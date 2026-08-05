@@ -1,0 +1,17 @@
+# Allow AI search bots (for ChatGPT, Copilot, DeepSeek, Gemini, etc.)
+User-agent: OAI-SearchBot
+Allow: /
+
+# ChatGPT-User is user-initiated and may not respect robots.txt, but keep it anyway
+User-agent: ChatGPT-User
+Allow: /
+
+# Block training crawlers to protect content
+User-agent: GPTBot
+Disallow: /
+
+# Allow all other good crawlers (Google, Bing, etc.)
+User-agent: *
+Allow: /
+
+Sitemap: https://zeynalikid-form.vercel.app/sitemap.xml

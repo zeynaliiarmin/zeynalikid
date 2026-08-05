@@ -1,0 +1,210 @@
+/* =====================================================
+   Zeynalikid — Stage 1 Design System Foundation (Mobile-first)
+   Brand: Warm trust (Teal/Blue + Cream + Warm neutrals)
+   Font: Vazirmatn
+   No purple as primary. 3 shadows only. Pill buttons.
+   ===================================================== */
+
+:root {
+  /* Brand */
+  --zk-primary: #0F766E;
+  --zk-primary-hover: #134E4B;
+  --zk-primary-light: #CCFBF1;
+  --zk-accent: #0EA5E9;
+  --zk-accent-light: #E0F2FE;
+
+  /* Surfaces */
+  --zk-bg: #FDF8F3;
+  --zk-surface: #FFFFFF;
+  --zk-surface-muted: #F8F4EF;
+  --zk-surface-soft: #F1EDE6;
+
+  /* Text */
+  --zk-text: #1F2937;
+  --zk-text-muted: #4B5563;
+  --zk-text-subtle: #6B7280;
+  --zk-text-inverse: #FFFFFF;
+
+  /* Borders */
+  --zk-border: #E5E0D8;
+  --zk-border-strong: #D1C8BB;
+
+  /* Semantic */
+  --zk-success: #14B8A6;
+  --zk-warning: #F59E0B;
+  --zk-error: #DC2626;
+  --zk-info: #0EA5E9;
+
+  /* Radius */
+  --zk-radius-pill: 9999px;
+  --zk-radius-card: 20px;
+  --zk-radius-xl: 24px;
+  --zk-radius-input: 14px;
+  --zk-radius-badge: 999px;
+
+  /* Shadows — strict 3 levels */
+  --zk-shadow-light: 0 4px 15px 0 rgba(15, 23, 42, 0.06);
+  --zk-shadow-medium: 0 5px 20px 0 rgba(15, 23, 42, 0.10);
+  --zk-shadow-strong: 0 15px 30px 0 rgba(15, 23, 42, 0.18);
+
+  /* Spacing */
+  --zk-space-1: 4px;
+  --zk-space-2: 8px;
+  --zk-space-3: 12px;
+  --zk-space-4: 16px;
+  --zk-space-5: 20px;
+  --zk-space-6: 24px;
+  --zk-space-7: 32px;
+  --zk-space-8: 40px;
+  --zk-space-9: 48px;
+
+  /* Typography */
+  --zk-font: 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+  --zk-font-weight-regular: 400;
+  --zk-font-weight-medium: 500;
+  --zk-font-weight-semibold: 600;
+  --zk-font-weight-bold: 700;
+
+  /* Motion */
+  --zk-duration-fast: 120ms;
+  --zk-duration-base: 200ms;
+  --zk-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Touch & Safe */
+  --zk-touch: 48px;
+  --zk-safe-top: env(safe-area-inset-top, 0px);
+  --zk-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Z */
+  --zk-z-header: 1000;
+  --zk-z-drawer: 3000;
+}
+
+/* Global base */
+html, body, #root {
+  font-family: var(--zk-font);
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--zk-bg);
+  color: var(--zk-text);
+  direction: rtl;
+}
+
+/* Prevent iOS zoom */
+input, select, textarea {
+  font-size: 16px !important;
+  font-family: var(--zk-font);
+}
+
+/* Safe area */
+.zk-safe-shell {
+  padding-top: var(--zk-safe-top);
+  padding-bottom: var(--zk-safe-bottom);
+}
+
+/* Buttons — Pill */
+.zk-btn {
+  min-height: var(--zk-touch);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--zk-radius-pill);
+  font-weight: 700;
+  font-size: 15px;
+  font-family: var(--zk-font);
+  transition: all var(--zk-duration-base) var(--zk-ease);
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.zk-btn-primary {
+  background: var(--zk-primary);
+  color: var(--zk-text-inverse);
+  box-shadow: var(--zk-shadow-light);
+}
+.zk-btn-primary:hover { background: var(--zk-primary-hover); }
+.zk-btn-primary:active { transform: translateY(1px); }
+
+.zk-btn-secondary {
+  background: var(--zk-surface);
+  color: var(--zk-text);
+  border: 1px solid var(--zk-border-strong);
+}
+.zk-btn-secondary:hover { border-color: var(--zk-text-subtle); }
+
+.zk-btn-ghost {
+  background: transparent;
+  color: var(--zk-primary);
+}
+
+/* Cards */
+.zk-card {
+  background: var(--zk-surface);
+  border-radius: var(--zk-radius-card);
+  padding: 20px;
+  box-shadow: var(--zk-shadow-light);
+  border: 1px solid var(--zk-border);
+}
+
+.zk-card-interactive:hover {
+  box-shadow: var(--zk-shadow-medium);
+  transform: translateY(-2px);
+}
+
+/* Inputs */
+.zk-input {
+  width: 100%;
+  min-height: var(--zk-touch);
+  background: var(--zk-surface);
+  border: 1px solid var(--zk-border);
+  border-radius: var(--zk-radius-input);
+  padding: 14px 16px;
+  font-size: 16px;
+  font-family: var(--zk-font);
+  color: var(--zk-text);
+}
+.zk-input:focus {
+  border-color: var(--zk-primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  outline: none;
+}
+
+/* Chips / Pills */
+.zk-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: var(--zk-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--zk-surface-muted);
+  border: 1px solid var(--zk-border);
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.zk-chip.active, .zk-chip--active {
+  background: var(--zk-primary-light);
+  color: var(--zk-primary);
+  border-color: var(--zk-primary);
+}
+
+/* Typography helpers */
+.zk-h1 { font-size: clamp(1.75rem, 6.5vw, 2.25rem); font-weight: 800; line-height: 1.25; }
+.zk-h2 { font-size: 1.35rem; font-weight: 700; line-height: 1.35; }
+.zk-h3 { font-size: 1.1rem; font-weight: 700; }
+
+/* Mobile-first responsive helpers */
+@media (max-width: 480px) {
+  .zk-card { padding: 16px; border-radius: 18px; }
+  .zk-btn { padding: 13px 22px; font-size: 15px; }
+}
+
+/* RTL helpers */
+[dir="rtl"] .zk-logical { margin-right: 0; margin-left: auto; }
+
+/* No emoji in chrome — enforced in redesigned sections */
