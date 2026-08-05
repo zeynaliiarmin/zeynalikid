@@ -525,8 +525,21 @@ function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)
       </div>
 
       <div style={{maxWidth:1100,margin:'0 auto',padding:'28px 16px 18px'}}>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:32}}>
-        <div>
+        <style>{`
+          .zk-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px}
+          .zk-footer-acc-head{display:none}
+          @media(max-width:768px){
+            .zk-footer-grid{grid-template-columns:1fr;gap:0}
+            .zk-footer-col{border-bottom:1px solid ${T.brd};padding:8px 0}
+            .zk-footer-col:first-child{border-top:0}
+            .zk-footer-acc-head{display:flex;width:100%;justify-content:space-between;align-items:center;background:transparent;border:0;color:${T.ttl};font-weight:800;font-size:14px;padding:12px 0;cursor:pointer;font-family:inherit;min-height:44px}
+            .zk-footer-acc-head svg{transition:transform .25s ease;transform:rotate(0deg)}
+            .zk-footer-acc-head[data-open="true"] svg{transform:rotate(180deg)}
+            .zk-footer-acc-body:not([data-open="true"]){display:none !important}
+          }
+        `}</style>
+        <div className="zk-footer-grid">
+        <div className="zk-footer-col">
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:10}}>
             <div style={{width:34,height:34,borderRadius:999,background:`linear-gradient(135deg,${T.acc},#0F766E)`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:15}}>Z</div>
             <div style={{fontWeight:900,fontSize:19,color:T.ttl}}>{siteName}</div>
@@ -534,23 +547,23 @@ function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)
           <p style={{fontSize:13,color:T.mut,lineHeight:1.75,margin:0}}>{lang==='en'?'Specialized child growth & nutrition consultations using the TC method. Warm, human, science-backed support for every parent.':'مشاوره تخصصی رشد و تغذیه کودک با روش TC. همراهی گرم، انسانی و علمی برای هر والد.'}</p>
           <div style={{marginTop:14,fontSize:12,color:T.mut}}>{lang==='en'?'Since 2018 • Trusted by 10,000+ families':'از ۱۳۹۷ • مورد اعتماد بیش از ۱۰٬۰۰۰ خانواده'}</div>
         </div>
-        <div>
-          <div style={{fontWeight:800,fontSize:14,color:T.ttl,marginBottom:12}}>{lang==='en'?'Quick Links':'دسترسی سریع'}</div>
-          <div style={{display:'grid',gap:7}}>{navLinks.map(l=><button key={l.key} onClick={()=>setView(l.view)} style={{textAlign:'right',background:'transparent',border:0,color:T.txt,fontSize:14,fontWeight:600,padding:'5px 0',minHeight:40,cursor:'pointer',display:'flex',alignItems:'center',gap:6}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{transform:lang==='fa'?'scaleX(-1)':'none'}} aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg> {l.label}</button>)}</div>
+        <div className="zk-footer-col">
+          <button className="zk-footer-acc-head" data-open={openAcc==='links'} onClick={()=>toggleAcc('links')} aria-expanded={openAcc==='links'}>{lang==='en'?'Quick Links':'دسترسی سریع'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div className="zk-footer-acc-body" data-open={openAcc==='links'} style={{gap:7,paddingTop:'12px'}}>{navLinks.map(l=><button key={l.key} onClick={()=>setView(l.view)} style={{textAlign:'right',background:'transparent',border:0,color:T.txt,fontSize:14,fontWeight:600,padding:'5px 0',minHeight:40,cursor:'pointer',display:'flex',alignItems:'center',gap:6}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{transform:lang==='fa'?'scaleX(-1)':'none'}} aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg> {l.label}</button>)}</div>
         </div>
-        <div>
-          <div style={{fontWeight:800,fontSize:14,color:T.ttl,marginBottom:12}}>{lang==='en'?'Reach Us':'تماس با ما'}</div>
-          <div style={{display:'flex',flexDirection:'column',gap:9}}>
+        <div className="zk-footer-col">
+          <button className="zk-footer-acc-head" data-open={openAcc==='reach'} onClick={()=>toggleAcc('reach')} aria-expanded={openAcc==='reach'}>{lang==='en'?'Reach Us':'تماس با ما'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div className="zk-footer-acc-body" data-open={openAcc==='reach'} style={{flexDirection:'column',gap:9,paddingTop:'12px'}}>
             {c.phone && <a href={`tel:${c.phone}`} style={{display:'flex',alignItems:'center',gap:9,color:T.acc,fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z"/></svg> <span>{c.phone}</span></a>}
             {c.whatsapp && <a href={`https://wa.me/${digits(c.whatsapp)}`} target="_blank" style={{display:'flex',alignItems:'center',gap:9,color:'#25D366',fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5zM8.5 7.8c.2 3.7 3.1 6.4 6.7 6.8l1-1.7-2.2-1-1 1c-1.3-.5-2.2-1.4-2.8-2.7l1-1-1-2.2-1.7.8z"/></svg> <span>WhatsApp</span></a>}
             {c.telegram && <a href={`https://t.me/${String(c.telegram).replace('@','')}`} target="_blank" style={{display:'flex',alignItems:'center',gap:9,color:'#229ED9',fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 4 3 11l6 2 2 6 10-15z"/></svg> <span>Telegram</span></a>}
           </div>
-          <div style={{marginTop:14,paddingTop:12,borderTop:`1px dashed ${T.brd}`,fontSize:12,color:T.mut,lineHeight:1.7}}>{lang==='en'?'Response time: Within 24–48 hours':'زمان پاسخگویی: ۲۴ تا ۴۸ ساعت'}<br/>{lang==='en'?'Mon–Sat • 9:00–20:00 (Tehran)':'شنبه تا پنجشنبه • ۹ تا ۲۰ (تهران)'}</div>
+          <div className="zk-footer-acc-body" data-open={openAcc==='reach'} style={{marginTop:14,paddingTop:12,borderTop:`1px dashed ${T.brd}`,fontSize:12,color:T.mut,lineHeight:1.7}}>{lang==='en'?'Response time: Within 24–48 hours':'زمان پاسخگویی: ۲۴ تا ۴۸ ساعت'}<br/>{lang==='en'?'Mon–Sat • 9:00–20:00 (Tehran)':'شنبه تا پنجشنبه • ۹ تا ۲۰ (تهران)'}</div>
         </div>
-        <div>
-          <div style={{fontWeight:800,fontSize:14,color:T.ttl,marginBottom:12}}>{lang==='en'?'Trust & Legal':'اعتماد و حقوقی'}</div>
-          <div style={{fontSize:13,color:T.mut,lineHeight:1.85}}>{lang==='en'?'• 100% confidential • Science-backed TC method • No medical claims':'• کاملاً محرمانه • روش TC علمی • بدون ادعای پزشکی'}<br/><br/>{lang==='en'?'Licensed specialists • Parents-first approach':'متخصصان دارای مجوز • رویکرد والد-محور'}</div>
-          {socialLinks.length>0 && <div style={{marginTop:16,display:'flex',gap:10,flexWrap:'wrap'}}>{socialLinks.map((s,i)=><a key={i} href={s.url!} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:999,border:`1px solid ${T.brd}`,background:T.card,color:T.acc}}>{s.icon}</a>)}</div>}
+        <div className="zk-footer-col">
+          <button className="zk-footer-acc-head" data-open={openAcc==='trust'} onClick={()=>toggleAcc('trust')} aria-expanded={openAcc==='trust'}>{lang==='en'?'Trust & Legal':'اعتماد و حقوقی'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div className="zk-footer-acc-body" data-open={openAcc==='trust'} style={{fontSize:13,color:T.mut,lineHeight:1.85,paddingTop:'12px'}}>{lang==='en'?'• 100% confidential • Science-backed TC method • No medical claims':'• کاملاً محرمانه • روش TC علمی • بدون ادعای پزشکی'}<br/><br/>{lang==='en'?'Licensed specialists • Parents-first approach':'متخصصان دارای مجوز • رویکرد والد-محور'}</div>
+          {socialLinks.length>0 && <div className="zk-footer-acc-body" data-open={openAcc==='trust'} style={{marginTop:16,gap:10,flexWrap:'wrap',paddingTop:'12px'}}>{socialLinks.map((s,i)=><a key={i} href={s.url!} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:999,border:`1px solid ${T.brd}`,background:T.card,color:T.acc}}>{s.icon}</a>)}</div>}
         </div>
       </div>
       </div>
