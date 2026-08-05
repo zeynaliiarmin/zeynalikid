@@ -1,0 +1,21 @@
+{
+  "name": "زینالیکید — همراهی والدین در رشد و تغذیه کودک",
+  "short_name": "زینالیکید",
+  "description": "مشاوره و آموزش والدین درباره رشد، تغذیه، اشتها و تمرکز کودک و نوجوان | Zeynalikid: parent guidance for child growth, nutrition, appetite and focus.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F766E",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": ["health", "lifestyle", "education"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

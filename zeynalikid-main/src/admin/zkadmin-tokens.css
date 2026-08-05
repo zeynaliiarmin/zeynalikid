@@ -1,0 +1,1057 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Zeynalikid Admin Panel — Stage 7A Design Tokens (--zkad-*)
+   ─ Scoped strictly to `body.admin-root` so nothing leaks into the
+     marketing pages, course flow, profile, settings or the form app.
+   ─ Light mode is the default. Dark mode follows Stage 6's system:
+     <html data-theme="dark"> (localStorage key: "zk_theme").
+   ─ Palette: Zeynalikid teal/blue (#0F766E / #0EA5E9), cream and warm
+     neutrals. No purple, no neon cyan, no SCADA-dark industrial bg.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Light (default) ─────────────────────────────────────────────── */
+body.admin-root {
+  /* surfaces */
+  --zkad-bg: #F8FAFC;
+  --zkad-sidebar: #FFFFFF;
+  --zkad-header: rgba(255, 255, 255, 0.94);
+  --zkad-card: #FFFFFF;
+  --zkad-hover: rgba(14, 165, 233, 0.08);      /* آبی با opacity — hover */
+  --zkad-hover-strong: rgba(14, 165, 233, 0.14);
+  --zkad-selected: #F0FDFA;                     /* teal-50 — آیتم فعال */
+  --zkad-inp: #FFFFFF;
+  --zkad-pop: #FFFFFF;
+
+  /* brand */
+  --zkad-acc: #0F766E;                          /* teal زینالیکید */
+  --zkad-acc-hover: #134E4B;
+  --zkad-acc-soft: rgba(15, 118, 110, 0.09);
+  --zkad-accent2: #0EA5E9;                      /* آبی آسمانی */
+  --zkad-acc-contrast: #FFFFFF;
+
+  /* text */
+  --zkad-txt: #0F172A;
+  --zkad-mut: #64748B;
+  --zkad-faint: #94A3B8;
+  --zkad-ttl: #0F766E;
+
+  /* lines */
+  --zkad-brd: #E2E8F0;
+  --zkad-brd-strong: #CBD5E1;
+
+  /* semantic */
+  --zkad-ok: #10B981;
+  --zkad-ok-soft: rgba(16, 185, 129, 0.10);
+  --zkad-warn: #F59E0B;
+  --zkad-warn-soft: rgba(245, 158, 11, 0.12);
+  --zkad-err: #EF4444;
+  --zkad-err-soft: rgba(239, 68, 68, 0.09);
+  --zkad-info: #0EA5E9;
+  --zkad-info-soft: rgba(14, 165, 233, 0.10);
+
+  /* elevation — سه سطح سایه، کوچک‌تر/متراکم‌تر از مارکتینگ */
+  --zkad-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --zkad-shadow-md: 0 2px 6px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.05);
+  --zkad-shadow-lg: 0 6px 16px rgba(15, 23, 42, 0.10), 0 2px 5px rgba(15, 23, 42, 0.06);
+
+  /* radius — کارت ۸ / دکمه و input ۶ / هدر و مدال ۲۰ */
+  --zkad-r-card: 8px;
+  --zkad-r-btn: 6px;
+  --zkad-r-input: 6px;
+  --zkad-r-shell: 20px;
+  --zkad-r-pill: 999px;
+
+  /* layout */
+  --zkad-sidebar-w: 256px;
+  --zkad-header-h: 60px;
+  --zkad-header-h-m: 56px;
+  --zkad-drawer-w: 85vw;
+  --zkad-drawer-max: 340px;
+
+  /* motion */
+  --zkad-dur: 250ms;
+  --zkad-dur-fast: 180ms;
+  --zkad-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* type */
+  --zkad-font: 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+
+  color-scheme: light;
+}
+
+/* ── Dark — هماهنگ با Stage 6 (data-theme="dark") ───────────────── */
+html[data-theme="dark"] body.admin-root {
+  --zkad-bg: #0F1722;
+  --zkad-sidebar: #111827;
+  --zkad-header: rgba(17, 24, 39, 0.92);
+  --zkad-card: #1E293B;
+  --zkad-hover: rgba(14, 165, 233, 0.10);
+  --zkad-hover-strong: rgba(14, 165, 233, 0.16);
+  --zkad-selected: rgba(15, 118, 110, 0.18);
+  --zkad-inp: #0F1722;
+  --zkad-pop: #1E293B;
+
+  --zkad-acc: #2DD4BF;                          /* teal روشن‌تر برای خوانایی روی تیره */
+  --zkad-acc-hover: #5EEAD4;
+  --zkad-acc-soft: rgba(45, 212, 191, 0.12);
+  --zkad-accent2: #38BDF8;
+  --zkad-acc-contrast: #0F1722;
+
+  --zkad-txt: #E2E8F0;
+  --zkad-mut: #94A3B8;
+  --zkad-faint: #64748B;
+  --zkad-ttl: #5EEAD4;
+
+  --zkad-brd: #334155;
+  --zkad-brd-strong: #475569;
+
+  --zkad-ok: #34D399;
+  --zkad-ok-soft: rgba(52, 211, 153, 0.12);
+  --zkad-warn: #FBBF24;
+  --zkad-warn-soft: rgba(251, 191, 36, 0.12);
+  --zkad-err: #F87171;
+  --zkad-err-soft: rgba(248, 113, 113, 0.12);
+  --zkad-info: #38BDF8;
+  --zkad-info-soft: rgba(56, 189, 248, 0.12);
+
+  --zkad-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --zkad-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.38), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --zkad-shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Shell components — all selectors stay inside body.admin-root
+   ═══════════════════════════════════════════════════════════════════ */
+
+body.admin-root {
+  font-family: var(--zkad-font);
+  background: var(--zkad-bg);
+  color: var(--zkad-txt);
+}
+
+body.admin-root .zkad-root {
+  min-height: 100dvh;
+  background: var(--zkad-bg);
+  color: var(--zkad-txt);
+  font-family: var(--zkad-font);
+}
+
+/* ── Sidebar (desktop fixed / mobile drawer) ─────────────────────── */
+body.admin-root .zkad-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: 0;               /* RTL: راست، LTR: چپ — خودکار */
+  width: var(--zkad-sidebar-w);
+  background: var(--zkad-sidebar);
+  border-inline-end: 1px solid var(--zkad-brd);
+  display: flex;
+  flex-direction: column;
+  z-index: 60;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-inline-start: env(safe-area-inset-left, 0px);
+  padding-inline-end: env(safe-area-inset-right, 0px);
+  transition: transform var(--zkad-dur) var(--zkad-ease);
+  overscroll-behavior: contain;
+}
+
+/* موبایل/تبلت: تبدیل به Drawer */
+@media (max-width: 1023.5px) {
+  body.admin-root .zkad-sidebar {
+    width: min(var(--zkad-drawer-w), var(--zkad-drawer-max));
+    transform: translateX(100%);       /* RTL — از راست بیرون است */
+    box-shadow: var(--zkad-shadow-lg);
+    z-index: 2100;
+    border-radius: var(--zkad-r-shell) 0 0 var(--zkad-r-shell);
+  }
+  body.admin-root[dir="ltr"] .zkad-sidebar,
+  html[dir="ltr"] body.admin-root .zkad-sidebar {
+    transform: translateX(-100%);
+    border-radius: 0 var(--zkad-r-shell) var(--zkad-r-shell) 0;
+  }
+  body.admin-root .zkad-sidebar.zkad-open { transform: translateX(0); }
+}
+
+/* دسکتاپ: ثابت و همیشهvisible؛ محتوا کنارش قرار می‌گیرد */
+@media (min-width: 1024px) {
+  body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); }
+}
+
+body.admin-root .zkad-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 2090;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--zkad-dur) var(--zkad-ease);
+}
+body.admin-root .zkad-backdrop.zkad-show { opacity: 1; pointer-events: auto; }
+@media (min-width: 1024px) {
+  body.admin-root .zkad-backdrop { display: none; }
+}
+
+/* ── Brand block ─────────────────────────────────────────────────── */
+body.admin-root .zkad-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--zkad-brd);
+}
+body.admin-root .zkad-brand-logo {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0F766E, #0EA5E9);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--zkad-shadow-sm);
+}
+html[data-theme="dark"] body.admin-root .zkad-brand-logo {
+  background: linear-gradient(135deg, #0F766E, #0369A1);
+}
+body.admin-root .zkad-brand-name {
+  font-size: 15px; font-weight: 800; color: var(--zkad-txt);
+  line-height: 1.3; margin: 0;
+}
+body.admin-root .zkad-brand-sub {
+  font-size: 10.5px; color: var(--zkad-mut); margin: 1px 0 0;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────── */
+body.admin-root .zkad-nav {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zkad-brd-strong) transparent;
+}
+body.admin-root .zkad-nav::-webkit-scrollbar { width: 5px; }
+body.admin-root .zkad-nav::-webkit-scrollbar-thumb { background: var(--zkad-brd-strong); border-radius: 99px; }
+
+body.admin-root .zkad-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  padding-inline-start: 14px;
+  border: none;
+  border-radius: var(--zkad-r-card);
+  background: transparent;
+  color: var(--zkad-mut);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+body.admin-root .zkad-nav-item:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-nav-item:focus-visible {
+  outline: 2px solid var(--zkad-accent2);
+  outline-offset: 1px;
+}
+body.admin-root .zkad-nav-item .zkad-nav-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; flex-shrink: 0; color: inherit;
+}
+body.admin-root .zkad-nav-item .zkad-nav-lbl {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* آیتم فعال: متن teal + bg نرم + نوار ۳px عمودی لبه راست (RTL) */
+body.admin-root .zkad-nav-item.zkad-active {
+  background: var(--zkad-acc-soft);
+  color: var(--zkad-acc);
+  font-weight: 800;
+}
+body.admin-root .zkad-nav-item.zkad-active::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: var(--zkad-r-pill);
+  background: var(--zkad-acc);
+}
+
+/* زیرآیتم‌ها (گروه‌ها) */
+body.admin-root .zkad-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-inline-start: 20px;
+  overflow: hidden;
+}
+body.admin-root .zkad-nav-item.zkad-subitem {
+  min-height: 38px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+body.admin-root .zkad-caret {
+  display: inline-flex;
+  transition: transform var(--zkad-dur-fast) var(--zkad-ease);
+  color: var(--zkad-faint);
+}
+body.admin-root .zkad-caret.zkad-open-c { transform: rotate(180deg); }
+
+/* ── Sidebar footer ──────────────────────────────────────────────── */
+body.admin-root .zkad-side-foot {
+  border-top: 1px solid var(--zkad-brd);
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+body.admin-root .zkad-side-meta {
+  font-size: 10px; color: var(--zkad-faint); line-height: 1.7;
+}
+body.admin-root .zkad-side-actions { display: flex; gap: 8px; }
+body.admin-root .zkad-side-btn {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px;
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-btn);
+  background: var(--zkad-card);
+  color: var(--zkad-mut);
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-side-btn:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-side-btn.zkad-danger { color: var(--zkad-err); }
+body.admin-root .zkad-side-btn.zkad-danger:hover { background: var(--zkad-err-soft); }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+body.admin-root .zkad-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 16px;
+  background: var(--zkad-header);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--zkad-brd);
+}
+@media (max-width: 1023.5px) {
+  body.admin-root .zkad-header {
+    height: calc(var(--zkad-header-h-m) + env(safe-area-inset-top, 0px));
+    padding-inline: max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  }
+}
+
+body.admin-root .zkad-burger {
+  display: none;
+  width: 42px; height: 42px;
+  align-items: center; justify-content: center;
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-btn);
+  background: var(--zkad-card);
+  color: var(--zkad-txt);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+@media (max-width: 1023.5px) {
+  body.admin-root .zkad-burger { display: inline-flex; }
+}
+
+body.admin-root .zkad-crumb {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--zkad-mut);
+  overflow: hidden;
+  white-space: nowrap;
+}
+body.admin-root .zkad-crumb-root { color: var(--zkad-faint); font-weight: 500; }
+body.admin-root .zkad-crumb-sep { color: var(--zkad-faint); }
+body.admin-root .zkad-crumb-cur {
+  color: var(--zkad-txt);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 640px) {
+  body.admin-root .zkad-crumb-root, body.admin-root .zkad-crumb-sep { display: none; }
+  body.admin-root .zkad-crumb-cur { font-size: 14px; }
+}
+
+body.admin-root .zkad-hbtn {
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--zkad-r-btn);
+  background: transparent;
+  color: var(--zkad-mut);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-hbtn:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-hbtn:focus-visible { outline: 2px solid var(--zkad-accent2); outline-offset: 1px; }
+
+body.admin-root .zkad-bell-dot {
+  position: absolute;
+  top: 9px;
+  inset-inline-end: 10px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--zkad-warn);
+  border: 1.5px solid var(--zkad-header);
+}
+
+body.admin-root .zkad-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0F766E, #0EA5E9);
+  color: #fff;
+  font-size: 14px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--zkad-card);
+  box-shadow: var(--zkad-shadow-sm);
+}
+
+body.admin-root .zkad-notif-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: 250px;
+  background: var(--zkad-pop);
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card);
+  box-shadow: var(--zkad-shadow-lg);
+  padding: 12px;
+  font-size: 12px;
+  color: var(--zkad-mut);
+  text-align: center;
+  z-index: 3000;
+  animation: zkadPop var(--zkad-dur-fast) var(--zkad-ease) both;
+}
+@keyframes zkadPop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Content area ────────────────────────────────────────────────── */
+body.admin-root .zkad-content {
+  padding: 16px;
+  padding-inline: max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  body.admin-root .zkad-content { padding: 22px 26px 30px; }
+}
+
+/* اسکرول نرم محتوای اصلی */
+body.admin-root .admin-main { -webkit-overflow-scrolling: touch; }
+
+/* دکمه‌هایdense پنل — شعاع ۶px طبق توکن */
+body.admin-root .zkad-flat-btn {
+  border-radius: var(--zkad-r-btn);
+}
+
+/* احترام به کاهش حرکت کاربر */
+@media (prefers-reduced-motion: reduce) {
+  body.admin-root .zkad-sidebar,
+  body.admin-root .zkad-backdrop,
+  body.admin-root .zkad-caret,
+  body.admin-root .zkad-notif-pop { transition: none; animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Stage 7B — KPI cards, panels, list/table system, chips, pager, empty
+   (همه selectors داخل body.admin-root — بدون نشت به مارکتینگ/فرم)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── semantic tag colors (light) ── */
+body.admin-root {
+  --zkad-tag-ok-bg: rgba(16, 185, 129, 0.13);  --zkad-tag-ok-tx: #0B7A5C;
+  --zkad-tag-warn-bg: rgba(245, 158, 11, 0.14); --zkad-tag-warn-tx: #92600A;
+  --zkad-tag-err-bg: rgba(239, 68, 68, 0.11);  --zkad-tag-err-tx: #C23636;
+  --zkad-tag-info-bg: rgba(14, 165, 233, 0.12); --zkad-tag-info-tx: #0B6FA8;
+  --zkad-tag-mut-bg: rgba(100, 116, 139, 0.12); --zkad-tag-mut-tx: #475569;
+  --zkad-thead-bg: #F1F5F9;
+}
+html[data-theme="dark"] body.admin-root {
+  --zkad-tag-ok-bg: rgba(52, 211, 153, 0.16);  --zkad-tag-ok-tx: #6EE7B7;
+  --zkad-tag-warn-bg: rgba(251, 191, 36, 0.16); --zkad-tag-warn-tx: #FCD34D;
+  --zkad-tag-err-bg: rgba(248, 113, 113, 0.16); --zkad-tag-err-tx: #FCA5A5;
+  --zkad-tag-info-bg: rgba(56, 189, 248, 0.16); --zkad-tag-info-tx: #7DD3FC;
+  --zkad-tag-mut-bg: rgba(148, 163, 184, 0.16); --zkad-tag-mut-tx: #CBD5E1;
+  --zkad-thead-bg: #16202E;
+}
+
+/* ── page head ── */
+body.admin-root .zkad-page-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+}
+body.admin-root .zkad-page-head h2 {
+  margin: 0; font-size: 18px; font-weight: 800; color: var(--zkad-ttl);
+}
+body.admin-root .zkad-page-head p {
+  margin: 3px 0 0; font-size: 12px; color: var(--zkad-mut);
+}
+body.admin-root .zkad-page-head .zkad-head-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 14px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-btn);
+  background: var(--zkad-card); color: var(--zkad-acc);
+  font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-page-head .zkad-head-btn:hover { background: var(--zkad-hover); }
+
+/* ── KPI stat cards ── */
+body.admin-root .zkad-stat-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;
+}
+@media (min-width: 900px) {
+  body.admin-root .zkad-stat-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+}
+body.admin-root .zkad-stat-card {
+  position: relative;
+  background: var(--zkad-card);
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card);
+  padding: 16px;
+  box-shadow: var(--zkad-shadow-sm);
+  transition: transform var(--zkad-dur-fast) var(--zkad-ease), box-shadow var(--zkad-dur-fast) var(--zkad-ease);
+}
+@media (min-width: 1024px) {
+  body.admin-root .zkad-stat-card:hover { transform: translateY(-2px); box-shadow: var(--zkad-shadow-md); }
+}
+body.admin-root .zkad-stat-icon {
+  position: absolute; top: 14px; inset-inline-end: 14px;
+  width: 38px; height: 38px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+body.admin-root .zkad-stat-icon.t-ok { background: var(--zkad-tag-ok-bg); color: var(--zkad-tag-ok-tx); }
+body.admin-root .zkad-stat-icon.t-warn { background: var(--zkad-tag-warn-bg); color: var(--zkad-tag-warn-tx); }
+body.admin-root .zkad-stat-icon.t-err { background: var(--zkad-tag-err-bg); color: var(--zkad-tag-err-tx); }
+body.admin-root .zkad-stat-icon.t-info { background: var(--zkad-tag-info-bg); color: var(--zkad-tag-info-tx); }
+body.admin-root .zkad-stat-icon.t-mut { background: var(--zkad-tag-mut-bg); color: var(--zkad-tag-mut-tx); }
+body.admin-root .zkad-stat-lbl {
+  font-size: 11px; font-weight: 700; color: var(--zkad-mut); margin-bottom: 8px;
+  padding-inline-end: 46px;
+}
+body.admin-root .zkad-stat-num {
+  font-size: 26px; font-weight: 800; color: var(--zkad-txt); line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+body.admin-root .zkad-stat-foot {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+  min-height: 16px;
+}
+body.admin-root .zkad-stat-sub { font-size: 10.5px; color: var(--zkad-faint); }
+body.admin-root .zkad-delta { font-size: 10.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
+body.admin-root .zkad-delta.up { color: var(--zkad-ok); }
+body.admin-root .zkad-delta.down { color: var(--zkad-err); }
+body.admin-root .zkad-delta.flat { color: var(--zkad-faint); font-weight: 500; }
+body.admin-root .zkad-stat-dot {
+  position: absolute; top: 12px; inset-inline-start: 12px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--zkad-warn);
+  box-shadow: 0 0 0 3px var(--zkad-tag-warn-bg);
+}
+body.admin-root .zkad-warn-card { border-color: var(--zkad-warn); border-color: color-mix(in srgb, var(--zkad-warn) 45%, transparent); }
+
+/* ── two panel cards ── */
+body.admin-root .zkad-panels-grid {
+  display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 8px;
+}
+@media (min-width: 900px) {
+  body.admin-root .zkad-panels-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+}
+body.admin-root .zkad-panel-card {
+  background: var(--zkad-card); border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card); padding: 14px 16px;
+  box-shadow: var(--zkad-shadow-sm);
+}
+body.admin-root .zkad-panel-card > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 10px;
+}
+body.admin-root .zkad-panel-card h3 {
+  margin: 0; font-size: 13.5px; font-weight: 800; color: var(--zkad-txt);
+  display: inline-flex; align-items: center; gap: 7px;
+}
+body.admin-root .zkad-linkbtn {
+  border: 0; background: transparent; color: var(--zkad-acc);
+  font-family: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer;
+  min-height: 32px; padding: 4px 8px; border-radius: var(--zkad-r-btn);
+}
+body.admin-root .zkad-linkbtn:hover { background: var(--zkad-hover); }
+body.admin-root .zkad-panel-card ul { list-style: none; margin: 0; padding: 0; }
+body.admin-root .zkad-activity {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 9px 6px; border: 0; background: transparent;
+  border-bottom: 1px solid var(--zkad-brd);
+  font-family: inherit; text-align: inherit; cursor: pointer; color: var(--zkad-txt);
+  transition: background var(--zkad-dur-fast) var(--zkad-ease);
+  border-radius: 6px;
+}
+body.admin-root .zkad-activity:last-child { border-bottom: 0; }
+body.admin-root .zkad-activity:hover { background: var(--zkad-hover); }
+body.admin-root .zkad-activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+body.admin-root .zkad-activity-dot.t-ok { background: var(--zkad-ok); }
+body.admin-root .zkad-activity-dot.t-warn { background: var(--zkad-warn); }
+body.admin-root .zkad-activity-dot.t-info { background: var(--zkad-info); }
+body.admin-root .zkad-activity-txt {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+}
+body.admin-root .zkad-activity-txt b {
+  font-size: 12.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── tags / pills (status column) ── */
+body.admin-root .zkad-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; line-height: 1;
+  padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+}
+body.admin-root .zkad-tag.t-ok { background: var(--zkad-tag-ok-bg); color: var(--zkad-tag-ok-tx); }
+body.admin-root .zkad-tag.t-warn { background: var(--zkad-tag-warn-bg); color: var(--zkad-tag-warn-tx); }
+body.admin-root .zkad-tag.t-err { background: var(--zkad-tag-err-bg); color: var(--zkad-tag-err-tx); }
+body.admin-root .zkad-tag.t-info { background: var(--zkad-tag-info-bg); color: var(--zkad-tag-info-tx); }
+body.admin-root .zkad-tag.t-mut { background: var(--zkad-tag-mut-bg); color: var(--zkad-tag-mut-tx); }
+
+/* ── list rows (SubCard / card lists) ── */
+body.admin-root .zkad-card {
+  background: var(--zkad-card);
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card) !important;
+  box-shadow: var(--zkad-shadow-sm) !important;
+  overflow: hidden;
+  transition: box-shadow var(--zkad-dur-fast) var(--zkad-ease), border-color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-card.zkad-unread { border-color: var(--zkad-acc) !important; }
+body.admin-root .zkad-card:hover { box-shadow: var(--zkad-shadow-md) !important; }
+body.admin-root .zkad-row-head { transition: background var(--zkad-dur-fast) var(--zkad-ease); }
+body.admin-root .zkad-row-head:hover { background: var(--zkad-hover); }
+body.admin-root .zkad-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace, -apple-system, "Courier New";
+  font-size: 10px; letter-spacing: 0.6px; color: var(--zkad-info);
+  background: var(--zkad-tag-info-bg); border: 0; border-radius: 4px; padding: 3px 7px;
+  direction: ltr;
+}
+body.admin-root .zkad-time { font-size: 10.5px; color: var(--zkad-faint); white-space: nowrap; }
+
+/* ── icon action buttons (≥40px tap) ── */
+body.admin-root .zkad-iconbtn {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: var(--zkad-r-btn);
+  background: transparent; color: var(--zkad-mut); cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-iconbtn:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-iconbtn.t-err:hover { background: var(--zkad-err-soft); color: var(--zkad-err); }
+body.admin-root .zkad-iconbtn.t-ok:hover { background: var(--zkad-ok-soft); color: var(--zkad-ok); }
+body.admin-root .zkad-iconbtn.t-warn { color: var(--zkad-warn); }
+
+/* ── toolbar: search + actions ── */
+body.admin-root .zkad-toolbar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+}
+body.admin-root .zkad-search {
+  flex: 1; min-width: 200px; position: relative; display: flex; align-items: center;
+}
+body.admin-root .zkad-search svg {
+  position: absolute; inset-inline-start: 11px; color: var(--zkad-faint); pointer-events: none;
+}
+body.admin-root .zkad-search input {
+  width: 100%; min-height: 40px;
+  padding: 8px 12px; padding-inline-start: 34px;
+  background: var(--zkad-card); color: var(--zkad-txt);
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-input);
+  font-family: inherit; font-size: 13px;
+  box-shadow: var(--zkad-shadow-sm);
+  transition: border-color var(--zkad-dur-fast) var(--zkad-ease), box-shadow var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-search input::placeholder { color: var(--zkad-faint); }
+body.admin-root .zkad-search input:focus {
+  outline: none; border-color: var(--zkad-acc);
+  box-shadow: 0 0 0 3px var(--zkad-acc-soft);
+}
+body.admin-root .zkad-toolbar-actions { display: flex; align-items: center; gap: 6px; }
+body.admin-root .zkad-toolbtn {
+  min-height: 40px; padding: 6px 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-btn);
+  background: var(--zkad-card); color: var(--zkad-mut);
+  font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-toolbtn:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+
+/* ── chip filter rows ── */
+body.admin-root .zkad-chips-area { margin-bottom: 12px; display: flex; flex-direction: column; gap: 7px; }
+body.admin-root .zkad-chipgroup { display: flex; align-items: center; gap: 8px; min-width: 0; }
+body.admin-root .zkad-chipgroup-lbl {
+  font-size: 10.5px; font-weight: 800; color: var(--zkad-faint); flex-shrink: 0; width: 74px;
+}
+@media (max-width: 640px) {
+  body.admin-root .zkad-chipgroup { flex-direction: column; align-items: stretch; gap: 4px; }
+  body.admin-root .zkad-chipgroup-lbl { width: auto; }
+}
+body.admin-root .zkad-chiprow {
+  display: flex; gap: 6px; overflow-x: auto; padding: 2px;
+  scrollbar-width: thin; scrollbar-color: var(--zkad-brd-strong) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+body.admin-root .zkad-chiprow::-webkit-scrollbar { height: 4px; }
+body.admin-root .zkad-chiprow::-webkit-scrollbar-thumb { background: var(--zkad-brd-strong); border-radius: 99px; }
+body.admin-root .zkad-chip {
+  flex-shrink: 0; min-height: 30px; padding: 5px 12px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-pill);
+  background: var(--zkad-card); color: var(--zkad-mut);
+  font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease), border-color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-chip:hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-chip.on {
+  background: var(--zkad-acc-soft); color: var(--zkad-acc); border-color: var(--zkad-acc);
+  font-weight: 800;
+}
+body.admin-root .zkad-datechip {
+  min-height: 30px; width: 110px; padding: 4px 10px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-pill);
+  background: var(--zkad-card); color: var(--zkad-txt);
+  font-family: inherit; font-size: 11px;
+}
+body.admin-root .zkad-datechip:focus { outline: none; border-color: var(--zkad-acc); }
+
+/* ── pagination ── */
+body.admin-root .zkad-pager {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px;
+}
+body.admin-root .zkad-pager-btn {
+  min-height: 36px; padding: 6px 16px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-pill);
+  background: var(--zkad-card); color: var(--zkad-mut);
+  font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .zkad-pager-btn:hover:not(:disabled) { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .zkad-pager-btn:disabled { opacity: 0.45; cursor: default; }
+body.admin-root .zkad-pager-cur {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--zkad-acc); color: var(--zkad-acc-contrast);
+  font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+html[data-theme="dark"] body.admin-root .zkad-pager-cur { color: #0F1722; }
+body.admin-root .zkad-pager-total { font-size: 11.5px; color: var(--zkad-mut); }
+
+/* ── empty states ── */
+body.admin-root .zkad-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 42px 20px; text-align: center;
+  background: var(--zkad-card); border: 1px dashed var(--zkad-brd-strong);
+  border-radius: var(--zkad-r-card); color: var(--zkad-mut);
+}
+body.admin-root .zkad-empty svg { color: var(--zkad-faint); opacity: 0.75; }
+body.admin-root .zkad-empty p { margin: 0; font-size: 12.5px; font-weight: 700; }
+body.admin-root .zkad-empty small { font-size: 11px; color: var(--zkad-faint); }
+
+/* ── unified tables (برای هر جدول واقعی فعلی/آینده) ── */
+body.admin-root .zkad-tablewrap { overflow-x: auto; border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-card); background: var(--zkad-card); }
+body.admin-root table.zkad-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+body.admin-root table.zkad-table thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--zkad-thead-bg); color: var(--zkad-mut);
+  font-size: 11px; font-weight: 600; text-align: inherit;
+  padding: 11px 14px; border-bottom: 1px solid var(--zkad-brd);
+  white-space: nowrap;
+}
+body.admin-root table.zkad-table tbody td {
+  padding: 12px 14px; border-bottom: 1px solid var(--zkad-brd); color: var(--zkad-txt);
+  vertical-align: middle;
+}
+body.admin-root table.zkad-table tbody tr:last-child td { border-bottom: 0; }
+body.admin-root table.zkad-table tbody tr { transition: background var(--zkad-dur-fast) var(--zkad-ease); }
+body.admin-root table.zkad-table tbody tr:hover { background: var(--zkad-hover); }
+body.admin-root table.zkad-table tbody tr.zkad-selected { background: var(--zkad-selected); }
+/* موبایل: جدول‌های بلند به کارت عمودی (کوتاه‌ها با scroll افقی می‌مانند) */
+@media (max-width: 639.5px) {
+  body.admin-root table.zkad-table.zkad-cardable,
+  body.admin-root table.zkad-table.zkad-cardable thead,
+  body.admin-root table.zkad-table.zkad-cardable tbody,
+  body.admin-root table.zkad-table.zkad-cardable tr,
+  body.admin-root table.zkad-table.zkad-cardable td { display: block; width: 100%; }
+  body.admin-root table.zkad-table.zkad-cardable thead { display: none; }
+  body.admin-root table.zkad-table.zkad-cardable tbody tr {
+    border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-card);
+    margin-bottom: 10px; padding: 10px 12px; background: var(--zkad-card);
+  }
+  body.admin-root table.zkad-table.zkad-cardable tbody td {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    border: 0; padding: 5px 0; font-size: 12px;
+  }
+  body.admin-root table.zkad-table.zkad-cardable tbody td::before {
+    content: attr(data-label); font-size: 10.5px; font-weight: 700; color: var(--zkad-faint);
+    flex-shrink: 0;
+  }
+}
+
+/* ── checkboxes هماهنگ ── */
+body.admin-root input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--zkad-acc); cursor: pointer;
+}
+
+/* ── چک‌باکس پیگیری کمی بزرگ‌تر (tap target) ── */
+body.admin-root .zkad-fu-btn { width: 40px !important; height: 40px !important; }
+
+/* Stage 7B polish: تراکم بیشتر چیپس‌ها در دسکتاپ (دو ستون) */
+@media (min-width: 900px) {
+  body.admin-root .zkad-chips-area {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 7px 22px; align-items: center;
+  }
+}
+
+/* Stage 7B verify: baseline برای دکمه‌های بدون استایل داخل محتوا + دکمه حذف */
+body.admin-root .admin-main button:not([style]):not([class]) {
+  min-height: 40px; padding: 6px 14px;
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-btn);
+  background: var(--zkad-card); color: var(--zkad-mut);
+  font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  transition: background var(--zkad-dur-fast) var(--zkad-ease), color var(--zkad-dur-fast) var(--zkad-ease);
+}
+body.admin-root .admin-main button:not([style]):not([class]):hover { background: var(--zkad-hover); color: var(--zkad-txt); }
+body.admin-root .admin-main button:not([style]):not([class]):disabled { opacity: 0.45; cursor: default; }
+body.admin-root .zkad-del {
+  min-height: 40px; padding: 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--zkad-err) 35%, transparent); border-radius: var(--zkad-r-btn);
+  background: var(--zkad-err-soft); color: var(--zkad-err);
+  font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+body.admin-root .zkad-del:hover { background: var(--zkad-tag-err-bg); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Stage 7C — فرم‌ها، toggleها، dropzone، مدال‌ها، spinner، sticky CTA
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── input / select / textarea یکپارچه (scoped !important برای غلبه بر inline) ── */
+body.admin-root .admin-main input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+body.admin-root .admin-main select,
+body.admin-root .admin-main textarea {
+  border-radius: var(--zkad-r-input) !important;
+  border: 1px solid var(--zkad-brd) !important;
+  background-color: var(--zkad-inp) !important;
+  color: var(--zkad-txt) !important;
+  padding: 10px 12px !important;
+  min-height: 40px;
+  font-family: var(--zkad-font) !important;
+  box-shadow: none !important;
+  transition: border-color 180ms var(--zkad-ease), box-shadow 180ms var(--zkad-ease), background-color 180ms var(--zkad-ease);
+}
+body.admin-root .admin-main textarea {
+  min-height: 84px !important;
+  resize: vertical !important;
+  line-height: 1.9;
+}
+body.admin-root .admin-main input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus,
+body.admin-root .admin-main select:focus,
+body.admin-root .admin-main textarea:focus {
+  outline: none !important;
+  border-color: var(--zkad-acc) !important;
+  background-color: var(--zkad-card) !important;
+  box-shadow: 0 0 0 3px var(--zkad-acc-soft) !important;
+}
+body.admin-root .admin-main select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9.5 6 6 6-6'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: left 10px center !important;
+  padding-inline-end: 30px !important;
+}
+html[data-theme="dark"] body.admin-root .admin-main select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9.5 6 6 6-6'/></svg>") !important;
+}
+/* لیبل فیلدها */
+body.admin-root .admin-main label[style*="display: block"] {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--zkad-mut) !important;
+  margin-bottom: 6px !important;
+  line-height: 1.6;
+}
+
+/* ── toggle switch (جایگزین بصری چک‌باکس‌های فعال/نمایش) ── */
+body.admin-root .zkad-switch {
+  appearance: none; -webkit-appearance: none;
+  width: 40px !important; height: 22px !important;
+  border-radius: 999px !important;
+  background: var(--zkad-brd-strong) !important;
+  border: 0 !important;
+  position: relative; cursor: pointer; flex-shrink: 0;
+  transition: background 180ms var(--zkad-ease);
+  vertical-align: middle;
+}
+body.admin-root .zkad-switch::before {
+  content: '';
+  position: absolute; top: 2px; inset-inline-start: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: var(--zkad-shadow-sm);
+  transition: transform 180ms var(--zkad-ease);
+}
+body.admin-root .zkad-switch:checked { background: var(--zkad-acc) !important; }
+body.admin-root .zkad-switch:checked::before { transform: translateX(-18px); }
+html[dir="ltr"] body.admin-root .zkad-switch:checked::before,
+body.admin-root.admin-ltr .zkad-switch:checked::before { transform: translateX(18px); }
+
+/* ── color swatch دایره‌ای ── */
+body.admin-root .admin-main input[type="color"] {
+  width: 44px !important; height: 40px !important;
+  min-height: 0; padding: 3px !important;
+  border: 1px solid var(--zkad-brd) !important;
+  border-radius: 999px !important;
+  background: var(--zkad-card) !important; cursor: pointer;
+}
+body.admin-root .admin-main input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+body.admin-root .admin-main input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+body.admin-root .admin-main input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+
+/* ── dropzone آپلود ── */
+body.admin-root .zkad-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 14px; margin-top: 8px;
+  border: 2px dashed var(--zkad-brd-strong); border-radius: var(--zkad-r-card);
+  background: var(--zkad-bg); color: var(--zkad-mut);
+  font-size: 11.5px; font-weight: 700; text-align: center; cursor: pointer;
+  transition: border-color 180ms var(--zkad-ease), background 180ms var(--zkad-ease);
+}
+body.admin-root .zkad-drop:hover { border-color: var(--zkad-acc); background: var(--zkad-acc-soft); color: var(--zkad-acc); }
+body.admin-root .zkad-drop input[type="file"] { display: none; }
+body.admin-root .zkad-drop svg { opacity: .8; }
+
+/* ── اسلات‌های ویرایش تصویر ── */
+body.admin-root .zkad-media-slot {
+  border: 1px solid var(--zkad-brd); border-radius: var(--zkad-r-card);
+  padding: 14px; background: var(--zkad-card); box-shadow: var(--zkad-shadow-sm);
+}
+body.admin-root .zkad-media-slot img { border-radius: var(--zkad-r-card) !important; }
+
+/* ── مدال‌ها (Modal مشترک — اسکوپ ادمین) ── */
+body.admin-root div[style*="9000"] {
+  background: rgba(15, 23, 42, 0.5) !important;
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  animation: zkadFade 200ms var(--zkad-ease) both !important;
+}
+body.admin-root div[style*="9000"] > div {
+  border-radius: 12px !important;
+  padding: 24px !important;
+  background: var(--zkad-pop) !important;
+  border: 1px solid var(--zkad-brd) !important;
+  box-shadow: var(--zkad-shadow-lg) !important;
+  animation: zkadModalIn 200ms var(--zkad-ease) both !important;
+}
+body.admin-root div[style*="9000"] > div > button {
+  margin-top: 16px !important;
+  border-radius: var(--zkad-r-btn) !important;
+  background: transparent !important;
+  border: 1px solid var(--zkad-brd) !important;
+  color: var(--zkad-mut) !important;
+  box-shadow: none !important;
+  min-height: 44px;
+  font-family: var(--zkad-font) !important;
+}
+body.admin-root div[style*="9000"] > div > button:hover { background: var(--zkad-hover) !important; color: var(--zkad-txt) !important; }
+@media (max-width: 640px) {
+  body.admin-root div[style*="9000"] { align-items: flex-end !important; padding: 0 !important; }
+  body.admin-root div[style*="9000"] > div {
+    width: 100%; max-width: 100% !important; max-height: 92vh;
+    border-radius: 20px 20px 0 0 !important;
+    animation: zkadSheetUp 250ms var(--zkad-ease) both !important;
+  }
+}
+@keyframes zkadFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zkadModalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes zkadSheetUp { from { opacity: 0.4; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── sticky CTA موبایل برای دکمه‌های ذخیره (S.btn گرادیانی) ── */
+@media (max-width: 640px) {
+  body.admin-root .admin-main button[style*="linear-gradient"] {
+    position: sticky;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    box-shadow: var(--zkad-shadow-lg);
+  }
+}
+body.admin-root .admin-main button[style*="linear-gradient"] { border-radius: 999px !important; }
+
+/* ── spinner بارگذاری ── */
+body.admin-root .zkad-loading {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 34px 16px; color: var(--zkad-mut); font-size: 12.5px; font-weight: 700;
+}
+body.admin-root .zkad-spin {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid var(--zkad-brd);
+  border-top-color: var(--zkad-acc);
+  animation: zkadSpin 700ms linear infinite;
+}
+@keyframes zkadSpin { to { transform: rotate(360deg); } }
+
+/* ── هدر تب‌ها + جداکننده ── */
+body.admin-root .zkad-page-head { border-bottom: 1px solid var(--zkad-brd); padding-bottom: 12px; }
+
+/* ── یادآوری سطل بازیافت ── */
+body.admin-root .zkad-note-warn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--zkad-tag-warn-bg); color: var(--zkad-tag-warn-tx);
+  border: 1px solid color-mix(in srgb, var(--zkad-warn) 35%, transparent);
+  border-radius: var(--zkad-r-card); padding: 10px 14px;
+  font-size: 11.5px; font-weight: 700; margin-bottom: 12px;
+}
+
+/* ── پیش‌نمایش زنده تم در مدیریت دیزاین ── */
+body.admin-root .zkad-preview {
+  margin-top: 14px; padding: 14px;
+  border: 1px dashed var(--zkad-brd-strong); border-radius: var(--zkad-r-card);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--zkad-bg);
+}
+body.admin-root .zkad-preview-card {
+  background: var(--zkad-card); border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card); padding: 10px 14px; box-shadow: var(--zkad-shadow-sm);
+  font-size: 11.5px; color: var(--zkad-txt); font-weight: 700;
+}
+body.admin-root .zkad-preview-btn {
+  background: var(--zkad-acc); color: var(--zkad-acc-contrast);
+  border: 0; border-radius: 999px; padding: 8px 16px;
+  font-family: inherit; font-size: 11.5px; font-weight: 800;
+}
+body.admin-root .zkad-preview small { width: 100%; color: var(--zkad-faint); font-size: 10px; }
+
+/* ── خطای فرم با آیکن ── */
+body.admin-root .zkad-err {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--zkad-err); margin-top: 5px; font-weight: 600;
+}
