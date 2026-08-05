@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured, fetchDeletedSubmissions, restoreSubmission, permanentDeleteSubmission, permanentDeleteMultipleSubmissions } from '../lib/supabase';
+import { ZkTrashIcon } from './adminIcons';
 
 const SK={subs:'zkid_submissions_v2', trash:'zkid_trash_v1'};
 const getLS=(k:string,f:any)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}};
@@ -27,7 +28,7 @@ export default function TrashPanel({T,S,AdminBtn,onRestored,refreshKey}:{T:any,S
 
  return <div>
   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
-   <h3 style={{color:T.err,margin:0}}>🗑️ سطل آشغال ({deletedSubs.length})</h3>
+   <h3 style={{color:T.err,margin:0,display:'flex',alignItems:'center',gap:8}}><ZkTrashIcon size={17} color={T.err}/> سطل آشغال ({deletedSubs.length})</h3>
    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
     <button style={AdminBtn()} onClick={exportExcel}>خروجی Excel</button>
     <button style={AdminBtn()} onClick={exportPhones}>خروجی شماره‌ها</button>
@@ -49,7 +50,7 @@ export default function TrashPanel({T,S,AdminBtn,onRestored,refreshKey}:{T:any,S
      <button style={{...AdminBtn(),color:T.ok,borderColor:T.ok}} onClick={()=>handleRestore(sub.id)}>بازیابی</button>
      <button style={{...AdminBtn(),color:T.err,borderColor:T.err}} onClick={()=>handlePermanentDelete(sub.id)}>حذف دائمی</button>
     </div>
-    <div style={{fontSize:12,color:T.mut,marginTop:6,direction:'ltr',textAlign:'right'}}>{sub.fullPhone||'—'} | {sub.trackingCode||'—'} | {sub.course?.title||'بدون دوره'}</div><div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:4}}>{sub.payment?.receiptDeletedAt&&<span style={{color:T.mut,fontSize:11}}>🗑️ فیش حذف شده: {new Date(sub.payment.receiptDeletedAt).toLocaleDateString('fa-IR')}</span>}{sub.payment?.amount&&<span style={{color:T.mut,fontSize:11}}>💰 {Number(sub.payment.amount).toLocaleString()} تومان</span>}{sub.payment?.paidAt&&<span style={{color:T.mut,fontSize:11}}>📅 {sub.payment.paidAt}</span>}</div>
+    <div style={{fontSize:12,color:T.mut,marginTop:6,direction:'ltr',textAlign:'right'}}>{sub.fullPhone||'—'} | {sub.trackingCode||'—'} | {sub.course?.title||'بدون دوره'}</div><div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:4}}>{sub.payment?.receiptDeletedAt&&<span style={{color:T.mut,fontSize:11}}>فیش حذف شده: {new Date(sub.payment.receiptDeletedAt).toLocaleDateString('fa-IR')}</span>}{sub.payment?.amount&&<span style={{color:T.mut,fontSize:11}}>{Number(sub.payment.amount).toLocaleString()} تومان</span>}{sub.payment?.paidAt&&<span style={{color:T.mut,fontSize:11}}>{sub.payment.paidAt}</span>}</div>
    </div>)}
   </div>}
  </div>

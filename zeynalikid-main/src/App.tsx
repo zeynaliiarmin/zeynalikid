@@ -12,6 +12,8 @@ import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/t
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, fetchSubmissions, saveSettings as saveSettingsRemote, trackPageView } from './lib/supabase';
 import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
+// Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
+import { resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
 // اصلاح چانک-۱: Lazy Loading صفحات برای کاهش حجم باندل اولیه
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CoursesPage = lazy(() => import('./pages/CoursesPage'));
@@ -141,7 +143,10 @@ const TH:Any={
  // ─── Three Design Systems: Wellness, KidLearn, NavyStack ───
  wellness:{id:'wellness',name:'Wellness',bg:'#F8FBFA',card:'#FFFFFF',brd:'#D9E2EA',acc:'#1769C2',soft:'#EAF5F3',grad:'linear-gradient(135deg,#1769C2,#356B62)',txt:'#17202B',mut:'#405466',ttl:'#12559E',inp:'#FFFFFF',sel:'#EAF5F3',pop:'#FFFFFF',err:'#B83A3A',ok:'#218653',warn:'#B56A08',badge:'#EAF5F3',hdr:'rgba(248,251,250,.96)',neuOut:'0 4px 15px rgba(15,38,60,.06)',neuIn:'inset 2px 2px 5px rgba(15,38,60,.05),inset -2px -2px 5px rgba(255,255,255,.8)',memphis:['#E7F2FC','#EAF5F3','#FFF0E8']},
  kidlearn:{id:'kidlearn',name:'KidLearn',bg:'#F7F9FC',card:'#FFFFFF',brd:'#D9E2EA',acc:'#1769C2',soft:'#E7F2FC',grad:'linear-gradient(135deg,#1769C2,#63B3F4)',txt:'#17202B',mut:'#6B7B8A',ttl:'#12559E',inp:'#FFFFFF',sel:'#EAF4FF',pop:'#FFFFFF',err:'#B83A3A',ok:'#218653',warn:'#B56A08',badge:'#E7F2FC',hdr:'rgba(247,249,252,.96)',neuOut:'0 4px 15px rgba(15,38,60,.06)',neuIn:'inset 2px 2px 5px rgba(15,38,60,.05),inset -2px -2px 5px rgba(255,255,255,.8)',memphis:['#E7F2FC','#EAF5F3','#FFF0E8']},
- navystack:{id:'navystack',name:'NavyStack',bg:'#0F1722',card:'#172231',brd:'#304456',acc:'#4BA8D8',soft:'rgba(75,168,216,0.10)',grad:'linear-gradient(135deg,#1769C2,#4BA8D8)',txt:'#F2F6FA',mut:'#91A2B1',ttl:'#63B3F4',inp:'#0F1722',sel:'#163A5B',pop:'#1D2B3A',err:'#FF8D8D',ok:'#69D39B',warn:'#F2B85B',badge:'rgba(75,168,216,0.12)',hdr:'#172332',neuOut:'0 2px 8px rgba(0,0,0,0.30)',neuIn:'inset 1px 1px 4px rgba(0,0,0,0.28),inset -1px -1px 4px rgba(255,255,255,0.02)',memphis:['rgba(75,168,216,0.06)','rgba(33,134,83,0.06)','rgba(255,255,255,0.03)']},
+ // Stage 7A: پنل مدیریت — تم روشن زینالیکید (آبی/teal + کرم)، بدون cyan نئونی و بدون پس‌زمینه تیره صنعتی.
+ // نسخه تیره (navystack-dark) با data-theme="dark" مرحله ۶ هماهنگ است.
+ navystack:{id:'navystack',name:'NavyStack',bg:'#F8FAFC',card:'#FFFFFF',brd:'#E2E8F0',acc:'#0F766E',soft:'rgba(15,118,110,0.08)',hover:'rgba(14,165,233,0.08)',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)',txt:'#0F172A',mut:'#64748B',ttl:'#0F766E',inp:'#FFFFFF',sel:'#F0FDFA',pop:'#FFFFFF',err:'#EF4444',ok:'#10B981',warn:'#F59E0B',info:'#0EA5E9',badge:'#F0FDFA',hdr:'rgba(255,255,255,0.94)',sidebar:'#FFFFFF',neuOut:'0 1px 3px rgba(15,23,42,0.07)',neuIn:'inset 0 1px 2px rgba(15,23,42,0.04)',memphis:['#F0FDFA','#E0F2FE','#FDF6EC']},
+ 'navystack-dark':{id:'navystack-dark',name:'NavyStack Dark',bg:'#0F1722',card:'#1E293B',brd:'#334155',acc:'#2DD4BF',soft:'rgba(45,212,191,0.10)',hover:'rgba(14,165,233,0.10)',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)',txt:'#E2E8F0',mut:'#94A3B8',ttl:'#5EEAD4',inp:'#0F1722',sel:'#1E293B',pop:'#1E293B',err:'#F87171',ok:'#34D399',warn:'#FBBF24',info:'#38BDF8',badge:'rgba(45,212,191,0.10)',hdr:'#111827',sidebar:'#111827',neuOut:'0 1px 3px rgba(0,0,0,0.35)',neuIn:'inset 0 1px 2px rgba(0,0,0,0.30)',memphis:['rgba(45,212,191,0.05)','rgba(56,189,248,0.05)','rgba(255,255,255,0.02)']},
 };
 
 // Stage 7: semantic theme aliases. They share the existing T shape and do not alter routing or data logic.
@@ -643,10 +648,22 @@ function App(){
  const activeDesign = getDesignForPath(location.pathname, designSystem);
  const activeTheme = getThemeForDesign(activeDesign, designSystem);
 
+ // Stage 7A: حالت تیره پنل مدیریت از Stage 6 پیروی می‌کند (zk_theme / data-theme)
+ const [adminDark,setAdminDark]=useState<boolean>(()=>{try{return resolveZkDark()}catch{return false}});
+ useEffect(()=>{
+  const sync=()=>{try{setAdminDark(resolveZkDark())}catch{}};
+  const onStorage=(e:StorageEvent)=>{if(e.key===ZK_THEME_KEY)sync()};
+  window.addEventListener('storage',onStorage);
+  window.addEventListener(ZK_THEME_EVENT,sync as EventListener);
+  return()=>{window.removeEventListener('storage',onStorage);window.removeEventListener(ZK_THEME_EVENT,sync as EventListener)};
+ },[]);
+
  // انتخاب T بر اساس دیزاین و تم فعال
  const T = activeDesign === 'classic'
   ? TH[activeTheme]  // تم‌های کلاسیک (روشن، کرم، اقیانوسی، تاریک)
-  : TH[activeDesign]; // دیزاین‌های جدید (wellness, kidlearn, navystack)
+  : activeDesign === 'navystack'
+  ? (adminDark ? TH['navystack-dark'] : TH['navystack']) // پنل مدیریت: روشن پیش‌فرض، تیره با Stage 6
+  : TH[activeDesign]; // دیزاین‌های جدید (wellness, kidlearn)
  const [fd,setFd]=useState<any>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:any)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<any>(null); const [shipModal,setShipModal]=useState<any>(null); const [course,setCourse]=useState<any>(()=>emptyCourse()); const [courseResult,setCourseResult]=useState<any>(null); const [editChild,setEditChild]=useState(false);
  useEffect(()=>{setLS(SK.settings,cfg); document.title=cfg.browserTitle||cfg.siteTitle; imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.body.style.background=T.bg; document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]); useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);

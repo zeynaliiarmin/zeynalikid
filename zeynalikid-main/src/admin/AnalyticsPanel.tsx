@@ -1,7 +1,8 @@
 // اصلاح ۳۱: پنل «آمار بازدید» — نمایش بازدید کل / این ماه / امروز + صفحات پربازدید (اختیاری)
-// ثبت بازدید در جدول Supabase به‌نام page_views انجام می‌شود (نگاه کنید به src/lib/supabase.ts → trackPageView/fetchPageViewStats).
+// ثبت بازدید در جدول Supabase به‌نام page_views انجام می‌شود (نگاه کنید به src/lib/supabase.ts (trackPageView/fetchPageViewStats)).
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured, fetchPageViewStats } from '../lib/supabase';
+import { ZkChartIcon, ZkWarnIcon, ZkStarIcon } from './adminIcons';
 
 type Stats = {
   total: number;
@@ -73,11 +74,11 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
 
   return (
     <div>
-      <h3 style={{ color: T.ttl, marginBottom: 16, fontWeight: 800 }}>📊 آمار بازدید</h3>
+      <h3 style={{ color: T.ttl, marginBottom: 16, fontWeight: 800, display:'flex', alignItems:'center', gap:8 }}><ZkChartIcon size={16} color={T.ttl}/> آمار بازدید</h3>
 
       {stats.error && (
-        <div style={{ background: `${T.warn}18`, border: `1px solid ${T.warn}`, color: T.warn, borderRadius: 10, padding: 10, marginBottom: 14, fontSize: 12, fontWeight: 700 }}>
-          ⚠️ {stats.error}
+        <div style={{ background: `${T.warn}18`, border: `1px solid ${T.warn}`, color: T.warn, borderRadius: 10, padding: 10, marginBottom: 14, fontSize: 12, fontWeight: 700, display:'flex', alignItems:'center', gap:6 }}>
+          <ZkWarnIcon size={15}/> <span>{stats.error}</span>
         </div>
       )}
 
@@ -89,7 +90,7 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
 
       {stats.topPages.length > 0 && (
         <div style={{ background: T.badge, borderRadius: 14, padding: 12, border: `1px solid ${T.brd}` }}>
-          <b style={{ fontSize: 13, color: T.ttl }}>📌 صفحات پربازدید (این ماه)</b>
+          <b style={{ fontSize: 13, color: T.ttl, display:'inline-flex', alignItems:'center', gap:6 }}><ZkStarIcon size={14} color={T.ttl}/> صفحات پربازدید (این ماه)</b>
           <div style={{ marginTop: 8 }}>
             {stats.topPages.map((p, i) => (
               <div
