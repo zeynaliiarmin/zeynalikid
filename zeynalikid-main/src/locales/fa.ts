@@ -1,0 +1,107 @@
+const fa = {
+  heroTitle: 'ضمن آرزوی اوقاتی خوش برای شما', heroDesc: 'این فرم برای بررسی شرایط فرزند شما و تعیین نوبت مشاوره خصوصی طراحی شده است.', noticeText: 'این مشاوره فقط به والدین یا سرپرست قانونی فرزند ارائه می‌شود. لطفاً اطلاعات را با دقت تکمیل فرمایید.', phoneNote: 'مشاوره فقط به‌صورت تلفنی', submitBtnText: 'ثبت درخواست مشاوره', successMsg: 'اطلاعات فرزند شما با موفقیت ثبت شد', successSubMsg: 'طی ۲۴ الی ۴۸ ساعت آینده با شما تماس می‌گیریم', timeSlotLabel: 'بازه زمانی مناسب برای تماس (اختیاری)', directCourseBtn: 'معرفی و ثبت مستقیم دوره', newFormBtn: 'ثبت فرم جدید', contactBtn: 'ارتباط با ما', backToConsultation: 'بازگشت به فرم مشاوره',
+  parentInfo: 'اطلاعات والد / سرپرست', childInfo: 'اطلاعات فرزند', healthInfo: 'وضعیت تغذیه و سلامت', consultTopic: 'موضوع مشاوره', multi: 'می‌توانید چند مورد انتخاب کنید', gender: 'جنسیت', boy: 'پسر', girl: 'دختر', age: 'سن', height: 'قد', weight: 'وزن', digest: 'مشکل گوارشی', appetite: 'وضعیت اشتها', disease: 'بیماری خاص', specials: 'شرایط خاص', notes: 'توضیحات تکمیلی', required: 'فیلدهای دارای * الزامی هستند',
+  courses: 'معرفی دوره‌ها', chooseDest: 'لطفاً مقصد ارسال را انتخاب کنید.', sendIran: 'ارسال برای ایران', sendIntl: 'ارسال برای خارج از ایران', shippingInfo: 'اطلاعات ارسال', paymentInfo: 'اطلاعات پرداخت', finalConfirm: 'تأیید ثبت‌نام دوره', finalSubmit: 'ثبت نهایی', editChild: 'درخواست ویرایش اطلاعات فرزندم را دارم', next: 'ادامه', backBtn: 'بازگشت', contactUs: 'ارتباط با ما', select: 'انتخاب کنید...', invalidPhone: 'شماره تماس برای کشور انتخاب شده معتبر نیست', requiredTopic: 'حداقل یک موضوع مشاوره انتخاب کنید', requiredGender: 'جنسیت فرزند را انتخاب کنید', invalidAge: 'سن ۲ تا ۱۷ سال', deliveryEstimate:'برآورد زمان تحویل',receiver:'نام گیرنده',destinationCity:'شهر مقصد',destinationCountry:'کشور مقصد',phone:'شماره تماس',whatsapp:'شماره واتساپ',shippingMethod:'روش ارسال',fullAddress:'آدرس کامل',previousInfo:'اطلاعات ثبت‌شده قبلی',name:'نام',topic:'موضوع',receiptUpload:'بارگذاری فیش واریزی',bankInfo:'اطلاعات بانکی',courseDone:'ثبت‌نام دوره با موفقیت نهایی شد',courseDoneSub:'اطلاعات شما ثبت شد و در پنل مدیریت قابل مشاهده است.', deliveryAddressRequired:'برای تخمین زمان تحویل، ابتدا باید قسمت آدرس تکمیل شود.', receiverRequired:'نام گیرنده الزامی است', cityRequired:'شهر مقصد الزامی است', addressRequired:'آدرس الزامی است', postalRequired:'کد پستی الزامی است', phoneInvalid:'شماره تماس معتبر نیست', whatsappRequired:'شماره واتساپ معتبر و الزامی است', editChildTitle:'ویرایش اطلاعات کودک', saveChanges:'ذخیره تغییرات', adminLogin:'ورود به پنل مدیریت', login:'ورود', password:'رمز عبور', zipCode:'ZIP Code', 'paymentTitle':'اطلاعات حساب\u200cهای مقصد', 'bankName':'نام بانک', 'cardNumber':'شماره کارت', 'iban':'شماره شبا', 'copy':'کپی', 'copied':'کپی شد', 'receiptTitle':'ارسال فیش واریزی', 'receiptHint':'فرمت JPG, PNG, WEBP, HEIC, HEIF – حجم کمتر از ۵ مگابایت', 'selectFile':'انتخاب فایل', 'noFileSelected':'هیچ فایلی انتخاب نشده', 'receiptSmsPlaceholder':'متن پیامک واریزی را اینجا وارد کنید...', 'submitFinal':'ثبت نهایی', 'receiptGeneralHint':'لطفاً یکی از روش\u200cهای زیر را برای ارسال فیش واریزی انتخاب کنید.', 'receiptTextHint':'اگر امکان آپلود عکس فیش را ندارید، متن پیامک واریز را در کادر زیر کپی-پیست کنید.', 'receiptImageDone':'عکس فیش ثبت شده است', 'receiptTextDone':'متن پیامک واریز ثبت شده است',
+  // منوی همبرگری
+  // اصلاح ۱۳: اضافه شدن گزینه «خانه»
+  menuHome: 'خانه', menuConsultation: 'فرم مشاوره', menuCourses: 'معرفی دوره‌ها', menuMedia: 'ویدیو / ویس / عکس', menuLicenses: 'مجوزها', menuParents: 'والدین', menuAbout: 'درباره ما', menuContact: 'ارتباط با ما', menuAdmin: 'پنل مدیریت',
+  // اصلاح ۲۲: صفحه محصولات در منوی همبرگری
+  menuProducts: 'محصولات',
+  // کلیدهای مراحل قبل
+  editRequest: 'درخواست اصلاحیه', trackingCode: 'کد پیگیری', trackingCodeNote: 'حتماً کد پیگیری را برای مراحل بعدی ذخیره یا یادداشت بفرمایید:', yourTrackingCode: 'کد پیگیری شما:', clickToCopy: 'برای کپی کلیک کنید', trackingCopied: 'کد پیگیری کپی شد', guestLogin: 'مهمان',
+  courseInfo: 'اطلاعات دوره', moreInfo: 'بیشتر', showMore: 'بیشتر', showLess: 'کمتر',
+  freeConsultation: '(مشاوره رایگان)', consultThisCourse: 'مشاوره این دوره', registerCourse: 'ثبت دوره', registerNewCourse: 'ثبت دوره جدید', backToCourses: 'بازگشت به دوره‌ها',
+  selectedCourse: 'دوره انتخاب‌شده', submitChildInfo: 'ثبت اطلاعات فرزند و ادامه', childName: 'نام فرزند', childAge: 'سن فرزند', childGender: 'جنسیت فرزند', childHeight: 'قد', childWeight: 'وزن', childDisease: 'بیماری خاص', childNotes: 'توضیحات تکمیلی',
+  initialCourseDone: 'ثبت اولیه دوره انجام شد', finalCourseDone: 'ثبت نهایی انجام شد',
+  duplicateFormTitle: 'فرم تکراری شناسایی شد', duplicateEdit: 'ویرایش اطلاعات', duplicateNo: 'خیر', duplicateOtherChild: 'برای فرزند دیگرم هست',
+  trackTitle: 'پیگیری ثبت‌نام', trackDesc: 'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.', trackBtn: 'پیگیری', registeredPhone: 'شماره ثبت‌شده:', requestCorrection: 'درخواست اصلاحیه', usageInstructions: 'طریقه مصرف', registrationDate: 'تاریخ ثبت', orderStatus: 'وضعیت سفارش',
+  mediaTitle: 'پاسخ به نگرانی‌های مادران', mediaVideo: ' ویدیو', mediaVoice: ' ویس', mediaPhoto: 'عکس',
+  statusNew: 'جدید', statusPending: 'در انتظار پرداخت', statusPaid: 'پرداخت‌شده', statusShipped: 'ارسال‌شده', statusCompleted: 'تکمیل‌شده', statusCancelled: 'لغو‌شده', changeStatus: 'تغییر وضعیت', history: 'تاریخچه', followReminder: 'یادآور پیگیری',
+  trustHealth: 'سلامت و ایمنی', trustHeight: 'رشد قد', trustAppetite: 'اشتها و تغذیه', trustMind: 'هوش و تمرکز',
+  successCourseTitle: 'ثبت‌نام دوره با موفقیت نهایی شد', successCourseSub: 'اطلاعات شما ثبت شد و در پنل مدیریت قابل مشاهده است.', successFormTitle: 'اطلاعات فرزند شما با موفقیت ثبت شد', successFormSub: 'طی ۲۴ الی ۴۸ ساعت آینده با شما تماس می‌گیریم',
+  // اصلاح ۸: بخش «خدمات ما» در صفحه هوم
+  ourServicesTitle: 'خدمات ما',
+  servicesModeGrid: 'گرید', servicesModeList: 'لیست', servicesModeCarousel: 'کاروسل',
+  serviceNutrition: 'برنامه تغذیه شخصی‌سازی‌شده (در صورت نیاز)', serviceNutritionDesc: 'طراحی برنامه غذایی و مکمل کاملاً اختصاصی بر اساس طبع، ذائقه، وزن و شرایط بدنی منحصربه‌فرد فرزندتان.',
+  serviceExercise: 'برنامه ورزشی (در صورت نیاز)', serviceExerciseDesc: 'معرفی حرکات ورزشی ساده در خانه یا بهترین رشته ورزشی متناسب با شرایط فرزندتان، جهت همراهی بهتر در دورهٔ تخصصی.',
+  serviceTemperament: 'تحلیل طبع و مزاج (زبان‌شناسی)', serviceTemperamentDesc: 'تحلیل تخصصی عکس زبان فرزند برای شناسایی ریشه پنهان بی‌اشتهایی، کندی رشد یا ضعف بدنی و انتخاب برنامهٔ همراهی هدفمند.',
+  serviceEmpower: 'توانمندسازی والدین', serviceEmpowerDesc: 'آموزش نکات کاربردی تغذیه، مدیریت بدغذایی و اصلاح سبک زندگی؛ تا خودتان به متخصص سلامت فرزندتان تبدیل شوید.',
+  serviceGrowth: 'پایش تخصصی رشد قد و وزن', serviceGrowthDesc: 'بررسی دقیق روند رشد قدی، وزنی و استخوان‌بندی کودک؛ تشخیص عقب‌ماندگی‌های پنهان و ارائه برنامه جبرانی هدفمند.',
+  serviceHeight: 'فعال‌سازی رشد قد', serviceHeightDesc: 'تحریک طبیعی صفحات رشد قد با تغذیه هدفمند و مکمل‌های ارگانیک. هر سانتیمتر افزایش قد، اعتماد به نفس فردای فرزندتان را می‌سازد؛ مناسب برای افزایش رشد قد دختر و پسر.',
+  serviceAppetite: 'همراهی بی‌اشتهایی و بدغذایی', serviceAppetiteDesc: 'شناسایی ریشهٔ بی‌اشتهایی و بدغذایی کودک با روش TC و علم زبان‌شناسی؛ بدون تکیه بر داروهای شیمیایی، بدون جنگ و گریه سر سفره. همراهی تخصصی برای بی‌اشتهایی و بدغذایی بچه‌ها.',
+  serviceWeight: 'کنترل وزن و اصلاح رشد قدی', serviceWeightDesc: 'برنامه تخصصی برای کودکان با اضافه وزن و ضعف رشد قدی؛ کاهش توده چربی بدون آسیب به صفحات رشد، تا قامتی متناسب و سالم.',
+  serviceBrain: 'تقویت هوش، تمرکز و حافظه', serviceBrainDesc: 'تغذیه هدفمند مغز با ریزمغذی‌های ضروری برای افزایش قدرت یادگیری و دقت در سنین طلایی رشد.',
+  serviceImmunity: 'تقویت سیستم ایمنی', serviceImmunityDesc: 'ایمن‌سازی طبیعی بدن کودک در برابر بیماری‌های ویروسی و عفونی با مکمل‌های کاملاً ارگانیک و گیاهی.',
+  serviceSleep: 'تنظیم خواب و آرام‌سازی', serviceSleepDesc: 'بهبود کیفیت خواب شبانه با برنامه اصولی و مکمل‌های آرام‌بخش و گیاهی؛ خوابی که موتور اصلی ترشح هورمون رشد را روشن می‌کند.',
+  // اصلاح ۱-۴ (مرحله ۴): متون ثابت اضافی
+  close: 'بستن', receipt: 'فیش:', registerCourseDirect: 'ثبت مستقیم این دوره',
+  // اصلاح ۲۹ (مرحله ۷): هایلایت استوری
+  storyHighlights: 'هایلایت استوری', addStory: 'افزودن استوری', storyTitle: 'عنوان استوری', storyType: 'نوع',
+  // اصلاح ۱۸: بازطراحی هایلایت استوری
+  addHighlight: 'افزودن هایلایت', highlightTitle: 'عنوان هایلایت', coverUrl: 'آدرس کاور', addSlide: 'افزودن اسلاید', slideTitle: 'عنوان اسلاید', imageCodeExternal: 'کد تصویر خارجی', imageCodeInternal: 'کد تصویر داخلی', migrateOldStories: 'انتقال استوری‌های قدیمی', slides: 'استوری‌ها',
+  // اصلاح ۳۰ (مرحله ۷): عکس زبان فرزند + بهبود آپلود فیش
+  tonguePhoto: 'عکس زبان', tonguePhotoRequired: 'بارگذاری عکس زبان الزامی است', tonguePhotoHint: 'بارگذاری عکس زبان اهمیت زیادی ندارد و بعداً هم می‌توانید ارسال کنید', uploadPhoto: 'بارگذاری عکس', takePhoto: 'گرفتن عکس', chooseFromGallery: 'انتخاب از گالری', chooseFromFiles: 'انتخاب از فایل‌ها', maxFileSizeMB: 'حداکثر حجم هر عکس: {size} مگابایت', uploadProgress: 'در حال آپلود... {percent}%',
+  tonguePhotoOptional: 'عکس زبان فرزند (اختیاری)', tonguePhotoRequiredLabel: 'عکس زبان فرزند (اجباری)', deleteTonguePhotos: 'حذف عکس‌های زبان', maxPhotosReached: 'حداکثر {count} عکس قابل بارگذاری است',
+  // اصلاح ۳۲ (مرحله ۹): سوالات متداول (FAQ) + متن‌های سئوی صفحات
+  homeFAQTitle: 'سوالات متداول', faqPageTitle: 'سوالات متداول | زینالیکید', faqPageDesc: 'پاسخ به سوالات متداول درباره رشد قد، بی‌اشتهایی، بدغذایی، تقویت هوش و سلامت کودکان', viewAllFAQs: 'مشاهده همه سوالات', noFAQs: 'هیچ سوالی ثبت نشده است.',
+  // اصلاح ۲: عنوان بخش سوالات متداول زیر تب‌های دوره
+  courseFAQTitle: 'سوالات متداول',
+  // اصلاح ۱۵: عنوان بخش محتوای چندرسانه‌ای زیر تب‌های دوره
+  courseMediaTitle: 'محتوای چندرسانه‌ای',
+  // اصلاح ۳: عنوان متن سئوی کامل پایین صفحه دوره‌ها
+  coursesSeoFullTitle: 'درباره دوره‌های زینالیکید',
+  coursesIntroText: 'در این بخش، دوره‌های تخصصی زینالیکید برای حمایت از رشد قد، افزایش اشتها و همراهی بدغذایی، و حمایت از تمرکز و یادگیری کودکان و نوجوانان معرفی شده‌اند. هر دوره بر اساس روش TC و با توجه به طبع و شرایط منحصربه‌فرد فرزند شما طراحی می‌شود. برای دریافت مشاوره رایگان، فرم مشاوره را تکمیل کنید.',
+  experienceIntroText: 'در این بخش، تجربه‌های واقعی والدین از دوره‌های رشد قد، همراهی بی‌اشتهایی و حمایت از تمرکز کودکان را مشاهده می‌کنید. این تجربه‌ها با رضایت والدین منتشر شده‌اند و نشان‌دهنده تأثیر مثبت روش TC بر سلامت و رشد فرزندان است.',
+  educationIntroText: 'در این بخش، آموزش‌های تخصصی در زمینه تغذیه کودک، افزایش رشد قد، بهبود اشتها، تقویت تمرکز و هوش کودکان گردآوری شده است. محتوای این صفحه شامل ویدیو، ویس، عکس و مقالات آموزشی است.',
+  aboutIntroText: 'زینالیکید یک سامانه مشاوره تخصصی در حوزه رشد و تغذیه کودکان و نوجوانان است. تیم ما با استفاده از روش TC و علم زبان‌شناسی، برنامه‌های اختصاصی برای همراهی بی‌اشتهایی، حمایت از رشد قد و تمرکز فرزندان طراحی می‌کند.',
+  // اصلاح ۱۷: مدیریت محتوای چندرسانه‌ای ادغام‌شده
+  mediaManagement: 'مدیریت محتوا',
+  mediaAparatCode: 'کد دستی آپارات',
+  mediaYoutubeCode: 'کد دستی یوتیوب',
+  mediaDisplayMode: 'نمایش از طریق',
+  mediaDisplayAparat: 'فقط آپارات',
+  mediaDisplayYoutube: 'فقط یوتیوب',
+  mediaDisplayAuto: 'هر دو خودکار',
+  mediaDescCourses: 'توضیحات ویدیو (نمایش در صفحه معرفی دوره‌ها)',
+  mediaDescExperience: 'توضیحات ویدیو (نمایش در صفحه تجربه والدین)',
+  mediaCategory: 'دسته‌بندی نمایش',
+  mediaCatExperience: 'تجربه والدین',
+  mediaCatHeight: 'رشد قد',
+  mediaCatAppetite: 'بی‌اشتهایی',
+  mediaCatMind: 'هوش',
+  // اصلاح ۳۵+۳۶: پنل مدیریت حرفه‌ای
+  adminDashboard: 'داشبورد',
+  adminData: 'داده‌ها',
+  adminSettings: 'تنظیمات',
+  adminCourses: 'دوره‌ها',
+  adminShipping: 'ارسال و بانک',
+  adminSecurity: 'امنیت',
+  adminAnalytics: 'آمار بازدید',
+  adminTrash: 'سطل آشغال',
+  adminMedia: 'محتوا',
+  adminContacts: 'ارتباط',
+  totalSubmissions: 'کل فرم‌ها',
+  todaySubmissions: 'فرم‌های امروز',
+  courseRegistrations: 'ثبت‌نام دوره',
+  consultationForms: 'فرم مشاوره',
+  applyFilters: 'اعمال',
+  clearFilters: 'حذف فیلترها',
+  // مرحله ۶: دوره‌های ویژه با تگ
+  taggedCourses: 'دوره‌های ویژه با تگ',
+  popular: 'پرفروش',
+  trending: 'داغ',
+  bestSeller: 'پرفروش‌ترین',
+  registerBtn: 'ثبت‌نام',
+  taggedCoursesSpecial: 'ویژه',
+  // TrustBoxNew
+  trustBoxNew: 'جملات اعتمادساز',
+  trustBoxNewHome: 'صفحه اصلی',
+  trustBoxNewHeight: 'رشد قد',
+  trustBoxNewAppetite: 'بی‌اشتهایی',
+  trustBoxNewMind: 'هوش و تمرکز',
+  trustBoxNewHealth: 'سلامت عمومی',
+  trustBoxNewInterval: 'زمان تغییر (ثانیه)',
+  trustBoxNewEnabled: 'فعال',
+  trustBoxNewDisabled: 'غیرفعال',
+};
+export default fa;
