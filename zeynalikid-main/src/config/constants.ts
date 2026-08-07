@@ -1,0 +1,1 @@
+export const ADMIN_TRIGGER_PHONE = '09016392824';
