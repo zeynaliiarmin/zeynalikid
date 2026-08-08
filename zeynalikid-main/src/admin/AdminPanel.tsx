@@ -67,20 +67,10 @@ export default function AdminPanel({app}:{app:any}){
   document.addEventListener('toggle',h,true);
   return()=>document.removeEventListener('toggle',h,true);
  },[]);
- useLayoutEffect(()=>{
-  const m=document.querySelector('.admin-main')as HTMLElement|null;
-  if(m)_scrollPos.current=m.scrollTop;
- });
- useEffect(()=>{
-  const saveFocus=(e:Event)=>{
-   const t=e.target as HTMLElement;
-   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
-    _activeEl.current={tag:t.tagName,label:(t.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60),ph:t.getAttribute('placeholder')||''};
-   }
-  };
-  document.addEventListener('focusin',saveFocus,true);
-  return()=>document.removeEventListener('focusin',saveFocus,true);
- },[]);
+ // scroll position save removed — .zkad-content now handles its own scrolling
+ // and browser preserves scrollTop across re-rends naturally.
+ // saveFocus listener removed — was causing focus to jump back to previous input
+ // on mobile keyboards. The browser handles focus natively.
  // Removed buggy focus-restore useLayoutEffect that ran on every re-render
  // and jumped to wrong elements (matching by label text found first match at top of page).
  // Scroll position and details open state are preserved by the browser naturally.
