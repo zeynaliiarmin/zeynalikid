@@ -37,13 +37,13 @@ const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}cat
 const normRange=(age:any,g:any)=>{const t:any={2:{m:[78,85,92,9,12,15],f:[77,84,91,9,12,14]},3:{m:[88,95,103,11,14,18],f:[86,94,102,11,14,17]},4:{m:[95,103,111,12,16,21],f:[94,102,110,12,16,20]},5:{m:[102,110,118,13,18,23],f:[100,108,117,13,18,23]},6:{m:[107,116,126,15,21,27],f:[106,115,125,14,20,26]},7:{m:[112,122,132,16,23,30],f:[111,122,132,15,22,30]},8:{m:[116,127,138,16,25,35],f:[116,127,139,15,25,35]},9:{m:[121,133,144,17,28,39],f:[121,133,145,16,29,41]},10:{m:[126,138,150,19,32,45],f:[126,139,152,18,33,47]},11:{m:[130,144,157,20,36,51],f:[131,145,159,20,37,54]},12:{m:[134,149,164,22,40,58],f:[138,152,166,23,42,60]},13:{m:[141,156,172,24,45,66],f:[142,155,168,26,46,66]},14:{m:[149,163,178,28,51,73],f:[146,158,171,29,50,71]},15:{m:[156,169,182,34,57,80],f:[148,160,172,32,53,73]},16:{m:[160,173,186,39,62,84],f:[149,161,172,33,54,75]},17:{m:[163,175,187,43,65,87],f:[149,161,173,34,55,76]}};const a=Math.min(17,Math.max(2,Math.round(+p2e(age)||2)));const d=t[a]?.[g==='male'?'m':'f'];return d?{hMin:d[0],hMed:d[1],hMax:d[2],wMin:d[3],wMed:d[4],wMax:d[5]}:null};
 const growthStatus=(val:number,min:number,med:number,max:number)=>{const sd=(max-min)/4;if(val>=min+sd&&val<=max-sd)return {label:'نرمال',color:'#22c55e'};if(val>=min&&val<=max)return {label:'نزدیک به مرز',color:'#f97316'};const diff=val<min?min-val:val-max;if(diff<=sd*1.5)return {label:val<min?'زیر نرمال':'بالای نرمال',color:'#f97316'};return {label:val<min?'خیلی زیر نرمال':'خیلی بالای نرمال',color:'#ef4444'}};
 
-// scrollFocusStable removed — was causing scroll jumps
+const scrollFocusStable=(e:any)=>{setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'nearest'})}catch{}},300)};
 const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter}:any){
   const ref=useRef<HTMLInputElement|null>(null);
   const handleChange=useCallback((e:any)=>{ if(numeric) e.target.value=p2e(e.target.value); },[numeric]);
   const commit=useCallback(()=>onCommit?.(ref.current?.value||''),[onCommit]);
   const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
-  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit}  onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
+  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onFocus={scrollFocusStable} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
 });
 
 function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'min(33vw, calc(100vw - 34px))',minWidth:180,maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
@@ -51,15 +51,60 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 export default function AdminPanel({app}:{app:any}){
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
  // FIX: Preserve <details> open state, scroll position, and focus across re-renders
- // All focus/scroll/details preservation refs removed — browser handles natively
- // details toggle listener removed — dead code, no longer needed
- // scroll position save removed — .zkad-content now handles its own scrolling
- // and browser preserves scrollTop across re-rends naturally.
- // saveFocus listener removed — was causing focus to jump back to previous input
- // on mobile keyboards. The browser handles focus natively.
- // Removed buggy focus-restore useLayoutEffect that ran on every re-render
- // and jumped to wrong elements (matching by label text found first match at top of page).
- // Scroll position and details open state are preserved by the browser naturally.
+ const _openDetails=useRef<Set<string>>(new Set());
+ const _scrollPos=useRef(0);
+ const _activeEl=useRef<{tag:string,label:string,ph:string}|null>(null);
+ const _detailsKey=(d:Element)=>{
+  const s=(d.querySelector('summary')?.textContent||'').replace(/\s*\(\d+\)\s*$/,'').trim().substring(0,80);
+  return s;
+ };
+ useEffect(()=>{
+  const h=(e:Event)=>{
+   const d=e.target as HTMLDetailsElement;
+   const s=_detailsKey(d);
+   if(s){if(d.open)_openDetails.current.add(s);else _openDetails.current.delete(s)}
+  };
+  document.addEventListener('toggle',h,true);
+  return()=>document.removeEventListener('toggle',h,true);
+ },[]);
+ useLayoutEffect(()=>{
+  const m=document.querySelector('.admin-main')as HTMLElement|null;
+  if(m)_scrollPos.current=m.scrollTop;
+ });
+ useEffect(()=>{
+  const saveFocus=(e:Event)=>{
+   const t=e.target as HTMLElement;
+   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+    _activeEl.current={tag:t.tagName,label:(t.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60),ph:t.getAttribute('placeholder')||''};
+   }
+  };
+  document.addEventListener('focusin',saveFocus,true);
+  return()=>document.removeEventListener('focusin',saveFocus,true);
+ },[]);
+ useLayoutEffect(()=>{
+  const m=document.querySelector('.admin-main')as HTMLElement|null;
+  if(m&&_scrollPos.current>0)m.scrollTop=_scrollPos.current;
+  document.querySelectorAll('.admin-main details').forEach(d=>{
+   const s=_detailsKey(d);
+   if(_openDetails.current.has(s))(d as HTMLDetailsElement).open=true;
+  });
+  if(_activeEl.current){
+   const els=document.querySelectorAll('.admin-main '+_activeEl.current.tag.toLowerCase());
+   for(let i=0;i<els.length;i++){
+    const el=els[i]as HTMLElement;
+    const lbl=(el.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60);
+    const ph=el.getAttribute('placeholder')||'';
+    if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
+     el.focus();
+     if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+      const len=(el as HTMLInputElement).value.length;
+      (el as HTMLInputElement).setSelectionRange(len,len);
+     }
+     break;
+    }
+   }
+  }
+ });
 
  const goHome=()=>{try{app.setView('home')}catch{goToAppA()}};
  const [subs,setSubsState]=useState<any[]>(()=>getLS(SK.subs,[]));
@@ -69,8 +114,27 @@ export default function AdminPanel({app}:{app:any}){
  const setSubs=useCallback((updater:any)=>{setSubsState(prev=>{const next=typeof updater==='function'?updater(prev):updater; const removedSubs=prev.filter((x:any)=>!next.some((y:any)=>y.id===x.id)); if(isSupabaseConfigured){try{const prevById=new Map(prev.map((x:any)=>[x.id,x])); if(removedSubs.length)softDeleteMultipleSubmissions(removedSubs.map((x:any)=>x.id)).catch(e=>console.warn('soft delete failed',e)); next.forEach((x:any)=>{const p=prevById.get(x.id); if(p&&p!==x)updateSubmission(x.id,x).catch(e=>console.warn('update failed',e))})}catch(e){console.warn(e)}}else{setLS(SK.subs,next); if(removedSubs.length){const now=new Date().toISOString(); removedSubs.forEach((x:any)=>{if(x?.payment?.receipt)deleteStoredImage(x.payment.receipt).catch(()=>{})}); const trash=getLS('zkid_trash_v1',[]); setLS('zkid_trash_v1',[...trash,...removedSubs.map((x:any)=>({...x,deleted_at:now,payment:x?.payment?.receipt?{...x.payment,receipt:'',receipt_image:'',receiptDeletedAt:now}:x.payment}))])}} if(removedSubs.length)setTrashKey(k=>k+1); return next})},[]);
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
- const [editCfg,setEditCfgRaw]=useState<any|null>(null); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
- const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
+ const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
+ const setEditCfgRaw=useCallback((u:any)=>{const content=document.querySelector('.zkad-content');const st=content?content.scrollTop:0;setEditCfgRawRaw(u);requestAnimationFrame(()=>{if(content)content.scrollTop=st})},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
+ const setEditCfg=useCallback((u:any)=>{setTimeout(()=>setEditCfgRaw(u as any),0)},[]);
+ // FIX: Preserve <details> open state across re-renders.
+ // When setEditCfg triggers a re-render, React re-creates <details> elements
+ // which default to closed. This useEffect saves open state before re-render
+ // and restores it after.
+ const detailsStateRef=useRef<Set<string>>(new Set());
+ useEffect(()=>{
+  const onSave=()=>{const s=new Set<string>();document.querySelectorAll('.admin-main details').forEach((d:Element)=>{if((d as HTMLDetailsElement).open){const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt)s.add(txt)}});detailsStateRef.current=s};
+  // Save before React re-renders
+  const origSetState=setEditCfgRaw;
+  // Use a mutation observer to restore open state after DOM changes
+  const observer=new MutationObserver(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&detailsStateRef.current.has(txt)){(d as HTMLDetailsElement).open=true}})});
+  const adminMain=document.querySelector('.admin-main');
+  if(adminMain){observer.observe(adminMain,{childList:true,subtree:true,attributes:true,attributeFilter:['open']})};
+  // Save on toggle
+  const onToggle=(e:Event)=>{const d=e.target as HTMLDetailsElement;const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt){if(d.open)detailsStateRef.current.add(txt);else detailsStateRef.current.delete(txt)}};
+  document.addEventListener('toggle',onToggle,true);
+  return()=>{document.removeEventListener('toggle',onToggle,true);observer.disconnect()};
+ },[]);
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
@@ -82,8 +146,7 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۹: رفع کامل مشکل پرش صفحه در پنل مدیریت — فیلد فوکوس‌شده به‌جای پرش ناگهانی مرورگر،
  // با اسکرول نرم (smooth) به مرکز دید (center) منتقل می‌شود. این افکت روی همه ورودی‌های
  // پنل مدیریت (شامل SubCard، SettingsEditor و سایر ادیتورها) به‌صورت سراسری اعمال می‌شود.
- // Removed aggressive scrollIntoView on focusin — it caused disorienting scroll jumps.
- // The browser's native focus handling is sufficient for desktop and mobile.
+ useEffect(()=>{const h=(e:Event)=>{const t=e.target as HTMLElement;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')&&t.closest('.admin-main')){setTimeout(()=>{try{t.scrollIntoView({behavior:'smooth',block:'center'})}catch{}},300)}};document.addEventListener('focusin',h);return()=>document.removeEventListener('focusin',h)},[]);
  const setSave=(next:any)=>{saveCfg(next);setMsg('ذخیره شد');setTimeout(()=>setMsg(''),2200)};
  const subTime=(x:any)=>{if(x?.created_at){const t=Date.parse(x.created_at);if(!isNaN(t))return t} return typeof x?.id==='number'?x.id:0};
  // اصلاح ۳-الف: یادآور پیگیری فقط وقتی نمایش داده می‌شود که بیش از ۳ روز گذشته، هیچ پیگیری‌ای ثبت نشده، و فرم از قبل در دسته «پیگیری» یا «پیگیری آخر ماه» نباشد (چون آن‌ها خودشان قبلاً وارد چرخه پیگیری شده‌اند)
@@ -94,8 +157,8 @@ export default function AdminPanel({app}:{app:any}){
  function AdminBtn(){return {minHeight:44,padding:'9px 14px',border:`1px solid ${T.brd}`,background:T.card,borderRadius:6,color:T.acc,cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',boxShadow:T.neuOut,transition:'all .25s ease'} as any}
  function Err({x}:{x:any}){return <div className="zkad-err"><ZkWarnIcon size={13}/>{x}</div>}
  function Tag({x,tone='mut'}:{x:string,tone?:string}){return <span className={`zkad-tag t-${tone}`}>{x}</span>}
- // scrollFocus removed — was causing scroll jumps when focusing 2nd input
-const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit}  placeholder={ph}/></div>}),[S,T.err]);
+ const scrollFocus=useCallback((e:any)=>{setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'nearest'})}catch{}},300)},[]);
+const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit} onFocus={scrollFocus} placeholder={ph}/></div>}),[S,T.err,scrollFocus]);
 
  function Admin(){
   // اصلاح ۱: state برای مودال «فرم‌های دیگر با این شماره تماس»
@@ -178,7 +241,7 @@ const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='t
   const remainingPercent = Math.max(1, 100 - usedPercent);
   const isStorageWarning = remainingPercent <= 20 || usedPercent >= 80;
 
-  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{...S.page,direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh',alignItems:'stretch'}}><style>{css}{adminDetailsCss}{`
+  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{...S.page,direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh',alignItems:'stretch',background:T.bg}}><style>{css}{adminDetailsCss}{`
   /* Stage 7A: پوسته پنل (Sidebar/Drawer/Header) در zkadmin-tokens.css تعریف شده است.
      قوانین زیر فقط رفتار فوکوس/اسکرول/zoom iOS محتوای داخلی پنل را حفظ می‌کنند. */
   .admin-main{min-width:0}
@@ -345,7 +408,7 @@ const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='t
     <button type="button" className="zkad-toolbtn" onClick={clearSelection}>لغو انتخاب</button>
   </div>}
 </div>
-{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='userQuestions'&&<UserQuestionsEditor app={{...app,AdminBtn,Box,setEditCfg,editCfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app,AdminBtn,Box,setEditCfg,editCfg}}/>}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&CoursesEditor()}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='themes'&&editCfg&&ThemeManagerEditor()}{aTab==='images'&&editCfg&&ImagesEditor()}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&<ShippingBankEditor/>}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='security'&&<SecurityEditor/>}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor()}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{msg&&<div style={{position:'fixed',bottom:20,left:20,background:T.pop,border:`1px solid ${T.ok}`,color:T.ok,borderRadius:12,padding:'10px 14px',zIndex:3000}}>{msg}</div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
+{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='userQuestions'&&<UserQuestionsEditor app={app}/>}{aTab==='reviews'&&<ReviewsEditor app={app}/>}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&CoursesEditor()}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='themes'&&editCfg&&ThemeManagerEditor()}{aTab==='images'&&editCfg&&ImagesEditor()}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&<ShippingBankEditor/>}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='security'&&<SecurityEditor/>}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor()}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{msg&&<div style={{position:'fixed',bottom:20,left:20,background:T.pop,border:`1px solid ${T.ok}`,color:T.ok,borderRadius:12,padding:'10px 14px',zIndex:3000}}>{msg}</div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
 <div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>}
 
  function PhoneAction({sub,phone,whatsappOnly=false,label}:{sub:any,phone:any,whatsappOnly?:boolean,label?:string}){const [open,setOpen]=useState(false);const raw=String(phone||'');if(!raw)return <span>—</span>;const cc=sub?.cc||sub?.shipping?.phoneCc||'';const isIran=cc==='+98'||raw.startsWith('+98')||raw.startsWith('0098');const waDigits=digits(raw.startsWith('+')||raw.startsWith('00')?raw:`${cc}${raw}`);const telHref=`tel:${raw}`;const waHref=`https://wa.me/${waDigits}`;const rbHref=`https://rubika.ir/${waDigits}`;const linkStyle={display:'block',padding:'9px 11px',borderRadius:9,textDecoration:'none',color:T.txt,background:'transparent',fontSize:13,fontWeight:700} as any;const trigger=<button onClick={(e)=>{e.stopPropagation();setOpen(v=>!v)}} style={{border:0,background:T.soft,color:T.acc,borderRadius:8,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit',fontSize:12,direction:'ltr'}}>{label||raw}</button>;if(whatsappOnly)return <a href={waHref} target="_blank" rel="noreferrer" style={{color:T.ok,fontWeight:800,direction:'ltr',display:'inline-block'}}>{label||raw}</a>;return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={190} trigger={trigger}><a href={telHref} style={linkStyle} onClick={()=>setOpen(false)}>تلفن</a><a href={waHref} target="_blank" rel="noreferrer" style={{...linkStyle,color:'#16a34a'}} onClick={()=>setOpen(false)}>واتساپ</a>{isIran&&<a href={rbHref} target="_blank" rel="noreferrer" style={{...linkStyle,color:'#f97316'}} onClick={()=>setOpen(false)}>روبیکا</a>}</Popup>}
