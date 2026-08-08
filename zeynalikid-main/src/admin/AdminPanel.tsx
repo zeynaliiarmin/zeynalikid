@@ -96,9 +96,9 @@ export default function AdminPanel({app}:{app:any}){
     const ph=el.getAttribute('placeholder')||'';
     if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
      el.focus();
-     if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+     if(el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !['checkbox','radio','button','submit','file','image'].includes((el as HTMLInputElement).type))){
       const len=(el as HTMLInputElement).value.length;
-      (el as HTMLInputElement).setSelectionRange(len,len);
+      try{(el as HTMLInputElement).setSelectionRange(len,len);}catch{}
      }
      break;
     }
