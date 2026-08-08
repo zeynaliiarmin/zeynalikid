@@ -177,7 +177,7 @@ body.admin-root .zkad-sidebar {
 
 /* دسکتاپ: ثابت و همیشهvisible؛ محتوا کنارش قرار می‌گیرد */
 @media (min-width: 1024px) {
-  body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); }
+  body.admin-root .zkad-body { height: 100dvh; overflow: hidden; padding-inline-start: var(--zkad-sidebar-w); }
 }
 
 body.admin-root .zkad-backdrop {
@@ -482,6 +482,11 @@ body.admin-root .zkad-content {
   padding: 16px;
   padding-inline: max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-left, 0px));
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
 }
 @media (min-width: 1024px) {
   body.admin-root .zkad-content { padding: 22px 26px 30px; }
