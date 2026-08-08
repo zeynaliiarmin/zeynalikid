@@ -127,8 +127,8 @@ export default function AdminPanel({app}:{app:any}){
   document.addEventListener('toggle',onToggle,true);
   return()=>document.removeEventListener('toggle',onToggle,true);
  },[]);
- // Restore open details after every render
- useEffect(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}})});
+ // Restore open details IMMEDIATELY after render (before browser fires toggle)
+ useLayoutEffect(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}})});
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
