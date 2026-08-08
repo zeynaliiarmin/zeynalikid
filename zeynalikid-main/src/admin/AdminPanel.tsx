@@ -222,7 +222,7 @@ const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='t
   const remainingPercent = Math.max(1, 100 - usedPercent);
   const isStorageWarning = remainingPercent <= 20 || usedPercent >= 80;
 
-  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{...S.page,direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh',alignItems:'stretch',background:T.bg}}><style>{css}{adminDetailsCss}{`
+  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{...S.page,direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh',alignItems:'stretch'}}><style>{css}{adminDetailsCss}{`
   /* Stage 7A: پوسته پنل (Sidebar/Drawer/Header) در zkadmin-tokens.css تعریف شده است.
      قوانین زیر فقط رفتار فوکوس/اسکرول/zoom iOS محتوای داخلی پنل را حفظ می‌کنند. */
   .admin-main{min-width:0}
