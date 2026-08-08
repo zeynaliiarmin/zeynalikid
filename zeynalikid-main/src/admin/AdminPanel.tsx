@@ -71,16 +71,7 @@ export default function AdminPanel({app}:{app:any}){
   const m=document.querySelector('.admin-main')as HTMLElement|null;
   if(m)_scrollPos.current=m.scrollTop;
  });
- useEffect(()=>{
-  const saveFocus=(e:Event)=>{
-   const t=e.target as HTMLElement;
-   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
-    _activeEl.current={tag:t.tagName,label:(t.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60),ph:t.getAttribute('placeholder')||''};
-   }
-  };
-  document.addEventListener('focusin',saveFocus,true);
-  return()=>document.removeEventListener('focusin',saveFocus,true);
- },[]);
+// saveFocus listener removed — was causing focus to jump to previous input
  useLayoutEffect(()=>{
   const m=document.querySelector('.admin-main')as HTMLElement|null;
   if(m&&_scrollPos.current>0)m.scrollTop=_scrollPos.current;
@@ -96,9 +87,9 @@ export default function AdminPanel({app}:{app:any}){
     const ph=el.getAttribute('placeholder')||'';
     if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
      el.focus();
-     if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+     if(el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !['checkbox','radio','button','submit','file','image'].includes((el as HTMLInputElement).type))){
       const len=(el as HTMLInputElement).value.length;
-      (el as HTMLInputElement).setSelectionRange(len,len);
+      try{(el as HTMLInputElement).setSelectionRange(len,len);}catch{}
      }
      break;
     }
@@ -116,7 +107,7 @@ export default function AdminPanel({app}:{app:any}){
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
  const setEditCfgRaw=useCallback((u:any)=>{const content=document.querySelector('.zkad-content');const st=content?content.scrollTop:0;setEditCfgRawRaw(u);requestAnimationFrame(()=>{if(content)content.scrollTop=st})},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
- const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
+ const setEditCfg=useCallback((u:any)=>{setTimeout(()=>setEditCfgRaw(u as any),0)},[]);
  // FIX: Preserve <details> open state across re-renders.
  // When setEditCfg triggers a re-render, React re-creates <details> elements
  // which default to closed. This useEffect saves open state before re-render
