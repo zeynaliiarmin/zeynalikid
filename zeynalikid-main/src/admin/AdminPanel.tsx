@@ -116,7 +116,7 @@ export default function AdminPanel({app}:{app:any}){
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
  const setEditCfgRaw=useCallback((u:any)=>{const content=document.querySelector('.zkad-content');const st=content?content.scrollTop:0;setEditCfgRawRaw(u);requestAnimationFrame(()=>{if(content)content.scrollTop=st})},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
- const setEditCfg=useCallback((u:any)=>{setTimeout(()=>setEditCfgRaw(u as any),0)},[]);
+ const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
  // FIX: Preserve <details> open state across re-renders.
  // When setEditCfg triggers a re-render, React re-creates <details> elements
  // which default to closed. This useEffect saves open state before re-render
@@ -129,6 +129,22 @@ export default function AdminPanel({app}:{app:any}){
  },[]);
  // Restore open details IMMEDIATELY after render (before browser fires toggle)
  useLayoutEffect(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}})});
+ // Also: prevent clicks on inputs/buttons/labels inside <details> from bubbling to <summary>
+ useEffect(()=>{
+  const onClick=(e:Event)=>{
+   const target=e.target as HTMLElement;
+   const details=target.closest('details');
+   if(!details)return;
+   const summary=details.querySelector('summary');
+   if(!summary)return;
+   // If click was NOT on summary or its children, stop propagation
+   if(!summary.contains(target)){
+    e.stopPropagation();
+   }
+  };
+  document.querySelector('.admin-main')?.addEventListener('click',onClick,true);
+  return()=>{document.querySelector('.admin-main')?.removeEventListener('click',onClick,true)};
+ },[]);
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
