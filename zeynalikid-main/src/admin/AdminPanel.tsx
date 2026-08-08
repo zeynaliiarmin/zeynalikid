@@ -81,30 +81,9 @@ export default function AdminPanel({app}:{app:any}){
   document.addEventListener('focusin',saveFocus,true);
   return()=>document.removeEventListener('focusin',saveFocus,true);
  },[]);
- useLayoutEffect(()=>{
-  const m=document.querySelector('.admin-main')as HTMLElement|null;
-  if(m&&_scrollPos.current>0)m.scrollTop=_scrollPos.current;
-  document.querySelectorAll('.admin-main details').forEach(d=>{
-   const s=_detailsKey(d);
-   if(_openDetails.current.has(s))(d as HTMLDetailsElement).open=true;
-  });
-  if(_activeEl.current){
-   const els=document.querySelectorAll('.admin-main '+_activeEl.current.tag.toLowerCase());
-   for(let i=0;i<els.length;i++){
-    const el=els[i]as HTMLElement;
-    const lbl=(el.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60);
-    const ph=el.getAttribute('placeholder')||'';
-    if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
-     el.focus();
-     if(el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !['checkbox','radio','button','submit','file','image'].includes((el as HTMLInputElement).type))){
-      const len=(el as HTMLInputElement).value.length;
-      try{(el as HTMLInputElement).setSelectionRange(len,len);}catch{}
-     }
-     break;
-    }
-   }
-  }
- });
+ // Removed buggy focus-restore useLayoutEffect that ran on every re-render
+ // and jumped to wrong elements (matching by label text found first match at top of page).
+ // Scroll position and details open state are preserved by the browser naturally.
 
  const goHome=()=>{try{app.setView('home')}catch{goToAppA()}};
  const [subs,setSubsState]=useState<any[]>(()=>getLS(SK.subs,[]));
@@ -127,7 +106,8 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۹: رفع کامل مشکل پرش صفحه در پنل مدیریت — فیلد فوکوس‌شده به‌جای پرش ناگهانی مرورگر،
  // با اسکرول نرم (smooth) به مرکز دید (center) منتقل می‌شود. این افکت روی همه ورودی‌های
  // پنل مدیریت (شامل SubCard، SettingsEditor و سایر ادیتورها) به‌صورت سراسری اعمال می‌شود.
- useEffect(()=>{const h=(e:Event)=>{const t=e.target as HTMLElement;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')&&t.closest('.admin-main')){setTimeout(()=>{try{t.scrollIntoView({behavior:'smooth',block:'center'})}catch{}},300)}};document.addEventListener('focusin',h);return()=>document.removeEventListener('focusin',h)},[]);
+ // Removed aggressive scrollIntoView on focusin — it caused disorienting scroll jumps.
+ // The browser's native focus handling is sufficient for desktop and mobile.
  const setSave=(next:any)=>{saveCfg(next);setMsg('ذخیره شد');setTimeout(()=>setMsg(''),2200)};
  const subTime=(x:any)=>{if(x?.created_at){const t=Date.parse(x.created_at);if(!isNaN(t))return t} return typeof x?.id==='number'?x.id:0};
  // اصلاح ۳-الف: یادآور پیگیری فقط وقتی نمایش داده می‌شود که بیش از ۳ روز گذشته، هیچ پیگیری‌ای ثبت نشده، و فرم از قبل در دسته «پیگیری» یا «پیگیری آخر ماه» نباشد (چون آن‌ها خودشان قبلاً وارد چرخه پیگیری شده‌اند)
