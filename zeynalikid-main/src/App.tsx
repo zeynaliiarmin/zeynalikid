@@ -941,7 +941,7 @@ function App(){
  const [fd,setFd]=useState<any>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:any)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<any>(null); const [shipModal,setShipModal]=useState<any>(null); const [course,setCourse]=useState<any>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<any>(null); const [editChild,setEditChild]=useState(false);
  useEffect(()=>{ try{ setLS('zkid_course_draft',course); }catch{} },[course]);
- useEffect(()=>{setLS(SK.settings,cfg); document.title=cfg.browserTitle||cfg.siteTitle; imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.body.style.background=T.bg; document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
+ useEffect(()=>{setLS(SK.settings,cfg); document.title=cfg.browserTitle||cfg.siteTitle; imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
  // Stage 9: lang/dir پویا روی <html> برای SEO/RTL-LTR واقعی
  useEffect(()=>{document.documentElement.lang=lang==='fa'?'fa':'en';document.documentElement.dir=lang==='fa'?'rtl':'ltr';},[lang]);
  // Stage 8: اعمال تم ذخیره‌شدهٔ Stage 6 در لحظه بارگذاری اپ (همان قانون zk_theme/auto) تا همه صفحات (از جمله آموزش) در تیره خوانا باشند
