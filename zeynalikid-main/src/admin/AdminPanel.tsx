@@ -37,13 +37,13 @@ const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}cat
 const normRange=(age:any,g:any)=>{const t:any={2:{m:[78,85,92,9,12,15],f:[77,84,91,9,12,14]},3:{m:[88,95,103,11,14,18],f:[86,94,102,11,14,17]},4:{m:[95,103,111,12,16,21],f:[94,102,110,12,16,20]},5:{m:[102,110,118,13,18,23],f:[100,108,117,13,18,23]},6:{m:[107,116,126,15,21,27],f:[106,115,125,14,20,26]},7:{m:[112,122,132,16,23,30],f:[111,122,132,15,22,30]},8:{m:[116,127,138,16,25,35],f:[116,127,139,15,25,35]},9:{m:[121,133,144,17,28,39],f:[121,133,145,16,29,41]},10:{m:[126,138,150,19,32,45],f:[126,139,152,18,33,47]},11:{m:[130,144,157,20,36,51],f:[131,145,159,20,37,54]},12:{m:[134,149,164,22,40,58],f:[138,152,166,23,42,60]},13:{m:[141,156,172,24,45,66],f:[142,155,168,26,46,66]},14:{m:[149,163,178,28,51,73],f:[146,158,171,29,50,71]},15:{m:[156,169,182,34,57,80],f:[148,160,172,32,53,73]},16:{m:[160,173,186,39,62,84],f:[149,161,172,33,54,75]},17:{m:[163,175,187,43,65,87],f:[149,161,173,34,55,76]}};const a=Math.min(17,Math.max(2,Math.round(+p2e(age)||2)));const d=t[a]?.[g==='male'?'m':'f'];return d?{hMin:d[0],hMed:d[1],hMax:d[2],wMin:d[3],wMed:d[4],wMax:d[5]}:null};
 const growthStatus=(val:number,min:number,med:number,max:number)=>{const sd=(max-min)/4;if(val>=min+sd&&val<=max-sd)return {label:'نرمال',color:'#22c55e'};if(val>=min&&val<=max)return {label:'نزدیک به مرز',color:'#f97316'};const diff=val<min?min-val:val-max;if(diff<=sd*1.5)return {label:val<min?'زیر نرمال':'بالای نرمال',color:'#f97316'};return {label:val<min?'خیلی زیر نرمال':'خیلی بالای نرمال',color:'#ef4444'}};
 
-const scrollFocusStable=(e:any)=>{setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'nearest'})}catch{}},300)};
+// scrollFocusStable removed — was causing scroll jumps
 const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter}:any){
   const ref=useRef<HTMLInputElement|null>(null);
   const handleChange=useCallback((e:any)=>{ if(numeric) e.target.value=p2e(e.target.value); },[numeric]);
   const commit=useCallback(()=>onCommit?.(ref.current?.value||''),[onCommit]);
   const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
-  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onFocus={scrollFocusStable} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
+  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit}  onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
 });
 
 function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'min(33vw, calc(100vw - 34px))',minWidth:180,maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
@@ -51,22 +51,8 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 export default function AdminPanel({app}:{app:any}){
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
  // FIX: Preserve <details> open state, scroll position, and focus across re-renders
- const _openDetails=useRef<Set<string>>(new Set());
- const _scrollPos=useRef(0);
- const _activeEl=useRef<{tag:string,label:string,ph:string}|null>(null);
- const _detailsKey=(d:Element)=>{
-  const s=(d.querySelector('summary')?.textContent||'').replace(/\s*\(\d+\)\s*$/,'').trim().substring(0,80);
-  return s;
- };
- useEffect(()=>{
-  const h=(e:Event)=>{
-   const d=e.target as HTMLDetailsElement;
-   const s=_detailsKey(d);
-   if(s){if(d.open)_openDetails.current.add(s);else _openDetails.current.delete(s)}
-  };
-  document.addEventListener('toggle',h,true);
-  return()=>document.removeEventListener('toggle',h,true);
- },[]);
+ // All focus/scroll/details preservation refs removed — browser handles natively
+ // details toggle listener removed — dead code, no longer needed
  // scroll position save removed — .zkad-content now handles its own scrolling
  // and browser preserves scrollTop across re-rends naturally.
  // saveFocus listener removed — was causing focus to jump back to previous input
@@ -84,7 +70,7 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRaw]=useState<any|null>(null); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
- const setEditCfg=useCallback((u:any)=>{setTimeout(()=>setEditCfgRaw(u as any),0)},[]);
+ const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
@@ -108,8 +94,8 @@ export default function AdminPanel({app}:{app:any}){
  function AdminBtn(){return {minHeight:44,padding:'9px 14px',border:`1px solid ${T.brd}`,background:T.card,borderRadius:6,color:T.acc,cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',boxShadow:T.neuOut,transition:'all .25s ease'} as any}
  function Err({x}:{x:any}){return <div className="zkad-err"><ZkWarnIcon size={13}/>{x}</div>}
  function Tag({x,tone='mut'}:{x:string,tone?:string}){return <span className={`zkad-tag t-${tone}`}>{x}</span>}
- const scrollFocus=useCallback((e:any)=>{setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'nearest'})}catch{}},300)},[]);
-const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit} onFocus={scrollFocus} placeholder={ph}/></div>}),[S,T.err,scrollFocus]);
+ // scrollFocus removed — was causing scroll jumps when focusing 2nd input
+const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit}  placeholder={ph}/></div>}),[S,T.err]);
 
  function Admin(){
   // اصلاح ۱: state برای مودال «فرم‌های دیگر با این شماره تماس»
