@@ -50,9 +50,10 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 
 export default function AdminPanel({app}:{app:any}){
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
- // FIX: Preserve <details> open state and scroll position across re-renders
+ // FIX: Preserve <details> open state, scroll position, and focus across re-renders
  const _openDetails=useRef<Set<string>>(new Set());
  const _scrollPos=useRef(0);
+ const _activeEl=useRef<{tag:string,label:string,ph:string}|null>(null);
  const _detailsKey=(d:Element)=>{
   const s=(d.querySelector('summary')?.textContent||'').replace(/\s*\(\d+\)\s*$/,'').trim().substring(0,80);
   return s;
@@ -70,6 +71,7 @@ export default function AdminPanel({app}:{app:any}){
   const m=document.querySelector('.admin-main')as HTMLElement|null;
   if(m)_scrollPos.current=m.scrollTop;
  });
+// saveFocus listener removed — was causing focus to jump to previous input
  useLayoutEffect(()=>{
   const m=document.querySelector('.admin-main')as HTMLElement|null;
   if(m&&_scrollPos.current>0)m.scrollTop=_scrollPos.current;
@@ -77,6 +79,22 @@ export default function AdminPanel({app}:{app:any}){
    const s=_detailsKey(d);
    if(_openDetails.current.has(s))(d as HTMLDetailsElement).open=true;
   });
+  if(_activeEl.current){
+   const els=document.querySelectorAll('.admin-main '+_activeEl.current.tag.toLowerCase());
+   for(let i=0;i<els.length;i++){
+    const el=els[i]as HTMLElement;
+    const lbl=(el.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60);
+    const ph=el.getAttribute('placeholder')||'';
+    if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
+     el.focus();
+     if(el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !['checkbox','radio','button','submit','file','image'].includes((el as HTMLInputElement).type))){
+      const len=(el as HTMLInputElement).value.length;
+      try{(el as HTMLInputElement).setSelectionRange(len,len);}catch{}
+     }
+     break;
+    }
+   }
+  }
  });
 
  const goHome=()=>{try{app.setView('home')}catch{goToAppA()}};
@@ -90,7 +108,34 @@ export default function AdminPanel({app}:{app:any}){
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
  const setEditCfgRaw=useCallback((u:any)=>{setEditCfgRawRaw(u)},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
  const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
- // Preserve <details> open state — handled by _openDetails ref above
+ // FIX: Preserve <details> open state across re-renders.
+ // When setEditCfg triggers a re-render, React re-creates <details> elements
+ // which default to closed. This useEffect saves open state before re-render
+ // and restores it after.
+ const openDetailsRef=useRef<Set<string>>(new Set());
+ useEffect(()=>{
+  const onToggle=(e:Event)=>{const d=e.target as HTMLDetailsElement;const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt){if(d.open)openDetailsRef.current.add(txt);else openDetailsRef.current.delete(txt)}};
+  document.addEventListener('toggle',onToggle,true);
+  return()=>document.removeEventListener('toggle',onToggle,true);
+ },[]);
+ // Restore open details IMMEDIATELY after render (before browser fires toggle)
+ useLayoutEffect(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}})});
+ // Also: prevent clicks on inputs/buttons/labels inside <details> from bubbling to <summary>
+ useEffect(()=>{
+  const onClick=(e:Event)=>{
+   const target=e.target as HTMLElement;
+   const details=target.closest('details');
+   if(!details)return;
+   const summary=details.querySelector('summary');
+   if(!summary)return;
+   // If click was NOT on summary or its children, stop propagation
+   if(!summary.contains(target)){
+    e.stopPropagation();
+   }
+  };
+  document.querySelector('.admin-main')?.addEventListener('click',onClick,true);
+  return()=>{document.querySelector('.admin-main')?.removeEventListener('click',onClick,true)};
+ },[]);
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
@@ -199,7 +244,7 @@ const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='t
   const remainingPercent = Math.max(1, 100 - usedPercent);
   const isStorageWarning = remainingPercent <= 20 || usedPercent >= 80;
 
-  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh'}}><style>{css}{adminDetailsCss}{`
+  return <div dir={lang==='en'?'ltr':'rtl'} className="admin-root" style={{...S.page,direction:lang==='en'?'ltr':'rtl',padding:0,minHeight:'100dvh',alignItems:'stretch',background:T.bg}}><style>{css}{adminDetailsCss}{`
   /* Stage 7A: پوسته پنل (Sidebar/Drawer/Header) در zkadmin-tokens.css تعریف شده است.
      قوانین زیر فقط رفتار فوکوس/اسکرول/zoom iOS محتوای داخلی پنل را حفظ می‌کنند. */
   .admin-main{min-width:0}
