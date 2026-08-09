@@ -106,7 +106,7 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
- const setEditCfgRaw=useCallback((u:any)=>{setEditCfgRawRaw(u)},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
+ const setEditCfgRaw=useCallback((u:any)=>{const content=document.querySelector('.zkad-content');const st=content?content.scrollTop:0;setEditCfgRawRaw(u);requestAnimationFrame(()=>{if(content)content.scrollTop=st})},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
  const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
  // FIX: Preserve <details> open state across re-renders.
  // When setEditCfg triggers a re-render, React re-creates <details> elements
