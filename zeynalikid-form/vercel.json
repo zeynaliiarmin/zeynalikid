@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://zeynalikid.vercel.app/form",
-      "statusCode": 301
-    }
-  ]
-}

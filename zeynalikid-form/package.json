@@ -1,9 +1,0 @@
-{
-  "name": "zeynalikid-form-redirect",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "build": "echo 'Static redirect — no build needed'"
-  }
-}
