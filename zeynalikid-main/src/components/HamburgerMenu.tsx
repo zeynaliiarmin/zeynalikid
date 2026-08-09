@@ -15,7 +15,7 @@ export default function HamburgerMenu({T,lang,setLang,cfg,publicText,APP_A_URL,s
  const itemStyleFor=(active:boolean)=>({display:'flex',width:'100%',alignItems:'center',gap:12,padding:'10px 12px',minHeight:48,border:0,borderRadius:12,background:active?T.soft:'transparent',color:active?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',fontSize:14,fontWeight:active?800:600,textAlign:(lang==='fa'?'right':'left') as any,transition:'background .2s ease',textDecoration:'none'});
  const itemsBase:Record<string,{label:string; icon:React.ReactNode; to?:string; fn?:()=>void; separator?:boolean}>=Object.fromEntries([
   ['home',{label: lang==='en'?'Home':publicText('menuHome','خانه'), icon: <HomeIcon size={20} color={T.acc} />, to:'/'}],
-  ['consult',{label: publicText('menuConsultation','فرم مشاوره'), icon: <ConsultIcon size={20} color={T.acc} />, fn: ()=>{window.location.href=APP_A_URL}}],
+  ['consult',{label: publicText('menuConsultation','فرم مشاوره'), icon: <ConsultIcon size={20} color={T.acc} />, to:'/form'}],
   ['courses',{label: publicText('menuCourses','معرفی دوره‌ها'), icon: <CoursesIcon size={20} color={T.acc} />, to:'/courses'}],
   ['experience',{label: lang==='en'?"Parents' Experience":'تجربه والدین', icon: <VideoIcon size={20} color={T.acc} />, to:'/experience'}],
   ['licenses',{label: publicText('menuLicenses','مجوزها'), icon: <LicensesIcon size={20} color={T.acc} />, to:'/licenses'}],

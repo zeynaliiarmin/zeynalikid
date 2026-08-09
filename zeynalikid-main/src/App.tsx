@@ -35,6 +35,7 @@ const ContactPage = lazy(() => import('./pages/InfoPages').then(m => ({ default:
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const ProductsPage = lazy(() => import('./pages/ProductsPage'));
 const TrackPage = lazy(() => import('./pages/TrackPage'));
+const ConsultationPage = lazy(() => import('./pages/ConsultationPage'));
 
 type Lang='fa'|'en'; type Any=Record<string,any>;
 // اصلاح ۱۸: این پروژه، «پروژه اصلی (A)» است (دوره‌ها + پنل مدیریت). VITE_APP_B_URL به «پروژه ثانویه (B)» یعنی فرم مشاوره اشاره دارد.
@@ -409,7 +410,7 @@ const defaultSettings:Any={
  homeLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'contact',show:true}],
  menuLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'education',show:true},{id:'faq',show:true},{id:'products',show:true},{id:'about',show:true},{id:'contact',show:true},{id:'track',show:true}],
  // اصلاح ۵: کنترل نمایش منوی همبرگری در هر صفحه (view) — به‌طور پیش‌فرض همان صفحاتی که قبلاً منو داشتند فعال هستند + admin-login
- menuVisibility:{home:true,experience:true,licenses:true,education:true,about:true,contact:true,faq:true,products:true,'admin-login':true,courses:false,'course-shipping':false,'course-payment':false,'course-confirm':false,'course-done':false,track:false,admin:false},
+ menuVisibility:{home:true,form:true,experience:true,licenses:true,education:true,about:true,contact:true,faq:true,products:true,'admin-login':true,courses:false,'course-shipping':false,'course-payment':false,'course-confirm':false,'course-done':false,track:false,admin:false},
  // اصلاح ۴۰-۴۳: مدل پیش‌فرض نمایش خدمات فقط list و carousel (grid حذف شد) - پیش‌فرض list
  servicesDisplayMode:(configDefaultSettings as any).servicesDisplayMode||{home:'carousel',courses:'carousel'},
  // اصلاح ۵۲: نمایش/پنهان‌سازی خدمات در هر صفحه
@@ -877,6 +878,8 @@ const pathToView: Record<string, string> = {
   '/course-payment/verify': 'payment-verify',
   '/course-confirm': 'course-confirm',
   '/course-done': 'course-done',
+  '/form': 'form',
+  '/consultation': 'form',
 };
 const viewToPath: Record<string, string> = Object.fromEntries(Object.entries(pathToView).map(([p, v]) => [v, p]));
 
@@ -1018,6 +1021,8 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   <Route path="/faq" element={<FAQPage app={app}/>}/>
   <Route path="/products" element={<ProductsPage app={app}/>}/>
   <Route path="/contact" element={<ContactPage app={app}/>}/>
+  <Route path="/form" element={<ConsultationPage app={app}/>}/>
+  <Route path="/consultation" element={<ConsultationPage app={app}/>}/>
   <Route path="/admin-login" element={<AdminLoginPage app={app}/>}/>
   <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin-login" replace/>}/>
   <Route path="*" element={<Navigate to="/" replace/>}/>
