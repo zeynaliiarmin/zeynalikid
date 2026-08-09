@@ -3,7 +3,6 @@
     {
       "source": "/(.*)",
       "destination": "https://zeynalikid.vercel.app/form",
-      "permanent": true,
       "statusCode": 301
     }
   ]
