@@ -230,7 +230,7 @@ export const permanentDeleteMultipleSubmissions = async (ids: Array<string | num
 export const createSubmission = async (submission: Submission): Promise<Submission> => {
   const client = requireSupabase();
   const row = submissionToDbRow(submission);
-  delete row.id;
+  // Keep the id (Date.now() + random) — submissions table has BIGINT PRIMARY KEY without auto-increment
 
   const { data, error } = await client
     .from(SUBMISSIONS_TABLE)
