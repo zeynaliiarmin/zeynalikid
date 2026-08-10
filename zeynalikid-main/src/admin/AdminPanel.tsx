@@ -1152,11 +1152,8 @@ ${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
     <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutIntroTextEn||''} onCommit={(v:string)=>up('aboutIntroTextEn',v)} placeholder="About page SEO text in English..." rows={3}/>
    </details>
   </Box>
-  {/* اصلاح ۳۲ (مرحله ۹): مدیریت کامل سوالات متداول (FAQ) — دوزبانه، افزودن/ویرایش/حذف/تغییر ترتیب + تنظیمات نمایش در صفحه اصلی */}
-  <FAQEditor/>
+  {/* مدیریت FAQ به صفحه سوالات کاربران منتقل شده است. */}
   <DailyTipsEditor/>
-  {/* اصلاح ۲: مدیریت سوالات متداول زیر تب‌های دوره */}
-  <CourseTabFAQEditor/>
   <Box title="مدیریت کلیدهای ترجمه (fa / en)">{(['fa','en'] as const).map(l=><details key={l} style={{marginBottom:10}}><summary style={{cursor:'pointer',fontWeight:800}}>{l==='fa'?'فارسی':'English'} ({Object.keys(editCfg.translations?.[l]||{}).length} کلید)</summary>{Object.keys(editCfg.translations?.[l]||{}).sort().map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'150px 1fr',gap:8,marginTop:6,alignItems:'center'}}><label style={{fontSize:11,color:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={k}>{k}</label><input style={S.inp} defaultValue={editCfg.translations[l][k]||''} onBlur={e=>setEditCfg({...editCfg,translations:{...editCfg.translations,[l]:{...editCfg.translations[l],[k]:e.target.value}}})}/></div>)}</details>)}</Box>
   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره متن‌ها و ترجمه‌ها</button>
  </>}

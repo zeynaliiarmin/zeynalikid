@@ -41,7 +41,9 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   })();
 
   const title = isFa ? course.title : (course.titleEn || course.title);
-  const courseFaqs = ((isFa ? cfg?.courseTabFaqs : cfg?.courseTabFaqsEn) || []).filter((item: any) => item.tab === course.tabId);
+  const legacyCourseFaqs = ((isFa ? cfg?.courseTabFaqs : cfg?.courseTabFaqsEn) || []).filter((item: any) => item.tab === course.tabId);
+  const selectedCourseFaqs = ((isFa ? cfg?.faqItems : cfg?.faqItemsEn) || []).filter((item: any) => Array.isArray(item.placements) && item.placements.includes(`course:${course.tabId}`));
+  const courseFaqs = [...legacyCourseFaqs, ...selectedCourseFaqs];
   const desc = isFa ? course.desc : (course.descEn || course.desc);
 
   // Accordion state for syllabus

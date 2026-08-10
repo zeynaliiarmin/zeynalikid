@@ -323,87 +323,24 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   const FAQManagement = () => {
     const fa:any[] = Array.isArray((cfg as any)?.faqItems) ? (cfg as any).faqItems : [];
     const en:any[] = Array.isArray((cfg as any)?.faqItemsEn) ? (cfg as any).faqItemsEn : [];
-    const courseFa:any[] = Array.isArray((cfg as any)?.courseTabFaqs) ? (cfg as any).courseTabFaqs : [];
-    const courseEn:any[] = Array.isArray((cfg as any)?.courseTabFaqsEn) ? (cfg as any).courseTabFaqsEn : [];
     const tabs:any[] = ((cfg as any)?.courseTabs || []).filter((t:any) => t.active !== false);
-    const commit = (patch:any, message:string) => { const next = {...(cfg as any), ...patch}; setEditCfg?.(next); saveCfg?.(next); showToast(message); };
-    const patch = (key:string, list:any[], index:number, value:any) => { const n=[...list]; n[index]={...n[index],...value}; setEditCfg?.({...cfg,[key]:n}); };
-    const move = (key:string,list:any[],i:number,d:-1|1) => { const j=i+d;if(j<0||j>=list.length)return;const n=[...list];[n[i],n[j]]=[n[j],n[i]];commit({[key]:n},'ترتیب سوال به‌روزرسانی شد.'); };
-    const card = (item:any,i:number,key:string,list:any[],course=false,enMode=false) => <div key={item.id||i} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:12,padding:10,background:T.card||'#fff',marginBottom:9}}>
-      {course && <><label style={{fontSize:11,fontWeight:800,color:T.mut}}>تب دوره (همگام با تب‌های فعال دوره‌ها)</label><select value={item.tab||tabs[0]?.id||''} onChange={e=>patch(key,list,i,{tab:e.target.value})} style={{...S.inp,margin:'4px 0 7px'}}>{tabs.map((t:any)=><option key={t.id} value={t.id}>{enMode?(t.titleEn||t.title):t.title}</option>)}</select></>}
-      {!course && <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:7,fontSize:11}}><b style={{color:T.mut}}>محل نمایش:</b><label><input type="checkbox" checked={!Array.isArray(item.placements)||item.placements.includes('home')} onChange={e=>patch(key,list,i,{placements:(e.target.checked?[...(Array.isArray(item.placements)?item.placements:[]),'home']:(Array.isArray(item.placements)?item.placements:['home','faq']).filter((x:string)=>x!=='home')).filter((x:string,j:number,a:string[])=>a.indexOf(x)===j)})}/> صفحه اصلی</label><label><input type="checkbox" checked={!Array.isArray(item.placements)||item.placements.includes('faq')} onChange={e=>patch(key,list,i,{placements:(e.target.checked?[...(Array.isArray(item.placements)?item.placements:[]),'faq']:(Array.isArray(item.placements)?item.placements:['home','faq']).filter((x:string)=>x!=='faq')).filter((x:string,j:number,a:string[])=>a.indexOf(x)===j)})}/> صفحه FAQ</label></div>}
-      <input dir={enMode?'ltr':undefined} value={item.question||''} onChange={e=>patch(key,list,i,{question:e.target.value})} placeholder={enMode?'Question':'متن سوال'} style={{...S.inp,marginBottom:6}} />
-      <textarea dir={enMode?'ltr':undefined} value={item.answer||''} onChange={e=>patch(key,list,i,{answer:e.target.value})} placeholder={enMode?'Answer':'متن پاسخ'} style={{...S.ta,minHeight:64}} />
-      <div style={{display:'flex',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'5px 9px'}} disabled={i===0} onClick={()=>move(key,list,i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'5px 9px'}} disabled={i===list.length-1} onClick={()=>move(key,list,i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'5px 9px',color:T.err||'#dc2626'}} onClick={()=>commit({[key]:list.filter((_:any,j:number)=>j!==i)},'سوال حذف شد.')}>حذف</button></div>
+    const destinations = [{id:'home',label:'صفحه اصلی'}, {id:'faq',label:'صفحه سوالات متداول'}, ...tabs.map((t:any)=>({id:`course:${t.id}`,label:`همه دوره‌های «${t.title}»`}))];
+    const save = (patch:any, msg='تغییرات FAQ ذخیره شد.') => { const next={...(cfg as any),...patch}; setEditCfg?.(next); saveCfg?.(next); showToast(msg); };
+    const update = (key:string,list:any[],i:number,patch:any) => {const next=[...list];next[i]={...next[i],...patch};setEditCfg?.({...cfg,[key]:next});};
+    const move = (key:string,list:any[],i:number,d:-1|1) => {const j=i+d;if(j<0||j>=list.length)return;const next=[...list];[next[i],next[j]]=[next[j],next[i]];save({[key]:next},'ترتیب سوال تغییر کرد.');};
+    const card=(item:any,i:number,key:string,list:any[],isEn=false)=><div key={item.id||i} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:12,padding:10,marginBottom:9,background:T.badge||T.card}}>
+      <input dir={isEn?'ltr':undefined} value={item.question||''} onChange={e=>update(key,list,i,{question:e.target.value})} placeholder={isEn?'Question':'سوال'} style={{...S.inp,marginBottom:6}}/>
+      <textarea dir={isEn?'ltr':undefined} value={item.answer||''} onChange={e=>update(key,list,i,{answer:e.target.value})} placeholder={isEn?'Answer':'پاسخ'} style={{...S.ta,minHeight:72}}/>
+      <label style={{display:'block',fontSize:11,fontWeight:800,color:T.mut,margin:'8px 0 4px'}}>نمایش این سوال در بخش‌ها (انتخاب چندگانه)</label>
+      <select multiple value={Array.isArray(item.placements)?item.placements:['home','faq']} onChange={e=>update(key,list,i,{placements:Array.from(e.currentTarget.selectedOptions).map(o=>o.value)})} style={{...S.inp,height:Math.min(150,Math.max(72,destinations.length*28)),fontSize:12}}>{destinations.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}</select>
+      <div style={{display:'flex',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'5px 10px'}} disabled={i===0} onClick={()=>move(key,list,i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'5px 10px'}} disabled={i===list.length-1} onClick={()=>move(key,list,i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'5px 10px',color:T.err||'#dc2626'}} onClick={()=>save({[key]:list.filter((_:any,j:number)=>j!==i)},'سوال حذف شد.')}>حذف</button></div>
     </div>;
-    const add=(key:string,list:any[],course=false,enMode=false)=>commit({[key]:[...list,{id:`faq_${Date.now()}_${Math.random().toString(36).slice(2,5)}`,tab:course?(tabs[0]?.id||'') : undefined,placements:course?undefined:['home','faq'],question:'',answer:''}]},'سوال جدید افزوده شد.');
-    return <Box title="مدیریت کامل سوالات متداول (FAQ)"><p style={{fontSize:12,lineHeight:1.9,color:T.mut,marginTop:0}}>تمام تنظیمات FAQ به این صفحه منتقل شده است. سوال‌های هر «تب دوره» برای تمام دوره‌های همان تب نمایش داده می‌شوند و فهرست انتخاب‌ها مستقیماً از تب‌های فعال صفحه دوره‌ها خوانده می‌شود.</p><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14}}><div><h4 style={{color:T.ttl}}>سوالات عمومی فارسی ({fa.length})</h4>{fa.map((x:any,i:number)=>card(x,i,'faqItems',fa,false))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItems',fa)}>+ افزودن سوال فارسی</button></div><div><h4 style={{color:T.ttl}}>General FAQ English ({en.length})</h4>{en.map((x:any,i:number)=>card(x,i,'faqItemsEn',en,false,true))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItemsEn',en,false,true)}>+ Add English question</button></div><div><h4 style={{color:T.ttl}}>سوالات تب‌های دوره — فارسی ({courseFa.length})</h4>{courseFa.map((x:any,i:number)=>card(x,i,'courseTabFaqs',courseFa,true))}<button type="button" style={AdminBtn()} onClick={()=>add('courseTabFaqs',courseFa,true)}>+ افزودن FAQ دوره</button></div><div><h4 style={{color:T.ttl}}>Course-tab FAQs English ({courseEn.length})</h4>{courseEn.map((x:any,i:number)=>card(x,i,'courseTabFaqsEn',courseEn,true,true))}<button type="button" style={AdminBtn()} onClick={()=>add('courseTabFaqsEn',courseEn,true,true)}>+ Add course FAQ</button></div></div><button type="button" style={{...AdminBtn(),marginTop:14,background:T.acc||'#0f766e',color:'#fff',border:0}} onClick={()=>commit({},'تمام تغییرات FAQ ذخیره و منتشر شد.')}>ذخیره و انتشار همه سوالات متداول</button></Box>;
+    const add=(key:string,list:any[])=>save({[key]:[...list,{id:`faq_${Date.now()}_${Math.random().toString(36).slice(2,5)}`,question:'',answer:'',placements:['home','faq']}]},'سوال جدید افزوده شد.');
+    return <Box title="مدیریت سوالات متداول (FAQ)"><p style={{fontSize:12,color:T.mut,lineHeight:1.8,marginTop:0}}>برای هر سوال، محل‌های نمایش را از فهرست چندانتخابی تعیین کنید. تب‌های دوره به‌طور خودکار از بخش «دوره‌ها» همگام می‌شوند.</p><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:16}}><div><h4 style={{color:T.ttl,marginTop:0}}>فارسی ({fa.length})</h4>{fa.map((x:any,i:number)=>card(x,i,'faqItems',fa))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItems',fa)}>+ افزودن سوال فارسی</button></div><div><h4 style={{color:T.ttl,marginTop:0}}>English ({en.length})</h4>{en.map((x:any,i:number)=>card(x,i,'faqItemsEn',en,true))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItemsEn',en)}>+ Add English question</button></div></div><button type="button" style={{...AdminBtn(),marginTop:14,background:T.acc||'#0f766e',color:'#fff',border:0}} onClick={()=>save({},'همه سوالات متداول ذخیره و منتشر شد.')}>ذخیره و انتشار سوالات متداول</button></Box>;
   };
 
   return (
     <div>
-      <FAQManagement />
-
-      {/* === بخش جدید: سوالات دستی پرتکرار === */}
-      <Box title={`⭐ سوالات دستی پرتکرار والدین — ${manualList.length} سوال (مانند نظرات، دستی اضافه کنید)`}>
-        <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.8, margin: '0 0 12px' }}>
-          این بخش مانند صفحه «نظرات» برای افزودن دستی سوالاتی است که اکثر والدین می‌پرسند. ترتیب را با بالا/پایین تغییر دهید، حذف/ویرایش کنید و با ذخیره منتشر کنید. این سوالات در کنار سوالات واقعی کاربران قابل مدیریت هستند.
-        </p>
-
-        {manualList.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 16, color: T.mut, fontSize: 13, background: T.soft || '#F4F1EA', borderRadius: 10, marginBottom: 12 }}>
-            هنوز سوال دستی ثبت نشده — با دکمه زیر اولین سوال پرتکرار را اضافه کنید.
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {manualList.map((item: any, idx: number) => (
-            <div key={item.id} style={{ border: `1px solid ${T.brd || '#E5E0D8'}`, borderRadius: 12, padding: 12, background: T.card || '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: T.ttl }}>#{idx + 1}</span>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={item.active !== false} onChange={(e) => handleUpdateManual(idx, { active: e.target.checked })} /> فعال
-                </label>
-                <span style={{ fontSize: 11, color: T.mut }}>ترتیب: {item.order || idx + 1}</span>
-                <div style={{ marginInlineStart: 'auto', display: 'flex', gap: 4 }}>
-                  <button type="button" onClick={() => handleMoveManual(idx, -1)} disabled={idx === 0} style={{ ...AdminBtn(), padding: '4px 8px', opacity: idx === 0 ? 0.5 : 1 }}>↑ بالا</button>
-                  <button type="button" onClick={() => handleMoveManual(idx, 1)} disabled={idx === manualList.length - 1} style={{ ...AdminBtn(), padding: '4px 8px', opacity: idx === manualList.length - 1 ? 0.5 : 1 }}>↓ پایین</button>
-                  <button type="button" onClick={() => handleDeleteManual(idx)} style={{ ...AdminBtn(), color: '#dc2626', border: '1px solid #fecaca', background: '#fef2f2', padding: '4px 8px' }}>حذف</button>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4, fontWeight: 700 }}>متن سوال (پرتکرار):</label>
-                  <input style={S.inp} value={item.question || ''} onChange={(e) => handleUpdateManual(idx, { question: e.target.value })} placeholder="مثال: آیا این مکمل برای کودک ۳ ساله بی‌خطر است؟" />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4, fontWeight: 700 }}>پاسخ پیشنهادی:</label>
-                  <textarea style={{ ...S.ta, minHeight: 60 }} value={item.answer || ''} onChange={(e) => handleUpdateManual(idx, { answer: e.target.value })} placeholder="پاسخ کامل و علمی..." />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 8 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4 }}>دسته‌بندی:</label>
-                    <input style={S.inp} value={item.category || ''} onChange={(e) => handleUpdateManual(idx, { category: e.target.value })} placeholder="عمومی / رشد قد / تغذیه" />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                    <span style={{ fontSize: 10, color: T.mut }}>ID: {String(item.id).slice(0, 10)}...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <button type="button" onClick={handleAddManual} style={{ ...AdminBtn(), background: T.grad || T.acc || '#0F766E', color: '#fff', border: 0, fontWeight: 800 }}>
-            + افزودن سوال دستی جدید
-          </button>
-          <button type="button" onClick={handleSaveManual} style={{ ...AdminBtn(), background: '#16a34a', color: '#fff', border: 0, fontWeight: 800 }}>
-            ذخیره سوالات دستی
-          </button>
-        </div>
-      </Box>
-
       <Box title="مدیریت سوالات و درخواست‌های مخاطبین (سوال دارم)">
         {/* Toast feedback */}
         {toastMsg && (
@@ -721,6 +658,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           </div>
         )}
       </Box>
+
+      <FAQManagement />
 
       {/* مودال جامع افزودن به سوالات متداول با تمام جزئیات */}
       {faqModalItem && (
