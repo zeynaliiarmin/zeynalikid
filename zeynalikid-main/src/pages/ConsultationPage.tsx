@@ -160,7 +160,8 @@ export default function ConsultationPage({ app }: { app: any }) {
   const handleVoiceRemoved = useCallback(() => setVoiceBlob(null), []);
 
   // Exit guard
-  const isDirty = fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0);
+  // پس از ثبت موفق، فرم دیگر «ویرایش ذخیره‌نشده» نیست؛ بنابراین رفرش/رفتن به دوره‌ها هشدار نادرست نمی‌دهد.
+  const isDirty = formView === 'form' && (fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0));
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
 
   // Auto-save draft
