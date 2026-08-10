@@ -40,6 +40,11 @@ export const defaultSettings = {
     { id:'t7', fa:'کودک با سلیقه، نیاز به تنوع دارد نه اجبار.', en:"A child with preferences needs variety, not force." },
   ],
 
+  // ─── سوالات دستی پرتکرار والدین (برای صفحه سوالات کاربران - افزودن دستی توسط ادمین)
+  manualUserQuestions: [
+    // { id: string, question: string, answer: string, category: string, active: boolean, order: number }
+  ] as Array<{ id: string; question: string; answer: string; category?: string; active?: boolean; order?: number }>,
+
   currencyUnit: 'تومان',
 
   // ─── مدیریت محتوا ───

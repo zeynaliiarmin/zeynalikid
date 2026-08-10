@@ -17,6 +17,55 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  // Manual frequent questions (added manually by admin)
+  const manualList: any[] = Array.isArray((cfg as any)?.manualUserQuestions) ? (cfg as any).manualUserQuestions : [];
+  const handleAddManual = () => {
+    const newItem = {
+      id: 'mq_' + Date.now() + Math.random().toString(36).slice(2, 5),
+      question: '',
+      answer: '',
+      category: 'عمومی',
+      active: true,
+      order: manualList.length + 1,
+    };
+    const updated = [...manualList, newItem];
+    const nextCfg = { ...(cfg as any), manualUserQuestions: updated };
+    if (setEditCfg) setEditCfg(nextCfg);
+    if (saveCfg) saveCfg(nextCfg);
+    showToast('سؤال دستی جدید افزوده شد — لطفاً متن را تکمیل و ذخیره کنید.');
+  };
+  const handleUpdateManual = (idx: number, patch: any) => {
+    const a = [...manualList];
+    a[idx] = { ...a[idx], ...patch };
+    const nextCfg = { ...(cfg as any), manualUserQuestions: a };
+    if (setEditCfg) setEditCfg(nextCfg);
+  };
+  const handleDeleteManual = (idx: number) => {
+    if (!confirm('این سؤال دستی حذف شود؟')) return;
+    const a = manualList.filter((_: any, j: number) => j !== idx);
+    const nextCfg = { ...(cfg as any), manualUserQuestions: a.map((x: any, i: number) => ({ ...x, order: i + 1 })) };
+    if (setEditCfg) setEditCfg(nextCfg);
+    if (saveCfg) saveCfg(nextCfg);
+    showToast('سؤال دستی حذف شد.');
+  };
+  const handleMoveManual = (idx: number, dir: -1 | 1) => {
+    const j = idx + dir;
+    if (j < 0 || j >= manualList.length) return;
+    const a = [...manualList];
+    [a[idx], a[j]] = [a[j], a[idx]];
+    const reordered = a.map((x: any, i: number) => ({ ...x, order: i + 1 }));
+    const nextCfg = { ...(cfg as any), manualUserQuestions: reordered };
+    if (setEditCfg) setEditCfg(nextCfg);
+    if (saveCfg) saveCfg(nextCfg);
+  };
+  const handleSaveManual = () => {
+    if (saveCfg) {
+      saveCfg({ ...(cfg as any), manualUserQuestions: manualList });
+      showToast('سوالات دستی با موفقیت ذخیره و منتشر شد.');
+    }
+  };
 
   // مودال افزودن به سوالات متداول
   const [faqModalItem, setFaqModalItem] = useState<{
@@ -98,6 +147,45 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  // Bulk select handlers
+  const toggleSelectOne = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const handleSelectAll = () => {
+    const ids = filtered.map((q) => q.id);
+    setSelectedIds(ids);
+    showToast(`تمام ${ids.length} سوال فیلترشده انتخاب شد.`);
+  };
+  const handleDeselectAll = () => {
+    setSelectedIds([]);
+    showToast('انتخاب همه لغو شد.');
+  };
+  const isAllSelected = filtered.length > 0 && filtered.every((q) => selectedIds.includes(q.id));
+  const hasSomeSelected = selectedIds.length > 0;
+
+  const handleBulkArchive = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm(`آیا ${selectedIds.length} سوال انتخاب‌شده بایگانی شوند؟`)) return;
+    setLoading(true);
+    try {
+      for (const id of selectedIds) await archiveUserQuestion(id);
+      await loadQuestions();
+      setSelectedIds([]);
+      showToast(`${selectedIds.length} سوال بایگانی شد.`);
+    } finally { setLoading(false); }
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm(`آیا ${selectedIds.length} سوال انتخاب‌شده حذف شوند؟ این عمل غیرقابل بازگشت است.`)) return;
+    setLoading(true);
+    try {
+      for (const id of selectedIds) await deleteUserQuestion(id);
+      await loadQuestions();
+      setSelectedIds([]);
+      showToast(`${selectedIds.length} سوال حذف شد.`);
+    } finally { setLoading(false); }
+  };
+
   const handleAnswerSubmit = async (q: UserQuestion) => {
     const ansText = answers[q.id] || '';
     if (!ansText.trim()) {
@@ -120,6 +208,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     try {
       await deleteUserQuestion(id);
       await loadQuestions();
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
       showToast('سؤال با موفقیت حذف شد.');
     } catch (e) {
       console.error('Delete question fail:', e);
@@ -233,6 +322,66 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
   return (
     <div>
+      {/* === بخش جدید: سوالات دستی پرتکرار === */}
+      <Box title={`⭐ سوالات دستی پرتکرار والدین — ${manualList.length} سوال (مانند نظرات، دستی اضافه کنید)`}>
+        <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.8, margin: '0 0 12px' }}>
+          این بخش مانند صفحه «نظرات» برای افزودن دستی سوالاتی است که اکثر والدین می‌پرسند. ترتیب را با بالا/پایین تغییر دهید، حذف/ویرایش کنید و با ذخیره منتشر کنید. این سوالات در کنار سوالات واقعی کاربران قابل مدیریت هستند.
+        </p>
+
+        {manualList.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 16, color: T.mut, fontSize: 13, background: T.soft || '#F4F1EA', borderRadius: 10, marginBottom: 12 }}>
+            هنوز سوال دستی ثبت نشده — با دکمه زیر اولین سوال پرتکرار را اضافه کنید.
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {manualList.map((item: any, idx: number) => (
+            <div key={item.id} style={{ border: `1px solid ${T.brd || '#E5E0D8'}`, borderRadius: 12, padding: 12, background: T.card || '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: T.ttl }}>#{idx + 1}</span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={item.active !== false} onChange={(e) => handleUpdateManual(idx, { active: e.target.checked })} /> فعال
+                </label>
+                <span style={{ fontSize: 11, color: T.mut }}>ترتیب: {item.order || idx + 1}</span>
+                <div style={{ marginInlineStart: 'auto', display: 'flex', gap: 4 }}>
+                  <button type="button" onClick={() => handleMoveManual(idx, -1)} disabled={idx === 0} style={{ ...AdminBtn(), padding: '4px 8px', opacity: idx === 0 ? 0.5 : 1 }}>↑ بالا</button>
+                  <button type="button" onClick={() => handleMoveManual(idx, 1)} disabled={idx === manualList.length - 1} style={{ ...AdminBtn(), padding: '4px 8px', opacity: idx === manualList.length - 1 ? 0.5 : 1 }}>↓ پایین</button>
+                  <button type="button" onClick={() => handleDeleteManual(idx)} style={{ ...AdminBtn(), color: '#dc2626', border: '1px solid #fecaca', background: '#fef2f2', padding: '4px 8px' }}>حذف</button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4, fontWeight: 700 }}>متن سوال (پرتکرار):</label>
+                  <input style={S.inp} value={item.question || ''} onChange={(e) => handleUpdateManual(idx, { question: e.target.value })} placeholder="مثال: آیا این مکمل برای کودک ۳ ساله بی‌خطر است؟" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4, fontWeight: 700 }}>پاسخ پیشنهادی:</label>
+                  <textarea style={{ ...S.ta, minHeight: 60 }} value={item.answer || ''} onChange={(e) => handleUpdateManual(idx, { answer: e.target.value })} placeholder="پاسخ کامل و علمی..." />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 8 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 4 }}>دسته‌بندی:</label>
+                    <input style={S.inp} value={item.category || ''} onChange={(e) => handleUpdateManual(idx, { category: e.target.value })} placeholder="عمومی / رشد قد / تغذیه" />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: 10, color: T.mut }}>ID: {String(item.id).slice(0, 10)}...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+          <button type="button" onClick={handleAddManual} style={{ ...AdminBtn(), background: T.grad || T.acc || '#0F766E', color: '#fff', border: 0, fontWeight: 800 }}>
+            + افزودن سوال دستی جدید
+          </button>
+          <button type="button" onClick={handleSaveManual} style={{ ...AdminBtn(), background: '#16a34a', color: '#fff', border: 0, fontWeight: 800 }}>
+            ذخیره سوالات دستی
+          </button>
+        </div>
+      </Box>
+
       <Box title="مدیریت سوالات و درخواست‌های مخاطبین (سوال دارم)">
         {/* Toast feedback */}
         {toastMsg && (
@@ -285,6 +434,47 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           ))}
         </div>
 
+        {/* Bulk Select Toolbar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 10,
+            padding: '10px 14px',
+            background: hasSomeSelected ? '#eff6ff' : (T.card || '#fff'),
+            border: `1px solid ${hasSomeSelected ? '#93c5fd' : (T.brd || '#E5E0D8')}`,
+            borderRadius: 12,
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
+              <input type="checkbox" checked={isAllSelected} onChange={() => (isAllSelected ? handleDeselectAll() : handleSelectAll())} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+              <span>{isAllSelected ? 'لغو انتخاب همه' : `انتخاب همه (${filtered.length} سوال)`}</span>
+            </label>
+            {hasSomeSelected && (
+              <button type="button" onClick={handleDeselectAll} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${T.brd}`, background: 'transparent', color: T.mut, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                لغو انتخاب
+              </button>
+            )}
+            <span style={{ fontSize: 12, color: hasSomeSelected ? '#1e40af' : T.mut }}>
+              {hasSomeSelected ? `${selectedIds.length} سوال انتخاب شد` : `${filtered.length} سوال فیلترشده`}
+            </span>
+          </div>
+          {hasSomeSelected && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button type="button" onClick={handleBulkArchive} style={{ ...AdminBtn(), padding: '6px 12px', background: '#f59e0b', color: '#fff', border: 0, fontSize: 12, fontWeight: 700 }}>
+                بایگانی انتخابی ({selectedIds.length})
+              </button>
+              <button type="button" onClick={handleBulkDelete} style={{ ...AdminBtn(), padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', fontSize: 12, fontWeight: 700 }}>
+                حذف انتخابی ({selectedIds.length})
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Search and Sort */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 180px', gap: 10, marginBottom: 16 }}>
           <input
@@ -321,19 +511,24 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
               const phone = extractPhone(q);
               const cleanText = extractCleanText(q);
               const isCallbackOnly = cleanText === 'درخواست تماس تلفنی جهت پاسخ به سؤال' || cleanText === 'درخواست تماس تلفنی';
+              const isSelected = selectedIds.includes(q.id);
 
               return (
                 <div
                   key={q.id}
                   style={{
-                    background: T.card || '#fff',
-                    border: `1px solid ${T.brd || '#E5E0D8'}`,
+                    background: isSelected ? '#eff6ff' : (T.card || '#fff'),
+                    border: `1px solid ${isSelected ? '#93c5fd' : (T.brd || '#E5E0D8')}`,
                     borderRadius: T.cardRadius || 14,
                     padding: 16,
-                    boxShadow: T.neuOut || '0 4px 15px rgba(0,0,0,0.06)',
+                    boxShadow: isSelected ? '0 4px 12px rgba(59,130,246,0.15)' : (T.neuOut || '0 4px 15px rgba(0,0,0,0.06)'),
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'), padding: '4px 8px', borderRadius: 8, border: `1px solid ${isSelected ? '#93c5fd' : 'transparent'}` }}>
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(q.id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{isSelected ? 'انتخاب شد' : 'انتخاب'}</span>
+                    </label>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                         <span style={getStatusBadgeStyle(q.status)}>{getStatusLabel(q.status)}</span>
