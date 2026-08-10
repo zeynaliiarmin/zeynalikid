@@ -2165,10 +2165,9 @@ function ThemeManagerEditor(){
 
  function SecurityEditor(){
   const vals=secVals; const setVal=secSetVal;
-  const [bioMsg,setBioMsg]=useState('');
-  const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');setBioMsg('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{setBioMsg('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
-  const disableBio=()=>{removeAdminBiometric();setBioMsg('ورود بیومتریک این دستگاه غیرفعال شد.');};
-  const logoutEverywhere=()=>{sessionStorage.removeItem('zk_admin_authed');setBioMsg('نشست این دستگاه بسته شد. برای خروج همه دستگاه‌ها، رمز عبور پنل را تغییر دهید.');};
+  const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');alert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{alert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
+  const disableBio=()=>{removeAdminBiometric();alert('ورود بیومتریک این دستگاه غیرفعال شد.');};
+  const logoutEverywhere=()=>{sessionStorage.removeItem('zk_admin_authed');alert('نشست این دستگاه بسته شد. برای خروج همه دستگاه‌ها، رمز عبور پنل را تغییر دهید.');};
   const savePhone=()=>{const v=vals.current;setSecErr('');if(v.curPh!==cfg.adminPhone){setSecErr('شماره تماس فعلی صحیح نیست');return}if(!v.newPh||v.newPh!==v.repPh){setSecErr('شماره تماس جدید با تکرار آن مطابقت ندارد');return}setSave({...cfg,adminPhone:v.newPh});vals.current={...vals.current,curPh:'',newPh:'',repPh:''};setClearKey(x=>x+1)};
   // اصلاح ۱۹: تغییر رمز عبور از داخل پنل مدیریت — فقط رمز ذخیره‌شده فعلی (یا رمز env اولیه) معتبر است
   const savePassword=()=>{
@@ -2199,7 +2198,6 @@ function ThemeManagerEditor(){
     <b style={{display:'block',color:T.ttl,marginBottom:6}}>ورود با اثر انگشت / Face ID</b>
     <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دستگاه فعلی: {hasAdminBiometric()?'فعال':'غیرفعال'}. اثر انگشت و چهره هرگز در سایت ذخیره نمی‌شوند.</p>
     <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{hasAdminBiometric()?<button type="button" style={{...AdminBtn(),color:T.err}} onClick={disableBio}>غیرفعال‌سازی این دستگاه</button>:<button type="button" style={AdminBtn()} onClick={enableBio}>فعال‌سازی اثر انگشت / Face ID</button>}<button type="button" style={AdminBtn()} onClick={logoutEverywhere}>خروج از نشست‌ها</button></div>
-    {bioMsg&&<p style={{fontSize:11,color:T.acc,margin:'9px 0 0'}}>{bioMsg}</p>}
    </div>
    <AdminInstallControl/>
   </Box>}
