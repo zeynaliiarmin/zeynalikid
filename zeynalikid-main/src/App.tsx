@@ -747,6 +747,48 @@ function shortCountry(c:any){return `${getCountryFlag(c)} ${c.code}`}
 const bankPal:Any={blue:['#0b74e5','#eaf6ff'],sky:['#dff3ff','#0e7490'],yellow:['#facc15','#422006'],red:['#ef4444','#fff1f2'],black:['#111827','#f9fafb'],green:['#16a34a','#ecfdf5'],gray:['#64748b','#f8fafc'],brown:['#b08968','#fff7ed']};
 function t(cfg:any,lang:Lang,k:string,fallback?:string){const dict=cfg.translations?.[lang]||(lang==='en'?enDict:faDict);return dict?.[k]||cfg.i18n?.[lang]?.[k]||cfg[k]||fallback||k}
 
+// ─── FIX: Stable Form Components — defined at module level to prevent Remount bug ───
+// علت باگ: تعریف کامپوننت داخل تابع والد (Unstable Nested Component) باعث می‌شود هر setState→رندر والد، React آن را نوع جدید تلقی کرده و DOM را نابود/بازسازی کند → فوکوس/کیبورد از دست می‌رود
+// راه حل: تعریف بیرون از App با هویت ثابت (Component Identity) + کنترل مستقیم value/onChange بدون بافر داخلی
+const StableErr = memo(function StableErr({x, err, T}:any){
+  const msg = err ?? x;
+  if(msg==null || msg==='') return null as any;
+  return <div style={{fontSize:11,color:T?.err??'#dc2626',marginTop:4}}>{msg}</div>;
+});
+const StableField = memo(function StableField({label,value,onChange,ph,type='text',required=false,S,T,trVal,p2e:_p2e}:any){
+  const _tr = trVal || ((s:any)=>String(s||''));
+  const __p2e = _p2e || p2e;
+  const isNumeric = /phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));
+  const handleChange = (e:any)=>{
+    const raw = e.target.value;
+    const val = isNumeric ? __p2e(raw).replace(/[^0-9]/g,'') : raw;
+    onChange?.(val);
+  };
+  const s = S || {lbl:{display:'block',fontSize:14,marginBottom:7,fontWeight:700}, inp:{width:'100%',padding:'13px 14px',border:'1px solid #ddd',borderRadius:12,minHeight:48,fontSize:16,boxSizing:'border-box'}};
+  const tt = T || {err:'#dc2626'};
+  return <div style={{marginBottom:13}}><label style={s.lbl}>{_tr(label)}{required&&<span style={{color:tt.err,marginInlineStart:4}}>*</span>}</label><input inputMode={isNumeric?'numeric':undefined} type={type} style={s.inp} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} /></div>;
+});
+const StableSelectBox = memo(function StableSelectBox({label,items,val,setVal,multi=false,S,T,trVal,cfg,lang}:any){
+  const [open,setOpen]=useState(false);
+  const _tr = trVal || ((s:any)=>String(s||''));
+  const txt = multi ? (Array.isArray(val)?val:[]).join('، ') : val;
+  const s = S || {lbl:{display:'block',fontSize:14,marginBottom:7,fontWeight:700}, inp:{width:'100%',padding:'13px 14px',border:'1px solid #ddd',borderRadius:12,minHeight:48,boxSizing:'border-box'}};
+  const tt = T || {pop:'#fff',brd:'#ddd',soft:'#f0f0f0',txt:'#000',mut:'#888',acc:'#2564a8'};
+  const choose = useCallback((it:string)=>{
+    if(multi) setVal((Array.isArray(val)?val:[]).includes(it) ? (val as string[]).filter((x:string)=>x!==it) : [...(Array.isArray(val)?val:[]), it]);
+    else { setVal(it); setOpen(false); }
+  },[multi,setVal,val]);
+  // key پایدار: از خود مقدار it استفاده می‌کنیم نه index
+  return <div><label style={s.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={tt} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{...(s.inp as any),textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?tt.txt:tt.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(_tr).join('، '):(cfg? t(cfg,lang as any,'select','انتخاب کنید...'):'انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{(items||[]).map((it:string)=><button key={String(it)} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?tt.soft:'transparent',border:0,borderRadius:9,color:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?tt.acc:tt.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{_tr(it)}</button>)}</Popup></div>;
+});
+const StableCountrySelect = memo(function StableCountrySelect({value,onChange,small=true,T,countries,lang}:any){
+  const [open,setOpen]=useState(false);
+  const tt = T || {inp:'#fff',brd:'#ddd',acc:'#2564a8',soft:'#eaf1f7',pop:'#fff',txt:'#000'};
+  const list = countries || [];
+  const choose = useCallback((v:string)=>{ onChange(v); setOpen(false); },[onChange]);
+  return <Popup open={open} onClose={()=>setOpen(false)} T={tt} width={'33vw'} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:tt.inp,border:`1px solid ${tt.brd}`,borderRadius:10,color:tt.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountry(list.find((x:any)=>x.code===value)||list[0])}</button>}>{list.map((c:any)=><button key={c.id || c.code} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?tt.soft:'transparent',border:0,borderRadius:9,color:value===c.code?tt.acc:tt.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountry(c,lang)}</button>)}</Popup>;
+});
+
 function MiniIcon({type,T}:{type:string,T:any}){const d:Any={check:'M20 6L9 17l-5-5',phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z',course:'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z',user:'M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',truck:'M10 17h4V5H2v12h3m12 0h2l3-5v5h-3m-9 0a2 2 0 1 1-4 0m14 0a2 2 0 1 1-4 0',card:'M3 6h18v12H3zM3 10h18',edit:'M12 20h9M16.5 3.5l4 4L8 20H4v-4z'};return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'middle',flexShrink:0}}><path d={d[type]||d.check}/></svg>}
 function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'min(33vw, calc(100vw - 34px))',minWidth:180,maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
 // بازطراحی: مودال با گوشه‌های نرم‌تر (۲۰px) و سایه عمیق ملایم‌تر (به‌جای سایه تیره سخت)
@@ -970,10 +1012,11 @@ function App(){
  const resetForm=()=>{clearPublicFormDrafts();setFd(emptyFd());setCourse(emptyCourse());setEditChild(false);setShipModal(null);setCourseResult(null);goToSecondaryApp()};
  const publicText=useCallback((k:string,fb?:string)=>t(cfg,lang,k,fb),[cfg,lang]); const trVal=useCallback((x:any)=>lang==='en'?(cfg.translations?.en?.[String(x)]||String(x)):String(x),[cfg,lang]);
  const showContactOn=(p:string)=>hasCt&&cfg.contactVisibility?.[p];
- const CountrySelect=useMemo(()=>memo(function CountrySelectCmp({value,onChange,small=true}:any){const [open,setOpen]=useState(false);const choose=useCallback((v:string)=>{onChange(v);setOpen(false)},[onChange]);return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button onClick={()=>setOpen((v:boolean)=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,color:T.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountry(countries.find((x:any)=>x.code===value)||countries[0])}</button>}>{countries.map((c:any)=><button key={c.id} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountry(c,lang)}</button>)}</Popup>}),[T,countries,lang]);
- function Err({x}:{x:any}){return <div style={{fontSize:11,color:T.err,marginTop:4}}>{x}</div>}
- const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{trVal(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit} placeholder={trVal(ph)}/></div>}),[S,trVal,T.err]);
- const SelectBox=useMemo(()=>memo(function MemoSelectBox({label,items,val,setVal,multi=false}:any){const [open,setOpen]=useState(false); const txt=multi?(val||[]).join('، '):val; const choose=useCallback((it:string)=>{if(multi)setVal((val||[]).includes(it)?val.filter((x:string)=>x!==it):[...(val||[]),it]); else {setVal(it);setOpen(false)}},[multi,setVal,val]); return <div><label style={S.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={T} trigger={<button onClick={()=>setOpen((v:boolean)=>!v)} style={{...S.inp,textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?T.txt:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(trVal).join('، '):t(cfg,lang,'select','انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{items.map((it:string)=><button key={it} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?val?.includes(it):val===it)?T.soft:'transparent',border:0,borderRadius:9,color:(multi?val?.includes(it):val===it)?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{trVal(it)}</button>)}</Popup></div>}),[S,T,cfg,lang,trVal]);
+ // FIX: هویت پایدار — کامپوننت‌ها در سطح ماژول تعریف شده‌اند تا Remount رخ ندهد
+ const CountrySelect = StableCountrySelect;
+ const Err = StableErr;
+ const Field = StableField;
+ const SelectBox = StableSelectBox;
  const activeTab=(cfg.courseTabs||[]).find((x:any)=>x.id===courseTab)||(cfg.courseTabs||[])[0];
  // اصلاح ۲۳: عنوان مرحله ۲ از «مقصد» به «اطلاعات فرزند» تغییر کرد.
  // بازطراحی: استپر با دایره‌های کوچک نئومورفیک + خطوط اتصال (به‌جای نوارهای مستطیلی) — روند و شماره مراحل تغییری نکرده

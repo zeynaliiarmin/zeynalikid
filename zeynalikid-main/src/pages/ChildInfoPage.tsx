@@ -12,8 +12,10 @@ import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 //           فیلدهای جدید اضافه‌شده: وضعیت اشتها، مشکل گوارشی، توضیحات تکمیلی.
 
 // ─── کامپوننت‌های کمکی (بیرون از تابع اصلی برای جلوگیری از Remount) ───
-// FIX: کامپونент‌های Err و ReadonlyRow از تابع خارج شدند تا در هر رندر دوباره ساخته نشوند.
+// FIX: کامپوننت‌های Err و ReadonlyRow از تابع خارج شدند تا در هر رندر دوباره ساخته نشوند.
 //       این اصلاح مشکل بسته‌شدن کیبورد بعد از هر کاراکتر را رفع می‌کند.
+// FIX ۲: Field/SelectBox اکنون در App.tsx در سطح ماژول با هویت پایدار تعریف شده‌اند (StableField/StableSelectBox)
+//       و textarea توضیحات هم مستقیم کنترل‌شده با آپدیت تابع‌محور (functional update) است تا shared/coupled state bug رخ ندهد.
 
 interface ErrProps { err: any; theme?: any; }
 function Err({ err, theme: T }: ErrProps) {
@@ -45,6 +47,21 @@ export default function ChildInfoPage({ app }: { app: any }) {
   // FIX: Stabilize VoiceRecorder callbacks to prevent remounting on every re-render
   const handleVoiceRecorded=useCallback((blob:Blob)=>setVoiceBlob(blob),[]);
   const handleVoiceRemoved=useCallback(()=>setVoiceBlob(null),[]);
+ // Fix: پایدار کردن هندلرهای آپدیت draft با functional update تا shared state bug رخ ندهد
+ const updateDraft = useCallback((patch: Record<string, any>) => {
+   setDraft((prev: any) => ({ ...prev, ...patch }));
+ }, []);
+ // هندلرهای اختصاصی هر فیلد — identity پایدار
+ const onAgeChange = useCallback((v:string)=> updateDraft({age: v}), [updateDraft]);
+ const onHeightChange = useCallback((v:string)=> updateDraft({height: v}), [updateDraft]);
+ const onWeightChange = useCallback((v:string)=> updateDraft({weight: v}), [updateDraft]);
+ const onDiseaseChange = useCallback((v:string)=> updateDraft({disease: v}), [updateDraft]);
+ const onDigestChange = useCallback((v:any)=> updateDraft({digest: v}), [updateDraft]);
+ const onAppetiteChange = useCallback((v:any)=> updateDraft({appetite: v}), [updateDraft]);
+ const onSpecialsChange = useCallback((v:any)=> updateDraft({specials: v}), [updateDraft]);
+ const onNotesChange = useCallback((e:any)=> updateDraft({notes: e.target.value}), [updateDraft]);
+ const onGenderSelect = useCallback((g:string)=> updateDraft({gender: g}), [updateDraft]);
+
  // اصلاح ۳۰ (مرحله ۷): اعتبارسنجی الزامی‌بودن عکس زبان (در صورت فعال بودن از پنل مدیریت)
  const tonguePhotos:string[]=course.tonguePhotos||[];
  const submit=async()=>{
@@ -94,21 +111,23 @@ export default function ChildInfoPage({ app }: { app: any }) {
   </div>
   <button onClick={()=>setEditChild(true)} style={{marginBottom:13,width:'100%',padding:12,border:0,borderRadius:14,background:'linear-gradient(135deg,#fbbf24,#f59e0b)',color:'#422006',fontWeight:800,cursor:'pointer',fontFamily:'inherit',fontSize:15,boxShadow:'4px 4px 10px rgba(0,0,0,.08),-2px -2px 8px rgba(255,255,255,.4)'}}>{publicText('editChild','درخواست ویرایش اطلاعات فرزندم را دارم')}</button>
  </> : <>
-  <div style={{display:'grid',gridTemplateColumns:'minmax(0,2fr) 105px',gap:12,alignItems:'start',marginBottom:13}}><div><label style={S.lbl}>{publicText('gender','جنسیت')} <span style={{color:T.err}}>*</span></label><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>{[['male',publicText('boy','پسر')],['female',publicText('girl','دختر')]].map((x:any)=><button key={x[0]} onClick={()=>setDraft({...draft,gender:x[0]})} style={{padding:'10px 8px',borderRadius:12,border:'none',background:draft.gender===x[0]?T.soft:T.card,color:draft.gender===x[0]?T.acc:T.mut,cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:700,boxShadow:draft.gender===x[0]?T.neuIn:T.neuOut}}>{x[1]}</button>)}</div>{errs.gender && <Err err={errs.gender} theme={T} />}</div><div><label style={S.lbl}>{publicText('age',cfg.formFields.age.label)} <span style={{color:T.err}}>*</span></label><Field label={publicText('age',cfg.formFields.age.label)} value={draft.age} onChange={(v:string)=>setDraft({...draft,age:v})} ph={cfg.formFields.age.placeholder} type="number" required={true}/>{errs.age && <Err err={errs.age} theme={T} />}</div></div>
-  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{cfg.formFields.height?.show!==false&&<Field label={publicText('height',cfg.formFields.height.label)} value={draft.height} onChange={(v:string)=>setDraft({...draft,height:v})} ph={cfg.formFields.height.placeholder} type="number"/>}{cfg.formFields.weight?.show!==false&&<Field label={publicText('weight',cfg.formFields.weight.label)} value={draft.weight} onChange={(v:string)=>setDraft({...draft,weight:v})} ph={cfg.formFields.weight.placeholder} type="number"/>}</div>
+  {/* FIX: جنسیت و سن — هر دکمه key پایدار (male/female) و هندلر functional تا ری‌مانت رخ ندهد */}
+  <div style={{display:'grid',gridTemplateColumns:'minmax(0,2fr) 105px',gap:12,alignItems:'start',marginBottom:13}}><div><label style={S.lbl}>{publicText('gender','جنسیت')} <span style={{color:T.err}}>*</span></label><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>{([['male',publicText('boy','پسر')],['female',publicText('girl','دختر')] ] as any[]).map((x:any)=><button key={x[0]} type="button" onClick={()=>onGenderSelect(x[0])} style={{padding:'10px 8px',borderRadius:12,border:'none',background:draft.gender===x[0]?T.soft:T.card,color:draft.gender===x[0]?T.acc:T.mut,cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:700,boxShadow:draft.gender===x[0]?T.neuIn:T.neuOut}}>{x[1]}</button>)}</div>{errs.gender && <Err err={errs.gender} theme={T} />}</div><div><label style={S.lbl}>{publicText('age',cfg.formFields.age.label)} <span style={{color:T.err}}>*</span></label><Field label={publicText('age',cfg.formFields.age.label)} value={draft.age} onChange={onAgeChange} ph={cfg.formFields.age.placeholder} type="number" required={true} S={S} T={T} trVal={trVal} p2e={p2e} />{errs.age && <Err err={errs.age} theme={T} />}</div></div>
+  {/* FIX: قد/وزن — هر فیلد کنترل‌شده مستقل با هندلر پایدار و value مستقیم از draft — بدون index-as-key و بدون shared object remount */}
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{cfg.formFields.height?.show!==false&&<Field label={publicText('height',cfg.formFields.height.label)} value={draft.height} onChange={onHeightChange} ph={cfg.formFields.height.placeholder} type="number" S={S} T={T} trVal={trVal} p2e={p2e} />}{cfg.formFields.weight?.show!==false&&<Field label={publicText('weight',cfg.formFields.weight.label)} value={draft.weight} onChange={onWeightChange} ph={cfg.formFields.weight.placeholder} type="number" S={S} T={T} trVal={trVal} p2e={p2e} />}</div>
   {/* اصلاح ۲۵: فیلدهای جدید — وضعیت اشتها و مشکل گوارشی */}
-  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}><SelectBox label={publicText('digest','مشکل گوارشی')} multi items={cfg.digestiveOptions} val={draft.digest||[]} setVal={(v:any)=>setDraft({...draft,digest:v})}/><SelectBox label={publicText('appetite','وضعیت اشتها')} items={cfg.appetiteOptions} val={draft.appetite||''} setVal={(v:any)=>setDraft({...draft,appetite:v})}/></div>
-  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}>{cfg.formFields.disease?.show!==false&&<Field label={publicText('disease',cfg.formFields.disease.label)} value={draft.disease} onChange={(v:string)=>setDraft({...draft,disease:v})} ph={cfg.formFields.disease.placeholder}/>}<SelectBox label={publicText('specials','شرایط خاص')} multi items={cfg.specialConditions} val={draft.specials} setVal={(v:any)=>setDraft({...draft,specials:v})}/></div>
-  {/* اصلاح ۲۵: فیلد جدید — توضیحات تکمیلی */}
-  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={e=>setDraft({...draft,notes:e.target.value})} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}><SelectBox label={publicText('digest','مشکل گوارشی')} multi items={cfg.digestiveOptions} val={draft.digest||[]} setVal={onDigestChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /><SelectBox label={publicText('appetite','وضعیت اشتها')} items={cfg.appetiteOptions} val={draft.appetite||''} setVal={onAppetiteChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /></div>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}>{cfg.formFields.disease?.show!==false&&<Field label={publicText('disease',cfg.formFields.disease.label)} value={draft.disease} onChange={onDiseaseChange} ph={cfg.formFields.disease.placeholder} S={S} T={T} trVal={trVal} p2e={p2e} />}<SelectBox label={publicText('specials','شرایط خاص')} multi items={cfg.specialConditions} val={draft.specials} setVal={onSpecialsChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /></div>
+  {/* اصلاح ۲۵: فیلد جدید — توضیحات تکمیلی — FIX: کنترل مستقیم بدون تعریف داخلی کامپوننت */}
+  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={onNotesChange} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
  </>}
 
  {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — قبل از دکمه‌های بازگشت/ادامه */}
  <TonguePhotoUploader app={app} tonguePhotos={tonguePhotos} onChange={(list:string[])=>setCourse((c:any)=>({...c,tonguePhotos:list}))} tongueErr={errs.tonguePhoto}/>
 
- {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={i}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
-  <button style={S.btnGhost} onClick={()=>setView('courses')}>{publicText('backBtn','بازگشت')}</button>
-  <button style={{...S.btn, minHeight:52}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
+ {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={`err-${i}`}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
+  <button type="button" style={S.btnGhost} onClick={()=>setView('courses')}>{publicText('backBtn','بازگشت')}</button>
+  <button type="button" style={{...S.btn, minHeight:52}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
 </div></div>
  {editChild&&<EditChildOnInfoModal app={app}/>}
  </div>
@@ -240,11 +259,11 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
 
    {(err||tongueErr)&&<div style={{fontSize:11,color:T.err,marginBottom:8}}>{err||tongueErr}</div>}
 
-   {/* پیش‌نمایش عکس‌های آپلودشده */}
+   {/* پیش‌نمایش عکس‌های آپلودشده — key پایدار بر اساس url نه index */}
    {tonguePhotos.length>0&&(
     <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-     {tonguePhotos.map((url,i)=>(
-      <div key={i} style={{position:'relative',width:76,height:76,borderRadius:12,overflow:'hidden',boxShadow:T.neuOut}}>
+     {tonguePhotos.map((url)=>(
+      <div key={url} style={{position:'relative',width:76,height:76,borderRadius:12,overflow:'hidden',boxShadow:T.neuOut}}>
        <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
        <button type="button" onClick={()=>removePhoto(url)} style={{position:'absolute',top:3,insetInlineEnd:3,width:20,height:20,borderRadius:'50%',border:0,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
       </div>
@@ -267,9 +286,12 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
 
 // اصلاح ۲۵: مودال ویرایش اطلاعات کودک اکنون در همین صفحه (اطلاعات فرزند) در دسترس است.
 function EditChildOnInfoModal({app}:{app:any}){
- const {cfg,T,S,fd,setFd,setCourse,setEditChild,publicText,Field,Modal}=app;
+ const {cfg,T,S,fd,setFd,setCourse,setEditChild,publicText,Field,Modal,trVal,p2e}=app;
  const today=()=>new Date().toLocaleDateString('fa-IR'); const now=()=>new Date().toLocaleTimeString('fa-IR');
  const [draft,setDraft]=useState({...fd});
+ const updateDraftField = useCallback((field:string, value:string) => {
+   setDraft((prev:any)=> ({...prev, [field]: value}));
+ },[]);
  const save=()=>{const prev={date:today(),time:now(),data:{...fd}}; setFd(draft); setCourse((c:any)=>({...c,childInfo:{...draft},editedHistory:[...(c.editedHistory||[]),prev]})); setEditChild(false)};
- return <Modal T={T} onClose={()=>setEditChild(false)} closeLabel={publicText('close','بستن')}><h3 style={{color:T.ttl,marginTop:0}}>{publicText('editChildTitle','ویرایش اطلاعات کودک')}</h3>{['age','height','weight','disease','notes'].map(k=><Field key={k} label={cfg.formFields[k]?.label||k} value={draft[k]||''} onChange={(v:string)=>setDraft({...draft,[k]:v})} ph={cfg.formFields[k]?.placeholder||''}/>)}<label style={S.lbl}>{publicText('gender','جنسیت')}</label><div style={{display:'flex',gap:8,marginBottom:12}}><button onClick={()=>setDraft({...draft,gender:'male'})} style={draft.gender==='male'?S.btn:S.btnGhost}>{publicText('boy','پسر')}</button><button onClick={()=>setDraft({...draft,gender:'female'})} style={draft.gender==='female'?S.btn:S.btnGhost}>{publicText('girl','دختر')}</button></div><button style={S.btn} onClick={save}>{publicText('saveChanges','ذخیره تغییرات')}</button></Modal>
+ return <Modal T={T} onClose={()=>setEditChild(false)} closeLabel={publicText('close','بستن')}><h3 style={{color:T.ttl,marginTop:0}}>{publicText('editChildTitle','ویرایش اطلاعات کودک')}</h3>{['age','height','weight','disease','notes'].map(k=><Field key={k} label={cfg.formFields[k]?.label||k} value={draft[k]||''} onChange={(v:string)=>updateDraftField(k, v)} ph={cfg.formFields[k]?.placeholder||''} S={S} T={T} trVal={trVal} p2e={p2e} />)}<label style={S.lbl}>{publicText('gender','جنسیت')}</label><div style={{display:'flex',gap:8,marginBottom:12}}><button type="button" onClick={()=>setDraft((p:any)=>({...p,gender:'male'}))} style={draft.gender==='male'?S.btn:S.btnGhost}>{publicText('boy','پسر')}</button><button type="button" onClick={()=>setDraft((p:any)=>({...p,gender:'female'}))} style={draft.gender==='female'?S.btn:S.btnGhost}>{publicText('girl','دختر')}</button></div><button type="button" style={S.btn} onClick={save}>{publicText('saveChanges','ذخیره تغییرات')}</button></Modal>
 }

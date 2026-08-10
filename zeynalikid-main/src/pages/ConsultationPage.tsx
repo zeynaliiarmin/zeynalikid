@@ -53,6 +53,34 @@ function ContactPanelLocal({ cfg, lang, T, publicText, digits }: any) {
   return <div style={{ marginTop: 12, padding: 12, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 14 }}><div style={{ fontWeight: 700, color: T.ttl, marginBottom: 9, fontSize: 13, display: 'flex', gap: 7, alignItems: 'center' }}><PlatformIcon type="phone" color={T.acc} />{publicText('contactUs', 'ارتباط با ما')}</div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 8 }}>{items.map((it: any, i: number) => { const color = it.color || icons[it.key]?.color || T.acc; return <a key={i} href={it.url} target={it.url?.startsWith('http') ? '_blank' : undefined} rel="noreferrer" style={{ textDecoration: 'none', padding: '10px 11px', borderRadius: 11, border: `1px solid ${color}55`, background: `${color}14`, color, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}><PlatformIcon type={it.key} color={color} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</span></a>; })}</div></div>;
 }
 
+// ─── FIX: Stable Form Components for Consultation (module-level, no remount) ───
+const StableFieldLocal = memo(function StableFieldLocal({label,value,onChange,ph,type='text',required=false,S,T,trVal}:any){
+  const _tr = trVal || ((s:any)=>String(s||''));
+  const isNumeric = /phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));
+  const handleChange = (e:any)=>{
+    const raw=e.target.value;
+    const v = isNumeric ? p2e(raw).replace(/[^0-9]/g,'') : raw;
+    onChange?.(v);
+  };
+  return <div style={{marginBottom:13}}><label style={S.lbl}>{_tr(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><input type={type} style={S.inp} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} inputMode={isNumeric?'numeric':undefined} /></div>;
+});
+const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val,setVal,multi=false,S,T,trVal,cfg,lang}:any){
+  const [open,setOpen]=useState(false);
+  const _tr = trVal || ((s:any)=>String(s||''));
+  const txt = multi ? (Array.isArray(val)?val:[]).join('، ') : val;
+  const choose = useCallback((it:string)=>{
+    if(multi) setVal((Array.isArray(val)?val:[]).includes(it) ? (val as string[]).filter((x:string)=>x!==it) : [...(Array.isArray(val)?val:[]), it]);
+    else { setVal(it); setOpen(false); }
+  },[multi,setVal,val]);
+  return <div><label style={S.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={T} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{...S.inp,textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?T.txt:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(_tr).join('، '):(cfg? '- انتخاب کنید...' : 'انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{(items||[]).map((it:string)=><button key={String(it)} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.soft:'transparent',border:0,borderRadius:9,color:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{_tr(it)}</button>)}</Popup></div>;
+});
+const StableCountrySelectLocal = memo(function StableCountrySelectLocal({value,onChange,small=true,T,countries,lang}:any){
+  const [open,setOpen]=useState(false);
+  const choose = useCallback((v:string)=>{ onChange(v); setOpen(false); },[onChange]);
+  return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,color:T.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountryFn((countries||[]).find((x:any)=>x.code===value)||(countries||[])[0])}</button>}>{(countries||[]).map((c:any)=><button key={c.id||c.code} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountryFn(c, lang)}</button>)}</Popup>;
+});
+
+
 export default function ConsultationPage({ app }: { app: any }) {
   const {
     cfg, T, S, css, lang, setLang, view, setView,
@@ -412,71 +440,29 @@ export default function ConsultationPage({ app }: { app: any }) {
 
 
 
-  // ─── Page-local styles (reuse app.S for base, add form-specific) ───
+  // FIX: Stable components — module-level identity, direct controlled (no buffered local)
+  const Field = useCallback((props:any)=><StableFieldLocal {...props} S={S} T={T} trVal={trVal} />, [S,T,trVal]);
+  const SelectBox = useCallback((props:any)=><StableSelectBoxLocal {...props} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} />, [S,T,cfg,lang,trVal]);
+  const CountrySelectLocal = useCallback((props:any)=><StableCountrySelectLocal {...props} T={T} countries={countries} lang={lang} />, [T,countries,lang]);
+
+  // LS kept for textarea
   const LS: any = useMemo(() => ({
     ...S,
     page: { ...S?.page, position: 'relative' as const },
     ta: { ...S?.ta, width: '100%', padding: '12px 14px', background: T.inp, border: `1px solid ${T.brd}`, borderRadius: 12, color: T.txt, fontSize: 16, outline: 'none', boxSizing: 'border-box' as const, minHeight: 100, resize: 'vertical' as const, fontFamily: 'inherit', boxShadow: T.neuIn },
   }), [S, T]);
 
-  const Field = useMemo(() => memo(function MemoField({ label, value, onChange, ph, type = 'text', required = false }: any) {
-    const [local, setLocal] = useState(value ?? '');
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    const isNumeric = /phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label || ''));
-    useEffect(() => setLocal(value ?? ''), [value]);
-    const cleanNumeric = (s: any) => p2e(s).replace(/[^0-9]/g, '');
-    const handle = useCallback((e: any) => setLocal(isNumeric ? cleanNumeric(e.target.value) : e.target.value), [isNumeric]);
-    const commit = useCallback(() => onChange(isNumeric ? cleanNumeric(local) : local), [onChange, local, isNumeric]);
-    return <div style={{ marginBottom: 13 }}>
-      <label style={S.lbl}>{trVal(label)}{required && <span style={{ color: T.err, marginInlineStart: 4 }}>*</span>}</label>
-      <input ref={inputRef} inputMode={isNumeric ? 'numeric' : undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit} placeholder={trVal(ph)} />
-    </div>;
-  }), [S, trVal, T.err]);
-
-  const SelectBox = useMemo(() => memo(function MemoSelectBox({ label, items, val, setVal, multi = false }: any) {
-    const [open, setOpen] = useState(false);
-    const txt = multi ? (val || []).join('، ') : val;
-    const choose = useCallback((it: string) => {
-      if (multi) setVal((val || []).includes(it) ? val.filter((x: string) => x !== it) : [...(val || []), it]);
-      else { setVal(it); setOpen(false); }
-    }, [multi, setVal, val]);
-    return <div>
-      <label style={S.lbl}>{label}</label>
-      <Popup open={open} onClose={() => setOpen(false)} trigger={
-        <button onClick={() => setOpen((v: boolean) => !v)} style={{ ...S.inp, textAlign: 'inherit', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: txt ? T.txt : T.mut, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{txt ? String(txt).split('، ').map(trVal).join('، ') : publicText('select', 'انتخاب کنید...')}</span>
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span>
-        </button>
-      }>
-        {items.map((it: string) => <button key={it} onClick={() => choose(it)} style={{ display: 'block', width: '100%', padding: '9px 10px', background: (multi ? val?.includes(it) : val === it) ? T.soft : 'transparent', border: 0, borderRadius: 9, color: (multi ? val?.includes(it) : val === it) ? T.acc : T.txt, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right', fontSize: 13 }}>{trVal(it)}</button>)}
-      </Popup>
-    </div>;
-  }), [S, T, cfg, lang, trVal]);
-
-  // ─── CountrySelect using app's countries ───
-  const CountrySelectLocal = useMemo(() => memo(function CountrySelectCmp({ value, onChange, small = true }: any) {
-    const [open, setOpen] = useState(false);
-    const choose = useCallback((v: string) => { onChange(v); setOpen(false); }, [onChange]);
-    return <Popup open={open} onClose={() => setOpen(false)} width={'33vw'} trigger={
-      <button onClick={() => setOpen((v: boolean) => !v)} style={{ height: 44, minWidth: small ? 68 : 120, padding: '0 8px', background: T.inp, border: `1px solid ${T.brd}`, borderRadius: 10, color: T.acc, cursor: 'pointer', fontSize: 14, fontFamily: 'inherit', fontWeight: 700, whiteSpace: 'nowrap', order: -1 }}>
-        {shortCountry((countries || []).find((x: any) => x.code === value) || (countries || [])[0])}
-      </button>
-    }>
-      {(countries || []).map((c: any) => <button key={c.id} onClick={() => choose(c.code)} style={{ display: 'block', width: '100%', padding: '9px 10px', background: value === c.code ? T.soft : 'transparent', border: 0, borderRadius: 9, color: value === c.code ? T.acc : T.txt, cursor: 'pointer', textAlign: 'right', fontFamily: 'inherit', fontSize: 13 }}>{labelCountry(c, lang)}</button>)}
-    </Popup>;
-  }), [T, countries, lang]);
-
-  function TopicChips() {
+  // FIX: TopicChips inlined as stable rendering function to avoid nested component remount
+  const TopicChips = useCallback(()=>{
     const all = (cfg.consultTopics || []);
     const chip = (x: string) => <button key={x} onClick={() => setFd({ ...fd, topics: fd.topics.includes(x) ? fd.topics.filter((y: string) => y !== x) : [...fd.topics, x] })} style={{ padding: lang === 'en' ? '7px 8px' : '7px 6px', borderRadius: 18, border: `1px solid ${fd.topics.includes(x) ? T.acc : T.brd}`, background: fd.topics.includes(x) ? T.soft : 'transparent', color: fd.topics.includes(x) ? T.acc : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 10 : 11, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', height: 34, transition: 'all .65s', flex: '0 0 auto', maxWidth: lang === 'en' ? 132 : 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trVal(x)}</button>;
     if (lang === 'en') return <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>{all.map(chip)}</div>;
     const first = all.slice(0, 4), rest = all.slice(4);
     return <><div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, first.length)}, 1fr)`, gap: 5, marginBottom: rest.length ? 6 : 2 }}>{first.map(chip)}</div>{rest.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>{rest.map(chip)}</div>}</>;
-  }
+  }, [cfg.consultTopics, fd.topics, lang, T, trVal])
 
-  // ─── FORM PAGE ───
-  function FormPage() {
-    return <div style={{ ...S.page, position: 'relative' }}>
+  // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)
+  if (formView === 'form') return <><MemphisBg T={T} /><div style={{ ...S.page, position: 'relative' }}>
       <Helmet>
         <title>فرم مشاوره رشد و تغذیه کودک | زینالیکید</title>
         <meta name="description" content="فرم مشاوره تخصصی رشد قد، بهبود اشتها، تقویت هوش و تمرکز کودکان و نوجوانان" />
@@ -500,7 +486,7 @@ export default function ConsultationPage({ app }: { app: any }) {
 
         {/* Topics */}
         <div style={S.sec}><MiniIcon type="course" T={T} />{publicText('consultTopic', 'موضوع مشاوره')} <span style={{ color: T.err }}>*</span></div>
-        <TopicChips />
+        {TopicChips()}
         <p style={{ fontSize: 10, color: T.mut, margin: '5px 0' }}>{publicText('multi', 'می‌توانید چند مورد انتخاب کنید')}</p>
         {errs.topics && <Err err={errs.topics} theme={T} />}
         <div style={S.div} />
@@ -599,12 +585,8 @@ export default function ConsultationPage({ app }: { app: any }) {
           </div>
         </div>
       </div>}
-    </div>;
-  }
-
-  // ─── SUCCESS PAGE ───
-  function SuccessPage() {
-    return <div style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingBottom: 16 }}>
+    </div></>;
+  if (formView === 'success') return <><MemphisBg T={T} /><div style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingBottom: 16 }}>
       <Helmet>
         <title>ثبت موفقیت‌آمیز فرم مشاوره | زینالیکید</title>
         <meta name="description" content="فرم مشاوره شما با موفقیت ثبت شد." />
@@ -654,11 +636,6 @@ export default function ConsultationPage({ app }: { app: any }) {
         <Footer cfg={cfg} T={T} lang={lang} setView={setView} />
       </div>
       {copyToast && <div style={{ position: 'fixed', bottom: 18, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: T.pop, border: `1px solid ${copyToast.includes('نشد') || copyToast.includes('failed') ? T.err : T.ok}`, color: copyToast.includes('نشد') || copyToast.includes('failed') ? T.err : T.ok, borderRadius: 12, padding: '10px 16px', fontSize: 13, fontWeight: 800, boxShadow: '0 14px 35px rgba(0,0,0,.18)', animation: 'fadeSlide .35s ease both' }}>{copyToast}</div>}
-    </div>;
-  }
-
-  // ─── RENDER ───
-  if (formView === 'form') return <><MemphisBg T={T} /><FormPage /></>;
-  if (formView === 'success') return <><MemphisBg T={T} /><SuccessPage /></>;
+    </div></>;
   return null;
 }
