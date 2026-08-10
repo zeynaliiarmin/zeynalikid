@@ -259,6 +259,7 @@ export default function ConsultationPage({ app }: { app: any }) {
     const minAge = Number(ff?.age?.min ?? 2) || 2;
     const maxAge = Number(ff?.age?.max ?? 17) || 17;
     if (!fd.topics.length) e.topics = lang === 'en' ? 'Select at least one topic' : 'حداقل یک موضوع مشاوره انتخاب کنید';
+    if (!String(fd.pName || '').trim()) e.pName = lang === 'en' ? 'Enter parent name' : 'نام و نام خانوادگی والد را وارد کنید';
     if (ff?.parentPhone?.show !== false && ff?.parentPhone?.required !== false && !validPhone(fd.pPhone, country)) e.pPhone = lang === 'en' ? 'Phone number is invalid for selected country' : 'شماره تماس برای کشور انتخاب شده معتبر نیست';
     if (!fd.gender) e.gender = lang === 'en' ? 'Select gender' : 'جنسیت فرزند را انتخاب کنید';
     const ag = +p2e(fd.age);
@@ -347,19 +348,18 @@ export default function ConsultationPage({ app }: { app: any }) {
           usageInstructions: '', timeSlot: '', course: null, shipping: null, payment: null, editHistory: []
         };
 
+        // نسخهٔ محلیِ کامل را پیش از ارسال شبکه ذخیره می‌کنیم؛ هیچ فرم تکمیل‌شده‌ای با خطای اتصال از دست نمی‌رود.
+        const localSubs = getLS(SK.subs, []);
+        if (!localSubs.some((x: any) => String(x.id) === String(entry.id))) setLS(SK.subs, [...localSubs, entry]);
         if (isSupabaseConfigured) {
           try {
             await createSubmission(entry as any);
             setLastId(entry.id);
           } catch (e) {
             console.warn('Could not save submission to Supabase, falling back to localStorage', e);
-            const subs = getLS(SK.subs, []);
-            setLS(SK.subs, [...subs, entry]);
             setLastId(entry.id);
           }
         } else {
-          const subs = getLS(SK.subs, []);
-          setLS(SK.subs, [...subs, entry]);
           setLastId(entry.id);
         }
         if (subsCacheRef.current) subsCacheRef.current = [...subsCacheRef.current, entry];
