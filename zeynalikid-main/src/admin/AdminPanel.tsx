@@ -6,6 +6,7 @@ import { productVectorIcon, AdminIcon, MenuIcon, ProductsIcon, CoursesIcon, Cont
 import TrashPanel from './TrashPanel';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
+import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
 import AdminSpeedDialFAB from './AdminSpeedDialFAB';
@@ -256,6 +257,9 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   const toggleSelect=(id:any)=> setSelectedIds(prev=>{const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n;});
   const toggleSelectAll=(ids:any[])=> setSelectedIds(prev=>{ const allSelected = ids.every((id:any)=> prev.has(id)); if(allSelected) { const n=new Set(prev); ids.forEach((id:any)=> n.delete(id)); return n; } else { const n=new Set(prev); ids.forEach((id:any)=> n.add(id)); return n; }});
   const clearSelection=()=> setSelectedIds(new Set());
+  const [imageFormat,setImageFormat]=useState<'webp'|'jpg'>(()=>{try{return localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp'}catch{return 'webp'}});
+  const setPersistentImageFormat=(f:'webp'|'jpg')=>{setImageFormat(f);try{localStorage.setItem('zkid_form_image_format',f)}catch{}};
+  const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);alert('خطا در ساخت تصویر پرونده')}};
   const selectedCount = selectedIds.size;
   const statusOptions=['جدید','در انتظار پرداخت','پرداخت‌شده','ارسال‌شده','تکمیل‌شده','لغو‌شده'];
   const getStatus=(x:any)=>x.orderStatus||(x.payment?.receipt?'پرداخت‌شده':x.course?'در انتظار پرداخت':x.isNew?'جدید':'جدید');
@@ -494,6 +498,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const selectedRows = filtered.filter((x:any)=> selectedIds.has(x.id)).map(s=>({نام:s.pName||'',شماره:s.fullPhone||'',موضوع:(s.topics||[]).join('|'),کشور:getCountry(s),دوره:getCourse(s),پرداخت:getPay(s),وضعیت:getStatus(s),تاریخ:s.date||'',شهر:s.shipping?.city||'',یادداشت:s.adminNotes||''})); const keys=Object.keys(selectedRows[0]||{نام:'',شماره:'',موضوع:'',کشور:'',دوره:'',پرداخت:'',وضعیت:'',تاریخ:''}); const html=`<html><meta charset="utf-8"><body><table border="1"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${selectedRows.map((r:any)=>`<tr>${keys.map(k=>`<td>${String((r as any)[k]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`; const url=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-export.xls';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>اکسل انتخاب‌شده</button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const phones = filtered.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> x.fullPhone).filter(Boolean).join('\n'); const url=URL.createObjectURL(new Blob([phones],{type:'text/plain;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-phones.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>شماره‌ها</button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const links = filtered.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> digits(x.fullPhone||'')).filter(Boolean).map((n:any)=>`<p><a href="https://wa.me/${n}">${n}</a></p>`).join(''); const url=URL.createObjectURL(new Blob([`<html><meta charset="utf-8"><body>${links}</body></html>`],{type:'text/html;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-whatsapp.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>واتساپ</button>
+    <label className="zkad-toolbtn" style={{display:'inline-flex',alignItems:'center',gap:4}}>تصویر <select value={imageFormat} onChange={e=>setPersistentImageFormat(e.target.value as any)} style={{border:0,background:'transparent',fontFamily:'inherit'}}><option value="webp">webp</option><option value="jpg">jpg</option></select></label>
+    <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تصویر انتخاب‌شده</button>
     <button type="button" className="zkad-toolbtn" onClick={clearSelection}>لغو انتخاب</button>
   </div>}
 </div>
@@ -638,31 +644,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
         )}
         <button
           type="button"
-          onClick={()=>{
-            const content = `پرونده کودک و والد - زینالیکید\n`+
-              `کد پیگیری: ${sub.trackingCode || '—'}\n`+
-              `نام والد: ${sub.pName || sub.shipping?.receiver || '—'}\n`+
-              `شماره تماس: ${sub.fullPhone || sub.pPhone || '—'}\n`+
-              `مشخصات کودک: سن ${activeConsultRecord.age||sub.age||'—'} سال | جنسیت: ${activeConsultRecord.gender==='male'?'پسر':'دختر'} | قد: ${activeConsultRecord.height||'—'} | وزن: ${activeConsultRecord.weight||'—'}\n`+
-              `موضوعات مشاوره: ${(activeConsultRecord.topics||sub.topics||[]).join('، ')}\n`+
-              `مشکل گوارشی: ${(Array.isArray(activeConsultRecord.digest)?activeConsultRecord.digest.join('، '):activeConsultRecord.digest)||'—'}\n`+
-              `اشتها: ${activeConsultRecord.appetite||sub.appetite||'—'} | بیماری: ${activeConsultRecord.disease||sub.disease||'—'}\n`+
-              `توضیحات والد: ${activeConsultRecord.notes||sub.notes||'—'}\n`+
-              `یادداشت‌های مدیر: ${sub.adminNotes||'—'}\n`+
-              `دوره ثبت‌شده: ${activeCourseRecord.course?.title||'—'}\n`+
-              `آدرس ارسال: ${activeCourseRecord.shipping?.city||''} ${activeCourseRecord.shipping?.address||'—'}\n`+
-              `کد پستی: ${activeCourseRecord.shipping?.postalCode||'—'}\n`+
-              `تاریخ ثبت: ${sub.date||''} ${sub.time||''}\n`;
-            const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `پرونده_${(sub.pName||'کودک').replace(/\s+/g,'_')}_${sub.trackingCode||sub.id}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }}
+          onClick={async()=>{try{const fmt=(localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp') as 'webp'|'jpg';const blob=await generateFormImage(sub,fmt);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(sub.pName||sub.fullPhone||sub.id).replace(/\s+/g,'_')}.${fmt}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch{alert('خطا در ساخت تصویر پرونده')}}}
           style={{padding:'3px 8px',borderRadius:6,border:`1px solid ${T.brd}`,background:T.card,color:T.txt,fontSize:11,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:4}}
           title="دانلود خلاصه پرونده متنی"
         >

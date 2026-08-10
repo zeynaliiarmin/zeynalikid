@@ -9,7 +9,7 @@
  * تولید تصویر از آبجکت submission
  * فقط اطلاعات بخش والد و فرزند استخراج می‌شود (بدون پرداخت/ارسال)
  */
-export async function generateFormImage(submission: any): Promise<Blob> {
+export async function generateFormImage(submission: any, format: 'webp' | 'jpg' = 'webp'): Promise<Blob> {
   // ─── استخراج اطلاعات ───
   const parentName = submission.pName || submission.parentName || '—';
   const phone = submission.fullPhone || submission.full_phone || '—';
@@ -202,6 +202,6 @@ export async function generateFormImage(submission: any): Promise<Blob> {
       } else {
         reject(new Error('Failed to generate image blob'));
       }
-    }, 'image/jpeg', 0.8);
+    }, format === 'webp' ? 'image/webp' : 'image/jpeg', 0.82);
   });
 }
