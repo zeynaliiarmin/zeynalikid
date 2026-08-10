@@ -176,17 +176,10 @@ export default function ConsultationPage({ app }: { app: any }) {
     return () => { alive = false };
   }, []);
 
-  // Mobile keyboard scroll fix
-  useEffect(() => {
-    const h = (e: Event) => {
-      const t = e.target as HTMLElement;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
-        setTimeout(() => { try { t.scrollIntoView({ behavior: 'smooth', block: 'center' }) } catch { } }, 300);
-      }
-    };
-    document.addEventListener('focusin', h);
-    return () => document.removeEventListener('focusin', h);
-  }, []);
+  // FIX: حذف اسکرول خودکار وسط‌صفحه — این listener باعث می‌شد هر فیلد با focus به وسط صفحه اسکرول شود
+  // مرورگر به‌صورت native کیبورد موبایل را هندل می‌کند؛ نیازی به scrollIntoView با block:center نیست
+  // اگر در آینده نیاز به اسکرول ملایم بود، از {block:'nearest', behavior:'auto'} بدون setTimeout استفاده شود
+  useEffect(() => {}, []);
 
   // URL topic preselect
   useEffect(() => {
