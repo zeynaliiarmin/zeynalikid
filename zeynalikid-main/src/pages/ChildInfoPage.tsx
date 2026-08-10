@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
@@ -20,6 +20,9 @@ export default function ChildInfoPage({app}:{app:any}){
   const isDirty = Boolean(draft.age || draft.height || draft.weight || draft.notes);
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
  function Err({x}:{x:any}){return <div style={{fontSize:11,color:T.err,marginTop:4}}>{x}</div>}
+  // FIX: Stabilize VoiceRecorder callbacks to prevent remounting on every re-render
+  const handleVoiceRecorded=useCallback((blob:Blob)=>setVoiceBlob(blob),[]);
+  const handleVoiceRemoved=useCallback(()=>setVoiceBlob(null),[]);
  // اصلاح ۳۰ (مرحله ۷): اعتبارسنجی الزامی‌بودن عکس زبان (در صورت فعال بودن از پنل مدیریت)
  const tonguePhotos:string[]=course.tonguePhotos||[];
  const submit=async()=>{
@@ -78,7 +81,7 @@ export default function ChildInfoPage({app}:{app:any}){
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}><SelectBox label={publicText('digest','مشکل گوارشی')} multi items={cfg.digestiveOptions} val={draft.digest||[]} setVal={(v:any)=>setDraft({...draft,digest:v})}/><SelectBox label={publicText('appetite','وضعیت اشتها')} items={cfg.appetiteOptions} val={draft.appetite||''} setVal={(v:any)=>setDraft({...draft,appetite:v})}/></div>
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}>{cfg.formFields.disease?.show!==false&&<Field label={publicText('disease',cfg.formFields.disease.label)} value={draft.disease} onChange={(v:string)=>setDraft({...draft,disease:v})} ph={cfg.formFields.disease.placeholder}/>}<SelectBox label={publicText('specials','شرایط خاص')} multi items={cfg.specialConditions} val={draft.specials} setVal={(v:any)=>setDraft({...draft,specials:v})}/></div>
   {/* اصلاح ۲۵: فیلد جدید — توضیحات تکمیلی */}
-  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={(blob:any)=>{setVoiceBlob(blob)}} onRemoved={()=>{setVoiceBlob(null)}}/></div><textarea style={S.ta} value={draft.notes||''} onChange={e=>setDraft({...draft,notes:e.target.value})} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
+  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={e=>setDraft({...draft,notes:e.target.value})} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
  </>}
 
  {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — قبل از دکمه‌های بازگشت/ادامه */}
