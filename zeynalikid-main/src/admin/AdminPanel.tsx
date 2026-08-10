@@ -1774,16 +1774,22 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
 
   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
 
- // ─── مدیریت باکس جملات اعتمادساز (TrustBoxNew) ───
+ // ─── مدیریت باکس جملات اعتمادساز (TrustBoxNew) — ۴ دسته ثابت + تب‌های دوره
  function TrustBoxManagerEditor(){
   const tb=editCfg.trustBoxes||{};
   const sentences=tb.sentences||{};
   const courseTabsActive = (editCfg.courseTabs || cfg.courseTabs || []).filter((t: any) => t.active !== false);
-  const cats = ['health', ...courseTabsActive.map((t: any) => t.id)];
-  const catLabels: Record<string, string> = {
-    health: 'سلامت عمومی',
-    ...Object.fromEntries(courseTabsActive.map((t: any) => [t.id, t.title || t.id]))
-  };
+  // دسته‌های ثابت جملات اعتمادساز — دقیقاً مطابق درخواست کاربر (health/height/appetite/mind)
+  const fixedCats: Array<{id:string,label:string}> = [
+    {id:'health', label:'🏥 سلامت عمومی (health) — صفحه اصلی'},
+    {id:'height', label:'📏 رشد قد (height) — ۱۶ جمله'},
+    {id:'appetite', label:'🍽️ بی‌اشتهایی / بدغذایی (appetite) — ۱۹ جمله'},
+    {id:'mind', label:'🧠 هوش و ذهن / تمرکز (mind) — ۱۸ جمله'},
+  ];
+  const dynamicCats = courseTabsActive.filter((t:any)=> !fixedCats.some(f=>f.id===t.id)).map((t:any)=> ({id:t.id, label: `${t.title || t.id} (تب دوره)`}));
+  const allCats = [...fixedCats, ...dynamicCats];
+  const cats = allCats.map(c=>c.id);
+  const catLabels: Record<string, string> = Object.fromEntries(allCats.map(c=>[c.id,c.label]));
   const activeCat=trustCat; const setActiveCat=setTrustCat;
   const list=sentences[activeCat]||[];
   const updList=(items:any[])=>{const ns={...sentences,[activeCat]:items};setEditCfg({...editCfg,trustBoxes:{...tb,sentences:ns}})};

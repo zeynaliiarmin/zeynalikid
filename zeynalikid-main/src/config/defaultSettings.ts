@@ -449,6 +449,42 @@ export function migrateSettings(settings: any): any {
     if (migrated.images.specialist && !migrated.images.specialist.storagePath) migrated.images.specialist.storagePath = '';
   }
 
+  // ─── مهاجرت trustBoxes: اطمینان از وجود ۴ دسته جملات اعتمادساز (health/height/appetite/mind) با ۶۳ جمله
+  // این ۴ دسته در defaultSettings تعریف شده‌اند ولی اگر تنظیمات قدیمی در Supabase بدون آن‌ها ذخیره شده باشد، باید ادغام شوند
+  try{
+    const defTB = (defaultSettings as any).trustBoxes;
+    if (!migrated.trustBoxes) {
+      migrated.trustBoxes = JSON.parse(JSON.stringify(defTB));
+    } else {
+      if (!migrated.trustBoxes.sentences) migrated.trustBoxes.sentences = JSON.parse(JSON.stringify(defTB.sentences));
+      else {
+        (['health','height','appetite','mind'] as const).forEach(cat=>{
+          const defList: any[] = (defTB.sentences as any)[cat] || [];
+          const curList: any = (migrated.trustBoxes.sentences as any)[cat];
+          if (!Array.isArray(curList) || curList.length === 0) {
+            (migrated.trustBoxes.sentences as any)[cat] = JSON.parse(JSON.stringify(defList));
+          } else if (curList.length < defList.length) {
+            const existingIds = new Set(curList.map((x:any)=>x.id));
+            const missing = defList.filter((x:any)=> !existingIds.has(x.id));
+            if (missing.length) {
+              (migrated.trustBoxes.sentences as any)[cat] = [...curList, ...missing];
+            }
+          }
+        });
+      }
+      if (!migrated.trustBoxes.tabs) migrated.trustBoxes.tabs = JSON.parse(JSON.stringify(defTB.tabs));
+      else {
+        // اطمینان از وجود کلیدهای height/appetite/mind در tabs
+        (['height','appetite','mind'] as const).forEach(k=>{
+          if (!(migrated.trustBoxes.tabs as any)[k]) (migrated.trustBoxes.tabs as any)[k] = JSON.parse(JSON.stringify((defTB.tabs as any)[k]));
+        });
+      }
+      if (!migrated.trustBoxes.home) migrated.trustBoxes.home = JSON.parse(JSON.stringify(defTB.home));
+      if (migrated.trustBoxes.enabled === undefined) migrated.trustBoxes.enabled = true;
+      if (migrated.trustBoxes.defaultInterval === undefined) migrated.trustBoxes.defaultInterval = 8;
+    }
+  }catch{}
+
   return migrated;
 }
 
