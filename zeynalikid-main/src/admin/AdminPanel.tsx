@@ -6,6 +6,7 @@ import { productVectorIcon, AdminIcon, MenuIcon, ProductsIcon, CoursesIcon, Cont
 import TrashPanel from './TrashPanel';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
+import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
@@ -2163,6 +2164,10 @@ function ThemeManagerEditor(){
 
  function SecurityEditor(){
   const vals=secVals; const setVal=secSetVal;
+  const [bioMsg,setBioMsg]=useState('');
+  const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');setBioMsg('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{setBioMsg('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
+  const disableBio=()=>{removeAdminBiometric();setBioMsg('ورود بیومتریک این دستگاه غیرفعال شد.');};
+  const logoutEverywhere=()=>{sessionStorage.removeItem('zk_admin_authed');setBioMsg('نشست این دستگاه بسته شد. برای خروج همه دستگاه‌ها، رمز عبور پنل را تغییر دهید.');};
   const savePhone=()=>{const v=vals.current;setSecErr('');if(v.curPh!==cfg.adminPhone){setSecErr('شماره تماس فعلی صحیح نیست');return}if(!v.newPh||v.newPh!==v.repPh){setSecErr('شماره تماس جدید با تکرار آن مطابقت ندارد');return}setSave({...cfg,adminPhone:v.newPh});vals.current={...vals.current,curPh:'',newPh:'',repPh:''};setClearKey(x=>x+1)};
   // اصلاح ۱۹: تغییر رمز عبور از داخل پنل مدیریت — فقط رمز ذخیره‌شده فعلی (یا رمز env اولیه) معتبر است
   const savePassword=()=>{
@@ -2189,6 +2194,12 @@ function ThemeManagerEditor(){
    <div style={{marginBottom:13}}><label style={S.lbl}>شماره تماس جدید</label><StableAdminInput key={clearKey+'-newPh'} numeric style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('newPh',v)}/></div>
    <div style={{marginBottom:13}}><label style={S.lbl}>تکرار شماره تماس جدید</label><StableAdminInput key={clearKey+'-repPh'} numeric style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('repPh',v)}/></div>
    <button style={AdminBtn()} onClick={savePhone}>ذخیره شماره جدید</button>
+   <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
+    <b style={{display:'block',color:T.ttl,marginBottom:6}}>ورود با اثر انگشت / Face ID</b>
+    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دستگاه فعلی: {hasAdminBiometric()?'فعال':'غیرفعال'}. اثر انگشت و چهره هرگز در سایت ذخیره نمی‌شوند.</p>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{hasAdminBiometric()?<button type="button" style={{...AdminBtn(),color:T.err}} onClick={disableBio}>غیرفعال‌سازی این دستگاه</button>:<button type="button" style={AdminBtn()} onClick={enableBio}>فعال‌سازی اثر انگشت / Face ID</button>}<button type="button" style={AdminBtn()} onClick={logoutEverywhere}>خروج از نشست‌ها</button></div>
+    {bioMsg&&<p style={{fontSize:11,color:T.acc,margin:'9px 0 0'}}>{bioMsg}</p>}
+   </div>
    <AdminInstallControl/>
   </Box>}
 
