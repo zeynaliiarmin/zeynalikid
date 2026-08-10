@@ -143,15 +143,29 @@ export default function AdminPanel({app}:{app:any}){
  // and restores it after.
  const openDetailsRef=useRef<Set<string>>(new Set());
  useEffect(()=>{
-  const onToggle=(e:Event)=>{const d=e.target as HTMLDetailsElement;const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt){if(d.open)openDetailsRef.current.add(txt);else openDetailsRef.current.delete(txt)}};
+  const getKey=(d:Element)=>{
+    const k=(d as HTMLElement).getAttribute('data-detail-key');
+    if(k) return k;
+    return (d.querySelector('summary')?.textContent||'').trim().substring(0,80);
+  };
+  const onToggle=(e:Event)=>{
+    const d=e.target as HTMLDetailsElement;
+    const k=getKey(d);
+    if(k){if(d.open)openDetailsRef.current.add(k);else openDetailsRef.current.delete(k)}
+  };
   document.addEventListener('toggle',onToggle,true);
   return()=>document.removeEventListener('toggle',onToggle,true);
  },[]);
- // Restore open details IMMEDIATELY after render — اکنون هم .admin-main و هم .zkad-content (پوشش تب‌های چندرسانه‌ای/تجربه والدین که داخل .zkad-content هستند)
+ // Restore open details IMMEDIATELY after render — اکنون با کلید پایدار data-detail-key
  useLayoutEffect(()=>{
+   const getKey=(d:Element)=>{
+     const k=(d as HTMLElement).getAttribute('data-detail-key');
+     if(k) return k;
+     return (d.querySelector('summary')?.textContent||'').trim().substring(0,80);
+   };
    document.querySelectorAll('.admin-main details, .zkad-content details').forEach((d:Element)=>{
-     const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);
-     if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}
+     const k=getKey(d);
+     if(k&&openDetailsRef.current.has(k)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}
    });
  });
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
@@ -1351,7 +1365,7 @@ function FAQEditor(){
   return <Box title="مدیریت هایلایت استوری (تجربه والدین / آموزش‌ها)">
    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر هایلایت یک دایره در بالای صفحات «تجربه والدین» و «آموزش‌ها» است. هر هایلایت شامل چند استوری (اسلاید) با دو کد دستی تصویر (خارجی/داخلی) می‌باشد.</p>
    {(editCfg.storyHighlights?.items||[]).length>0&&<div style={{marginBottom:12,padding:10,background:`${T.warn}18`,border:`1px solid ${T.warn}`,borderRadius:10,fontSize:12,color:T.warn}}>{editCfg.storyHighlights.items.length} استوری قدیمی موجود است. <button style={{...AdminBtn(),marginInlineStart:8}} onClick={migrateItems}>انتقال به ساختار جدید</button></div>}
-   {highlights.map((hl:any,hi:number)=><details key={hl.id||hi} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}>
+   {highlights.map((hl:any,hi:number)=><details key={hl.id||hi} data-detail-key={`hl-${hl.id||hi}`} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}>
     <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{hi+1}. {hl.title||'بدون عنوان'} ({(hl.stories||[]).length} استوری)</summary>
     <div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0'}}><label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={hl.active!==false} onChange={e=>chgHl(hi,'active',e.target.checked)}/> فعال</label></div>
     <Field label="عنوان هایلایت" value={hl.title||''} onChange={(v:string)=>chgHl(hi,'title',v)} ph=""/>
@@ -1522,7 +1536,7 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
   const isValidUrl=(u:string)=>{try{const p=new URL(String(u||'').trim());return p.protocol==='https:'||p.protocol==='http:'}catch{return false}};
   // اصلاح ۷: هر آیتم چندرسانه‌ای اکنون دو لینک مجزا دارد (یوتیوب برای VPN روشن، آپارات برای VPN خاموش)
   // و یک فیلد شماره تماس اختیاری که به‌صورت ماسک‌شده در کارت نمایش داده می‌شود.
-  return <Box title={title}>{list.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i+1}. {(it.type==='audio'?<ZkAudioIcon size={13}/>:it.type==='image'?<ZkImageIcon size={13}/>:it.type==='text'?<ZkDocIcon size={13}/>:<ZkVideoIcon size={13}/>)} {it.title||'بدون عنوان'}{it.active===false?' (غیرفعال)':''}</summary><div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0'}}><label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={it.active!==false} onChange={e=>chg(i,'active',e.target.checked)}/> فعال</label><select style={{...S.inp,flex:1}} value={it.type||'video'} onChange={e=>chg(i,'type',e.target.value)}>{typeOpts.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div><Field label="عنوان" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه تجربه والدین)</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.description||''} onBlur={e=>chg(i,'description',e.target.value)}/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه معرفی دوره‌ها)</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.descriptionCourses||''} onBlur={e=>chg(i,'descriptionCourses',e.target.value)}/><>{sectionKey==='education'&&<><label style={S.lbl}>کلمات کلیدی (با کاما یا ویرگول جدا کنید)</label><input style={{...S.inp,marginBottom:8}} defaultValue={(it.keywords||[]).join(', ')} onBlur={e=>chg(i,'keywords',e.target.value.split(/[,،]/).map((s:string)=>s.trim()).filter(Boolean))} placeholder="رشد قد, بی‌اشتهایی, هوش"/></>}</>{(it.type||'video')==='text'?<><label style={S.lbl}>متن کامل</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.body||''} onBlur={e=>chg(i,'body',e.target.value)}/></>:<>{/* اصلاح ۳۷: تفکیک پلتفرم‌ها بر اساس نوع محتوا */}
+  return <Box title={title}>{list.map((it:any,i:number)=><details key={it.id||i} data-detail-key={`ml-${sectionKey}-${it.id||i}`} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i+1}. {(it.type==='audio'?<ZkAudioIcon size={13}/>:it.type==='image'?<ZkImageIcon size={13}/>:it.type==='text'?<ZkDocIcon size={13}/>:<ZkVideoIcon size={13}/>)} {it.title||'بدون عنوان'}{it.active===false?' (غیرفعال)':''}</summary><div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0'}}><label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={it.active!==false} onChange={e=>chg(i,'active',e.target.checked)}/> فعال</label><select style={{...S.inp,flex:1}} value={it.type||'video'} onChange={e=>chg(i,'type',e.target.value)}>{typeOpts.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div><Field label="عنوان" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه تجربه والدین)</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.description||''} onBlur={e=>chg(i,'description',e.target.value)}/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه معرفی دوره‌ها)</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.descriptionCourses||''} onBlur={e=>chg(i,'descriptionCourses',e.target.value)}/><>{sectionKey==='education'&&<><label style={S.lbl}>کلمات کلیدی (با کاما یا ویرگول جدا کنید)</label><input style={{...S.inp,marginBottom:8}} defaultValue={(it.keywords||[]).join(', ')} onBlur={e=>chg(i,'keywords',e.target.value.split(/[,،]/).map((s:string)=>s.trim()).filter(Boolean))} placeholder="رشد قد, بی‌اشتهایی, هوش"/></>}</>{(it.type||'video')==='text'?<><label style={S.lbl}>متن کامل</label><textarea style={{...S.ta,marginBottom:8}} defaultValue={it.body||''} onBlur={e=>chg(i,'body',e.target.value)}/></>:<>{/* اصلاح ۳۷: تفکیک پلتفرم‌ها بر اساس نوع محتوا */}
    {(it.type||'video')==='video'&&<><label style={S.lbl}>کد دستی یوتیوب (VPN روشن)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.youtubeCode||it.manualCode||''} onBlur={e=>chg(i,'youtubeCode',e.target.value.trim())} placeholder='<iframe src="https://www.youtube.com/embed/..."></iframe>'/>
    <label style={S.lbl}>کد دستی آپارات (VPN خاموش)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.aparatCode||''} onBlur={e=>chg(i,'aparatCode',e.target.value.trim())} placeholder='<iframe src="https://www.aparat.com/..."></iframe>'/></>}
    {(it.type||'video')==='image'&&<><label style={S.lbl}>کد دستی تصویر خارجی (VPN روشن)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.externalCode||it.manualCode||''} onBlur={e=>chg(i,'externalCode',e.target.value.trim())} placeholder='<img src="https://..." /> یا لینک مستقیم'/>
@@ -1624,10 +1638,21 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
   const items:any[]=Array.isArray(rawCP)
     ? rawCP
     : (rawCP&&typeof rawCP==='object'?Object.values(rawCP):[]);
-  const upd=(newItems:any[])=>setEditCfg({...editCfg,customPlatforms:newItems});
-  const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};upd(a)};
-  const addPlatform=()=>upd([...items,{id:'cp'+uid(),name:'پلتفرم جدید',code:'',vpnRequired:false}]);
-  const removePlatform=(i:number)=>upd(items.filter((_:any,j:number)=>j!==i));
+  const upd=(newItems:any)=>setEditCfg((prev:any)=>({...prev, customPlatforms:newItems}));
+  const chg=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
+    const a=[...prevItems];
+    if(a[i]) a[i]={...a[i],[k]:v};
+    return {...prev, customPlatforms:a};
+  });
+  const addPlatform=()=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
+    return {...prev, customPlatforms:[...prevItems,{id:'cp'+uid(),name:'پلتفرم جدید',code:'',vpnRequired:false}]};
+  });
+  const removePlatform=(i:number)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
+    return {...prev, customPlatforms: prevItems.filter((_:any,j:number)=>j!==i)};
+  });
   return <Box title={<><ZkLinkIcon size={16} color={T.ttl}/> پلتفرم‌های سفارشی</>}>
    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>پلتفرم‌های سفارشی در کنار یوتیوب و آپارات برای هر آیتم محتوا قابل انتخاب هستند. هر پلتفرم دارای نام، کد embed و وضعیت VPN است.</p>
    {items.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.soft}}>
@@ -1708,7 +1733,7 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
    {typeSections.map(([type,sectionLabel,addLabel])=>{
     const filtered=items.filter((it:any)=>(it.type||'video')===type);
     const globalIndices=items.map((it:any,idx:number)=>(it.type||'video')===type?idx:-1).filter((idx:number)=>idx>=0);
-    return <details key={type} style={{marginBottom:10,background:T.badge,borderRadius:12,padding:10}}>
+    return <details key={type} data-detail-key={`media-${type}`} style={{marginBottom:10,background:T.badge,borderRadius:12,padding:10}}>
      <summary style={{cursor:'pointer',fontWeight:800}}>{sectionLabel} ({filtered.length})</summary>
      {filtered.map((it:any,localIdx:number)=>{
       const gi=globalIndices[localIdx];
