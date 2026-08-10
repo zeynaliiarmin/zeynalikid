@@ -41,6 +41,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   })();
 
   const title = isFa ? course.title : (course.titleEn || course.title);
+  const courseFaqs = ((isFa ? cfg?.courseTabFaqs : cfg?.courseTabFaqsEn) || []).filter((item: any) => item.tab === course.tabId);
   const desc = isFa ? course.desc : (course.descEn || course.desc);
 
   // Accordion state for syllabus
@@ -365,8 +366,8 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         )}
 
         {activeTab === 'faq' && (
-          <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>
-            {isFa ? 'سوالات متداول این دوره در بخش پایین صفحه لیست دوره‌ها نمایش داده می‌شود.' : 'Course FAQs are shown below the course list.'}
+          <div style={{ display: 'grid', gap: 8 }}>
+            {courseFaqs.length ? courseFaqs.map((item: any) => <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}><summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary><p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p></details>) : <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز سوال متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>}
           </div>
         )}
       </div>

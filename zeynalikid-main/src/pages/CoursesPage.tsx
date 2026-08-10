@@ -15,7 +15,7 @@ export default function CoursesPage({ app }: { app: any }) {
   const [filter, setFilter] = useState<'all' | 'growth' | 'appetite' | 'nutrition' | 'focus' | 'parenting' | 'discount'>('all');
 
   const activeTab = cfg.courseTabs?.find((t: any) => t.id === courseTab) || cfg.courseTabs?.[0];
-  const allCourses = (activeTab?.courses || []).filter((c: any) => c.active !== false);
+  const allCourses = (activeTab?.courses || []).filter((c: any) => c.active !== false).map((c: any) => ({ ...c, tabId: activeTab?.id }));
 
   // پشتیبانی از باز شدن مستقیم دوره هنگام انتخاب از صفحه اصلی (HomePage)
   useEffect(() => {

@@ -320,8 +320,30 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     }
   };
 
+  const FAQManagement = () => {
+    const fa:any[] = Array.isArray((cfg as any)?.faqItems) ? (cfg as any).faqItems : [];
+    const en:any[] = Array.isArray((cfg as any)?.faqItemsEn) ? (cfg as any).faqItemsEn : [];
+    const courseFa:any[] = Array.isArray((cfg as any)?.courseTabFaqs) ? (cfg as any).courseTabFaqs : [];
+    const courseEn:any[] = Array.isArray((cfg as any)?.courseTabFaqsEn) ? (cfg as any).courseTabFaqsEn : [];
+    const tabs:any[] = ((cfg as any)?.courseTabs || []).filter((t:any) => t.active !== false);
+    const commit = (patch:any, message:string) => { const next = {...(cfg as any), ...patch}; setEditCfg?.(next); saveCfg?.(next); showToast(message); };
+    const patch = (key:string, list:any[], index:number, value:any) => { const n=[...list]; n[index]={...n[index],...value}; setEditCfg?.({...cfg,[key]:n}); };
+    const move = (key:string,list:any[],i:number,d:-1|1) => { const j=i+d;if(j<0||j>=list.length)return;const n=[...list];[n[i],n[j]]=[n[j],n[i]];commit({[key]:n},'ترتیب سوال به‌روزرسانی شد.'); };
+    const card = (item:any,i:number,key:string,list:any[],course=false,enMode=false) => <div key={item.id||i} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:12,padding:10,background:T.card||'#fff',marginBottom:9}}>
+      {course && <><label style={{fontSize:11,fontWeight:800,color:T.mut}}>تب دوره (همگام با تب‌های فعال دوره‌ها)</label><select value={item.tab||tabs[0]?.id||''} onChange={e=>patch(key,list,i,{tab:e.target.value})} style={{...S.inp,margin:'4px 0 7px'}}>{tabs.map((t:any)=><option key={t.id} value={t.id}>{enMode?(t.titleEn||t.title):t.title}</option>)}</select></>}
+      {!course && <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:7,fontSize:11}}><b style={{color:T.mut}}>محل نمایش:</b><label><input type="checkbox" checked={!Array.isArray(item.placements)||item.placements.includes('home')} onChange={e=>patch(key,list,i,{placements:(e.target.checked?[...(Array.isArray(item.placements)?item.placements:[]),'home']:(Array.isArray(item.placements)?item.placements:['home','faq']).filter((x:string)=>x!=='home')).filter((x:string,j:number,a:string[])=>a.indexOf(x)===j)})}/> صفحه اصلی</label><label><input type="checkbox" checked={!Array.isArray(item.placements)||item.placements.includes('faq')} onChange={e=>patch(key,list,i,{placements:(e.target.checked?[...(Array.isArray(item.placements)?item.placements:[]),'faq']:(Array.isArray(item.placements)?item.placements:['home','faq']).filter((x:string)=>x!=='faq')).filter((x:string,j:number,a:string[])=>a.indexOf(x)===j)})}/> صفحه FAQ</label></div>}
+      <input dir={enMode?'ltr':undefined} value={item.question||''} onChange={e=>patch(key,list,i,{question:e.target.value})} placeholder={enMode?'Question':'متن سوال'} style={{...S.inp,marginBottom:6}} />
+      <textarea dir={enMode?'ltr':undefined} value={item.answer||''} onChange={e=>patch(key,list,i,{answer:e.target.value})} placeholder={enMode?'Answer':'متن پاسخ'} style={{...S.ta,minHeight:64}} />
+      <div style={{display:'flex',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'5px 9px'}} disabled={i===0} onClick={()=>move(key,list,i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'5px 9px'}} disabled={i===list.length-1} onClick={()=>move(key,list,i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'5px 9px',color:T.err||'#dc2626'}} onClick={()=>commit({[key]:list.filter((_:any,j:number)=>j!==i)},'سوال حذف شد.')}>حذف</button></div>
+    </div>;
+    const add=(key:string,list:any[],course=false,enMode=false)=>commit({[key]:[...list,{id:`faq_${Date.now()}_${Math.random().toString(36).slice(2,5)}`,tab:course?(tabs[0]?.id||'') : undefined,placements:course?undefined:['home','faq'],question:'',answer:''}]},'سوال جدید افزوده شد.');
+    return <Box title="مدیریت کامل سوالات متداول (FAQ)"><p style={{fontSize:12,lineHeight:1.9,color:T.mut,marginTop:0}}>تمام تنظیمات FAQ به این صفحه منتقل شده است. سوال‌های هر «تب دوره» برای تمام دوره‌های همان تب نمایش داده می‌شوند و فهرست انتخاب‌ها مستقیماً از تب‌های فعال صفحه دوره‌ها خوانده می‌شود.</p><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14}}><div><h4 style={{color:T.ttl}}>سوالات عمومی فارسی ({fa.length})</h4>{fa.map((x:any,i:number)=>card(x,i,'faqItems',fa,false))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItems',fa)}>+ افزودن سوال فارسی</button></div><div><h4 style={{color:T.ttl}}>General FAQ English ({en.length})</h4>{en.map((x:any,i:number)=>card(x,i,'faqItemsEn',en,false,true))}<button type="button" style={AdminBtn()} onClick={()=>add('faqItemsEn',en,false,true)}>+ Add English question</button></div><div><h4 style={{color:T.ttl}}>سوالات تب‌های دوره — فارسی ({courseFa.length})</h4>{courseFa.map((x:any,i:number)=>card(x,i,'courseTabFaqs',courseFa,true))}<button type="button" style={AdminBtn()} onClick={()=>add('courseTabFaqs',courseFa,true)}>+ افزودن FAQ دوره</button></div><div><h4 style={{color:T.ttl}}>Course-tab FAQs English ({courseEn.length})</h4>{courseEn.map((x:any,i:number)=>card(x,i,'courseTabFaqsEn',courseEn,true,true))}<button type="button" style={AdminBtn()} onClick={()=>add('courseTabFaqsEn',courseEn,true,true)}>+ Add course FAQ</button></div></div><button type="button" style={{...AdminBtn(),marginTop:14,background:T.acc||'#0f766e',color:'#fff',border:0}} onClick={()=>commit({},'تمام تغییرات FAQ ذخیره و منتشر شد.')}>ذخیره و انتشار همه سوالات متداول</button></Box>;
+  };
+
   return (
     <div>
+      <FAQManagement />
+
       {/* === بخش جدید: سوالات دستی پرتکرار === */}
       <Box title={`⭐ سوالات دستی پرتکرار والدین — ${manualList.length} سوال (مانند نظرات، دستی اضافه کنید)`}>
         <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.8, margin: '0 0 12px' }}>

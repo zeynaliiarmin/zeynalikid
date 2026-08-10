@@ -9,7 +9,7 @@ type FAQItem = { id: string; question: string; answer: string };
 
 export default function FAQPage({ app }: { app: any }) {
   const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
-  const items: FAQItem[] = (lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || [];
+  const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => !Array.isArray(item.placements) || item.placements.includes('faq'));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [askOpen, setAskOpen] = useState(false);
   const [query, setQuery] = useState('');
