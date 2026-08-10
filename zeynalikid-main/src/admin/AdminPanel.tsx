@@ -37,65 +37,27 @@ const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}cat
 const normRange=(age:any,g:any)=>{const t:any={2:{m:[78,85,92,9,12,15],f:[77,84,91,9,12,14]},3:{m:[88,95,103,11,14,18],f:[86,94,102,11,14,17]},4:{m:[95,103,111,12,16,21],f:[94,102,110,12,16,20]},5:{m:[102,110,118,13,18,23],f:[100,108,117,13,18,23]},6:{m:[107,116,126,15,21,27],f:[106,115,125,14,20,26]},7:{m:[112,122,132,16,23,30],f:[111,122,132,15,22,30]},8:{m:[116,127,138,16,25,35],f:[116,127,139,15,25,35]},9:{m:[121,133,144,17,28,39],f:[121,133,145,16,29,41]},10:{m:[126,138,150,19,32,45],f:[126,139,152,18,33,47]},11:{m:[130,144,157,20,36,51],f:[131,145,159,20,37,54]},12:{m:[134,149,164,22,40,58],f:[138,152,166,23,42,60]},13:{m:[141,156,172,24,45,66],f:[142,155,168,26,46,66]},14:{m:[149,163,178,28,51,73],f:[146,158,171,29,50,71]},15:{m:[156,169,182,34,57,80],f:[148,160,172,32,53,73]},16:{m:[160,173,186,39,62,84],f:[149,161,172,33,54,75]},17:{m:[163,175,187,43,65,87],f:[149,161,173,34,55,76]}};const a=Math.min(17,Math.max(2,Math.round(+p2e(age)||2)));const d=t[a]?.[g==='male'?'m':'f'];return d?{hMin:d[0],hMed:d[1],hMax:d[2],wMin:d[3],wMed:d[4],wMax:d[5]}:null};
 const growthStatus=(val:number,min:number,med:number,max:number)=>{const sd=(max-min)/4;if(val>=min+sd&&val<=max-sd)return {label:'نرمال',color:'#22c55e'};if(val>=min&&val<=max)return {label:'نزدیک به مرز',color:'#f97316'};const diff=val<min?min-val:val-max;if(diff<=sd*1.5)return {label:val<min?'زیر نرمال':'بالای نرمال',color:'#f97316'};return {label:val<min?'خیلی زیر نرمال':'خیلی بالای نرمال',color:'#ef4444'}};
 
-// scrollFocusStable removed
+// FIX: StableAdminInput با تاخیر در commit تا focus به فیلد بعدی منتقل شود (رفع fg دوبار کلیک)
+// علت fg: onBlur بلافاصله setState می‌کرد و رندر والد، focus بعدی را می‌دزدید
 const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter}:any){
   const ref=useRef<HTMLInputElement|null>(null);
   const handleChange=useCallback((e:any)=>{ if(numeric) e.target.value=p2e(e.target.value); },[numeric]);
-  const commit=useCallback(()=>onCommit?.(ref.current?.value||''),[onCommit]);
-  const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
-  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit}  onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
+  const commit=useCallback(()=>{
+    const val = ref.current?.value||'';
+    // تاخیر 0ms تا مرورگر ابتدا focus را به فیلد بعدی منتقل کند، سپس state آپدیت شود
+    setTimeout(()=>onCommit?.(val), 0);
+  },[onCommit]);
+  const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
+  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
 });
 
 function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'min(33vw, calc(100vw - 34px))',minWidth:180,maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
 
 export default function AdminPanel({app}:{app:any}){
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
- // FIX: Preserve <details> open state, scroll position, and focus across re-renders
- const _openDetails=useRef<Set<string>>(new Set());
- const _scrollPos=useRef(0);
- const _activeEl=useRef<{tag:string,label:string,ph:string}|null>(null);
- const _detailsKey=(d:Element)=>{
-  const s=(d.querySelector('summary')?.textContent||'').replace(/\s*\(\d+\)\s*$/,'').trim().substring(0,80);
-  return s;
- };
- useEffect(()=>{
-  const h=(e:Event)=>{
-   const d=e.target as HTMLDetailsElement;
-   const s=_detailsKey(d);
-   if(s){if(d.open)_openDetails.current.add(s);else _openDetails.current.delete(s)}
-  };
-  document.addEventListener('toggle',h,true);
-  return()=>document.removeEventListener('toggle',h,true);
- },[]);
- useLayoutEffect(()=>{
-  const m=document.querySelector('.admin-main')as HTMLElement|null;
-  if(m)_scrollPos.current=m.scrollTop;
- });
-// saveFocus listener removed — was causing focus to jump to previous input
- useLayoutEffect(()=>{
-  const m=document.querySelector('.admin-main')as HTMLElement|null;
-  if(m&&_scrollPos.current>0)m.scrollTop=_scrollPos.current;
-  document.querySelectorAll('.admin-main details').forEach(d=>{
-   const s=_detailsKey(d);
-   if(_openDetails.current.has(s))(d as HTMLDetailsElement).open=true;
-  });
-  if(_activeEl.current){
-   const els=document.querySelectorAll('.admin-main '+_activeEl.current.tag.toLowerCase());
-   for(let i=0;i<els.length;i++){
-    const el=els[i]as HTMLElement;
-    const lbl=(el.closest('div')?.querySelector('label')?.textContent||'').trim().substring(0,60);
-    const ph=el.getAttribute('placeholder')||'';
-    if(lbl===_activeEl.current!.label&&ph===_activeEl.current!.ph){
-     el.focus();
-     if(el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !['checkbox','radio','button','submit','file','image'].includes((el as HTMLInputElement).type))){
-      const len=(el as HTMLInputElement).value.length;
-      try{(el as HTMLInputElement).setSelectionRange(len,len);}catch{}
-     }
-     break;
-    }
-   }
-  }
- });
+ // FIX: حذف کامل preserve اسکرول/فوکوس قدیمی که باعث fg (دوبار کلیک) و sj (پرش صفحه) می‌شد
+ // علت: ذخیره/بازیابی scrollTop و focus به المنت قبلی، باعث می‌شد کلیک روی فیلد B ابتدا focus به A برگردد
+ // راه حل: فقط حفظ حالت باز بودن details از طریق openDetailsRef (پایین‌تر) کافی است؛ اسکرول و فوکوس به مرورگر سپرده می‌شود
 
  const goHome=()=>{try{app.setView('home')}catch{goToAppA()}};
  const [subs,setSubsState]=useState<any[]>(()=>getLS(SK.subs,[]));
@@ -106,7 +68,15 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
- const setEditCfgRaw=useCallback((u:any)=>{const content=document.querySelector('.zkad-content');const st=content?content.scrollTop:0;setEditCfgRawRaw(u);requestAnimationFrame(()=>{if(content)content.scrollTop=st})},[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
+ // FIX: Defer setEditCfg to next tick to fix fg (double-tap) and preserve scroll for sj
+ const setEditCfgRaw=useCallback((u:any)=>{
+   const el=document.querySelector('.zkad-content') as HTMLElement|null || document.querySelector('.admin-main') as HTMLElement|null;
+   const st=el?el.scrollTop:0;
+   setTimeout(()=>{
+     setEditCfgRawRaw(u);
+     requestAnimationFrame(()=>{ if(el) el.scrollTop=st; });
+   },0);
+ },[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
  const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
  // FIX: Preserve <details> open state across re-renders.
  // When setEditCfg triggers a re-render, React re-creates <details> elements
@@ -160,7 +130,17 @@ export default function AdminPanel({app}:{app:any}){
  const Err=useMemo(()=>({x}:{x:any})=><div className="zkad-err"><ZkWarnIcon size={13}/>{x}</div>,[]);
  const Tag=useMemo(()=>({x,tone='mut'}:{x:string,tone?:string})=><span className={`zkad-tag t-${tone}`}>{x}</span>,[]);
 // scrollFocus removed — was causing scroll jumps
-const Field=useMemo(()=>memo(function MemoField({label,value,onChange,ph,type='text',required=false}:any){const [local,setLocal]=useState(value??'');const inputRef=useRef<HTMLInputElement|null>(null);const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));useEffect(()=>setLocal(value??''),[value]);const handle=useCallback((e:any)=>setLocal(isNumeric?p2e(e.target.value):e.target.value),[isNumeric]);const commit=useCallback(()=>onChange(isNumeric?p2e(local):local),[onChange,local,isNumeric]);return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={inputRef} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handle} onBlur={commit}  placeholder={ph}/></div>}),[S,T.err]);
+// FIX: Field پایدار با کنترل مستقیم و بدون بافر local/onBlur — رفع fg دوبار کلیک
+const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:any)=>{
+  const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));
+  const handleChange=useCallback((e:any)=>{
+    const raw=e.target.value;
+    // برای فیلدهای عددی، فقط ارقام انگلیسی را نگه دار
+    const v=isNumeric?p2e(raw).replace(/[^0-9]/g,''):raw;
+    onChange(v);
+  },[onChange,isNumeric]);
+  return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={value??''} onChange={handleChange} placeholder={ph}/></div>;
+},[S,T.err]);
 
  function Admin(){
   // اصلاح ۱: state برای مودال «فرم‌های دیگر با این شماره تماس»
