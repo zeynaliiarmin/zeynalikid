@@ -1087,3 +1087,17 @@ body.admin-root .zkad-err {
   display: flex; align-items: center; gap: 5px;
   font-size: 11px; color: var(--zkad-err); margin-top: 5px; font-weight: 600;
 }
+
+/* Forms & orders redesign */
+body.admin-root .zkad-data-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--zkad-brd);border-radius:16px;background:linear-gradient(135deg,var(--zkad-card),var(--zkad-acc-soft));box-shadow:var(--zkad-shadow-sm)}
+body.admin-root .zkad-data-eyebrow{font-size:10px;font-weight:800;color:var(--zkad-acc)}
+body.admin-root .zkad-data-hero h3{margin:3px 0 0;font-size:17px;color:var(--zkad-txt)}
+body.admin-root .zkad-data-hero h3 small{font-size:11px;color:var(--zkad-mut);font-weight:600;margin-inline-start:6px}
+body.admin-root .zkad-refresh-btn{min-height:38px;padding:7px 12px;border:0;border-radius:11px;background:var(--zkad-acc);color:#fff;font:700 12px inherit;cursor:pointer;white-space:nowrap}
+body.admin-root .zkad-refresh-btn:disabled{opacity:.65}
+body.admin-root .zkad-filter-toggle{display:flex;gap:8px;align-items:center;margin:0 0 10px}
+body.admin-root .zkad-filter-toggle button{min-height:34px;padding:5px 11px;border:1px solid var(--zkad-brd);border-radius:10px;background:var(--zkad-card);color:var(--zkad-mut);font:700 11px inherit;cursor:pointer}
+body.admin-root .zkad-filter-toggle button:first-child{color:var(--zkad-acc);border-color:var(--zkad-acc)}
+body.admin-root .zkad-card{overflow:hidden}
+body.admin-root .zkad-row-head{min-height:68px}
+@media(max-width:640px){body.admin-root .zkad-data-hero{padding:12px}body.admin-root .zkad-toolbar-actions{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}body.admin-root .zkad-toolbtn{justify-content:center;padding:5px 6px}body.admin-root .zkad-row-head{padding:12px!important;gap:8px!important}}

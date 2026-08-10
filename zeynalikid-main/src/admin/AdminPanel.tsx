@@ -253,6 +253,9 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   // اصلاح ۱: state برای مودال «فرم‌های دیگر با این شماره تماس»
   const [modalSub,setModalSub]=useState<any>(null);
   const [dashFilter,setDashFilter]=useState<string|null>(null);
+  const [filtersOpen,setFiltersOpen]=useState(false);
+  const [refreshingSubs,setRefreshingSubs]=useState(false);
+  const refreshSubmissions=async()=>{setRefreshingSubs(true);try{const local=getLS(SK.subs,[]);if(isSupabaseConfigured){const cloud=await fetchSubmissions();const ids=new Set((cloud||[]).map((x:any)=>String(x.id)));setSubsState([...(cloud||[]),...local.filter((x:any)=>!ids.has(String(x.id)))])}else setSubsState(local);setMsg('فرم‌ها و سفارشات بروزرسانی شد.')}catch(e){console.warn(e);setMsg('بروزرسانی ناموفق بود.')}finally{setRefreshingSubs(false);setTimeout(()=>setMsg(''),2500)}};
   const [selectedIds,setSelectedIds]=useState<Set<any>>(new Set());
   const toggleSelect=(id:any)=> setSelectedIds(prev=>{const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n;});
   const toggleSelectAll=(ids:any[])=> setSelectedIds(prev=>{ const allSelected = ids.every((id:any)=> prev.has(id)); if(allSelected) { const n=new Set(prev); ids.forEach((id:any)=> n.delete(id)); return n; } else { const n=new Set(prev); ids.forEach((id:any)=> n.add(id)); return n; }});
@@ -474,6 +477,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
  </section>
 </div>
 {loadingSubs&&<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>}</>}{aTab==='data'&&<>{subs.length>1000&&<div className="zkad-tag t-warn" style={{marginBottom:10,fontSize:11,padding:'8px 10px'}}>برای نمایش همه فرم‌ها، از فیلتر استفاده کنید</div>}
+<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small>{faNum(groups.length)} پرونده</small></h3></div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
 <div className="zkad-toolbar">
  <div className="zkad-search"><ZkSearchIcon size={16}/><input placeholder="نام، شماره، کد پیگیری..." value={srch} onChange={e=>{setSrch(e.target.value);setPage(1)}} aria-label="جستجوی فرم‌ها"/></div>
  <div className="zkad-toolbar-actions">
@@ -483,13 +487,13 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   {filtersActive&&<button type="button" className="zkad-toolbtn" title="حذف فیلترها" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}
  </div>
 </div>
-<div className="zkad-chips-area">
+<div className="zkad-filter-toggle"><button type="button" onClick={()=>setFiltersOpen(v=>!v)}>{filtersOpen?"− بستن فیلترها":"+ فیلترها و تنظیمات خروجی"}{filtersActive&&<span> فعال</span>}</button>{filtersOpen&&<button type="button" onClick={clearFilters}>پاک‌کردن</button>}</div>{filtersOpen&&<div className="zkad-chips-area">
  <ChipGroup label="دسته‌بندی" options={cats} val={catF} set={v=>{setCatF(v);setPage(1)}}/>
  <ChipGroup label="وضعیت سفارش" options={['همه',...statusOptions]} val={statusF} set={v=>{setStatusF(v);setPage(1)}}/>
  <ChipGroup label="پرداخت" options={payOptions} val={payF} set={v=>{setPayF(v);setPage(1)}}/>
  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,width:'100%'}}><ChipGroup label="کشور" options={countriesF} val={countryF} set={v=>{setCountryF(v);setPage(1)}}/><div className="zkad-chipgroup"><span className="zkad-chipgroup-lbl">تاریخ ثبت</span><input className="zkad-datechip" placeholder="مثلاً ۱۴۰۴/۰۴" value={dateF} onChange={e=>{setDateF(e.target.value);setPage(1)}} aria-label="فیلتر تاریخ ثبت"/></div></div>
  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,width:'100%'}}><ChipGroup label="دوره" options={coursesF} val={courseF} set={v=>{setCourseF(v);setPage(1)}}/><label className="zkad-toolbtn" style={{display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>فرمت تصویر <select value={imageFormat} onChange={e=>setPersistentImageFormat(e.target.value as any)} style={{border:0,background:'transparent',fontFamily:'inherit',fontWeight:800}}><option value="webp">webp</option><option value="jpg">jpg</option></select></label></div>
-</div>{/* اصلاح ۱: فقط سرگروه (جدیدترین فرم) در لیست اصلی نمایش داده می‌شود؛ بقیه فرم‌های همان شماره از داخل خودِ کارت («فرم‌های دیگر با این شماره تماس») با کلیک در یک مودال مستقل باز می‌شوند — بدون نمایش تو رفته/زیرمجموعه در لیست اصلی */}<div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,padding:'8px 12px',background:'var(--zkad-card)',border:'1px solid var(--zkad-brd)',borderRadius:8}}>
+</div>}{/* اصلاح ۱: فقط سرگروه (جدیدترین فرم) در لیست اصلی نمایش داده می‌شود؛ بقیه فرم‌های همان شماره از داخل خودِ کارت («فرم‌های دیگر با این شماره تماس») با کلیک در یک مودال مستقل باز می‌شوند — بدون نمایش تو رفته/زیرمجموعه در لیست اصلی */}<div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,padding:'8px 12px',background:'var(--zkad-card)',border:'1px solid var(--zkad-brd)',borderRadius:8}}>
   <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,cursor:'pointer'}}><input type="checkbox" checked={isAllSelected} onChange={()=> toggleSelectAll(groups.map((g:any)=> g.head.id))}/> انتخاب همه ({faNum(groups.length)})</label>
   {selectedCount>0 && <span style={{fontSize:12,color:'var(--zkad-acc)',fontWeight:700}}>{faNum(selectedCount)} انتخاب شده</span>}
   {selectedCount>0 && <div style={{display:'flex',gap:6,marginInlineStart:'auto',flexWrap:'wrap'}}>
@@ -611,7 +615,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   <div onClick={mark} className="zkad-row-head" style={{padding:'12px 14px',cursor:'pointer',display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}><input type="checkbox" checked={selectedIds.has(sub.id)} onClick={(e:any)=>{e.stopPropagation(); toggleSelect(sub.id);}} onChange={()=>{}} style={{width:18,height:18,accentColor:'var(--zkad-acc)',cursor:'pointer'}}/>{needsReminder(sub)&&<span title="بیش از ۳ روز بدون پیگیری" style={{flexShrink:0,color:T.warn,display:'inline-flex',alignItems:'center'}}><ZkBellIcon size={15}/></span>}<div style={{flex:1,minWidth:130,display:'flex',flexDirection:'column',gap:2}}><b>{sub.pName||sub.shipping?.receiver||'—'}</b><span style={{fontSize:12,color:T.mut,direction:'ltr',textAlign:'right'}}>{sub.fullPhone||sub.shipping?.phone||sub.pPhone||'—'}</span></div><span className={`zkad-tag t-${statusTone(getStatus(sub))}`}>{getStatus(sub)}</span><span className="zkad-time">{fmtWhen(sub)}</span>{sub.trackingCode&&<span className="zkad-mono">{sub.trackingCode}</span>}{isChild&&<Tag x="فرم تکراری" tone="warn"/>}{groupCount>0&&<Tag x={`${groupCount} فرم دیگر با این شماره`} tone="info"/>}{sub.similarTo&&<Tag x="مشابه"/>}{sub.editHistory?.length>0&&<Tag x="ادیت شده"/>}{sub.priority==='high'&&<Tag x="اولویت زیاد" tone="err"/>}<button type="button" className="zkad-iconbtn t-err" title="حذف فرم" onClick={(e)=>{e.stopPropagation();if(confirm('حذف شود؟'))setSubs((s:any[])=>s.filter(x=>x.id!==sub.id))}}><ZkTrashIcon size={15}/></button><span style={{display:'inline-flex',color:T.mut}}>{open?<ZkChevronUpIcon size={14}/>:<ZkChevronDownIcon size={14}/>}</span></div>
   {open&&<div style={{padding:13,borderTop:`1px solid ${T.brd}`,fontSize:12,lineHeight:2,background:T.card}}>
    {/* نوار ۴ تب استاندارد */}
-   <div style={{display:'grid',gridTemplateColumns:`repeat(${tabs.length},1fr)`,gap:6,marginBottom:12}}>{tabs.map(([id,label])=><button key={id} onClick={()=>setSubTab(id)} style={{padding:'8px 4px',borderRadius:11,border:'none',background:subTab===id?T.soft:T.card,color:subTab===id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:11.5,fontWeight:700,boxShadow:subTab===id?T.neuIn:T.neuOut}}>{label}</button>)}</div>
+   <div style={{display:'grid',gridTemplateColumns:`repeat(${tabs.length},1fr)`,gap:6,marginBottom:12}}>{tabs.map(([id,label])=><button type="button" key={id} onClick={(e)=>{e.stopPropagation();setSubTab(id)}} style={{padding:'8px 4px',borderRadius:11,border:'none',background:subTab===id?T.soft:T.card,color:subTab===id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:11.5,fontWeight:700,boxShadow:subTab===id?T.neuIn:T.neuOut}}>{label}</button>)}</div>
 
    {/* تب ۱: اطلاعات فرزند */}
    {subTab==='parent'&&<div>
