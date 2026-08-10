@@ -348,12 +348,15 @@ export default function ConsultationPage({ app }: { app: any }) {
         };
 
         if (isSupabaseConfigured) {
-          createSubmission(entry as any).catch(e => {
+          try {
+            await createSubmission(entry as any);
+            setLastId(entry.id);
+          } catch (e) {
             console.warn('Could not save submission to Supabase, falling back to localStorage', e);
             const subs = getLS(SK.subs, []);
             setLS(SK.subs, [...subs, entry]);
-          });
-          setLastId(entry.id);
+            setLastId(entry.id);
+          }
         } else {
           const subs = getLS(SK.subs, []);
           setLS(SK.subs, [...subs, entry]);
