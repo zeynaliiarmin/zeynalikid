@@ -166,6 +166,9 @@ export default function AskQuestionForm({
   const [phone, setPhone] = useState('');
   const [question, setQuestion] = useState('');
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  // FIX: Stabilize VoiceRecorder callbacks (همان باگ ConsultationPage)
+  const handleVoiceRecorded = useCallback((blob: Blob) => setVoiceBlob(blob), []);
+  const handleVoiceRemoved = useCallback(() => setVoiceBlob(null), []);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -441,8 +444,8 @@ export default function AskQuestionForm({
                   T={T}
                   lang={lang}
                   maxDuration={90}
-                  onRecorded={(blob) => setVoiceBlob(blob)}
-                  onRemoved={() => setVoiceBlob(null)}
+                  onRecorded={handleVoiceRecorded}
+                  onRemoved={handleVoiceRemoved}
                 />
               </div>
 

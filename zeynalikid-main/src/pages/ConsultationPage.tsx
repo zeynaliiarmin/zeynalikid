@@ -155,6 +155,10 @@ export default function ConsultationPage({ app }: { app: any }) {
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const subsCacheRef = useRef<any[] | null>(null);
 
+  // FIX: Stabilize VoiceRecorder callbacks to prevent remounting / lost blob on parent re-render (فرم مشاوره)
+  const handleVoiceRecorded = useCallback((blob: Blob) => setVoiceBlob(blob), []);
+  const handleVoiceRemoved = useCallback(() => setVoiceBlob(null), []);
+
   // Exit guard
   const isDirty = fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0);
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
@@ -534,9 +538,10 @@ export default function ConsultationPage({ app }: { app: any }) {
         {cfg.formFields?.notes?.show !== false && <div style={{ marginTop: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 7 }}>
             <label style={{ fontSize: 14, color: T.mut, fontWeight: 700 }}>{publicText('notes', cfg.formFields?.notes?.label)}</label>
-            <VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={(blob: Blob) => setVoiceBlob(blob)} onRemoved={() => setVoiceBlob(null)} />
+            <VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved} />
           </div>
           <textarea style={LS.ta} value={fd.notes} onChange={e => setFd({ ...fd, notes: e.target.value })} placeholder={trVal(cfg.formFields?.notes?.placeholder)} />
+          {voiceBlob && <div style={{ fontSize: 11, color: '#059669', marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
         <p style={{ fontSize: 10, color: T.mut, textAlign: 'center' }}>{publicText('required', 'فیلدهای دارای * الزامی هستند')}</p>
