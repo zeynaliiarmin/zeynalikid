@@ -25,6 +25,34 @@ function Err({ err, theme: T }: ErrProps) {
 function labelCountryFn(c: any, l: Lang) { return `${getCountryFlag(c)} ${l === 'en' ? (c.nameEn || c.name) : c.name} ${c.code}`; }
 function shortCountryFn(c: any) { return `${getCountryFlag(c)} ${c.code}`; }
 
+// ─── Module-level components (stable identity, no remounting) ───
+function PlatformIcon({ type, color }: { type: string; color: string }) {
+  const paths: any = { phone: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z', whatsapp: 'M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5zM8.5 7.8c.2 3.7 3.1 6.4 6.7 6.8l1-1.7-2.2-1-1 1c-1.3-.5-2.2-1.4-2.8-2.7l1-1-1-2.2-1.7.8z', telegram: 'M21 4 3 11l6 2 2 6 10-15zM9 13l9-7-7 9', instagram: 'M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm6-1h.01', rubika: 'M12 2 22 8v8l-10 6L2 16V8l10-6zm0 4-6 3.5v5L12 18l6-3.5v-5L12 6z', bale: 'M4 4h16v11H8l-4 4V4z' };
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d={paths[type] || paths.phone} /></svg>;
+}
+
+function Popup({ open, onClose, trigger, children, width, T }: any) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [place, setPlace] = useState<'top' | 'bottom'>('bottom');
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() };
+    const calc = () => { const r = ref.current?.getBoundingClientRect(); if (r) { const below = window.innerHeight - r.bottom; setPlace(below < window.innerHeight * .38 && r.top > below ? 'top' : 'bottom') } };
+    calc(); document.addEventListener('mousedown', h); window.addEventListener('resize', calc); window.addEventListener('scroll', calc, true);
+    return () => { document.removeEventListener('mousedown', h); window.removeEventListener('resize', calc); window.removeEventListener('scroll', calc, true) };
+  }, [open, onClose]);
+  return <div ref={ref} style={{ position: 'relative' }}>{trigger}{open && <div style={{ position: 'absolute', top: place === 'bottom' ? 'calc(100% + 6px)' : 'auto', bottom: place === 'top' ? 'calc(100% + 6px)' : 'auto', left: 0, right: 'auto', zIndex: 3000, width: width || 260, maxWidth: 'min(33vw, calc(100vw - 34px))', minWidth: 180, maxHeight: '40vh', overflowY: 'auto', overflowX: 'hidden', background: T.pop, border: `1px solid ${T.brd}`, borderRadius: 16, boxShadow: '0 18px 48px rgba(0,0,0,.16)', padding: 8, animation: 'fadeSlide .3s ease both' }}>{children}</div>}</div>;
+}
+
+function ContactPanelLocal({ cfg, lang, T, publicText, digits }: any) {
+  const c = cfg.contacts || {};
+  const icons = cfg.contactIcons || {};
+  const custom = (c.custom || []).filter((x: any) => x.title && x.url).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+  const items = [c.phone && { key: 'phone', title: lang === 'en' ? 'Phone' : 'شماره تماس', url: `tel:${c.phone}`, value: c.phone }, c.whatsapp && { key: 'whatsapp', title: 'WhatsApp', url: `https://wa.me/${digits(c.whatsapp)}`, value: c.whatsapp }, c.telegram && { key: 'telegram', title: 'Telegram', url: `https://t.me/${String(c.telegram).replace('@', '')}`, value: c.telegram }, c.instagram && { key: 'instagram', title: 'Instagram', url: `https://instagram.com/${String(c.instagram).replace('@', '')}`, value: c.instagram }, c.rubika && { key: 'rubika', title: 'Rubika', url: `https://rubika.ir/${String(c.rubika).replace('@', '')}`, value: c.rubika }, c.bale && { key: 'bale', title: 'Bale', url: `https://ble.ir/${String(c.bale).replace('@', '')}`, value: c.bale }, ...custom.map((x: any) => ({ ...x, key: x.key || 'phone' }))].filter(Boolean);
+  if (!items.length) return null;
+  return <div style={{ marginTop: 12, padding: 12, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 14 }}><div style={{ fontWeight: 700, color: T.ttl, marginBottom: 9, fontSize: 13, display: 'flex', gap: 7, alignItems: 'center' }}><PlatformIcon type="phone" color={T.acc} />{publicText('contactUs', 'ارتباط با ما')}</div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 8 }}>{items.map((it: any, i: number) => { const color = it.color || icons[it.key]?.color || T.acc; return <a key={i} href={it.url} target={it.url?.startsWith('http') ? '_blank' : undefined} rel="noreferrer" style={{ textDecoration: 'none', padding: '10px 11px', borderRadius: 11, border: `1px solid ${color}55`, background: `${color}14`, color, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}><PlatformIcon type={it.key} color={color} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</span></a>; })}</div></div>;
+}
+
 export default function ConsultationPage({ app }: { app: any }) {
   const {
     cfg, T, S, css, lang, setLang, view, setView,
@@ -381,56 +409,8 @@ export default function ConsultationPage({ app }: { app: any }) {
   const labelCountry = labelCountryFn;
   const shortCountry = shortCountryFn;
 
-  function Popup({ open, onClose, trigger, children, width }: { open: boolean; onClose: () => void; trigger: any; children: any; width?: number | string }) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const [place, setPlace] = useState<'top' | 'bottom'>('bottom');
-    useEffect(() => {
-      if (!open) return;
-      const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() };
-      const calc = () => { const r = ref.current?.getBoundingClientRect(); if (r) { const below = window.innerHeight - r.bottom; setPlace(below < window.innerHeight * .38 && r.top > below ? 'top' : 'bottom') } };
-      calc();
-      document.addEventListener('mousedown', h);
-      window.addEventListener('resize', calc);
-      window.addEventListener('scroll', calc, true);
-      return () => { document.removeEventListener('mousedown', h); window.removeEventListener('resize', calc); window.removeEventListener('scroll', calc, true) };
-    }, [open, onClose]);
-    return <div ref={ref} style={{ position: 'relative' }}>{trigger}{open && <div style={{ position: 'absolute', top: place === 'bottom' ? 'calc(100% + 6px)' : 'auto', bottom: place === 'top' ? 'calc(100% + 6px)' : 'auto', left: 0, right: 'auto', zIndex: 3000, width: width || 260, maxWidth: 'min(33vw, calc(100vw - 34px))', minWidth: 180, maxHeight: '40vh', overflowY: 'auto', overflowX: 'hidden', background: T.pop, border: `1px solid ${T.brd}`, borderRadius: 16, boxShadow: '0 18px 48px rgba(0,0,0,.16)', padding: 8, animation: 'fadeSlide .3s ease both' }}>{children}</div>}</div>;
-  }
 
-  function PlatformIcon({ type, color }: { type: string; color: string }) {
-    const paths: Any = { phone: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z', whatsapp: 'M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5zM8.5 7.8c.2 3.7 3.1 6.4 6.7 6.8l1-1.7-2.2-1-1 1c-1.3-.5-2.2-1.4-2.8-2.7l1-1-1-2.2-1.7.8z', telegram: 'M21 4 3 11l6 2 2 6 10-15zM9 13l9-7-7 9', instagram: 'M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm6-1h.01', rubika: 'M12 2 22 8v8l-10 6L2 16V8l10-6zm0 4-6 3.5v5L12 18l6-3.5v-5L12 6z', bale: 'M4 4h16v11H8l-4 4V4z' };
-    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d={paths[type] || paths.phone} /></svg>;
-  }
 
-  function ContactPanelLocal() {
-    const c = cfg.contacts || {};
-    const icons = cfg.contactIcons || {};
-    const custom = (c.custom || []).filter((x: any) => x.title && x.url).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-    const items = [
-      c.phone && { key: 'phone', title: lang === 'en' ? 'Phone' : 'شماره تماس', url: `tel:${c.phone}`, value: c.phone },
-      c.whatsapp && { key: 'whatsapp', title: 'WhatsApp', url: `https://wa.me/${digits(c.whatsapp)}`, value: c.whatsapp },
-      c.telegram && { key: 'telegram', title: 'Telegram', url: `https://t.me/${String(c.telegram).replace('@', '')}`, value: c.telegram },
-      c.instagram && { key: 'instagram', title: 'Instagram', url: `https://instagram.com/${String(c.instagram).replace('@', '')}`, value: c.instagram },
-      c.rubika && { key: 'rubika', title: 'Rubika', url: `https://rubika.ir/${String(c.rubika).replace('@', '')}`, value: c.rubika },
-      c.bale && { key: 'bale', title: 'Bale', url: `https://ble.ir/${String(c.bale).replace('@', '')}`, value: c.bale },
-      ...custom.map((x: any) => ({ ...x, key: x.key || 'phone' }))
-    ].filter(Boolean);
-    if (!items.length) return null;
-    return <div style={{ marginTop: 12, padding: 12, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 14 }}>
-      <div style={{ fontWeight: 700, color: T.ttl, marginBottom: 9, fontSize: 13, display: 'flex', gap: 7, alignItems: 'center' }}>
-        <PlatformIcon type="phone" color={T.acc} />{publicText('contactUs', 'ارتباط با ما')}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 8 }}>
-        {items.map((it: any, i: number) => {
-          const color = it.color || icons[it.key]?.color || T.acc;
-          return <a key={i} href={it.url} target={it.url?.startsWith('http') ? '_blank' : undefined} rel="noreferrer" style={{ textDecoration: 'none', padding: '10px 11px', borderRadius: 11, border: `1px solid ${color}55`, background: `${color}14`, color, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}>
-            <PlatformIcon type={it.key} color={color} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</span>
-          </a>;
-        })}
-      </div>
-    </div>;
-  }
 
   // ─── Page-local styles (reuse app.S for base, add form-specific) ───
   const LS: any = useMemo(() => ({
@@ -668,7 +648,7 @@ export default function ConsultationPage({ app }: { app: any }) {
         </div>
 
         <p style={{ color: T.mut, fontSize: getTrustFontSize(String(successMsgRnd), 13), lineHeight: 2, margin: '8px 0 0', textAlign: 'right', background: T.soft, borderRadius: 12, padding: '9px 11px', boxShadow: T.neuIn, overflow: 'hidden' }}>{successMsgRnd}</p>
-        {showCt && showContactOnPage('consultSuccess') && <ContactPanelLocal />}
+        {showCt && showContactOnPage('consultSuccess') && <ContactPanelLocal cfg={cfg} lang={lang} T={T} publicText={publicText} digits={digits} />}
       </div>
       <div style={{ marginTop: 'auto', width: '100%', maxWidth: 600 }}>
         <Footer cfg={cfg} T={T} lang={lang} setView={setView} />
