@@ -1090,9 +1090,9 @@ ${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
    <Box title="عکس زبان فرزند (صفحه اطلاعات فرزند)">
     <label style={{display:'flex',alignItems:'center',gap:7,marginBottom:10,cursor:'pointer'}}><input type="checkbox" checked={!!editCfg.isTonguePhotoRequired} onChange={e=>up('isTonguePhotoRequired',e.target.checked)}/> اجباری بودن بارگذاری عکس زبان</label>
     <label style={S.lbl}>حداکثر حجم هر عکس (مگابایت)</label>
-    <input style={S.inp} inputMode="numeric" type="number" min={1} max={15} defaultValue={editCfg.maxTonguePhotoSizeMB||5} onBlur={e=>up('maxTonguePhotoSizeMB',Math.min(15,Math.max(1,+p2e(e.target.value)||5)))}/>
+    <StableAdminInput style={S.inp} inputMode="numeric" type="number" min={1} max={15} defaultValue={editCfg.maxTonguePhotoSizeMB||5} onCommit={(v:string)=>up('maxTonguePhotoSizeMB',Math.min(15,Math.max(1,+p2e(v)||5)))} numeric/>
     <label style={{...S.lbl,marginTop:10}}>حداکثر تعداد عکس‌ها</label>
-    <input style={S.inp} inputMode="numeric" type="number" min={1} max={10} defaultValue={editCfg.maxTonguePhotoCount||3} onBlur={e=>up('maxTonguePhotoCount',Math.min(10,Math.max(1,+p2e(e.target.value)||3)))}/>
+    <StableAdminInput style={S.inp} inputMode="numeric" type="number" min={1} max={10} defaultValue={editCfg.maxTonguePhotoCount||3} onCommit={(v:string)=>up('maxTonguePhotoCount',Math.min(10,Math.max(1,+p2e(v)||3)))} numeric/>
     <label style={{display:'flex',alignItems:'center',gap:7,marginTop:10,cursor:'pointer'}}><input type="checkbox" checked={editCfg.showTonguePhotoHint!==false} onChange={e=>up('showTonguePhotoHint',e.target.checked)}/> نمایش متن راهنما زیر عنوان بخش</label>
    </Box>
    {/* تنظیمات باکس معرفی کارشناس در صفحه دوره‌ها */}
@@ -1102,9 +1102,9 @@ ${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
      نمایش باکس کارشناس در صفحه معرفی دوره
     </label>
     <label style={S.lbl}>نام کارشناس</label>
-    <input style={{...S.inp,marginBottom:10}} defaultValue={editCfg.courseInstructor?.name||'آرمین زینالی'} onBlur={e=>up('courseInstructor',{...(editCfg.courseInstructor||{}),name:e.target.value})}/>
+    <StableAdminInput style={{...S.inp,marginBottom:10}} defaultValue={editCfg.courseInstructor?.name||'آرمین زینالی'} onCommit={(v:string)=>up('courseInstructor',{...(editCfg.courseInstructor||{}),name:v})} />
     <label style={S.lbl}>توضیحات و سمت کارشناس</label>
-    <textarea style={{...S.ta,minHeight:60}} defaultValue={editCfg.courseInstructor?.desc||'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onBlur={e=>up('courseInstructor',{...(editCfg.courseInstructor||{}),desc:e.target.value})} placeholder="متن سمت و تخصص کارشناس..."/>
+    <StableAdminTextarea style={{...S.ta,minHeight:60}} defaultValue={editCfg.courseInstructor?.desc||'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onCommit={(v:string)=>up('courseInstructor',{...(editCfg.courseInstructor||{}),desc:v})} placeholder="متن سمت و تخصص کارشناس..." rows={3}/>
    </Box>
    <ProductsEditor/>
    <CountryEditor/>
@@ -1124,32 +1124,32 @@ ${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
    <Field label="زیرعنوان خوش‌آمدگویی (انگلیسی)" value={editCfg.heroSubtitleEn||''} onChange={(v:string)=>up('heroSubtitleEn',v)} ph=""/>
   </Box>
   <Box title="متن صفحه درباره ما (دوزبانه)">
-   <label style={S.lbl}>متن فارسی</label><textarea style={S.ta} defaultValue={editCfg.aboutText||''} onBlur={e=>up('aboutText',e.target.value)} placeholder="متن صفحه درباره ما به فارسی..."/>
-   <label style={{...S.lbl,marginTop:10}}>متن انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.aboutTextEn||''} onBlur={e=>up('aboutTextEn',e.target.value)} placeholder="About us content in English..."/>
+   <label style={S.lbl}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutText||''} onCommit={(v:string)=>up('aboutText',v)} placeholder="متن صفحه درباره ما به فارسی..." rows={3}/>
+   <label style={{...S.lbl,marginTop:10}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutTextEn||''} onCommit={(v:string)=>up('aboutTextEn',v)} placeholder="About us content in English..." rows={3}/>
   </Box>
   {/* اصلاح ۳۲ (مرحله ۹): متن‌های سئوی سوال‌محور/کلیدواژه‌محور برای صفحات دوره‌ها، تجربه والدین، آموزش‌ها و درباره ما (دوزبانه) */}
   <Box title="متن‌های سئو در انتهای صفحات (دوزبانه)">
    <details style={{marginBottom:10}}>
     <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>معرفی دوره‌ها</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — فارسی</label><textarea style={S.ta} defaultValue={editCfg.coursesIntroText||''} onBlur={e=>up('coursesIntroText',e.target.value)} placeholder="متن سئوی کوتاه صفحه دوره‌ها به فارسی..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.coursesIntroTextEn||''} onBlur={e=>up('coursesIntroTextEn',e.target.value)} placeholder="Short SEO text for Courses page in English..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه، بین FAQ و ارتباط) — فارسی</label><textarea style={S.ta} defaultValue={editCfg.coursesSeoFullText||''} onBlur={e=>up('coursesSeoFullText',e.target.value)} placeholder="متن سئوی کامل پایین صفحه دوره‌ها به فارسی..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه) — انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.coursesSeoFullTextEn||''} onBlur={e=>up('coursesSeoFullTextEn',e.target.value)} placeholder="Full SEO text for bottom of Courses page in English..."/>
+    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesIntroText||''} onCommit={(v:string)=>up('coursesIntroText',v)} placeholder="متن سئوی کوتاه صفحه دوره‌ها به فارسی..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesIntroTextEn||''} onCommit={(v:string)=>up('coursesIntroTextEn',v)} placeholder="Short SEO text for Courses page in English..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه، بین FAQ و ارتباط) — فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesSeoFullText||''} onCommit={(v:string)=>up('coursesSeoFullText',v)} placeholder="متن سئوی کامل پایین صفحه دوره‌ها به فارسی..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه) — انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesSeoFullTextEn||''} onCommit={(v:string)=>up('coursesSeoFullTextEn',v)} placeholder="Full SEO text for bottom of Courses page in English..." rows={3}/>
    </details>
    <details style={{marginBottom:10}}>
     <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>تجربه والدین</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><textarea style={S.ta} defaultValue={editCfg.experienceIntroText||''} onBlur={e=>up('experienceIntroText',e.target.value)} placeholder="متن سئوی صفحه تجربه والدین به فارسی..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.experienceIntroTextEn||''} onBlur={e=>up('experienceIntroTextEn',e.target.value)} placeholder="Parents' experience page SEO text in English..."/>
+    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.experienceIntroText||''} onCommit={(v:string)=>up('experienceIntroText',v)} placeholder="متن سئوی صفحه تجربه والدین به فارسی..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.experienceIntroTextEn||''} onCommit={(v:string)=>up('experienceIntroTextEn',v)} placeholder="Parents' experience page SEO text in English..." rows={3}/>
    </details>
    <details style={{marginBottom:10}}>
     <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>آموزش‌ها</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><textarea style={S.ta} defaultValue={editCfg.educationIntroText||''} onBlur={e=>up('educationIntroText',e.target.value)} placeholder="متن سئوی صفحه آموزش‌ها به فارسی..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.educationIntroTextEn||''} onBlur={e=>up('educationIntroTextEn',e.target.value)} placeholder="Tutorials page SEO text in English..."/>
+    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.educationIntroText||''} onCommit={(v:string)=>up('educationIntroText',v)} placeholder="متن سئوی صفحه آموزش‌ها به فارسی..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.educationIntroTextEn||''} onCommit={(v:string)=>up('educationIntroTextEn',v)} placeholder="Tutorials page SEO text in English..." rows={3}/>
    </details>
    <details>
     <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>درباره ما</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><textarea style={S.ta} defaultValue={editCfg.aboutIntroText||''} onBlur={e=>up('aboutIntroText',e.target.value)} placeholder="متن سئوی صفحه درباره ما به فارسی..."/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><textarea style={S.ta} defaultValue={editCfg.aboutIntroTextEn||''} onBlur={e=>up('aboutIntroTextEn',e.target.value)} placeholder="About page SEO text in English..."/>
+    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutIntroText||''} onCommit={(v:string)=>up('aboutIntroText',v)} placeholder="متن سئوی صفحه درباره ما به فارسی..." rows={3}/>
+    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutIntroTextEn||''} onCommit={(v:string)=>up('aboutIntroTextEn',v)} placeholder="About page SEO text in English..." rows={3}/>
    </details>
   </Box>
   {/* اصلاح ۳۲ (مرحله ۹): مدیریت کامل سوالات متداول (FAQ) — دوزبانه، افزودن/ویرایش/حذف/تغییر ترتیب + تنظیمات نمایش در صفحه اصلی */}
@@ -1418,7 +1418,7 @@ function FAQEditor(){
    <button style={{...S.btn,marginTop:10}} onClick={()=>setSave(editCfg)}>ذخیره هایلایت استوری</button>
   </Box>;
  }
- function CountryEditor(){return <Box title="مدیریت کدهای کشور">{editCfg.countryCodes.map((c:any,i:number)=><div key={c.id} style={{display:'grid',gridTemplateColumns:'85px 1fr 80px 1.4fr 45px',gap:6,marginBottom:6}}><div style={{display:'flex',gap:4,alignItems:'center'}}><span style={{fontSize:20}}>{getCountryFlag(c)}</span><input style={{...S.inp,flex:1}} defaultValue={c.flag} onBlur={e=>chgCountry(i,'flag',e.target.value)}/></div><input style={S.inp} defaultValue={c.name} onBlur={e=>chgCountry(i,'name',e.target.value)}/><input style={S.inp} defaultValue={c.code} onBlur={e=>chgCountry(i,'code',p2e(e.target.value))}/><input style={S.inp} defaultValue={c.regex} onBlur={e=>chgCountry(i,'regex',e.target.value)}/><button className="zkad-iconbtn t-err" title="حذف کشور" disabled={c.locked} onClick={()=>setEditCfg({...editCfg,countryCodes:editCfg.countryCodes.filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,countryCodes:[...editCfg.countryCodes,{id:'c'+uid(),name:'کشور جدید',code:'+0',flag:'',regex:'^\\d{7,}$'}]})}><ZkPlusIcon size={13}/> افزودن کشور</button></Box>}
+ function CountryEditor(){return <Box title="مدیریت کدهای کشور">{editCfg.countryCodes.map((c:any,i:number)=><div key={c.id} style={{display:'grid',gridTemplateColumns:'85px 1fr 80px 1.4fr 45px',gap:6,marginBottom:6}}><div style={{display:'flex',gap:4,alignItems:'center'}}><span style={{fontSize:20}}>{getCountryFlag(c)}</span><StableAdminInput style={{...S.inp,flex:1}} defaultValue={c.flag} onCommit={(v:string)=>chgCountry(i,'flag',v)}/></div><StableAdminInput style={S.inp} defaultValue={c.name} onCommit={(v:string)=>chgCountry(i,'name',v)}/><StableAdminInput style={S.inp} defaultValue={c.code} onCommit={(v:string)=>chgCountry(i,'code',p2e(v))}/><StableAdminInput style={S.inp} defaultValue={c.regex} onCommit={(v:string)=>chgCountry(i,'regex',v)}/><button className="zkad-iconbtn t-err" title="حذف کشور" disabled={c.locked} onClick={()=>setEditCfg({...editCfg,countryCodes:editCfg.countryCodes.filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,countryCodes:[...editCfg.countryCodes,{id:'c'+uid(),name:'کشور جدید',code:'+0',flag:'',regex:'^\\d{7,}$'}]})}><ZkPlusIcon size={13}/> افزودن کشور</button></Box>}
  function chgCountry(i:number,k:string,v:any){const a=[...editCfg.countryCodes];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,countryCodes:a})}
  function ContactsEditor(){const custom=editCfg.contacts.custom||[];const updCustom=(i:number,k:string,v:any)=>{const a=[...custom];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})};return <><Box title="اطلاعات تماس">{['phone','whatsapp','telegram','instagram','rubika','bale'].map(k=><Field key={k} label={k} value={editCfg.contacts[k]||''} onChange={(v:string)=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,[k]:v}})} ph=""/>)}<h4>نمایش در صفحات</h4>{Object.keys(editCfg.contactVisibility).map(k=><label key={k} style={{display:'block',marginBottom:6}}><input type="checkbox" checked={!!editCfg.contactVisibility[k]} onChange={e=>setEditCfg({...editCfg,contactVisibility:{...editCfg.contactVisibility,[k]:e.target.checked}})}/> {k}</label>)}</Box><Box title="مدیریت راه‌های ارتباطی">{custom.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><input style={S.inp} defaultValue={it.title||''} onBlur={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان"/><input style={S.inp} defaultValue={it.url||''} onBlur={e=>updCustom(i,'url',e.target.value)} placeholder="URL"/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}><input type="color" style={{...S.inp,height:44,padding:4}} value={it.color||'#2564a8'} onChange={e=>updCustom(i,'color',e.target.value)}/><label className="zkad-drop" onDragOver={e=>e.preventDefault()} onDrop={async e=>{e.preventDefault();const f=e.dataTransfer.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}><ZkUploadIcon size={20}/><span>برای آپلود آیکون کلیک کنید یا فایل را بکشید</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}/></label></div><div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}><button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...custom];[a[i-1],a[i]]=[a[i],a[i-1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>بالا</button><button style={AdminBtn()} onClick={()=>{if(i<custom.length-1){const a=[...custom];[a[i+1],a[i]]=[a[i],a[i+1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>پایین</button><button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:custom.filter((_:any,j:number)=>j!==i)}})}>حذف</button></div></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:[...custom,{id:'ct'+uid(),title:'راه ارتباطی جدید',url:'',color:'#2564a8',order:custom.length+1}]}})}><ZkPlusIcon size={13}/> افزودن راه ارتباطی</button></Box><Box title="مدیریت آیکون‌های ارتباط با ما">{Object.keys(editCfg.contactIcons||{}).map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'120px 1fr',gap:8,marginBottom:8,alignItems:'center'}}><label>{k}</label><input type="color" style={{...S.inp,height:44,padding:4}} value={editCfg.contactIcons[k]?.color||'#2564a8'} onChange={e=>setEditCfg({...editCfg,contactIcons:{...editCfg.contactIcons,[k]:{...(editCfg.contactIcons[k]||{}),color:e.target.value}}})}/></div>)}</Box><button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
 
@@ -1607,11 +1607,11 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
           <span style={{fontSize:11,color:T.mut}}>ترتیب: {it.order||i+1}</span>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'70px 1fr',gap:8,marginBottom:8}}>
-          <input style={S.inp} defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value)} placeholder="آیکون"/>
-          <input style={S.inp} defaultValue={it.name||''} onBlur={e=>chg(i,'name',e.target.value)} placeholder="نام محصول - مثلا داینامین"/>
+          <StableAdminInput style={S.inp} defaultValue={it.icon||''} onCommit={(v:string)=>chg(i,'icon',v)} placeholder="آیکون"/>
+          <StableAdminInput style={S.inp} defaultValue={it.name||''} onCommit={(v:string)=>chg(i,'name',v)} placeholder="نام محصول - مثلا داینامین"/>
         </div>
         <label style={S.lbl}>توضیحات محصول</label>
-        <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||''} onBlur={e=>chg(i,'description',e.target.value)} placeholder="توضیحات کامل محصول..."/>
+        <StableAdminTextarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||''} onCommit={(v:string)=>chg(i,'description',v)} placeholder="توضیحات کامل محصول..." rows={3}/>
 
         <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label>
         <textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="جذب سریع | مناسب برای رشد | ..."/>
@@ -1630,7 +1630,7 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
             }
           }}/>
         </div>
-        <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onBlur={e=>chg(i,'image',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
+        <StableAdminInput style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onCommit={(v:string)=>chg(i,'image',v.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
 
         <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
           <button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...list];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowUpIcon size={13}/> بالا</button>
