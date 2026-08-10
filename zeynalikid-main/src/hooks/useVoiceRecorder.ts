@@ -19,13 +19,16 @@ function getSupportedMimeType(): string {
     'audio/webm;codecs=opus',
     'audio/webm',
     'audio/mp4',
+    'audio/ogg;codecs=opus',
     'audio/ogg'
   ];
   if (typeof MediaRecorder === 'undefined') return '';
   for (const type of types) {
-    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
-      return type;
-    }
+    try {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    } catch {}
   }
   return '';
 }
@@ -45,7 +48,11 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      try {
+        streamRef.current.getTracks().forEach(track => {
+          try { track.stop(); } catch {}
+        });
+      } catch {}
       streamRef.current = null;
     }
   }, []);
@@ -55,15 +62,18 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    // اگر در حال ضبط است، توقف را بدون ایجاد blob انجام بده
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try { mediaRecorderRef.current.ondataavailable = null; } catch {}
+      try { mediaRecorderRef.current.onstop = null; } catch {}
       try { mediaRecorderRef.current.stop(); } catch {}
     }
+    mediaRecorderRef.current = null;
+    chunksRef.current = [];
     stopStream();
     if (audioUrl) {
       try { URL.revokeObjectURL(audioUrl); } catch {}
     }
-    mediaRecorderRef.current = null;
-    chunksRef.current = [];
     setDuration(0);
     setAudioBlob(null);
     setAudioUrl(null);
@@ -76,10 +86,23 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try { mediaRecorderRef.current.stop(); } catch {}
+    const rec = mediaRecorderRef.current;
+    if (rec && rec.state === 'recording') {
+      try {
+        // درخواست داده نهایی قبل از توقف — برای مرورگرهایی که chunk نهایی را فقط با requestData می‌دهند
+        if (typeof rec.requestData === 'function') {
+          try { rec.requestData(); } catch {}
+        }
+      } catch {}
+      try { rec.stop(); } catch (e) {
+        console.warn('MediaRecorder stop failed', e);
+      }
+      // استریم را اینجا نمی‌بندیم — onstop خودش بعد از ساخت blob خواهد بست
+      // تا داده‌ها از دست نروند
+    } else {
+      // اگر رکوردر فعال نیست، فقط استریم را ببند
+      stopStream();
     }
-    stopStream();
   }, [stopStream]);
 
   const startRecording = useCallback(async () => {
@@ -90,6 +113,7 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
     }
 
     try {
+      // پاکسازی قبلی
       if (audioUrl) {
         try { URL.revokeObjectURL(audioUrl); } catch {}
       }
@@ -97,39 +121,89 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
       setAudioUrl(null);
       setError(null);
       setDuration(0);
+      chunksRef.current = [];
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        } as any
+      });
       streamRef.current = stream;
 
       const mimeType = getSupportedMimeType();
       const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
-      const recorder = new MediaRecorder(stream, options);
+      
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        // fallback بدون mimeType
+        recorder = new MediaRecorder(stream);
+      }
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
+      recorder.ondataavailable = (e: BlobEvent) => {
+        // حتی اگر size کوچک باشد، نگه می‌داریم — بعداً فیلتر می‌کنیم
+        if (e.data) {
           chunksRef.current.push(e.data);
         }
       };
 
       recorder.onstop = () => {
-        const finalType = mimeType || 'audio/webm';
-        const blob = new Blob(chunksRef.current, { type: finalType });
-        const url = URL.createObjectURL(blob);
-        setAudioBlob(blob);
-        setAudioUrl(url);
-        setState('recorded');
-        stopStream();
+        try {
+          // اگر هیچ chunk نداریم یا همه خالی هستند
+          const validChunks = chunksRef.current.filter(c => c && c.size > 0);
+          if (validChunks.length === 0) {
+            setError('صدایی ضبط نشد. لطفاً دوباره تلاش کنید و مطمئن شوید میکروفون فعال است.');
+            setState('error');
+            stopStream();
+            return;
+          }
+          // نوع blob را از mimeType انتخاب‌شده یا از اولین chunk بگیر
+          const blobType = mimeType || validChunks[0]?.type || 'audio/webm';
+          const blob = new Blob(validChunks, { type: blobType });
+          
+          if (blob.size < 100) { // کمتر از 100 بایت یعنی تقریباً خالی
+            setError('فایل صوتی خیلی کوتاه است. لطفاً حداقل ۱ ثانیه صحبت کنید.');
+            setState('error');
+            stopStream();
+            return;
+          }
+
+          const url = URL.createObjectURL(blob);
+          setAudioBlob(blob);
+          setAudioUrl(url);
+          setState('recorded');
+        } catch (e: any) {
+          console.warn('onstop blob creation failed', e);
+          setError('خطا در ذخیره صدا. لطفاً دوباره تلاش کنید.');
+          setState('error');
+        } finally {
+          // حالا استریم را ببند
+          stopStream();
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+        }
       };
 
       recorder.onerror = (e: any) => {
+        console.warn('MediaRecorder error', e);
         setError(e?.error?.message || 'خطا در ضبط صدا');
         setState('error');
         stopStream();
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
       };
 
-      recorder.start(250);
+      // درخواست داده هر 200ms — مقدار بهینه برای حافظه و دقت
+      recorder.start(200);
       setState('recording');
       startTimeRef.current = Date.now();
 
@@ -137,36 +211,62 @@ export default function useVoiceRecorder(maxDuration: number = MAX_DURATION): Us
       timerRef.current = setInterval(() => {
         const elapsed = (Date.now() - startTimeRef.current) / 1000;
         if (elapsed >= maxDuration) {
+          // زمان به پایان رسید — توقف خودکار
           if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
           }
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            try { mediaRecorderRef.current.stop(); } catch {}
+          const r = mediaRecorderRef.current;
+          if (r && r.state === 'recording') {
+            try { 
+              if (typeof r.requestData === 'function') try { r.requestData(); } catch {}
+              r.stop(); 
+            } catch {}
           }
-          stopStream();
+          // onstop خودش stopStream را انجام می‌دهد
         } else {
           setDuration(Math.floor(elapsed));
         }
       }, 100);
 
     } catch (err: any) {
-      setError(err?.message || 'دسترسی به میکروفون داده نشد یا دستگاه پشتیبانی نمی‌شود.');
+      let msg = 'دسترسی به میکروفون داده نشد یا دستگاه پشتیبانی نمی‌شود.';
+      const errName = err?.name || '';
+      const errMsg = String(err?.message || '').toLowerCase();
+      if (errName === 'NotAllowedError' || errMsg.includes('permission') || errMsg.includes('denied')) {
+        msg = 'دسترسی به میکروفون رد شد. لطفاً در تنظیمات مرورگر اجازه میکروفون را فعال کنید.';
+      } else if (errName === 'NotFoundError' || errMsg.includes('not found')) {
+        msg = 'میکروفونی یافت نشد. لطفاً اتصال میکروفون را بررسی کنید.';
+      } else if (errName === 'NotReadableError' || errMsg.includes('readable')) {
+        msg = 'میکروفون در حال استفاده توسط برنامه دیگری است.';
+      }
+      setError(msg);
       setState('error');
       stopStream();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   }, [audioUrl, maxDuration, stopStream]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — بدون وابستگی به audioUrl برای جلوگیری از stale closure
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        try { mediaRecorderRef.current.stop(); } catch {}
+      // در unmount، رکوردر را بی‌صدا متوقف کن
+      const rec = mediaRecorderRef.current;
+      if (rec && rec.state === 'recording') {
+        try { rec.ondataavailable = null; } catch {}
+        try { rec.onstop = null; } catch {}
+        try { rec.stop(); } catch {}
       }
-      stopStream();
+      if (streamRef.current) {
+        try { streamRef.current.getTracks().forEach(t => { try{t.stop()}catch{} }); } catch {}
+        streamRef.current = null;
+      }
     };
-  }, [stopStream]);
+  }, []);
 
   return {
     state,
