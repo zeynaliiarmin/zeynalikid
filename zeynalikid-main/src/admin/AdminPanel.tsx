@@ -37,15 +37,23 @@ const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}cat
 const normRange=(age:any,g:any)=>{const t:any={2:{m:[78,85,92,9,12,15],f:[77,84,91,9,12,14]},3:{m:[88,95,103,11,14,18],f:[86,94,102,11,14,17]},4:{m:[95,103,111,12,16,21],f:[94,102,110,12,16,20]},5:{m:[102,110,118,13,18,23],f:[100,108,117,13,18,23]},6:{m:[107,116,126,15,21,27],f:[106,115,125,14,20,26]},7:{m:[112,122,132,16,23,30],f:[111,122,132,15,22,30]},8:{m:[116,127,138,16,25,35],f:[116,127,139,15,25,35]},9:{m:[121,133,144,17,28,39],f:[121,133,145,16,29,41]},10:{m:[126,138,150,19,32,45],f:[126,139,152,18,33,47]},11:{m:[130,144,157,20,36,51],f:[131,145,159,20,37,54]},12:{m:[134,149,164,22,40,58],f:[138,152,166,23,42,60]},13:{m:[141,156,172,24,45,66],f:[142,155,168,26,46,66]},14:{m:[149,163,178,28,51,73],f:[146,158,171,29,50,71]},15:{m:[156,169,182,34,57,80],f:[148,160,172,32,53,73]},16:{m:[160,173,186,39,62,84],f:[149,161,172,33,54,75]},17:{m:[163,175,187,43,65,87],f:[149,161,173,34,55,76]}};const a=Math.min(17,Math.max(2,Math.round(+p2e(age)||2)));const d=t[a]?.[g==='male'?'m':'f'];return d?{hMin:d[0],hMed:d[1],hMax:d[2],wMin:d[3],wMed:d[4],wMax:d[5]}:null};
 const growthStatus=(val:number,min:number,med:number,max:number)=>{const sd=(max-min)/4;if(val>=min+sd&&val<=max-sd)return {label:'نرمال',color:'#22c55e'};if(val>=min&&val<=max)return {label:'نزدیک به مرز',color:'#f97316'};const diff=val<min?min-val:val-max;if(diff<=sd*1.5)return {label:val<min?'زیر نرمال':'بالای نرمال',color:'#f97316'};return {label:val<min?'خیلی زیر نرمال':'خیلی بالای نرمال',color:'#ef4444'}};
 
-// FIX: StableAdminInput با تاخیر در commit تا focus به فیلد بعدی منتقل شود (رفع fg دوبار کلیک)
-// علت fg: onBlur بلافاصله setState می‌کرد و رندر والد، focus بعدی را می‌دزدید
+// FIX: StableAdminInput با تاخیر در commit و حفظ فوکوس — رفع fg انتخاب سریع و سپس لغو
+// علت جدید: بعد از کلیک A->B، B ابتدا انتخاب سپس سریع لغو می‌شد — چون commit قبلی بدون حفظ activeElement، رندر والد فوکوس B را می‌دزدید
 const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter}:any){
   const ref=useRef<HTMLInputElement|null>(null);
   const handleChange=useCallback((e:any)=>{ if(numeric) e.target.value=p2e(e.target.value); },[numeric]);
   const commit=useCallback(()=>{
     const val = ref.current?.value||'';
-    // تاخیر 0ms تا مرورگر ابتدا focus را به فیلد بعدی منتقل کند، سپس state آپدیت شود
-    setTimeout(()=>onCommit?.(val), 0);
+    const active=document.activeElement as HTMLElement|null;
+    const wasInput = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA');
+    setTimeout(()=>{
+      onCommit?.(val);
+      if(wasInput && active!==ref.current){
+        requestAnimationFrame(()=>{
+          try{ (active as HTMLElement).focus({preventScroll:true} as any); const inp=active as HTMLInputElement; if(inp.setSelectionRange){ const len=inp.value.length; try{inp.setSelectionRange(len,len);}catch{} } }catch{}
+        });
+      }
+    }, 0);
   },[onCommit]);
   const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
   return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
@@ -68,13 +76,64 @@ export default function AdminPanel({app}:{app:any}){
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
- // FIX: Defer setEditCfg to next tick to fix fg (double-tap) and preserve scroll for sj
+ // FIX: Defer setEditCfg + حفظ کامل اسکرول و فوکوس — رفع sj (پرش) و fg (انتخاب سپس لغو)
+ // قبلی فقط .zkad-content/.admin-main را حفظ می‌کرد و در تب‌ها/لیست‌ها همچنان پرش دیده می‌شد
+ // اکنون: تمام اسکرول‌های window + کانتینرهای اسکرول‌پذیر + فوکوس فعال را ذخیره و بعد از رندر با rAF برمی‌گردانیم
  const setEditCfgRaw=useCallback((u:any)=>{
-   const el=document.querySelector('.zkad-content') as HTMLElement|null || document.querySelector('.admin-main') as HTMLElement|null;
-   const st=el?el.scrollTop:0;
+   const active=document.activeElement as HTMLElement|null;
+   const activeIsText = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || (active as any).isContentEditable);
+   const activeRect = activeIsText ? active!.getBoundingClientRect() : null;
+   // ذخیره اسکرول window + تمام کانتینرهای ممکن
+   const scrollSnap:Array<{el: any, top:number, left:number}> = [];
+   try{ scrollSnap.push({el: window, top: window.scrollY, left: window.scrollX}); }catch{}
+   const selectors = ['.zkad-content','.admin-main','.admin-root','.zkad-panel-card','[data-scroll]'];
+   const seen=new Set<Element>();
+   selectors.forEach(sel=>{
+     document.querySelectorAll(sel).forEach((el:any)=>{
+       if(seen.has(el)) return; seen.add(el);
+       try{ if(el.scrollTop||el.scrollLeft) scrollSnap.push({el, top: el.scrollTop, left: el.scrollLeft}); }catch{}
+     });
+   });
+   // اگر هیچکدام اسکرول نداشت ولی کانتینر اصلی صفر بود، آن را هم ذخیره کن تا قبل از پرش بگیریم
+   if(!scrollSnap.find(s=> s.el!==window && (s.el as HTMLElement).classList?.contains('zkad-content'))){
+     const z=document.querySelector('.zkad-content') as HTMLElement|null;
+     if(z) scrollSnap.push({el: z, top: z.scrollTop, left: z.scrollLeft});
+   }
+   if(!scrollSnap.find(s=> s.el!==window && (s.el as HTMLElement).classList?.contains('admin-main'))){
+     const m=document.querySelector('.admin-main') as HTMLElement|null;
+     if(m) scrollSnap.push({el: m, top: m.scrollTop, left: m.scrollLeft});
+   }
+   const restore=()=>{
+     scrollSnap.forEach(s=>{
+       try{
+         if(s.el===window) window.scrollTo(s.left, s.top);
+         else (s.el as HTMLElement).scrollTop=s.top, (s.el as HTMLElement).scrollLeft=s.left;
+       }catch{}
+     });
+     if(activeIsText && active && document.activeElement!==active){
+       try{
+         // فقط اگر المنت هنوز در DOM است و قابل فوکوس است
+         if(document.contains(active)){
+           (active as HTMLElement).focus({preventScroll:true} as any);
+           if(activeRect){
+             // جلوگیری از پرش ناشی از focus
+             window.scrollTo(scrollSnap.find(s=>s.el===window)?.left||0, scrollSnap.find(s=>s.el===window)?.top||0);
+           }
+           const inp=active as HTMLInputElement;
+           if(inp.setSelectionRange && (inp.tagName==='INPUT' || inp.tagName==='TEXTAREA')){
+             const len=inp.value.length; try{inp.setSelectionRange(len,len);}catch{}
+           }
+         }
+       }catch{}
+     }
+   };
    setTimeout(()=>{
+     // @ts-ignore - functional or object
      setEditCfgRawRaw(u);
-     requestAnimationFrame(()=>{ if(el) el.scrollTop=st; });
+     requestAnimationFrame(()=>{
+       restore();
+       requestAnimationFrame(restore);
+     });
    },0);
  },[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
  const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
@@ -88,24 +147,16 @@ export default function AdminPanel({app}:{app:any}){
   document.addEventListener('toggle',onToggle,true);
   return()=>document.removeEventListener('toggle',onToggle,true);
  },[]);
- // Restore open details IMMEDIATELY after render (before browser fires toggle)
- useLayoutEffect(()=>{document.querySelectorAll('.admin-main details').forEach((d:Element)=>{const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}})});
- // Also: prevent clicks on inputs/buttons/labels inside <details> from bubbling to <summary>
- useEffect(()=>{
-  const onClick=(e:Event)=>{
-   const target=e.target as HTMLElement;
-   const details=target.closest('details');
-   if(!details)return;
-   const summary=details.querySelector('summary');
-   if(!summary)return;
-   // If click was NOT on summary or its children, stop propagation
-   if(!summary.contains(target)){
-    e.stopPropagation();
-   }
-  };
-  document.querySelector('.admin-main')?.addEventListener('click',onClick,true);
-  return()=>{document.querySelector('.admin-main')?.removeEventListener('click',onClick,true)};
- },[]);
+ // Restore open details IMMEDIATELY after render — اکنون هم .admin-main و هم .zkad-content (پوشش تب‌های چندرسانه‌ای/تجربه والدین که داخل .zkad-content هستند)
+ useLayoutEffect(()=>{
+   document.querySelectorAll('.admin-main details, .zkad-content details').forEach((d:Element)=>{
+     const txt=(d.querySelector('summary')?.textContent||'').trim().substring(0,80);
+     if(txt&&openDetailsRef.current.has(txt)&&(d as HTMLDetailsElement).open===false){(d as HTMLDetailsElement).open=true}
+   });
+ });
+ // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
+ // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
+ // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
  const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
@@ -130,16 +181,39 @@ export default function AdminPanel({app}:{app:any}){
  const Err=useMemo(()=>({x}:{x:any})=><div className="zkad-err"><ZkWarnIcon size={13}/>{x}</div>,[]);
  const Tag=useMemo(()=>({x,tone='mut'}:{x:string,tone?:string})=><span className={`zkad-tag t-${tone}`}>{x}</span>,[]);
 // scrollFocus removed — was causing scroll jumps
-// FIX: Field پایدار با کنترل مستقیم و بدون بافر local/onBlur — رفع fg دوبار کلیک
+// FIX: Field با بافر محلی + commit تاخیری و حفظ فوکوس — رفع fg و جلوگیری از deselect سریع
+// قبلی (controlled مستقیم) باعث می‌شد کلیک A->B، B ابتدا انتخاب سپس لغو شود — چون onChange فوری parent را رندر می‌کرد و فوکوس B از دست می‌رفت
 const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:any)=>{
   const isNumeric=/phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));
+  const [local,setLocal]=useState(value??'');
+  const ref=useRef<HTMLInputElement|null>(null);
+  useEffect(()=>{ setLocal(value??''); },[value]);
   const handleChange=useCallback((e:any)=>{
     const raw=e.target.value;
-    // برای فیلدهای عددی، فقط ارقام انگلیسی را نگه دار
     const v=isNumeric?p2e(raw).replace(/[^0-9]/g,''):raw;
-    onChange(v);
-  },[onChange,isNumeric]);
-  return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={value??''} onChange={handleChange} placeholder={ph}/></div>;
+    setLocal(v);
+  },[isNumeric]);
+  const commit=useCallback(()=>{
+    const cur = ref.current ? ref.current.value : local;
+    const final=isNumeric?p2e(cur).replace(/[^0-9]/g,''):cur;
+    if(final !== (value??'')){
+      const active=document.activeElement as HTMLElement|null;
+      const wasInput = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || (active as any).isContentEditable);
+      onChange(final);
+      if(wasInput && active!==ref.current){
+        requestAnimationFrame(()=>{
+          try{ (active as HTMLElement).focus({preventScroll:true} as any); const inp=active as HTMLInputElement; if(inp.setSelectionRange){ const len=inp.value.length; try{inp.setSelectionRange(len,len);}catch{} } }catch{}
+        });
+      }
+    }
+  },[onChange,local,value,isNumeric]);
+  const handleBlur=useCallback((e:any)=>{
+    setTimeout(()=>commit(),0);
+  },[commit]);
+  const handleKeyDown=useCallback((e:any)=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+  },[commit]);
+  return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={ref} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={ph}/></div>;
 },[S,T.err]);
 
  function Admin(){
@@ -955,7 +1029,7 @@ ${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
  function SummarySub({sub}:any){return <div><div><b>اطلاعات کودک:</b> سن {sub.age||'—'}، {sub.gender==='male'?'پسر':sub.gender==='female'?'دختر':'—'}، قد {sub.height||'—'}، وزن {sub.weight||'—'}</div><GrowthBox sub={sub}/><div><b>والد:</b> {sub.pName||'—'} / <PhoneAction sub={sub} phone={sub.fullPhone}/></div><div><b>موضوع:</b> {(sub.topics||[]).join('، ')||'—'} / <b>دسته:</b> {sub.category}</div>{sub.shipping&&<div style={{marginTop:8,padding:9,borderRadius:10,background:T.soft}}><b>اطلاعات ارسال:</b><br/>مقصد: {sub.shipping.dest==='iran'?'ایران':'خارج'} / شهر/کشور: {sub.shipping.city||sub.shipping.country||'—'} / روش: {sub.shipping.method} / واتساپ: {sub.shipping.whatsapp?<PhoneAction sub={sub} phone={(sub.shipping.whatsappCc||'')+sub.shipping.whatsapp} whatsappOnly/>:'—'} / زمان تحویل: {sub.shipping.estimatedDelivery}</div>}{sub.course&&<div><b>دوره:</b> {sub.course.title}</div>}{sub.payment&&<div><b>پرداخت:</b> {sub.payment.bank?.name||'—'} / فیش: {sub.payment.receipt?'عکس دارد':sub.payment.receiptText?'متن پیامک دارد':'ندارد'}{sub.payment.receiptText&&<details style={{marginTop:6}}><summary>مشاهده متن پیامک واریز</summary><div style={{whiteSpace:'pre-wrap',background:T.inp,borderRadius:8,padding:8,marginTop:4}}>{sub.payment.receiptText}</div></details>}</div>}{sub.editHistory?.length>0&&<details style={{marginTop:8}}><summary>مشاهده اطلاعات اولیه و تاریخچه ویرایش</summary>{sub.editHistory.map((h:any,i:number)=><pre key={i} style={{whiteSpace:'pre-wrap',background:T.inp,padding:8,borderRadius:8,overflow:'auto'}}>نسخه {i+1} - {h.date} {h.time}
 {JSON.stringify(h.data,null,2)}</pre>)}</details>}</div>}
 
- function ArrEditor({k,title}:any){const inputRef=useRef<HTMLInputElement|null>(null); const addVal=useCallback((raw?:string)=>{const v=p2e(raw ?? inputRef.current?.value ?? '').trim(); if(v){setEditCfg((prev:any)=>({...prev,[k]:[...(prev[k]||[]),v]})); if(inputRef.current) inputRef.current.value='';}},[k,setEditCfg]); const onNewChange=useCallback((e:any)=>{e.target.value=p2e(e.target.value)},[]); return <Box title={title}><div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>{(editCfg[k]||[]).map((x:string,i:number)=><span key={i} style={{padding:'5px 8px',border:`1px solid ${T.brd}`,borderRadius:9}}><input style={{background:'transparent',border:0,color:T.txt,fontSize:16,width:130}} defaultValue={x} onBlur={e=>{const a=[...editCfg[k]];a[i]=p2e(e.target.value);setEditCfg({...editCfg,[k]:a})}}/><button className="zkad-iconbtn t-err" title="حذف مورد" onClick={()=>setEditCfg({...editCfg,[k]:editCfg[k].filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></span>)}</div><div style={{display:'flex',gap:6}}><input ref={inputRef} style={S.inp} onChange={onNewChange} onKeyDown={e=>{if(e.key==='Enter')addVal((e.target as HTMLInputElement).value)}} placeholder="مورد جدید"/><button style={AdminBtn()} onClick={()=>addVal()}>+</button></div></Box>}
+ function ArrEditor({k,title}:any){const inputRef=useRef<HTMLInputElement|null>(null); const addVal=useCallback((raw?:string)=>{const v=p2e(raw ?? inputRef.current?.value ?? '').trim(); if(v){setEditCfg((prev:any)=>({...prev,[k]:[...(prev[k]||[]),v]})); if(inputRef.current) inputRef.current.value='';}},[k,setEditCfg]); const onNewChange=useCallback((e:any)=>{e.target.value=p2e(e.target.value)},[]); return <Box title={title}><div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>{(editCfg[k]||[]).map((x:string,i:number)=><span key={`${k}-${i}-${String(x).slice(0,10)}`} style={{padding:'5px 8px',border:`1px solid ${T.brd}`,borderRadius:9}}><input style={{background:'transparent',border:0,color:T.txt,fontSize:16,width:130}} defaultValue={x} onBlur={e=>{const val=p2e(e.target.value); setEditCfg((prev:any)=>{const a=[...(prev[k]||[])];a[i]=val; return {...prev,[k]:a}})}}/><button className="zkad-iconbtn t-err" title="حذف مورد" onClick={()=>setEditCfg((prev:any)=>({...prev,[k]:(prev[k]||[]).filter((_:any,j:number)=>j!==i)}))}><ZkCloseIcon size={13}/></button></span>)}</div><div style={{display:'flex',gap:6}}><input ref={inputRef} style={S.inp} onChange={onNewChange} onKeyDown={e=>{if(e.key==='Enter')addVal((e.target as HTMLInputElement).value)}} placeholder="مورد جدید"/><button style={AdminBtn()} onClick={()=>addVal()}>+</button></div></Box>}
 
  // بازطراحی: بخش‌های ادیتور پنل مدیریت با کارت نئومورفیک (سایه نرم به‌جای بردر ساده)
  // FIX: Stabilize Box component identity — used 59+ times, remount caused all nested inputs/details to reset
