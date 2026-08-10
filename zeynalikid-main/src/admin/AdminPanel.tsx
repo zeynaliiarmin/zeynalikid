@@ -1337,16 +1337,16 @@ function FAQEditor(){
   const storyHighlights=(rawSH&&typeof rawSH==='object')?rawSH:{};
   const highlightsRaw=(storyHighlights.highlights);
   const highlights:any[]=Array.isArray(highlightsRaw)?highlightsRaw:(highlightsRaw&&typeof highlightsRaw==='object'?Object.values(highlightsRaw):[]);
-  const upd=(list:any[])=>setEditCfg({...editCfg,storyHighlights:{...(editCfg.storyHighlights||{}),highlights:list}});
-  const chgHl=(i:number,k:string,v:any)=>{const a=[...highlights];a[i]={...a[i],[k]:v};upd(a);};
-  const addHl=()=>upd([...highlights,{id:'hl'+uid(),title:'هایلایت جدید',coverUrl:'',active:true,order:highlights.length+1,stories:[]}]);
-  const removeHl=(i:number)=>upd(highlights.filter((_:any,j:number)=>j!==i));
-  const moveHl=(i:number,dir:-1|1)=>{const a=[...highlights];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})));};
+  const upd=(list:any)=>setEditCfg((prev:any)=>({...prev, storyHighlights:{...(prev.storyHighlights||{}), highlights:list}}));
+  const chgHl=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(a[i]) a[i]={...a[i],[k]:v}; return {...prev, storyHighlights:{...sh, highlights:a}}});
+  const addHl=()=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; return {...prev, storyHighlights:{...sh, highlights:[...hl,{id:'hl'+uid(),title:'هایلایت جدید',coverUrl:'',active:true,order:hl.length+1,stories:[]}]} } });
+  const removeHl=(i:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; return {...prev, storyHighlights:{...sh, highlights: hl.filter((_:any,j:number)=>j!==i)}}});
+  const moveHl=(i:number,dir:-1|1)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; const j=i+dir; if(j<0||j>=a.length) return prev; [a[i],a[j]]=[a[j],a[i]]; return {...prev, storyHighlights:{...sh, highlights: a.map((x:any,idx:number)=>({...x,order:idx+1}))}}});
   const updStories=(hi:number,stories:any[])=>chgHl(hi,'stories',stories);
-  const chgStory=(hi:number,si:number,k:string,v:any)=>{const stories=[...highlights[hi].stories];stories[si]={...stories[si],[k]:v};updStories(hi,stories);};
-  const addStory=(hi:number)=>{const stories=[...highlights[hi].stories];stories.push({id:'st'+uid(),title:'',imageCodeExternal:'',imageCodeInternal:'',active:true,order:stories.length+1});updStories(hi,stories);};
-  const removeStory=(hi:number,si:number)=>{const stories=[...highlights[hi].stories].filter((_:any,j:number)=>j!==si);updStories(hi,stories);};
-  const moveStory=(hi:number,si:number,dir:-1|1)=>{const stories=[...highlights[hi].stories];const j=si+dir;if(j<0||j>=stories.length)return;[stories[si],stories[j]]=[stories[j],stories[si]];updStories(hi,stories.map((x:any,idx:number)=>({...x,order:idx+1})));};
+  const chgStory=(hi:number,si:number,k:string,v:any)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; if(stories[si]) stories[si]={...stories[si],[k]:v}; a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
+  const addStory=(hi:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; stories.push({id:'st'+uid(),title:'',imageCodeExternal:'',imageCodeInternal:'',active:true,order:stories.length+1}); a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
+  const removeStory=(hi:number,si:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=(a[hi].stories||[]).filter((_:any,j:number)=>j!==si); a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
+  const moveStory=(hi:number,si:number,dir:-1|1)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; const j=si+dir; if(j<0||j>=stories.length) return prev; [stories[si],stories[j]]=[stories[j],stories[si]]; a[hi]={...a[hi],stories: stories.map((x:any,idx:number)=>({...x,order:idx+1}))}; return {...prev, storyHighlights:{...sh, highlights:a}}});
   const migrateItems=()=>{const items=(editCfg.storyHighlights?.items)||[];if(!items.length)return;const legacy={id:'legacy',title:'استوری',coverUrl:'',active:true,order:1,stories:items.map((it:any,idx:number)=>({id:it.id,title:it.title||'',imageCodeExternal:it.embedCode||'',imageCodeInternal:it.embedCode||'',active:it.active!==false,order:it.order||idx+1}))};upd([...highlights,legacy]);setEditCfg({...editCfg,storyHighlights:{...editCfg.storyHighlights,items:[]}});};
   return <Box title="مدیریت هایلایت استوری (تجربه والدین / آموزش‌ها)">
    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر هایلایت یک دایره در بالای صفحات «تجربه والدین» و «آموزش‌ها» است. هر هایلایت شامل چند استوری (اسلاید) با دو کد دستی تصویر (خارجی/داخلی) می‌باشد.</p>
@@ -1661,16 +1661,48 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
     : (rawCustomPlatforms&&typeof rawCustomPlatforms==='object'
         ? Object.values(rawCustomPlatforms)
         : []);
-  const updItems=(newItems:any[])=>setEditCfg({...editCfg,mediaItems:newItems});
-  const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};updItems(a)};
-  const chgPlatform=(i:number,platformKey:string,value:string)=>{const a=[...items];a[i]={...a[i],platforms:{...(a[i].platforms||{}),[platformKey]:value}};updItems(a)};
-  const toggleCategory=(i:number,catId:string)=>{const item=items[i];const cats:string[]=item.categories||[];const newCats=cats.includes(catId)?cats.filter(c=>c!==catId):[...cats,catId];chg(i,'categories',newCats)};
+  const updItems=(newItems:any)=>setEditCfg((prev:any)=>({...prev, mediaItems:newItems}));
+  const chg=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    const a=[...prevItems];
+    if(a[i]) a[i]={...a[i],[k]:v};
+    return {...prev, mediaItems:a};
+  });
+  const chgPlatform=(i:number,platformKey:string,value:string)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    const a=[...prevItems];
+    if(a[i]) a[i]={...a[i],platforms:{...(a[i].platforms||{}),[platformKey]:value}};
+    return {...prev, mediaItems:a};
+  });
+  const toggleCategory=(i:number,catId:string)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    const a=[...prevItems];
+    const item=a[i];
+    if(!item) return prev;
+    const cats=item.categories||[];
+    const newCats=cats.includes(catId)?cats.filter((c:string)=>c!==catId):[...cats,catId];
+    a[i]={...item,categories:newCats};
+    return {...prev, mediaItems:a};
+  });
   const categoryOptions:[string,string][]=[['parent-experience','تجربه والدین'],['growth','رشد قد'],['appetite','بی‌اشتهایی'],['intelligence','هوش']];
   const displayModeOptions:[string,string][]=[['external','خارجی (VPN روشن)'],['internal','داخلی (VPN خاموش)'],['both','هر دو (خودکار)'],['custom','پلتفرم سفارشی']];
   const typeSections:[('video'|'image'|'audio'),string,string][]=[['video','ویدیوها','ویدیو'],['image','عکس‌ها','عکس'],['audio','ویس‌ها','ویس']];
-  const addItem=(type:string)=>updItems([...items,{id:type[0]+uid(),title:'',description:'',type,platforms:{},displayMode:'both',categories:[],isVisible:true}]);
-  const removeItem=(i:number)=>updItems(items.filter((_:any,j:number)=>j!==i));
-  const moveItem=(i:number,dir:-1|1)=>{const a=[...items];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];updItems(a)};
+  const addItem=(type:string)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    return {...prev, mediaItems:[...prevItems,{id:type[0]+uid(),title:'',description:'',type,platforms:{},displayMode:'both',categories:[],isVisible:true}]};
+  });
+  const removeItem=(i:number)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    return {...prev, mediaItems: prevItems.filter((_:any,j:number)=>j!==i)};
+  });
+  const moveItem=(i:number,dir:-1|1)=>setEditCfg((prev:any)=>{
+    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
+    const a=[...prevItems];
+    const j=i+dir;
+    if(j<0||j>=a.length) return prev;
+    [a[i],a[j]]=[a[j],a[i]];
+    return {...prev, mediaItems:a};
+  });
   return <Box title="مدیریت محتوای چندرسانه‌ای (ساختار جدید)">
    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر آیتم محتوا دارای نوع (ویدیو/عکس/ویس)، پلتفرم‌های مخصوص، حالت نمایش، دسته‌بندی و وضعیت نمایش است. پلتفرم‌های سفارشی از بخش بالا اضافه شده و در هر آیتم قابل فعال‌سازی هستند.</p>
    {typeSections.map(([type,sectionLabel,addLabel])=>{
