@@ -84,15 +84,15 @@ export async function generateFormImage(submission: any, format: 'webp' | 'jpg' 
 
   const drawRow = (label: string, value: string, icon: string) => {
     ctx.fillStyle = '#7A12D4';
-    ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+    ctx.font = 'bold 18px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
     // ستون ثابت برای عنوان و ستون جداگانه برای مقدار؛ خوانا در موبایل و بدون هم‌پوشانی RTL
     ctx.fillText(`${label}:`, width - padding, y);
     ctx.fillStyle = '#1F2937';
-    ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
+    ctx.font = '17px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
     const safeValue = String(value || '—');
-    ctx.fillText(safeValue.length > 48 ? safeValue.slice(0, 45) + '…' : safeValue, width - padding - 205, y);
+    ctx.fillText(safeValue.length > 28 ? safeValue.slice(0, 25) + '…' : safeValue, width - padding - 155, y);
     
     y += lineHeight;
   };
@@ -164,18 +164,18 @@ export async function generateFormImage(submission: any, format: 'webp' | 'jpg' 
 
   if (notes) {
     ctx.fillStyle = '#7A12D4';
-    ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
+    ctx.font = 'bold 18px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText('توضیحات:', width - padding, y);
     y += 2;
     
     ctx.fillStyle = '#1F2937';
-    ctx.font = '13px Vazirmatn, Tahoma, Arial, sans-serif';
+    ctx.font = '16px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
     // متن توضیحات با wrap
     const maxWidth = width - 2 * padding - 10;
     const words = String(notes);
-    ctx.fillText(words.length > 120 ? words.substring(0, 117) + '...' : words, width - padding - 0, y);
+    ctx.fillText(words.length > 28 ? words.substring(0, 25) + '…' : words, width - padding - 0, y);
     y += lineHeight;
   }
 
