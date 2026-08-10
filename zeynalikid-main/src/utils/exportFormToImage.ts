@@ -28,21 +28,21 @@ export async function generateFormImage(submission: any, format: 'webp' | 'jpg' 
 
   // ─── تنظیمات Canvas ───
   const canvas = document.createElement('canvas');
-  const width = 600;
+  const width = 900;
   const padding = 24;
-  const lineHeight = 38;
+  const lineHeight = 44;
   const headerHeight = 90;
   const footerHeight = 50;
 
   // محاسبه تعداد خطوط
-  let linesCount = 12; // baseline
+  let linesCount = 20; // فضای کافی برای تمام ردیف‌ها، از جمله تاریخ ثبت
   if (notes) linesCount += 2;
   if (courseTitle) linesCount += 1;
   if (submission.digest && Array.isArray(submission.digest) && submission.digest.length > 0) linesCount += 1;
   if (submission.appetite) linesCount += 1;
 
   const contentHeight = linesCount * lineHeight + headerHeight + footerHeight + 40;
-  const height = Math.max(500, contentHeight);
+  const height = Math.max(980, contentHeight);
 
   canvas.width = width;
   canvas.height = height;
@@ -86,14 +86,13 @@ export async function generateFormImage(submission: any, format: 'webp' | 'jpg' 
     ctx.fillStyle = '#7A12D4';
     ctx.font = 'bold 14px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
-    const textWidth = ctx.measureText(label + value).width;
+    // ستون ثابت برای عنوان و ستون جداگانه برای مقدار؛ خوانا در موبایل و بدون هم‌پوشانی RTL
     ctx.fillText(`${label}:`, width - padding, y);
-    
     ctx.fillStyle = '#1F2937';
     ctx.font = '14px Vazirmatn, Tahoma, Arial, sans-serif';
     ctx.textAlign = 'right';
-    const labelWidth = ctx.measureText(label + ': ').width;
-    ctx.fillText(value, width - padding - labelWidth, y);
+    const safeValue = String(value || '—');
+    ctx.fillText(safeValue.length > 48 ? safeValue.slice(0, 45) + '…' : safeValue, width - padding - 205, y);
     
     y += lineHeight;
   };
