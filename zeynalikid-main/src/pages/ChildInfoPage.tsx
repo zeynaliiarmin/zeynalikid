@@ -10,16 +10,38 @@ import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 //           (به‌جز موضوع مشاوره) در این صفحه به‌صورت غیرقابل‌ویرایش نمایش داده می‌شود و دکمه
 //           «درخواست ویرایش اطلاعات فرزندم را دارم» (که قبلاً در صفحه اطلاعات ارسال بود) اینجا قرار گرفته.
 //           فیلدهای جدید اضافه‌شده: وضعیت اشتها، مشکل گوارشی، توضیحات تکمیلی.
-export default function ChildInfoPage({app}:{app:any}){
- const {cfg,T,S,css,lang,setView,fd,setFd,course,setCourse,publicText,trVal,Field,SelectBox,MiniIcon,Stepper,p2e,editChild,setEditChild,Modal,uploadTonguePhoto,deleteStoredTonguePhoto}=app;
- const [draft,setDraft]=useState<any>({...fd});
- const [errs,setErrs]=useState<any>({}); const [voiceBlob,setVoiceBlob]=useState<Blob|null>(null);
- const selectedTitle=lang==='en'?(course.selected?.titleEn||course.selected?.title):course.selected?.title;
+
+// ─── کامپوننت‌های کمکی (بیرون از تابع اصلی برای جلوگیری از Remount) ───
+// FIX: کامپونент‌های Err و ReadonlyRow از تابع خارج شدند تا در هر رندر دوباره ساخته نشوند.
+//       این اصلاح مشکل بسته‌شدن کیبورد بعد از هر کاراکتر را رفع می‌کند.
+
+interface ErrProps { err: any; theme?: any; }
+function Err({ err, theme: T }: ErrProps) {
+  return <div style={{ fontSize: 11, color: T?.err ?? '#ef4444', marginTop: 4 }}>{err}</div>;
+}
+
+interface ReadonlyRowProps { label: string; value: any; theme?: any; }
+function ReadonlyRow({ label, value, theme: T }: ReadonlyRowProps) {
+  if (value === undefined || value === null || value === '') return null;
+  return (
+    <div style={{ background: T?.inp ?? '#f5f5f5', borderRadius: 10, padding: '8px 10px', marginBottom: 8, boxShadow: T?.neuIn ?? 'inset 0 1px 3px rgba(0,0,0,0.1)' }}>
+      <span style={{ color: T?.mut ?? '#888', fontSize: 12 }}>{label}: </span>
+      <b style={{ fontSize: 12.5 }}>{value}</b>
+    </div>
+  );
+}
+
+// ─── کامپوننت اصلی صفحه ───
+export default function ChildInfoPage({ app }: { app: any }) {
+ const { cfg, T, S, css, lang, setView, fd, setFd, course, setCourse, publicText, trVal, Field, SelectBox, MiniIcon, Stepper, p2e, editChild, setEditChild, Modal, uploadTonguePhoto, deleteStoredTonguePhoto } = app;
+ const [draft, setDraft] = useState<any>({ ...fd });
+ const [errs, setErrs] = useState<any>({});
+ const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+ const selectedTitle = lang === 'en' ? (course.selected?.titleEn || course.selected?.title) : course.selected?.title;
  // اگر از فرم مشاوره آمده باشد (fd.gender از قبل ست شده)، کل اطلاعات فرزند فقط نمایشی و غیرقابل ویرایش است.
- const fromConsultForm=!!fd?.gender;
-  const isDirty = Boolean(draft.age || draft.height || draft.weight || draft.notes);
-  useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
- function Err({x}:{x:any}){return <div style={{fontSize:11,color:T.err,marginTop:4}}>{x}</div>}
+ const fromConsultForm = !!fd?.gender;
+ const isDirty = Boolean(draft.age || draft.height || draft.weight || draft.notes);
+ useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
   // FIX: Stabilize VoiceRecorder callbacks to prevent remounting on every re-render
   const handleVoiceRecorded=useCallback((blob:Blob)=>setVoiceBlob(blob),[]);
   const handleVoiceRemoved=useCallback(()=>setVoiceBlob(null),[]);
@@ -48,9 +70,6 @@ export default function ChildInfoPage({app}:{app:any}){
   setView('course-shipping');
  };
 
- // نمای فقط‌خواندنیِ اطلاعات فرزند (زمانی که از فرم مشاوره آمده باشد)
- function ReadonlyRow({label,value}:{label:string,value:any}){ if(value===undefined||value===null||value==='')return null; return <div style={{background:T.inp,borderRadius:10,padding:'8px 10px',marginBottom:8,boxShadow:T.neuIn}}><span style={{color:T.mut,fontSize:12}}>{label}: </span><b style={{fontSize:12.5}}>{value}</b></div>; }
-
  return <div style={S.page}><style>{css}</style><div style={{...S.card, paddingTop:'10px'}}><Stepper step={2}/>
   <div style={{marginBottom:12}}>
     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
@@ -63,19 +82,19 @@ export default function ChildInfoPage({app}:{app:any}){
  {fromConsultForm ? <>
   <div style={{background:`${T.acc}0d`,borderRadius:12,padding:12,marginBottom:13,boxShadow:T.neuIn}}>
    <p style={{fontSize:11.5,color:T.mut,margin:'0 0 8px'}}>{lang==='en'?'This information was submitted in your consultation form and cannot be edited here.':'این اطلاعات از فرم مشاوره شما ثبت شده و در اینجا غیرقابل ویرایش است.'}</p>
-   <ReadonlyRow label={publicText('gender','جنسیت')} value={fd.gender==='male'?publicText('boy','پسر'):fd.gender==='female'?publicText('girl','دختر'):'—'}/>
-   <ReadonlyRow label={publicText('age',cfg.formFields.age.label)} value={fd.age}/>
-   <ReadonlyRow label={publicText('height',cfg.formFields.height.label)} value={fd.height}/>
-   <ReadonlyRow label={publicText('weight',cfg.formFields.weight.label)} value={fd.weight}/>
-   <ReadonlyRow label={publicText('digest','مشکل گوارشی')} value={Array.isArray(fd.digest)?fd.digest.map(trVal).join('، '):fd.digest}/>
-   <ReadonlyRow label={publicText('appetite','وضعیت اشتها')} value={fd.appetite?trVal(fd.appetite):''}/>
-   <ReadonlyRow label={publicText('disease',cfg.formFields.disease.label)} value={fd.disease}/>
-   <ReadonlyRow label={publicText('specials','شرایط خاص')} value={Array.isArray(fd.specials)?fd.specials.map(trVal).join('، '):fd.specials}/>
-   <ReadonlyRow label={publicText('notes',cfg.formFields.notes.label)} value={fd.notes}/>
+   <ReadonlyRow label={publicText('gender','جنسیت')} value={fd.gender==='male'?publicText('boy','پسر'):fd.gender==='female'?publicText('girl','دختر'):'—'} theme={T}/>
+   <ReadonlyRow label={publicText('age',cfg.formFields.age.label)} value={fd.age} theme={T}/>
+   <ReadonlyRow label={publicText('height',cfg.formFields.height.label)} value={fd.height} theme={T}/>
+   <ReadonlyRow label={publicText('weight',cfg.formFields.weight.label)} value={fd.weight} theme={T}/>
+   <ReadonlyRow label={publicText('digest','مشکل گوارشی')} value={Array.isArray(fd.digest)?fd.digest.map(trVal).join('، '):fd.digest} theme={T}/>
+   <ReadonlyRow label={publicText('appetite','وضعیت اشتها')} value={fd.appetite?trVal(fd.appetite):''} theme={T}/>
+   <ReadonlyRow label={publicText('disease',cfg.formFields.disease.label)} value={fd.disease} theme={T}/>
+   <ReadonlyRow label={publicText('specials','شرایط خاص')} value={Array.isArray(fd.specials)?fd.specials.map(trVal).join('، '):fd.specials} theme={T}/>
+   <ReadonlyRow label={publicText('notes',cfg.formFields.notes.label)} value={fd.notes} theme={T}/>
   </div>
   <button onClick={()=>setEditChild(true)} style={{marginBottom:13,width:'100%',padding:12,border:0,borderRadius:14,background:'linear-gradient(135deg,#fbbf24,#f59e0b)',color:'#422006',fontWeight:800,cursor:'pointer',fontFamily:'inherit',fontSize:15,boxShadow:'4px 4px 10px rgba(0,0,0,.08),-2px -2px 8px rgba(255,255,255,.4)'}}>{publicText('editChild','درخواست ویرایش اطلاعات فرزندم را دارم')}</button>
  </> : <>
-  <div style={{display:'grid',gridTemplateColumns:'minmax(0,2fr) 105px',gap:12,alignItems:'start',marginBottom:13}}><div><label style={S.lbl}>{publicText('gender','جنسیت')} <span style={{color:T.err}}>*</span></label><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>{[['male',publicText('boy','پسر')],['female',publicText('girl','دختر')]].map((x:any)=><button key={x[0]} onClick={()=>setDraft({...draft,gender:x[0]})} style={{padding:'10px 8px',borderRadius:12,border:'none',background:draft.gender===x[0]?T.soft:T.card,color:draft.gender===x[0]?T.acc:T.mut,cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:700,boxShadow:draft.gender===x[0]?T.neuIn:T.neuOut}}>{x[1]}</button>)}</div>{errs.gender&&<Err x={errs.gender}/>}</div><div><label style={S.lbl}>{publicText('age',cfg.formFields.age.label)} <span style={{color:T.err}}>*</span></label><input type="number" min={Number(cfg.formFields?.age?.min ?? 2) || 2} max={Number(cfg.formFields?.age?.max ?? 17) || 17} style={{...S.inp,borderColor:errs.age?T.err:T.brd}} value={draft.age} onChange={e=>setDraft({...draft,age:e.target.value})} placeholder={trVal(cfg.formFields.age.placeholder)}/>{errs.age&&<Err x={errs.age}/>}</div></div>
+  <div style={{display:'grid',gridTemplateColumns:'minmax(0,2fr) 105px',gap:12,alignItems:'start',marginBottom:13}}><div><label style={S.lbl}>{publicText('gender','جنسیت')} <span style={{color:T.err}}>*</span></label><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>{[['male',publicText('boy','پسر')],['female',publicText('girl','دختر')]].map((x:any)=><button key={x[0]} onClick={()=>setDraft({...draft,gender:x[0]})} style={{padding:'10px 8px',borderRadius:12,border:'none',background:draft.gender===x[0]?T.soft:T.card,color:draft.gender===x[0]?T.acc:T.mut,cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:700,boxShadow:draft.gender===x[0]?T.neuIn:T.neuOut}}>{x[1]}</button>)}</div>{errs.gender && <Err err={errs.gender} theme={T} />}</div><div><label style={S.lbl}>{publicText('age',cfg.formFields.age.label)} <span style={{color:T.err}}>*</span></label><input type="number" min={Number(cfg.formFields?.age?.min ?? 2) || 2} max={Number(cfg.formFields?.age?.max ?? 17) || 17} style={{...S.inp,borderColor:errs.age?T.err:T.brd}} value={draft.age} onChange={e=>setDraft({...draft,age:e.target.value})} placeholder={trVal(cfg.formFields.age.placeholder)}/>{errs.age && <Err err={errs.age} theme={T} />}</div></div>
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{cfg.formFields.height?.show!==false&&<Field label={publicText('height',cfg.formFields.height.label)} value={draft.height} onChange={(v:string)=>setDraft({...draft,height:v})} ph={cfg.formFields.height.placeholder} type="number"/>}{cfg.formFields.weight?.show!==false&&<Field label={publicText('weight',cfg.formFields.weight.label)} value={draft.weight} onChange={(v:string)=>setDraft({...draft,weight:v})} ph={cfg.formFields.weight.placeholder} type="number"/>}</div>
   {/* اصلاح ۲۵: فیلدهای جدید — وضعیت اشتها و مشکل گوارشی */}
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}><SelectBox label={publicText('digest','مشکل گوارشی')} multi items={cfg.digestiveOptions} val={draft.digest||[]} setVal={(v:any)=>setDraft({...draft,digest:v})}/><SelectBox label={publicText('appetite','وضعیت اشتها')} items={cfg.appetiteOptions} val={draft.appetite||''} setVal={(v:any)=>setDraft({...draft,appetite:v})}/></div>

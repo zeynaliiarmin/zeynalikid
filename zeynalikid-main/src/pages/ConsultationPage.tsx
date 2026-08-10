@@ -12,6 +12,19 @@ import { formSuccessMessages, getRandomMessage } from '../config/successMessages
 type Lang = 'fa' | 'en';
 type Any = Record<string, any>;
 
+// ─── کامپوننت‌های کمکی (بیرون از تابع اصلی برای جلوگیری از Remount) ───
+// FIX: کامپوننت‌های Err از تابع خارج شدند تا در هر رندر دوباره ساخته نشوند.
+//       این اصلاح مشکل بسته‌شدن کیبورد بعد از هر کاراکتر را رفع می‌کند.
+
+interface ErrProps { err: any; theme?: any; }
+function Err({ err, theme: T }: ErrProps) {
+  return <div style={{ fontSize: 11, color: T?.err ?? '#ef4444', marginTop: 4 }}>{err}</div>;
+}
+
+// ─── توابع کمکی (بیرون از تابع اصلی) ───
+function labelCountryFn(c: any, l: Lang) { return `${getCountryFlag(c)} ${l === 'en' ? (c.nameEn || c.name) : c.name} ${c.code}`; }
+function shortCountryFn(c: any) { return `${getCountryFlag(c)} ${c.code}`; }
+
 export default function ConsultationPage({ app }: { app: any }) {
   const {
     cfg, T, S, css, lang, setLang, view, setView,
@@ -365,8 +378,8 @@ export default function ConsultationPage({ app }: { app: any }) {
   const phoneExamples: Record<string, string> = { '+98': '09123456789', '+1': '2125550123', '+44': '07700900000', '+49': '030123456', '+46': '0701234567', '+41': '0791234567', '+47': '41234567', '+33': '0612345678', '+61': '0412345678', '+971': '0501234567', '+90': '05321234567', '+31': '0612345678', '+91': '9876543210', '+93': '0701234567', '+': 'Enter phone number' };
   const phonePlaceholder = (code: string, l: Lang) => phoneExamples[code] || (l === 'en' ? 'Enter phone number' : 'شماره تماس');
 
-  function labelCountry(c: any, l: Lang) { return `${getCountryFlag(c)} ${l === 'en' ? (c.nameEn || c.name) : c.name} ${c.code}` }
-  function shortCountry(c: any) { return `${getCountryFlag(c)} ${c.code}` }
+  const labelCountry = labelCountryFn;
+  const shortCountry = shortCountryFn;
 
   function Popup({ open, onClose, trigger, children, width }: { open: boolean; onClose: () => void; trigger: any; children: any; width?: number | string }) {
     const ref = useRef<HTMLDivElement | null>(null);
@@ -425,8 +438,6 @@ export default function ConsultationPage({ app }: { app: any }) {
     page: { ...S?.page, position: 'relative' as const },
     ta: { ...S?.ta, width: '100%', padding: '12px 14px', background: T.inp, border: `1px solid ${T.brd}`, borderRadius: 12, color: T.txt, fontSize: 16, outline: 'none', boxSizing: 'border-box' as const, minHeight: 100, resize: 'vertical' as const, fontFamily: 'inherit', boxShadow: T.neuIn },
   }), [S, T]);
-
-  function Err({ x }: { x: any }) { return <div style={{ fontSize: 11, color: T.err, marginTop: 4 }}>{x}</div> }
 
   const Field = useMemo(() => memo(function MemoField({ label, value, onChange, ph, type = 'text', required = false }: any) {
     const [local, setLocal] = useState(value ?? '');
@@ -511,7 +522,7 @@ export default function ConsultationPage({ app }: { app: any }) {
         <div style={S.sec}><MiniIcon type="course" T={T} />{publicText('consultTopic', 'موضوع مشاوره')} <span style={{ color: T.err }}>*</span></div>
         <TopicChips />
         <p style={{ fontSize: 10, color: T.mut, margin: '5px 0' }}>{publicText('multi', 'می‌توانید چند مورد انتخاب کنید')}</p>
-        {errs.topics && <Err x={errs.topics} />}
+        {errs.topics && <Err err={errs.topics} theme={T} />}
         <div style={S.div} />
 
         {/* Parent info */}
@@ -523,7 +534,7 @@ export default function ConsultationPage({ app }: { app: any }) {
             <CountrySelectLocal value={fd.cc} onChange={(v: string) => setFd({ ...fd, cc: v })} />
             <input dir="ltr" style={{ ...S.inp, flex: 1, borderColor: errs.pPhone ? T.err : T.brd }} value={fd.pPhone} onChange={e => setFd({ ...fd, pPhone: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={phonePlaceholder(fd.cc, lang)} inputMode="numeric" />
           </div>
-          {errs.pPhone && <Err x={errs.pPhone} />}
+          {errs.pPhone && <Err err={errs.pPhone} theme={T} />}
         </div>}
         <div style={S.div} />
 
@@ -535,12 +546,12 @@ export default function ConsultationPage({ app }: { app: any }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
               {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => <button key={x[0]} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '10px 8px', borderRadius: 12, border: 'none', background: fd.gender === x[0] ? T.soft : T.card, color: fd.gender === x[0] ? T.acc : T.mut, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 700, boxShadow: fd.gender === x[0] ? T.neuIn : T.neuOut }}>{x[1]}</button>)}
             </div>
-            {errs.gender && <Err x={errs.gender} />}
+            {errs.gender && <Err err={errs.gender} theme={T} />}
           </div>
           {cfg.formFields?.age?.show !== false && <div>
             <label style={S.lbl}>{publicText('age', cfg.formFields?.age?.label)} <span style={{ color: T.err }}>*</span></label>
             <input type="number" min={Number(cfg.formFields?.age?.min ?? 2) || 2} max={Number(cfg.formFields?.age?.max ?? 17) || 17} style={{ ...S.inp, borderColor: errs.age ? T.err : T.brd }} value={fd.age} onChange={e => setFd({ ...fd, age: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={trVal(cfg.formFields?.age?.placeholder)} inputMode="numeric" />
-            {errs.age && <Err x={errs.age} />}
+            {errs.age && <Err err={errs.age} theme={T} />}
           </div>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
