@@ -2063,6 +2063,7 @@ function ImagesEditor(){
 
 function DesignManagerEditor(){
  const ds=(editCfg as any).designSystem||{sections:{public:{design:'wellness',theme:'light'},education:{design:'kidlearn',theme:'light'},admin:{design:'navystack',theme:'dark'}},classic:{themes:['light','cream','ocean','dark'],defaultTheme:'light'}};
+ const publicThemeMode=(editCfg as any).publicThemeMode||'auto';
  const sections=ds.sections||{};
 
  const updateSection=(section:string,design:string,theme?:string)=>{
@@ -2087,7 +2088,7 @@ function DesignManagerEditor(){
   {value:'motherly-trust',label:'مادرانه-اعتمادساز'},
  ];
 
- return <>
+ return <><Box title="نمای ظاهری سایت برای کاربران"><p style={{fontSize:12,color:T.mut,lineHeight:1.8,marginTop:0}}>این تنظیم فقط صفحات عمومی سایت را کنترل می‌کند؛ دکمه ماه/خورشید پنل مدیریت همچنان کاملاً شخصی است.</p><label style={{...S.lbl}}>حالت نمایش سایت عمومی</label><select style={S.inp} value={publicThemeMode} onChange={e=>setEditCfg({...editCfg,publicThemeMode:e.target.value})}><option value="auto">خودکار — دارک از ساعت ۲۳ تا ۰۷</option><option value="light">وایت مود ثابت</option><option value="dark">دارک مود ثابت</option></select><p style={{fontSize:11,color:T.mut,lineHeight:1.7}}>کاربران دکمه تغییر تم نمی‌بینند؛ فقط مدیر از همین بخش ظاهر عمومی را تعیین می‌کند.</p></Box>
   <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت دیزاین و تم</>}>
    <p style={{fontSize:11,color:T.mut,margin:'0 0 14px',lineHeight:1.8}}>برای هر بخش، دیزاین مورد نظر را انتخاب کنید.</p>
    <div style={{display:'grid',gap:14}}>

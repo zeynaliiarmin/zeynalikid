@@ -401,7 +401,7 @@ const defTabs=[
  ]}
 ];
 const defaultSettings:Any={
- theme:'light',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
+ theme:'light',publicThemeMode:'auto',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
  // اصلاح ۱-۶ (مرحله ۴): عناوین کنار عکس پروفایل — دو زبانه، قابل ویرایش از پنل مدیریت
  specialistTitle:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',specialistTitleEn:'Child and Adolescent Growth and Nutrition Specialist at Zeynalikid',heroSubtitle:'ضمن آرزوی اوقاتی خوش برای شما',heroSubtitleEn:'Wishing you a pleasant time',
  heroTitle:'ضمن آرزوی اوقاتی خوش برای شما',heroDesc:'این فرم برای بررسی شرایط فرزند شما و تعیین نوبت مشاوره خصوصی طراحی شده است.',noticeText:'این مشاوره فقط به والدین یا سرپرست قانونی فرزند ارائه می‌شود. لطفاً اطلاعات را با دقت تکمیل فرمایید.',phoneNote:'مشاوره فقط به‌صورت تلفنی',submitBtnText:'ثبت درخواست مشاوره',successMsg:'اطلاعات فرزند شما با موفقیت ثبت شد',successSubMsg:'طی ۲۴ الی ۴۸ ساعت آینده با شما تماس می‌گیریم',timeSlotLabel:'بازه زمانی مناسب برای تماس (اختیاری)',
@@ -1007,8 +1007,16 @@ function App(){
   return()=>{window.removeEventListener('storage',onStorage);window.removeEventListener(ZK_THEME_EVENT,sync as EventListener)};
  },[]);
 
+ // تم عمومی مستقل از تم شخصی پنل: خودکار فقط برای بازدیدکنندگان، ساعت 23 تا 07.
+ const [publicThemeTick,setPublicThemeTick]=useState(0);
+ useEffect(()=>{const timer=window.setInterval(()=>setPublicThemeTick(x=>x+1),60000);return()=>window.clearInterval(timer)},[]);
+ const isAdminRoute=location.pathname.startsWith('/admin');
+ const publicThemeMode=(cfg as any).publicThemeMode||'auto';
+ const publicAutoDark=!isAdminRoute&&publicThemeMode==='auto'&&(()=>{const h=new Date().getHours();return h>=23||h<7})();
+ const publicForcedDark=!isAdminRoute&&publicThemeMode==='dark';
+ const publicForcedLight=!isAdminRoute&&publicThemeMode==='light';
  // انتخاب T بر اساس دیزاین و تم فعال
- const T = (activeDesign === 'classic' || activeDesign === 'blend')
+ const T = (publicAutoDark||publicForcedDark) ? TH.dark : (activeDesign === 'classic' || activeDesign === 'blend')
   ? (TH[activeTheme] || TH.blend)
   : activeDesign === 'navystack'
   ? (adminDark ? TH['navystack-dark'] : TH['navystack'])
@@ -1019,6 +1027,8 @@ function App(){
  useEffect(()=>{setLS(SK.settings,cfg); document.title=cfg.browserTitle||cfg.siteTitle; imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
  // Stage 9: lang/dir پویا روی <html> برای SEO/RTL-LTR واقعی
  useEffect(()=>{document.documentElement.lang=lang==='fa'?'fa':'en';document.documentElement.dir=lang==='fa'?'rtl':'ltr';},[lang]);
+ // تم عمومی از پنل کنترل می‌شود و به تنظیم محلی ادمین وابسته نیست.
+ useEffect(()=>{if(!isAdminRoute){document.documentElement.setAttribute('data-theme',(publicAutoDark||publicForcedDark)?'dark':'light')}},[isAdminRoute,publicAutoDark,publicForcedDark,publicForcedLight,publicThemeTick]);
  // Stage 8: اعمال تم ذخیره‌شدهٔ Stage 6 در لحظه بارگذاری اپ (همان قانون zk_theme/auto) تا همه صفحات (از جمله آموزش) در تیره خوانا باشند
  useLayoutEffect(()=>{try{const v=localStorage.getItem('zk_theme'); if(v==='light'||v==='dark'||v==='auto'){let final:'light'|'dark'=v==='dark'?'dark':v==='light'?'light':((()=>{const pd=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches); return pd;})()?'dark':'light'); const root=document.documentElement; root.setAttribute('data-theme',final); if(final==='dark'){root.style.setProperty('--zk-bg','#0F1722');root.style.setProperty('--zk-surface','#172231');root.style.setProperty('--zk-text','#E2E8F0');root.style.setProperty('--zk-text-muted','#94A3B8');root.style.setProperty('--zk-border','rgba(148,163,184,0.2)');root.style.setProperty('--zk-primary','#4BA8D8');}}}catch{}},[]); useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage
