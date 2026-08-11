@@ -489,14 +489,8 @@ function SubCardBase({
 
               <GrowthBox sub={activeConsultRecord} />
 
+              {/* نام والد و شماره تماس در سربرگ کارت نمایش داده می‌شوند؛ اینجا عمداً تکرار نمی‌شوند. */}
               <dl className="zkad-facts wide">
-                <div>
-                  <dt>والد</dt>
-                  <dd className="zkad-fact-inline">
-                    {activeConsultRecord.pName || sub.pName || '—'}
-                    <PhoneAction sub={activeConsultRecord} phone={activeConsultRecord.fullPhone || sub.fullPhone} />
-                  </dd>
-                </div>
                 <div><dt>موضوعات مشاوره</dt><dd>{(activeConsultRecord.topics || sub.topics || []).join('، ') || '—'}</dd></div>
                 <div><dt>دسته</dt><dd>{activeConsultRecord.category || sub.category || '—'}</dd></div>
                 <div><dt>مشکل گوارشی</dt><dd>{(Array.isArray(activeConsultRecord.digest) ? activeConsultRecord.digest.join('، ') : activeConsultRecord.digest) || (Array.isArray(sub.digest) ? sub.digest.join('، ') : sub.digest) || '—'}</dd></div>
