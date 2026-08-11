@@ -1121,3 +1121,6 @@ body.admin-root .zkad-filter-card .zkad-chiprow{padding:0 8px 9px;flex-wrap:wrap
 body.admin-root .zkad-chips-area>div[style*="grid"]{display:contents!important;padding:0!important;border:0!important;background:transparent!important}
 body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:0;border:0;background:transparent}
 @media(max-width:640px){body.admin-root .zkad-chips-area{grid-template-columns:1fr;gap:8px}body.admin-root .zkad-filter-card-head{min-height:48px;padding:9px 12px;font-size:13px}body.admin-root .zkad-chips-area .zkad-datechip{width:100%;min-height:42px}body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:10px!important;border:1px solid var(--zkad-brd)!important;border-radius:13px;background:var(--zkad-card)!important}}
+
+/* compact follow-up controls inside consultation status row */
+body.admin-root .zkad-fu-btn{width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
