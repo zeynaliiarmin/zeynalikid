@@ -478,7 +478,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
  </section>
 </div>
 {loadingSubs&&<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>}</>}{aTab==='data'&&<>{subs.length>1000&&<div className="zkad-tag t-warn" style={{marginBottom:10,fontSize:11,padding:'8px 10px'}}>برای نمایش همه فرم‌ها، از فیلتر استفاده کنید</div>}
-<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small>{faNum(groups.length)} پرونده</small></h3></div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
+<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small title="کل ثبت‌شده‌ها / تعداد همین صفحه" style={{direction:'ltr',display:'inline-block'}}>{faNum(subs.length)} / {faNum(groups.length)}</small></h3></div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
 <div className="zkad-toolbar">
  <div className="zkad-search"><ZkSearchIcon size={16}/><input placeholder="نام، شماره، کد پیگیری..." value={srch} onChange={e=>{setSrch(e.target.value);setPage(1)}} aria-label="جستجوی فرم‌ها"/></div>
  <div className="zkad-toolbar-actions">
