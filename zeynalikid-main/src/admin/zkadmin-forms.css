@@ -563,3 +563,11 @@ body.admin-root .zkad-sub-actions .zkad-sub-time { margin-inline: 2px; }
   body.admin-root .zkad-sub-identity .zkad-sub-title { width: auto; flex: 0 0 auto; }
   body.admin-root .zkad-sub-actions .zkad-sub-time { font-size: 10.5px; }
 }
+
+/* Header actions are compact controls; other admin icon buttons retain their normal size. */
+body.admin-root .zkad-sub-actions .zkad-sub-header-icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px;
+  min-height: 32px;
+}

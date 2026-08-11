@@ -387,13 +387,13 @@ function SubCardBase({
           <span className="zkad-sub-time">{fmtWhen(sub)}</span>
           <button
             type="button"
-            className="zkad-iconbtn t-err"
+            className="zkad-iconbtn zkad-sub-header-icon t-err"
             title="حذف فرم"
             onClick={() => { if (confirm('این فرم به سطل بازیافت منتقل شود؟')) setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
           >
             <ZkTrashIcon size={15} />
           </button>
-          <button type="button" className="zkad-iconbtn" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
+          <button type="button" className="zkad-iconbtn zkad-sub-header-icon" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
             {open ? <ZkChevronUpIcon size={15} /> : <ZkChevronDownIcon size={15} />}
           </button>
         </div>
