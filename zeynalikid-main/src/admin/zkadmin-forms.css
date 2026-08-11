@@ -500,7 +500,11 @@ body.admin-root .zkad-product-body { margin-top: 9px; display: flex; flex-direct
   /* Free text stays readable, while using proportionate vertical room. */
   body.admin-root .zkad-textarea { min-height: 72px; padding: 9px 10px; line-height: 1.5; }
   body.admin-root .zkad-textarea.sm { min-height: 52px; }
-  body.admin-root .zkad-facts > div { padding: 8px 9px; }
+  /* Child-information facts are short labels/values: show two balanced cards per row. */
+  body.admin-root .zkad-facts,
+  body.admin-root .zkad-facts.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  body.admin-root .zkad-facts > div { padding: 8px 9px; min-height: 64px; }
+  body.admin-root .zkad-facts dt { margin-bottom: 2px; }
   body.admin-root .zkad-note { padding: 9px 10px; }
   body.admin-root .zkad-file { padding: 9px 10px; }
 }
