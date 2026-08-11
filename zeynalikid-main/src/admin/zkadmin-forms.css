@@ -580,6 +580,9 @@ body.admin-root .zkad-sub-actions .zkad-sub-toggle {
 
 /* Deletion remains secondary to opening, but gets a slightly wider hit area. */
 body.admin-root .zkad-sub-actions .zkad-sub-header-icon.t-err {
-  width: 48px !important;
-  min-width: 48px;
+  width: 42px !important;
+  min-width: 42px;
 }
+
+/* Keep destructive and open controls as one intentional pair, with breathable spacing. */
+body.admin-root .zkad-sub-controls { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }

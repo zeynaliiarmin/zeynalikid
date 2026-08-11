@@ -385,17 +385,19 @@ function SubCardBase({
         <div className="zkad-sub-actions" onClick={e => e.stopPropagation()}>
           <span className={`zkad-tag t-${statusTone(status)}`}>{status}</span>
           <span className="zkad-sub-time">{fmtWhen(sub)}</span>
-          <button
-            type="button"
-            className="zkad-iconbtn zkad-sub-header-icon t-err"
-            title="حذف فرم"
-            onClick={() => { if (confirm('این فرم به سطل بازیافت منتقل شود؟')) setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
-          >
-            <ZkTrashIcon size={15} />
-          </button>
-          <button type="button" className="zkad-iconbtn zkad-sub-header-icon zkad-sub-toggle" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
-            {open ? <ZkChevronUpIcon size={15} /> : <ZkChevronDownIcon size={15} />}
-          </button>
+          <span className="zkad-sub-controls">
+            <button
+              type="button"
+              className="zkad-iconbtn zkad-sub-header-icon t-err"
+              title="حذف فرم"
+              onClick={() => { if (confirm('این فرم به سطل بازیافت منتقل شود؟')) setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
+            >
+              <ZkTrashIcon size={15} />
+            </button>
+            <button type="button" className="zkad-iconbtn zkad-sub-header-icon zkad-sub-toggle" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
+              {open ? <ZkChevronUpIcon size={15} /> : <ZkChevronDownIcon size={15} />}
+            </button>
+          </span>
         </div>
 
         {(isChild || groupCount > 0 || sub.similarTo || sub.editHistory?.length > 0 || sub.priority === 'high') && (
