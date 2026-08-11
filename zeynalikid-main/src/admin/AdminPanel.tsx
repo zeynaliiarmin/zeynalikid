@@ -191,7 +191,7 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
+ const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expId,setExpId]=useState<any>(null);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
@@ -275,8 +275,10 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   const coursesF=['همه',...Array.from(new Set(subs.map(getCourse).filter(Boolean)))];
   const payOptions=['همه','پرداخت‌شده','در انتظار پرداخت','بدون پرداخت'];
   const hay=(s:any)=>[s.pName,s.fullPhone,s.trackingCode,(s.topics||[]).join(' '),s.course?.title,s.course?.titleEn,s.shipping?.city,s.shipping?.country,s.shipping?.address,s.category,getStatus(s)].join(' ').toLowerCase();
-  const pageSize=50,totalPages=Math.max(1,Math.ceil(subs.length/pageSize)); const safePage=Math.min(page,totalPages); const currentPageRaw=subs.slice((safePage-1)*pageSize,safePage*pageSize);
-  const filtered=currentPageRaw.filter(s=>(catF==='همه'||s.category===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
+  // اول روی همه فرم‌ها جستجو و فیلتر می‌کنیم، سپس نتیجه را صفحه‌بندی می‌کنیم.
+  // بنابراین جستجو محدود به ۵۰ مورد صفحه فعلی نیست.
+  const filteredAll=subs.filter(s=>(typeF==='all'||s.type===typeF)&&(catF==='همه'||s.category===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
+  const pageSize=50,totalPages=Math.max(1,Math.ceil(filteredAll.length/pageSize)); const safePage=Math.min(page,totalPages); const filtered=filteredAll.slice((safePage-1)*pageSize,safePage*pageSize);
   const groups=(()=>{const byPhone=new Map<string,any[]>();const singles:any[]=[];filtered.forEach(s=>{const key=digits(s.fullPhone||'');if(!key){singles.push({head:s,children:[]});return}if(!byPhone.has(key))byPhone.set(key,[]);byPhone.get(key)!.push(s)});const out:any[]=[...singles];byPhone.forEach(list=>{const sorted=[...list].sort((a,b)=>subTime(a)-subTime(b));out.push({head:sorted[0],children:sorted.slice(1)})});const latest=(g:any)=>Math.max(subTime(g.head),...g.children.map((c:any)=>subTime(c)));return out.sort((a,b)=>latest(b)-latest(a))})();
   const isAllSelected = groups.length>0 && groups.every((g:any)=> selectedIds.has(g.head.id));
   const rows=filtered.map(s=>({نام:s.pName||'',شماره:s.fullPhone||'',موضوع:(s.topics||[]).join('|'),کشور:getCountry(s),دوره:getCourse(s),پرداخت:getPay(s),وضعیت:getStatus(s),تاریخ:s.date||'',شهر:s.shipping?.city||'',یادداشت:s.adminNotes||''}));
@@ -489,6 +491,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
  </div>
 </div>
 <div className="zkad-filter-toggle"><button type="button" onClick={()=>setFiltersOpen(v=>!v)}>{filtersOpen?"− بستن فیلترها":"+ فیلترها و تنظیمات خروجی"}{filtersActive&&<span> فعال</span>}</button>{filtersOpen&&<button type="button" onClick={clearFilters}>پاک‌کردن</button>}</div>{filtersOpen&&<div className="zkad-chips-area">
+ <ChipGroup label="نوع ثبت" options={['همه','درخواست مشاوره','ثبت دوره']} val={typeF==='all'?'همه':typeF==='consultation'?'درخواست مشاوره':'ثبت دوره'} set={v=>{setTypeF(v==='درخواست مشاوره'?'consultation':v==='ثبت دوره'?'course':'all');setPage(1)}}/>
  <ChipGroup label="دسته‌بندی" options={cats} val={catF} set={v=>{setCatF(v);setPage(1)}}/>
  <ChipGroup label="وضعیت سفارش" options={['همه',...statusOptions]} val={statusF} set={v=>{setStatusF(v);setPage(1)}}/>
  <ChipGroup label="پرداخت" options={payOptions} val={payF} set={v=>{setPayF(v);setPage(1)}}/>
@@ -2480,7 +2483,7 @@ function ThemeManagerEditor(){
   </>}
 
  const goTab=(id:string)=>{setATab(id);setEditCfg(JSON.parse(JSON.stringify(cfg)))};
- const filtersActive=!!(srch||dateF||catF!=='همه'||countryF!=='همه'||courseF!=='همه'||payF!=='همه'||statusF!=='همه');
- const clearFilters=()=>{setSrch('');setDateF('');setCatF('همه');setCountryF('همه');setCourseF('همه');setPayF('همه');setStatusF('همه');setPage(1)};
+ const filtersActive=!!(srch||dateF||typeF!=='all'||catF!=='همه'||countryF!=='همه'||courseF!=='همه'||payF!=='همه'||statusF!=='همه');
+ const clearFilters=()=>{setSrch('');setDateF('');setTypeF('all');setCatF('همه');setCountryF('همه');setCourseF('همه');setPayF('همه');setStatusF('همه');setPage(1)};
  return Admin();
 }
