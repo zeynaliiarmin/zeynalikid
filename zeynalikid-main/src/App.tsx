@@ -1001,6 +1001,8 @@ function App(){
  const [adminDark,setAdminDark]=useState<boolean>(()=>{try{return resolveZkDark()}catch{return false}});
  useEffect(()=>{
   const sync=()=>{try{setAdminDark(resolveZkDark())}catch{}};
+  // AdminLayout ممکن است قبل از ثبت listener تم را اعمال کند؛ یک‌بار هم در mount همگام‌سازی می‌کنیم.
+  sync();
   const onStorage=(e:StorageEvent)=>{if(e.key===ZK_THEME_KEY)sync()};
   window.addEventListener('storage',onStorage);
   window.addEventListener(ZK_THEME_EVENT,sync as EventListener);
