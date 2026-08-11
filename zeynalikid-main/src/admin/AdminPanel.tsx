@@ -19,25 +19,21 @@ import { ZkArrowUpIcon, ZkArrowDownIcon, ZkChevronUpIcon, ZkChevronDownIcon, ZkC
  ZkReviewsIcon, ZkOrdersIcon, ZkContentIcon, ZkBellIcon, ZkTruckIcon, ZkHomeIcon, ZkSearchIcon,
  ZkDownloadIcon, ZkFilterIcon, ZkPhoneIcon, ZkSendIcon, ZkClockIcon, ZkWarnIcon, ZkPlusIcon, ZkUploadIcon, ZkChatIcon } from './adminIcons';
 import './zkadmin-tokens.css';
+import './zkadmin-forms.css';
+// FIX معماری: SubCard/LazySubCard/PhoneAction/GrowthBox از داخل بدنه AdminPanel
+// به ماژول مستقل منتقل شدند. تعریف داخلی باعث می‌شد در هر رندر یک component type
+// جدید ساخته شود و React کل زیردرخت را unmount/remount کند (کیبورد بسته می‌شد،
+// تب داخلی ریست می‌شد، اسکرول می‌پرید، فرم باز بسته می‌شد).
+import SubCard, { LazySubCard } from './SubCard';
 import AnalyticsPanel from './AnalyticsPanel';
+// منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
+import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 
 type Any=Record<string,any>;
-const SK={settings:'zkid_settings_v2', subs:'zkid_submissions_v2'};
 const ENV_ADMIN_PASSWORD=(import.meta.env.VITE_ADMIN_PASSWORD as string|undefined)||'';
-const p2e=(s:any)=>String(s??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
-const digits=(s:any)=>p2e(s).replace(/[^0-9]/g,'');
-const uid=()=>Date.now()+Math.floor(Math.random()*9999);
 // Stage 7B: هِلپرهای نمایشی خالص (بدون هیچ تغییر منطقی) — عدد فارسی، تاریخ خوانا، زمان نسبی، لحن وضعیت
-const faNum=(n:number)=>Number(n||0).toLocaleString('fa-IR');
-const fmtWhen=(x:any)=>{try{const d=x?.created_at?new Date(x.created_at):null; if(d&&!isNaN(+d))return new Intl.DateTimeFormat('fa-IR',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(d);}catch{} return x?.date?`${x.date}${x.time?' '+x.time:''}`:'—'};
-const relTime=(t:number)=>{try{if(!t)return ''; const rtf=new Intl.RelativeTimeFormat('fa',{numeric:'auto'}); const m=Math.round((t-Date.now())/60000); if(Math.abs(m)<60)return rtf.format(m,'minute'); const h=Math.round(m/60); if(Math.abs(h)<24)return rtf.format(h,'hour'); return rtf.format(Math.round(h/24),'day');}catch{return ''}};
-const statusTone=(s:string)=>(s==='پرداخت‌شده'||s==='تکمیل‌شده')?'ok':s==='ارسال‌شده'?'info':s==='لغو‌شده'?'err':(s==='جدید'||s==='در انتظار پرداخت')?'warn':'mut';
-const getLS=(k:string,f:any)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}};
-const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 
-const normRange=(age:any,g:any)=>{const t:any={2:{m:[78,85,92,9,12,15],f:[77,84,91,9,12,14]},3:{m:[88,95,103,11,14,18],f:[86,94,102,11,14,17]},4:{m:[95,103,111,12,16,21],f:[94,102,110,12,16,20]},5:{m:[102,110,118,13,18,23],f:[100,108,117,13,18,23]},6:{m:[107,116,126,15,21,27],f:[106,115,125,14,20,26]},7:{m:[112,122,132,16,23,30],f:[111,122,132,15,22,30]},8:{m:[116,127,138,16,25,35],f:[116,127,139,15,25,35]},9:{m:[121,133,144,17,28,39],f:[121,133,145,16,29,41]},10:{m:[126,138,150,19,32,45],f:[126,139,152,18,33,47]},11:{m:[130,144,157,20,36,51],f:[131,145,159,20,37,54]},12:{m:[134,149,164,22,40,58],f:[138,152,166,23,42,60]},13:{m:[141,156,172,24,45,66],f:[142,155,168,26,46,66]},14:{m:[149,163,178,28,51,73],f:[146,158,171,29,50,71]},15:{m:[156,169,182,34,57,80],f:[148,160,172,32,53,73]},16:{m:[160,173,186,39,62,84],f:[149,161,172,33,54,75]},17:{m:[163,175,187,43,65,87],f:[149,161,173,34,55,76]}};const a=Math.min(17,Math.max(2,Math.round(+p2e(age)||2)));const d=t[a]?.[g==='male'?'m':'f'];return d?{hMin:d[0],hMed:d[1],hMax:d[2],wMin:d[3],wMed:d[4],wMax:d[5]}:null};
-const growthStatus=(val:number,min:number,med:number,max:number)=>{const sd=(max-min)/4;if(val>=min+sd&&val<=max-sd)return {label:'نرمال',color:'#22c55e'};if(val>=min&&val<=max)return {label:'نزدیک به مرز',color:'#f97316'};const diff=val<min?min-val:val-max;if(diff<=sd*1.5)return {label:val<min?'زیر نرمال':'بالای نرمال',color:'#f97316'};return {label:val<min?'خیلی زیر نرمال':'خیلی بالای نرمال',color:'#ef4444'}};
 
 // FIX: StableAdminInput با تاخیر در commit و حفظ فوکوس — رفع fg انتخاب سریع و سپس لغو
 // علت جدید: بعد از کلیک A->B، B ابتدا انتخاب سپس سریع لغو می‌شد — چون commit قبلی بدون حفظ activeElement، رندر والد فوکوس B را می‌دزدید
@@ -79,7 +75,6 @@ const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',o
   return <textarea ref={ref} defaultValue={defaultValue} onBlur={commit} placeholder={placeholder} style={style} rows={rows}/>;
 });
 
-function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'calc(100vw - 28px)',minWidth:'min(220px, calc(100vw - 28px))',maxHeight:'55vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
 
 export default function AdminPanel({app}:{app:any}){
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
@@ -139,7 +134,7 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const setExpId=(id:any)=>{setExpIdRaw(id);try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}}; const expId=expIdRaw;
+ const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
@@ -152,10 +147,7 @@ export default function AdminPanel({app}:{app:any}){
  // پنل مدیریت (شامل SubCard، SettingsEditor و سایر ادیتورها) به‌صورت سراسری اعمال می‌شود.
 // Removed focusin scrollIntoView listener — was causing scroll jumps
  const setSave=(next:any)=>{saveCfg(next);setMsg('ذخیره شد');setTimeout(()=>setMsg(''),2200)};
- const subTime=(x:any)=>{if(x?.created_at){const t=Date.parse(x.created_at);if(!isNaN(t))return t} return typeof x?.id==='number'?x.id:0};
  // اصلاح ۳-الف: یادآور پیگیری فقط وقتی نمایش داده می‌شود که بیش از ۳ روز گذشته، هیچ پیگیری‌ای ثبت نشده، و فرم از قبل در دسته «پیگیری» یا «پیگیری آخر ماه» نباشد (چون آن‌ها خودشان قبلاً وارد چرخه پیگیری شده‌اند)
- const needsReminder=(x:any)=>{if(!x?.followReminder)return false; const fu=x.followUps||[]; if(fu.some((f:any)=>f!==null))return false; if(x.category==='پیگیری'||x.category==='آخر ماه'||x.consultationStatus==='پیگیری'||x.consultationStatus==='پیگیری آخر ماه')return false; const t=subTime(x); return t>0&&(Date.now()-t)>3*24*60*60*1000};
- const logChange=(x:any,what:string)=>[...(x.changeHistory||[]),{by:'مدیر',at:new Date().toLocaleString('fa-IR'),what}];
 
  // FIX: Stabilize component identity with useMemo to prevent remount on every re-render
  // This fixes: (fg) double-tap on input fields, (sj) page jump / details collapse
@@ -236,7 +228,11 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   const exportExcel=()=>{const keys=Object.keys(rows[0]||{نام:'',شماره:'',موضوع:'',کشور:'',دوره:'',پرداخت:'',وضعیت:'',تاریخ:''});const html=`<html><meta charset="utf-8"><body><table border="1"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${String((r as any)[k]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`;download('zeynalikid-export.xls',html,'application/vnd.ms-excel;charset=utf-8')};
   const exportPhones=()=>download('phones.txt',filtered.map(s=>s.fullPhone).filter(Boolean).join('\n'));
   const exportWhatsApp=()=>{const links=filtered.map(s=>digits(s.fullPhone||'')).filter(Boolean).map(n=>`<p><a href="https://wa.me/${n}">${n}</a></p>`).join('');download('whatsapp-links.html',`<html><meta charset="utf-8"><body>${links}</body></html>`,'text/html;charset=utf-8')};
-  const changeStatus=(id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:[...(x.changeHistory||[]),{by:'مدیر',at:new Date().toLocaleString('fa-IR'),what:`تغییر وضعیت به ${status}`}]}:x));
+  const changeStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:logChange(x,`تغییر وضعیت به ${status}`)}:x)),[setSubs]);
+  // باز/بستن کارت فرم — callback پایدار تا React.memo کارت‌ها بی‌دلیل رندر نشود
+  const toggleOpenForm=useCallback((id:any)=>{setExpId(expIdRef.current===id?null:id)},[]);
+  // وابستگی‌های تزریقی SubCard؛ با useMemo پایدار می‌مانند و باعث remount نمی‌شوند
+  const subCardIO=useMemo(()=>({setSubs,cfg,uploadPdfFile,deleteStoredFile,deleteStoredImage,deleteStoredTonguePhoto,isSupabaseConfigured,updateSubmission}),[setSubs,cfg,uploadPdfFile,deleteStoredFile,deleteStoredImage,deleteStoredTonguePhoto]);
   // اصلاح ۸: فلش چرخان ۱۸۰ درجه برای details/summary در پنل مدیریت
   const adminDetailsCss=`details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}details>summary::after{content:'';display:inline-block;width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .3s ease;margin-inline-start:6px;vertical-align:middle}details[open]>summary::after{transform:rotate(-135deg)}.admin-section-box{border:1px solid var(--zk-admin-border,#c8d5df);background:var(--zk-admin-surface,#f1f5f8)}.admin-main details{border-color:var(--zk-admin-border,#c8d5df)!important}.admin-main input[type=checkbox]{width:18px;height:18px;accent-color:var(--zk-action-primary,#1769c2)}.admin-main label{line-height:1.7}.admin-main .admin-section-box button{min-height:44px}`;
   // اصلاح ۳۵+۳۶: بازطراحی پنل مدیریت — داشبورد مدرن با کارت‌های آمار + منوی جانبی + رفع باگ کیبورد موبایل
@@ -460,549 +456,9 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
     <button type="button" className="zkad-toolbtn" onClick={clearSelection}>لغو انتخاب</button>
   </div>}
 </div>
-{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&CoursesEditor()}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='themes'&&editCfg&&ThemeManagerEditor()}{aTab==='images'&&editCfg&&ImagesEditor()}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor()}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{msg&&<div style={{position:'fixed',bottom:20,left:20,background:T.pop,border:`1px solid ${T.ok}`,color:T.ok,borderRadius:12,padding:'10px 14px',zIndex:3000}}>{msg}</div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
+{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&CoursesEditor()}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='themes'&&editCfg&&ThemeManagerEditor()}{aTab==='images'&&editCfg&&ImagesEditor()}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor()}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{msg&&<div style={{position:'fixed',bottom:20,left:20,background:T.pop,border:`1px solid ${T.ok}`,color:T.ok,borderRadius:12,padding:'10px 14px',zIndex:3000}}>{msg}</div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
 <div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>}
 
- function PhoneAction({sub,phone,whatsappOnly=false,label}:{sub:any,phone:any,whatsappOnly?:boolean,label?:string}){const [open,setOpen]=useState(false);const raw=String(phone||'');if(!raw)return <span>—</span>;const cc=sub?.cc||sub?.shipping?.phoneCc||'';const isIran=cc==='+98'||raw.startsWith('+98')||raw.startsWith('0098');const waDigits=digits(raw.startsWith('+')||raw.startsWith('00')?raw:`${cc}${raw}`);const telHref=`tel:${raw}`;const waHref=`https://wa.me/${waDigits}`;const rbHref=`https://rubika.ir/${waDigits}`;const linkStyle={display:'block',padding:'9px 11px',borderRadius:9,textDecoration:'none',color:T.txt,background:'transparent',fontSize:13,fontWeight:700} as any;const trigger=<button onClick={(e)=>{e.stopPropagation();setOpen(v=>!v)}} style={{border:0,background:T.soft,color:T.acc,borderRadius:8,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit',fontSize:12,direction:'ltr'}}>{label||raw}</button>;if(whatsappOnly)return <a href={waHref} target="_blank" rel="noreferrer" style={{color:T.ok,fontWeight:800,direction:'ltr',display:'inline-block'}}>{label||raw}</a>;return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={240} trigger={trigger}><a href={telHref} style={linkStyle} onClick={()=>setOpen(false)}>تلفن</a><a href={waHref} target="_blank" rel="noreferrer" style={{...linkStyle,color:'#16a34a'}} onClick={()=>setOpen(false)}>واتساپ</a>{isIran&&<a href={rbHref} target="_blank" rel="noreferrer" style={{...linkStyle,color:'#f97316'}} onClick={()=>setOpen(false)}>روبیکا</a>}<button type="button" style={{...linkStyle,border:0,width:'100%',textAlign:'right',cursor:'pointer',fontFamily:'inherit'}} onClick={async()=>{try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(raw);else throw new Error();setOpen(false)}catch{const el=document.createElement('textarea');el.value=raw;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();setOpen(false)}}}>کپی شماره</button></Popup>}
-
- function LazySubCard(props:any){const ref=useRef<HTMLDivElement|null>(null);const [visible,setVisible]=useState(false);useEffect(()=>{const el=ref.current;if(!el)return;const io=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){setVisible(true);io.disconnect()}},{rootMargin:'180px'});io.observe(el);return()=>io.disconnect()},[]);return <div ref={ref} style={{minHeight:visible?'auto':92}}>{visible?<SubCard {...props}/>:<div style={{height:78,borderRadius:14,background:T.badge,border:`1px solid ${T.brd}`,opacity:.55}}/>}</div>}
-
- function SubCard({sub,statusOptions=[],getStatus=(x:any)=>x.orderStatus||'جدید',onStatusChange,groupCount=0,isChild=false,allSubs=[],onOpenRelated,forceOpen=false,selectedIds=new Set(),toggleSelect=()=>{}}:any){
- const color=sub.priority==='high'?T.err:sub.unread?T.ok:T.acc;
- const open=forceOpen||expId===sub.id;
- const [subTabRaw,setSubTabRaw]=useState<'parent'|'course'|'manage'|'corrective'>(()=>{try{return (sessionStorage.getItem(`zk_admin_form_tab_${sub.id}`) as any)||'parent'}catch{return 'parent'}}); const setSubTab=(tab:'parent'|'course'|'manage'|'corrective')=>{setSubTabRaw(tab);try{sessionStorage.setItem(`zk_admin_form_tab_${sub.id}`,tab)}catch{}}; const subTab=subTabRaw;
- const [trackCopied,setTrackCopied]=useState(false);
- const copyTracking=async()=>{const value=String(sub.trackingCode||'');if(!value)return;try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else throw new Error();}catch{const el=document.createElement('textarea');el.value=value;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();}setTrackCopied(true);setTimeout(()=>setTrackCopied(false),1800)};
- const [selectedCourseIdx,setSelectedCourseIdx]=useState(0);
- const [selectedConsultIdx,setSelectedConsultIdx]=useState(0);
- const mark=()=>{setExpId(open?null:sub.id); if(sub.unread)setSubs((s:any[])=>s.map(x=>x.id===sub.id?{...x,unread:false,isNew:false}:x))};
-
- // پیگیری‌ها: ۳ تیک سبز خودکار به آخر ماه می‌برد
- const fu=(i:number)=>{const slots=[...(sub.followUps||[null,null,null,null,null])]; slots[i]=slots[i]===null?'done':slots[i]==='done'?'miss':null; let cat=sub.category; let cs=sub.consultationStatus; const doneCount=slots.filter(x=>x==='done').length; const hasMiss=slots.some(x=>x==='miss'); if(hasMiss){cat='پیگیری';cs='پیگیری'} else if(doneCount>=3){cat='آخر ماه';cs='پیگیری آخر ماه'} else if(cat==='آخر ماه'||cs==='پیگیری آخر ماه'){cat='پیگیری';cs='پیگیری'} setSubs((s:any[])=>s.map(x=>x.id===sub.id?{...x,followUps:slots,category:cat,consultationStatus:cs,changeHistory:logChange(x,`ثبت پیگیری مرحله ${i+1}`)}:x))};
-
- // یکپارچه‌سازی خودکار بر اساس شماره تماس: پیدا کردن تمام فرم‌های این شماره تماس
- const myPhone=digits(sub.fullPhone||'');
- const allSamePhone=useMemo(()=>{
-   if(!myPhone)return [sub];
-   return allSubs.filter((x:any)=>digits(x.fullPhone||'')===myPhone).sort((a:any,b:any)=>subTime(b)-subTime(a));
- },[allSubs,myPhone,sub]);
-
- // تمام ثبت‌نام‌های دوره این شماره تماس
- const courseRecords=useMemo(()=>{
-   const list=allSamePhone.filter((x:any)=>x.type==='course'||x.course||x.shipping||x.payment);
-   return list.length?list:[sub];
- },[allSamePhone,sub]);
-
- // تمام درخواست‌های مشاوره این شماره تماس
- const consultRecords=useMemo(()=>{
-   const list=allSamePhone.filter((x:any)=>x.type==='consultation'||(x.topics&&x.topics.length>0));
-   return list.length?list:[sub];
- },[allSamePhone,sub]);
-
- const activeCourseRecord=courseRecords[selectedCourseIdx]||courseRecords[0]||sub;
- const activeConsultRecord=consultRecords[selectedConsultIdx]||consultRecords[0]||sub;
-
- const relatedSubs=useMemo(()=>{
-   if(!myPhone)return [];
-   return allSubs.filter((x:any)=>x.id!==sub.id&&digits(x.fullPhone||'')===myPhone).sort((a:any,b:any)=>subTime(b)-subTime(a));
- },[allSubs,sub.id,myPhone]);
-
- const hasConsultation = allSamePhone.some((x:any)=>x.type==='consultation'||(x.topics&&x.topics.length>0));
- const hasCourseRegistration = allSamePhone.some((x:any)=>x.type==='course'||x.course||x.shipping||x.payment);
-
- // بررسی هوشمند مغایرت و تفاوت اطلاعات فرزند بین فرم مشاوره و ثبت دوره
- const childDiffs=useMemo(()=>{
-   const diffs:any[]=[];
-   const c1=consultRecords[0]; const c2=courseRecords[0];
-   if(!c1||!c2||c1.id===c2.id)return diffs;
-   if(c1.age&&c2.age&&String(c1.age).trim()!==String(c2.age).trim()){
-     diffs.push({label:'سن فرزند',oldVal:`${c1.age} سال (مشاوره)`,newVal:`${c2.age} سال (دوره)`});
-   }
-   if(c1.gender&&c2.gender&&c1.gender!==c2.gender){
-     diffs.push({label:'جنسیت',oldVal:c1.gender==='male'?'پسر':'دختر',newVal:c2.gender==='male'?'پسر':'دختر'});
-   }
-   if(c1.height&&c2.height&&String(c1.height).trim()!==String(c2.height).trim()){
-     diffs.push({label:'قد',oldVal:`${c1.height} cm`,newVal:`${c2.height} cm`});
-   }
-   if(c1.weight&&c2.weight&&String(c1.weight).trim()!==String(c2.weight).trim()){
-     diffs.push({label:'وزن',oldVal:`${c1.weight} kg`,newVal:`${c2.weight} kg`});
-   }
-   if(c1.appetite&&c2.appetite&&c1.appetite!==c2.appetite){
-     diffs.push({label:'وضعیت اشتها',oldVal:c1.appetite,newVal:c2.appetite});
-   }
-   if(c1.disease&&c2.disease&&c1.disease.trim()!==c2.disease.trim()){
-     diffs.push({label:'بیماری خاص',oldVal:c1.disease,newVal:c2.disease});
-   }
-   return diffs;
- },[consultRecords,courseRecords]);
-
- // ۴ تب استاندارد درخواستی
- const tabs:[('parent'|'course'|'manage'|'corrective'),string][]=[
-   ['parent','۱. اطلاعات فرزند'],
-   ['course','۲. دوره، ارسال و پرداخت'],
-   ['manage','۳. مدیریت و پیگیری'],
-   ['corrective','۴. اصلاحی']
- ];
-
- const updateField=(targetRecordId:any,fieldPath:string,val:any,logText?:string)=>{
-   setSubs((list:any[])=>list.map(x=>{
-     if(x.id!==targetRecordId&&x.id!==sub.id) return x;
-     const updated={...x};
-     if(fieldPath.includes('.')){
-       const parts=fieldPath.split('.');
-       if(parts.length===2){
-         updated[parts[0]]={...(updated[parts[0]]||{}),[parts[1]]:val};
-       }
-     } else {
-       updated[fieldPath]=val;
-     }
-     if(logText){
-       updated.changeHistory=logChange(x,logText);
-     }
-     // ذخیره‌سازی بلادرنگ در دیتابیس Supabase
-     if(isSupabaseConfigured){
-       updateSubmission(x.id, updated as any).catch((err:any)=>console.warn('Update submission in Supabase failed',err));
-     }
-     return updated;
-   }));
- };
-
- return <div className={`zkad-card ${sub.unread||sub.isNew?'zkad-unread':''}`} style={{marginBottom:10,borderColor:sub.priority==='high'?'var(--zkad-err)':sub.unread?'var(--zkad-acc)':undefined}}>
-  <div onClick={mark} className="zkad-row-head" style={{padding:'12px 14px',cursor:'pointer',display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}><input type="checkbox" checked={selectedIds.has(sub.id)} onClick={(e:any)=>{e.stopPropagation(); toggleSelect(sub.id);}} onChange={()=>{}} style={{width:18,height:18,accentColor:'var(--zkad-acc)',cursor:'pointer'}}/>{needsReminder(sub)&&<span title="بیش از ۳ روز بدون پیگیری" style={{flexShrink:0,color:T.warn,display:'inline-flex',alignItems:'center'}}><ZkBellIcon size={15}/></span>}<div style={{flex:1,minWidth:130,display:'flex',flexDirection:'column',gap:2}}><b>{sub.pName||sub.shipping?.receiver||'—'}</b><span style={{fontSize:12,color:T.mut,direction:'ltr',textAlign:'right'}}>{sub.fullPhone||sub.shipping?.phone||sub.pPhone||'—'}</span></div><span className={`zkad-tag t-${statusTone(getStatus(sub))}`}>{getStatus(sub)}</span><span className="zkad-time">{fmtWhen(sub)}</span>{sub.trackingCode&&<button type="button" className="zkad-mono" onClick={(e)=>{e.stopPropagation();copyTracking()}} title="برای کپی کد پیگیری لمس کنید" style={{border:0,cursor:'pointer',fontFamily:'inherit',display:'inline-flex',alignItems:'center',gap:5}}>{sub.trackingCode}{trackCopied&&<span style={{color:'#16a34a',fontWeight:900}}>✓</span>}</button>}{isChild&&<Tag x="فرم تکراری" tone="warn"/>}{groupCount>0&&<Tag x={`${groupCount} فرم دیگر با این شماره`} tone="info"/>}{sub.similarTo&&<Tag x="مشابه"/>}{sub.editHistory?.length>0&&<Tag x="ادیت شده"/>}{sub.priority==='high'&&<Tag x="اولویت زیاد" tone="err"/>}<button type="button" className="zkad-iconbtn t-err" title="حذف فرم" onClick={(e)=>{e.stopPropagation();if(confirm('حذف شود؟'))setSubs((s:any[])=>s.filter(x=>x.id!==sub.id))}}><ZkTrashIcon size={15}/></button><span style={{display:'inline-flex',color:T.mut}}>{open?<ZkChevronUpIcon size={14}/>:<ZkChevronDownIcon size={14}/>}</span></div>
-  {open&&<div style={{padding:13,borderTop:`1px solid ${T.brd}`,fontSize:12,lineHeight:2,background:T.card}}>
-   {/* نوار ۴ تب استاندارد */}
-   <div style={{display:'grid',gridTemplateColumns:`repeat(${tabs.length},1fr)`,gap:6,marginBottom:12}}>{tabs.map(([id,label])=><button type="button" key={id} onClick={(e)=>{e.stopPropagation();setSubTab(id)}} style={{padding:'8px 4px',borderRadius:11,border:'none',background:subTab===id?T.soft:T.card,color:subTab===id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:11.5,fontWeight:700,boxShadow:subTab===id?T.neuIn:T.neuOut}}>{label}</button>)}</div>
-
-   {/* تب ۱: اطلاعات فرزند */}
-   {subTab==='parent'&&<div>
-    {/* تگ منبع ثبت اطلاعات: فرم مشاوره یا ثبت دوره + دکمه دانلود پرونده */}
-    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:10,padding:'8px 12px',background:T.soft||'#f0fdf4',borderRadius:10,border:`1px solid ${T.brd}`}}>
-      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-        <span style={{fontSize:12,color:T.mut,fontWeight:700}}>مبدأ ثبت اطلاعات:</span>
-        {hasConsultation && (
-          <span style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #bfdbfe',borderRadius:7,padding:'2px 8px',fontSize:11.5,fontWeight:800,display:'inline-flex',alignItems:'center',gap:4}}>
-            <ZkDocIcon size={12}/> درخواست مشاوره
-          </span>
-        )}
-        {hasCourseRegistration && (
-          <span style={{background:'#f3e8ff',color:'#6b21a8',border:'1px solid #e9d5ff',borderRadius:7,padding:'2px 8px',fontSize:11.5,fontWeight:800,display:'inline-flex',alignItems:'center',gap:4}}>
-            <ZkCoursesIcon size={12}/> ثبت دوره
-          </span>
-        )}
-        {!hasConsultation && !hasCourseRegistration && (
-          <span style={{background:T.card,color:T.acc,border:`1px solid ${T.brd}`,borderRadius:7,padding:'2px 8px',fontSize:11.5,fontWeight:700}}>
-            {sub.type === 'course' ? 'ثبت دوره' : 'درخواست مشاوره'}
-          </span>
-        )}
-      </div>
-      <div style={{display:'flex',alignItems:'center',gap:8}}>
-        {sub.date && (
-          <span style={{fontSize:11,color:T.mut}}>
-            تاریخ ثبت: {sub.date} {sub.time || ''}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={async()=>{try{const fmt=(localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp') as 'webp'|'jpg';const blob=await generateFormImage(sub,fmt);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(sub.pName||sub.fullPhone||sub.id).replace(/\s+/g,'_')}.${fmt}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch{alert('خطا در ساخت تصویر پرونده')}}}
-          style={{padding:'3px 8px',borderRadius:6,border:`1px solid ${T.brd}`,background:T.card,color:T.txt,fontSize:11,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:4}}
-          title="دانلود خلاصه پرونده متنی"
-        >
-          <ZkDownloadIcon size={11}/> دانلود پرونده
-        </button>
-      </div>
-    </div>
-
-    {/* باکس هوشمند مغایرت و تفاوت‌ها در صورت تغییر شرایط یا اشتباه تایپی بین فرم‌ها */}
-    {childDiffs.length > 0 && (
-      <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:'10px 14px',marginBottom:12,fontSize:12,lineHeight:1.8}}>
-        <div style={{display:'flex',alignItems:'center',gap:6,color:'#b45309',fontWeight:800,marginBottom:4}}>
-          <span>⚠️</span>
-          <span>تفاوت اطلاعات فرزند بین فرم مشاوره و ثبت دوره شناسایی شد (بررسی شرایط جدید):</span>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:6,marginTop:6}}>
-          {childDiffs.map((d:any,idx:number)=>(
-            <div key={idx} style={{background:'#fef3c7',borderRadius:8,padding:'4px 8px',fontSize:11.5}}>
-              <span style={{color:T.mut}}>{d.label}: </span>
-              <span style={{textDecoration:'line-through',opacity:0.75}}>{d.oldVal}</span>
-              <span style={{margin:'0 4px',color:'#b45309',fontWeight:800}}>➔</span>
-              <b style={{color:'#92400e'}}>{d.newVal}</b>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-    {/* سوییچ سریع نسخه‌ها در صورت وجود چندین فرم مشاوره با همین شماره تماس */}
-    {consultRecords.length > 1 && (
-      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:10,padding:'6px 10px',background:T.card,borderRadius:8,border:`1px solid ${T.brd}`}}>
-        <span style={{fontSize:11,color:T.mut,fontWeight:700}}>نسخه اطلاعات فرزند:</span>
-        {consultRecords.map((cr:any,idx:number)=>(
-          <button
-            key={cr.id||idx}
-            type="button"
-            onClick={()=>setSelectedConsultIdx(idx)}
-            style={{
-              padding:'3px 8px',
-              borderRadius:6,
-              border:`1px solid ${selectedConsultIdx===idx?T.acc:T.brd}`,
-              background:selectedConsultIdx===idx?T.acc:T.soft,
-              color:selectedConsultIdx===idx?'#fff':T.txt,
-              fontSize:11,
-              fontWeight:700,
-              cursor:'pointer',
-              fontFamily:'inherit'
-            }}
-          >
-            فرم {idx+1}: {cr.date||''}
-          </button>
-        ))}
-      </div>
-    )}
-
-    <div><b>اطلاعات کودک:</b> سن {activeConsultRecord.age||sub.age||'—'}، {activeConsultRecord.gender==='male'?'پسر':activeConsultRecord.gender==='female'?'دختر':(sub.gender==='male'?'پسر':sub.gender==='female'?'دختر':'—')}، قد {activeConsultRecord.height||sub.height||'—'}، وزن {activeConsultRecord.weight||sub.weight||'—'}</div>
-    <GrowthBox sub={activeConsultRecord}/>
-    <div style={{marginTop:6}}><b>والد:</b> {activeConsultRecord.pName||sub.pName||'—'} / <PhoneAction sub={activeConsultRecord} phone={activeConsultRecord.fullPhone||sub.fullPhone}/></div>
-    <div><b>موضوعات مشاوره:</b> {(activeConsultRecord.topics||sub.topics||[]).join('، ')||'—'} / <b>دسته:</b> {activeConsultRecord.category||sub.category}</div>
-    <div><b>مشکل گوارشی:</b> {(Array.isArray(activeConsultRecord.digest)?activeConsultRecord.digest.join('، '):activeConsultRecord.digest)||(Array.isArray(sub.digest)?sub.digest.join('، '):sub.digest)||'—'} / <b>وضعیت اشتها:</b> {activeConsultRecord.appetite||sub.appetite||'—'}</div>
-    <div><b>بیماری خاص:</b> {activeConsultRecord.disease||sub.disease||'—'} / <b>شرایط خاص:</b> {(Array.isArray(activeConsultRecord.specials)?activeConsultRecord.specials.join('، '):activeConsultRecord.specials)||(Array.isArray(sub.specials)?sub.specials.join('، '):sub.specials)||'—'}</div>
-    {(activeConsultRecord.notes||sub.notes)&&<div style={{marginTop:6,padding:8,borderRadius:8,background:T.soft}}><b>توضیحات تکمیلی والد:</b> {activeConsultRecord.notes||sub.notes}</div>}
-    
-    {/* یادداشت صوتی / ویس ارسالی کاربر */}
-    {(activeConsultRecord.voice_note_url||sub.voice_note_url)&&<div style={{marginTop:10,background:T.soft,padding:10,borderRadius:10}}>
-      <div style={{fontSize:12,color:T.mut,marginBottom:4,fontWeight:700}}>یادداشت صوتی ارسالی والد:</div>
-      <audio controls src={activeConsultRecord.voice_note_url||sub.voice_note_url} style={{width:'100%'}} />
-    </div>}
-    
-    {/* نمایش عکس‌های زبان فرزند + دکمه حذف کامل از Storage */}
-    {(activeConsultRecord.tonguePhotos||sub.tonguePhotos||[]).length>0&&<div style={{marginTop:10}}>
-     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-      <b><ZkCameraIcon size={14} color={T.acc}/> عکس‌های زبان ({(activeConsultRecord.tonguePhotos||sub.tonguePhotos||[]).length})</b>
-      <button onClick={async()=>{if(!confirm('همه عکس‌های زبان این فرم حذف شوند؟ این عملیات قابل بازگشت نیست.'))return; try{for(const url of (activeConsultRecord.tonguePhotos||sub.tonguePhotos||[])){await deleteStoredTonguePhoto?.(url)} setSubs((list:any[])=>list.map(x=>{if(x.id===sub.id||x.id===activeConsultRecord.id){const updated={...x,tonguePhotos:[],changeHistory:logChange(x,'حذف عکس‌های زبان')}; if(isSupabaseConfigured){updateSubmission(x.id, updated as any).catch(()=>{});} return updated;} return x;}))}catch(e){alert('حذف عکس‌های زبان انجام نشد.')}}} style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${T.err}`,color:T.err,background:`${T.err}10`,fontSize:11}}>حذف عکس‌های زبان</button>
-     </div>
-     <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{(activeConsultRecord.tonguePhotos||sub.tonguePhotos||[]).map((url:string,i:number)=><a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/></a>)}</div>
-    </div>}
-    
-    {/* فرم‌های دیگر با همین شماره تماس */}
-    {relatedSubs.length>0&&<details style={{marginTop:10,border:`1px solid ${T.brd}`,borderRadius:10,padding:9,background:T.soft}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,color:T.ttl}}><ZkDocIcon size={14} color={T.ttl}/> تمام فرم‌ها و سفارشات ثبت‌شده با این شماره ({relatedSubs.length})</summary>{relatedSubs.map((r:any)=><div key={r.id} onClick={(e:any)=>{e.stopPropagation();onOpenRelated?.(r)}} style={{marginTop:8,padding:8,borderRadius:8,background:T.inp,border:`1px solid ${T.brd}`,fontSize:11,lineHeight:1.9,cursor:'pointer',transition:'box-shadow .2s ease'}}><div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}><Tag x={r.type==='course'?'ثبت‌نام دوره':'فرم مشاوره'}/>{r.trackingCode&&<span className="zkad-mono">{r.trackingCode}</span>}<span style={{color:T.mut}}>{r.date} {r.time}</span><span style={{marginInlineStart:'auto',color:T.acc,fontWeight:800}}>مشاهده</span></div><div style={{marginTop:4}}>سن {r.age||'—'} / {r.gender==='male'?'پسر':r.gender==='female'?'دختر':'—'} / {r.course?.title?`دوره: ${r.course.title}`:'بدون دوره'}</div>{r.editHistory?.length>0&&<div style={{marginTop:4,color:T.mut}}>تاریخچه ویرایش: {r.editHistory.length} نسخه قبلی</div>}</div>)}</details>}
-   </div>}
-
-   {/* تب ۲: ثبت دوره (شامل اطلاعات کامل دوره، ارسال، و پرداخت/فیش با قابلیت ویرایش توسط ادمین) */}
-   {subTab==='course'&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
-    {/* سوییچر بین دوره‌های مختلف در صورت چند خرید توسط یک شماره تماس */}
-    {courseRecords.length > 1 && (
-      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',padding:10,background:T.soft,borderRadius:10,border:`1px solid ${T.brd}`}}>
-        <span style={{fontSize:12,color:T.mut,fontWeight:700}}>انتخاب سفارش دوره:</span>
-        {courseRecords.map((cr:any,idx:number)=>(
-          <button
-            key={cr.id||idx}
-            type="button"
-            onClick={()=>setSelectedCourseIdx(idx)}
-            style={{
-              padding:'5px 12px',
-              borderRadius:8,
-              border:`1px solid ${selectedCourseIdx===idx?T.acc:T.brd}`,
-              background:selectedCourseIdx===idx?T.acc:T.card,
-              color:selectedCourseIdx===idx?'#fff':T.txt,
-              fontSize:12,
-              fontWeight:700,
-              cursor:'pointer',
-              fontFamily:'inherit'
-            }}
-          >
-            سفارش {idx+1}: {cr.course?.title||'دوره'} ({cr.date||''})
-          </button>
-        ))}
-      </div>
-    )}
-
-    {/* بخش دوره */}
-    <div style={{padding:12,borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-        <b><ZkCoursesIcon size={15} color={T.acc}/> اطلاعات دوره و پکیج</b>
-        <span style={{fontSize:11,color:T.mut}}>{activeCourseRecord.course?.title?'دوره ثبت‌شده':'ثبت دوره توسط ادمین'}</span>
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-        <div>
-          <label style={S.lbl}>عنوان دوره</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.course?.title||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'course.title',e.target.value,`ویرایش عنوان دوره به ${e.target.value}`)}
-            placeholder="مثال: تک دوره رشد قد"
-          />
-        </div>
-        <div>
-          <label style={S.lbl}>هزینه دوره (تومان)</label>
-          <input
-            inputMode="numeric"
-            style={S.inp}
-            defaultValue={activeCourseRecord.course?.price||activeCourseRecord.payment?.amount||''}
-            onBlur={e=>{
-              const val=parseInt(p2e(e.target.value).replace(/\D/g,''));
-              if(!isNaN(val)){
-                updateField(activeCourseRecord.id,'course.price',val);
-                updateField(activeCourseRecord.id,'payment.amount',val,`ثبت هزینه دوره: ${val.toLocaleString()} تومان`);
-              }
-            }}
-            placeholder="مثلاً 2500000"
-          />
-        </div>
-      </div>
-      {activeCourseRecord.course?.features?.length>0&&<div style={{marginTop:6,fontSize:11.5,color:T.txt}}><b>ویژگی‌های پکیج:</b> {(activeCourseRecord.course.features||[]).join('، ')}</div>}
-    </div>
-
-    {/* بخش ارسال و تحویل */}
-    <div style={{padding:12,borderRadius:12,background:T.card,border:`1px solid ${T.brd}`}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-        <b><ZkTruckIcon size={15} color={T.acc}/> اطلاعات ارسال و مقصد</b>
-        <span style={{fontSize:11,color:T.mut}}>مقصد: {activeCourseRecord.shipping?.dest==='intl'?'خارج از کشور':'ایران'}</span>
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-        <div>
-          <label style={S.lbl}>شهر یا کشور مقصد</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.shipping?.city||activeCourseRecord.shipping?.country||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'shipping.city',e.target.value,`ویرایش شهر/کشور ارسال: ${e.target.value}`)}
-            placeholder="تهران، تبریز..."
-          />
-        </div>
-        <div>
-          <label style={S.lbl}>روش ارسال / باربری</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.shipping?.method||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'shipping.method',e.target.value,`ویرایش روش ارسال: ${e.target.value}`)}
-            placeholder="چاپار، ماهکس، تیپاکس..."
-          />
-        </div>
-        <div>
-          <label style={S.lbl}>کد پستی</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.shipping?.postalCode||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'shipping.postalCode',p2e(e.target.value).trim(),`ویرایش کد پستی: ${e.target.value}`)}
-            placeholder="1234567890"
-          />
-        </div>
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
-        <div>
-          <label style={S.lbl}>زمان تخمینی تحویل</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.shipping?.estimatedDelivery||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'shipping.estimatedDelivery',e.target.value,`ویرایش زمان تحویل: ${e.target.value}`)}
-            placeholder="حدود ۴۸ ساعت تا ۵ روز کاری"
-          />
-        </div>
-        <div>
-          <label style={S.lbl}>نام گیرنده مرسوله</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.shipping?.receiver||activeCourseRecord.pName||activeConsultRecord.pName||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'shipping.receiver',e.target.value,`ویرایش نام گیرنده: ${e.target.value}`)}
-            placeholder="نام گیرنده"
-          />
-        </div>
-      </div>
-      <div style={{marginTop:8}}>
-        <label style={S.lbl}>آدرس پستی کامل</label>
-        <textarea
-          style={{...S.ta,minHeight:60}}
-          defaultValue={activeCourseRecord.shipping?.address||''}
-          onBlur={e=>updateField(activeCourseRecord.id,'shipping.address',e.target.value,'ویرایش آدرس پستی')}
-          placeholder="استان، شهر، خیابان، پلاک، واحد..."
-        />
-      </div>
-      {(activeCourseRecord.shipping?.phone||activeCourseRecord.shipping?.whatsapp)&&<div style={{display:'flex',gap:12,marginTop:6,flexWrap:'wrap',fontSize:12}}>
-        {activeCourseRecord.shipping.phone&&<div>شماره تماس گیرنده: <PhoneAction sub={activeCourseRecord} phone={(activeCourseRecord.shipping.phoneCc||'')+activeCourseRecord.shipping.phone}/></div>}
-        {activeCourseRecord.shipping.whatsapp&&<div>واتساپ گیرنده: <PhoneAction sub={activeCourseRecord} phone={(activeCourseRecord.shipping.whatsappCc||'')+activeCourseRecord.shipping.whatsapp} whatsappOnly/></div>}
-      </div>}
-    </div>
-
-    {/* بخش کامل پرداخت، فیش و حساب بانکی (کاملاً قابل ویرایش توسط ادمین) */}
-    <div style={{padding:12,borderRadius:12,background:T.badge||'#f0fdf4',border:`1px solid ${T.ok}44`}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-        <b style={{color:T.ttl}}><ZkCardIcon size={15} color={T.ttl}/> اطلاعات پرداخت و فیش واریزی (قابل ویرایش)</b>
-        <span style={{fontSize:11,fontWeight:700,color:activeCourseRecord.payment?.receipt?'#16a34a':activeCourseRecord.payment?.receiptText?'#0284c7':'#d97706'}}>
-          {activeCourseRecord.payment?.receipt?'✓ فیش دارد':activeCourseRecord.payment?.receiptText?'متن پیامک دارد':'بدون فیش آنلاین'}
-        </span>
-      </div>
-
-      {/* تصویر فیش و دکمه حذف فیش */}
-      {activeCourseRecord.payment?.receipt&&<div style={{display:'flex',alignItems:'center',gap:12,margin:'8px 0',padding:10,background:T.card,borderRadius:10,border:`1px solid ${T.brd}`}}>
-        <a href={activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" title="مشاهده بزرگ فیش">
-          <img src={activeCourseRecord.payment.receipt} alt="فیش واریزی" style={{width:70,height:70,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>
-        </a>
-        <div style={{flex:1}}>
-          <div style={{fontSize:12,fontWeight:700,color:T.ok}}>✓ فیش واریزی آپلود شده</div>
-          <a href={activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" style={{fontSize:11.5,color:T.acc,textDecoration:'none',fontWeight:700,display:'inline-block',marginTop:3}}>
-            مشاهده تصویر کامل فیش ↗
-          </a>
-        </div>
-        <button
-          type="button"
-          onClick={async()=>{
-            if(!confirm('آیا از حذف کامل این فیش واریزی مطمئن هستید؟'))return;
-            try{
-              await deleteStoredImage(activeCourseRecord.payment.receipt);
-              const updatedPayment={...(activeCourseRecord.payment||{}),receipt:'',receipt_image:'',receiptDeletedAt:new Date().toISOString()};
-              updateField(activeCourseRecord.id,'payment',updatedPayment,'حذف فیش واریزی توسط ادمین');
-              alert('فیش با موفقیت حذف شد.');
-            }catch(e){
-              alert('خطا در حذف فیش.');
-            }
-          }}
-          style={{padding:'6px 12px',borderRadius:8,border:`1px solid ${T.err}`,background:`${T.err}10`,color:T.err,cursor:'pointer',fontSize:11.5,fontFamily:'inherit',fontWeight:700}}
-        >
-          <ZkTrashIcon size={13}/> حذف فیش
-        </button>
-      </div>}
-
-      {/* متن پیامک واریز */}
-      <div style={{marginTop:8}}>
-        <label style={S.lbl}>متن پیامک یا شرح واریز</label>
-        <textarea
-          style={{...S.ta,minHeight:60}}
-          defaultValue={activeCourseRecord.payment?.receiptText||''}
-          onBlur={e=>updateField(activeCourseRecord.id,'payment.receiptText',e.target.value,'ویرایش متن پیامک واریزی')}
-          placeholder="متن پیامک بانک، شماره پیگیری، ارجاع..."
-        />
-      </div>
-
-      {/* فیلدهای مبالغ، تاریخ، بانک و شماره پیگیری */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}>
-        <div>
-          <label style={S.lbl}><ZkMoneyIcon size={13}/> مبلغ پرداخت‌شده (تومان)</label>
-          <input
-            inputMode="numeric"
-            style={S.inp}
-            defaultValue={activeCourseRecord.payment?.amount||activeCourseRecord.course?.price||''}
-            onBlur={e=>{
-              const val=parseInt(p2e(e.target.value).replace(/\D/g,''));
-              if(!isNaN(val))updateField(activeCourseRecord.id,'payment.amount',val,`ویرایش مبلغ پرداختی به ${val.toLocaleString()} تومان`);
-            }}
-            placeholder="مثلاً 2500000"
-          />
-        </div>
-        <div>
-          <label style={S.lbl}><ZkCalendarIcon size={13}/> تاریخ پرداخت</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.payment?.paidAt||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'payment.paidAt',p2e(e.target.value).trim(),`ویرایش تاریخ پرداخت به ${e.target.value}`)}
-            placeholder="مثلاً 1404/05/20"
-          />
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
-        <div>
-          <label style={S.lbl}>نام بانک / درگاه واریزی</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.payment?.bank?.name||activeCourseRecord.payment?.bankName||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'payment.bankName',e.target.value,`ویرایش نام بانک به ${e.target.value}`)}
-            placeholder="بانک ملی، بلوبانک، تتر..."
-          />
-        </div>
-        <div>
-          <label style={S.lbl}>کد پیگیری / شماره ارجاع</label>
-          <input
-            style={S.inp}
-            defaultValue={activeCourseRecord.payment?.trackingCode||activeCourseRecord.trackingCode||''}
-            onBlur={e=>updateField(activeCourseRecord.id,'payment.trackingCode',p2e(e.target.value).trim(),`ویرایش کد پیگیری پرداخت: ${e.target.value}`)}
-            placeholder="کد ارجاع فیش"
-          />
-        </div>
-      </div>
-
-      {/* وضعیت تایید پرداخت */}
-      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:12,flexWrap:'wrap'}}>
-        <span style={{fontSize:12,fontWeight:700,color:T.txt}}>وضعیت تایید پرداخت:</span>
-        <button
-          type="button"
-          onClick={()=>{
-            const upPay={...(activeCourseRecord.payment||{}),verified:true,status:'paid'};
-            updateField(activeCourseRecord.id,'payment',upPay);
-            onStatusChange?.(activeCourseRecord.id,'پرداخت‌شده');
-          }}
-          style={{padding:'6px 12px',borderRadius:8,border:0,background:'#16a34a',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}
-        >
-          ✓ تایید پرداخت (پرداخت‌شده)
-        </button>
-        <button
-          type="button"
-          onClick={()=>{
-            const upPay={...(activeCourseRecord.payment||{}),verified:false,status:'pending'};
-            updateField(activeCourseRecord.id,'payment',upPay);
-            onStatusChange?.(activeCourseRecord.id,'در انتظار پرداخت');
-          }}
-          style={{padding:'6px 12px',borderRadius:8,border:`1px solid ${T.brd}`,background:T.card,color:T.warn,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}
-        >
-          ⏳ در انتظار پرداخت
-        </button>
-      </div>
-    </div>
-
-    {activeCourseRecord.editHistory?.length>0&&<details style={{marginTop:8}}><summary>مشاهده اطلاعات اولیه و تاریخچه ویرایش دوره</summary>{activeCourseRecord.editHistory.map((h:any,i:number)=><pre key={i} style={{whiteSpace:'pre-wrap',background:T.inp,padding:8,borderRadius:8,overflow:'auto'}}>`نسخه ${i+1} - ${h.date} ${h.time}
-${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
-   </div>}
-
-   {/* تب ۳: مدیریت و پیگیری */}
-   {subTab==='manage'&&<div>
-    {/* وضعیت سفارش فقط دستی توسط ادمین تغییر می‌کند */}
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,alignItems:'end'}}><div><label style={S.lbl}>وضعیت سفارش</label><select style={S.inp} value={getStatus(sub)} onChange={e=>onStatusChange?.(sub.id,e.target.value)}>{statusOptions.map((x:string)=><option key={x}>{x}</option>)}</select></div><button style={{...AdminBtn(),background:sub.followReminder?`${T.warn}22`:T.soft,color:sub.followReminder?T.warn:T.acc,borderColor:sub.followReminder?T.warn:T.brd}} onClick={()=>setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,followReminder:!x.followReminder,changeHistory:logChange(x,!x.followReminder?'فعال‌سازی یادآور پیگیری':'غیرفعال‌سازی یادآور پیگیری')}:x))}>{sub.followReminder?'یادآور فعال':'یادآور پیگیری'}</button></div>
-    {/* وضعیت مشاوره و مراحل پیگیری در یک ردیف */}
-    <div style={{marginTop:10,display:'grid',gridTemplateColumns:(sub.type==='consultation'||activeConsultRecord.type==='consultation')?'minmax(0,1fr) minmax(0,1fr)':'1fr',gap:10,alignItems:'end'}}>
-      {(sub.type==='consultation'||activeConsultRecord.type==='consultation')&&<div><label style={S.lbl}>وضعیت مشاوره</label><select style={{...S.inp,minHeight:42}} value={sub.consultationStatus||activeConsultRecord.consultationStatus||'مشاوره اولیه'} onChange={e=>{const val=e.target.value; setSubs((list:any[])=>list.map(x=>x.id===sub.id||x.id===activeConsultRecord.id?{...x,consultationStatus:val,consultationStatusChangedAt:new Date().toISOString(),changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${val}`)}:x))}}>{['مشاوره اولیه','مشاوره شده','اصلاحی','ثبتی','پیگیری','پیگیری آخر ماه'].map(x=><option key={x}>{x}</option>)}</select></div>}
-      <div><label style={S.lbl}>پیگیری‌ها</label><div style={{height:42,display:'flex',alignItems:'center',justifyContent:'space-between',gap:4,padding:'3px 5px',border:`1px solid ${T.brd}`,borderRadius:10,background:T.inp}}>{[0,1,2,3,4].map(i=><button type="button" key={i} className="zkad-fu-btn" title={`پیگیری مرحله ${i+1}`} onClick={()=>fu(i)} style={{width:29,height:29,flexShrink:0,borderRadius:'50%',border:`2px solid ${(sub.followUps||[])[i]==='done'?T.ok:(sub.followUps||[])[i]==='miss'?T.err:T.brd}`,background:'transparent',color:(sub.followUps||[])[i]==='done'?T.ok:(sub.followUps||[])[i]==='miss'?T.err:T.mut,cursor:'pointer'}}>{(sub.followUps||[])[i]==='done'?<ZkCheckIcon size={12}/>:(sub.followUps||[])[i]==='miss'?<ZkCloseIcon size={12}/>:''}</button>)}</div></div>
-    </div>
-    {sub.changeHistory?.length>0&&<details style={{marginTop:8}}><summary>تاریخچه تغییرات</summary>{sub.changeHistory.map((h:any,i:number)=><div key={i} style={{fontSize:11,color:T.mut,padding:'4px 0'}}>• {h.at} — {h.by}: {h.what}</div>)}</details>}
-    <textarea style={{...S.ta,marginTop:10}} defaultValue={sub.adminNotes||''} onBlur={e=>setSubs((s:any[])=>s.map(x=>x.id===sub.id&&x.adminNotes!==e.target.value?{...x,adminNotes:e.target.value,changeHistory:logChange(x,'ویرایش یادداشت مدیر')}:x))}/>
-    <label style={{...S.lbl,marginTop:10}}>طریقه مصرف (در صفحه پیگیری به کاربر نمایش داده می‌شود)</label><textarea style={S.ta} defaultValue={sub.usageInstructions||''} onBlur={e=>setSubs((s:any[])=>s.map(x=>x.id===sub.id&&x.usageInstructions!==e.target.value?{...x,usageInstructions:e.target.value,changeHistory:logChange(x,'ویرایش طریقه مصرف')}:x))} placeholder="مثلاً: روزی یک پیمانه بعد از صبحانه..."/>
-    <label style={{...S.lbl,marginTop:10}}>برنامه غذایی (در صفحه پیگیری به کاربر نمایش داده می‌شود)</label><textarea style={S.ta} defaultValue={sub.mealPlan||''} onBlur={e=>setSubs((s:any[])=>s.map(x=>x.id===sub.id&&x.mealPlan!==e.target.value?{...x,mealPlan:e.target.value,changeHistory:logChange(x,'ویرایش برنامه غذایی')}:x))} placeholder="برنامه غذایی هفتگی..."/>
-    {/* کنترل نمایش برنامه غذایی از پنل مدیریت */}
-    <label style={{display:'flex',alignItems:'center',gap:7,marginTop:10,fontWeight:800,fontSize:12,cursor:'pointer'}}><input className="zkad-switch" type="checkbox" checked={!!sub.showMealPlan} onChange={e=>setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,showMealPlan:e.target.checked,changeHistory:logChange(x,e.target.checked?'فعال‌سازی نمایش برنامه غذایی':'غیرفعال‌سازی نمایش برنامه غذایی')}:x))}/> نمایش برنامه غذایی در صفحه پیگیری</label>
-    <div style={{marginTop:10,padding:10,border:`1px dashed ${T.brd}`,borderRadius:10,background:T.soft}}><label style={{...S.lbl,margin:'0 0 6px'}}><ZkDocIcon size={13}/> فایل PDF طریقه مصرف (اختیاری)</label><div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}><label style={{padding:'6px 10px',borderRadius:8,background:T.pop,color:T.acc,border:`1px solid ${T.brd}`,fontSize:12,cursor:'pointer'}}><input type="file" accept="application/pdf" style={{display:'none'}} onChange={async e=>{const f=e.target.files?.[0]; if(!f)return; try{const url=await uploadPdfFile(f,'usage-pdf'); if(sub.usagePdfUrl)await deleteStoredFile(sub.usagePdfUrl); setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,usagePdfUrl:url,changeHistory:logChange(x,'آپلود فایل PDF طریقه مصرف')}:x))}catch(err:any){alert(err?.message||'آپلود فایل انجام نشد.')}}}/>{sub.usagePdfUrl?'جایگزینی فایل':'انتخاب فایل PDF'}</label>{sub.usagePdfUrl&&<><a href={sub.usagePdfUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:T.ok,fontWeight:800}}><ZkCheckIcon size={11}/> مشاهده فایل فعلی</a><button onClick={async()=>{if(!confirm('فایل PDF طریقه مصرف حذف شود؟'))return; await deleteStoredFile(sub.usagePdfUrl); setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,usagePdfUrl:'',changeHistory:logChange(x,'حذف فایل PDF طریقه مصرف')}:x))}} style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${T.err}`,color:T.err,background:`${T.err}10`,fontSize:11}}>حذف</button></>}</div></div>
-    <div style={{marginTop:10,padding:10,border:`1px dashed ${T.brd}`,borderRadius:10,background:T.soft}}><label style={{...S.lbl,margin:'0 0 6px'}}><ZkDocIcon size={13}/> فایل PDF برنامه غذایی (اختیاری)</label><div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}><label style={{padding:'6px 10px',borderRadius:8,background:T.pop,color:T.acc,border:`1px solid ${T.brd}`,fontSize:12,cursor:'pointer'}}><input type="file" accept="application/pdf" style={{display:'none'}} onChange={async e=>{const f=e.target.files?.[0]; if(!f)return; try{const url=await uploadPdfFile(f,'meal-pdf'); if(sub.mealPdfUrl)await deleteStoredFile(sub.mealPdfUrl); setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,mealPdfUrl:url,changeHistory:logChange(x,'آپلود فایل PDF برنامه غذایی')}:x))}catch(err:any){alert(err?.message||'آپلود فایل انجام نشد.')}}}/>{sub.mealPdfUrl?'جایگزینی فایل':'انتخاب فایل PDF'}</label>{sub.mealPdfUrl&&<><a href={sub.mealPdfUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:T.ok,fontWeight:800}}><ZkCheckIcon size={11}/> مشاهده فایل فعلی</a><button onClick={async()=>{if(!confirm('فایل PDF برنامه غذایی حذف شود؟'))return; await deleteStoredFile(sub.mealPdfUrl); setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,mealPdfUrl:'',changeHistory:logChange(x,'حذف فایل PDF برنامه غذایی')}:x))}} style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${T.err}`,color:T.err,background:`${T.err}10`,fontSize:11}}>حذف</button></>}</div></div>
-    <details style={{marginTop:10,border:`1px solid ${T.brd}`,borderRadius:12,padding:10,background:T.soft}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,color:T.ttl}}><ZkPillIcon size={14} color={T.ttl}/> طریقه مصرف محصولات ({Object.values(sub.productUsage||{}).filter((u:any)=>u&&u.enabled).length} فعال)</summary>{(cfg.products?.list||[]).map((pr:any)=>{const u=(sub.productUsage||{})[pr.id]||{};const setU=(k:string,v:any)=>{const nu={...(sub.productUsage||{}),[pr.id]:{...u,[k]:v}};setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,productUsage:nu,changeHistory:logChange(x,`ویرایش طریقه مصرف ${pr.name}`)}:x))};const ProdIcon=productVectorIcon(pr.icon); return <div key={pr.id} style={{border:`1px solid ${u.enabled?T.acc:T.brd}`,borderRadius:10,padding:9,marginTop:8,background:T.inp}}><label style={{display:'flex',alignItems:'center',gap:7,fontSize:12,fontWeight:800,cursor:'pointer'}}><input type="checkbox" checked={!!u.enabled} onChange={e=>setU('enabled',e.target.checked)}/><span style={{fontSize:15,display:'flex',alignItems:'center'}}>{ProdIcon?<ProdIcon size={15} color={T.acc}/>:(pr.icon||<BoxIcon size={13} color={T.acc}/>)}</span>{pr.name}</label>{u.enabled&&<div style={{marginTop:8}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}><div><label style={S.lbl}>مقدار مصرف</label><input style={S.inp} defaultValue={u.dosage||''} onBlur={e=>setU('dosage',e.target.value)} placeholder="یک پیمانه"/></div><div><label style={S.lbl}>زمان مصرف</label><input style={S.inp} defaultValue={u.time||''} onBlur={e=>setU('time',e.target.value)} placeholder="بعد از صبحانه"/></div><div><label style={S.lbl}>ساعت مصرف</label><input style={S.inp} defaultValue={u.hour||''} onBlur={e=>setU('hour',e.target.value)} placeholder="۸ صبح"/></div><div><label style={S.lbl}>با چی بخوره</label><input style={S.inp} defaultValue={u.withWhat||''} onBlur={e=>setU('withWhat',e.target.value)} placeholder="با شیر"/></div></div><label style={{...S.lbl,marginTop:6}}>توضیحات تکمیلی این محصول</label><textarea style={{...S.ta,minHeight:52}} defaultValue={u.note||''} onBlur={e=>setU('note',e.target.value)}/></div>}</div>})}</details>
-    <label style={{display:'flex',alignItems:'center',gap:7,marginTop:12,fontWeight:800,fontSize:12,cursor:'pointer'}}><input className="zkad-switch" type="checkbox" checked={!!sub.showCorrectiveTab} onChange={e=>setSubs((list:any[])=>list.map(x=>x.id===sub.id?{...x,showCorrectiveTab:e.target.checked,changeHistory:logChange(x,e.target.checked?'فعال‌سازی نمایش اصلاحی':'غیرفعال‌سازی نمایش اصلاحی')}:x))}/> نمایش تب «اصلاحی» به کاربر در صفحه پیگیری (قابل ویرایش توسط کاربر)</label>
-    <label style={{...S.lbl,marginTop:10}}><ZkStethoscopeIcon size={14} color={T.ttl}/> اطلاعات اصلاحی (قابل مشاهده در Track)</label><textarea style={S.ta} defaultValue={sub.corrective||""} onBlur={e=>setSubs((list:any[])=>list.map(x=>x.id===sub.id&&x.corrective!==e.target.value?{...x,corrective:e.target.value,changeHistory:logChange(x,"ویرایش اطلاعات اصلاحی")}:x))} placeholder="اطلاعات اصلاحی..."/>
-    <label style={{...S.lbl,marginTop:10}}> نکات قابل مشاهده توسط کاربر (زیر توضیحات — یادداشت‌های مدیر نمایش داده نمی‌شود)</label><textarea style={S.ta} defaultValue={sub.userNotes||''} onBlur={e=>setSubs((list:any[])=>list.map(x=>x.id===sub.id&&x.userNotes!==e.target.value?{...x,userNotes:e.target.value,changeHistory:logChange(x,'ویرایش نکات قابل مشاهده کاربر')}:x))} placeholder="مواردی که کاربر در صفحه پیگیری می‌بیند..."/>
-    <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}><button style={AdminBtn()} onClick={()=>setSubs((s:any[])=>s.map(x=>x.id===sub.id?{...x,priority:x.priority==='high'?'normal':'high',changeHistory:logChange(x,x.priority==='high'?'تغییر اولویت به عادی':'تغییر اولویت به زیاد')}:x))}>تغییر اولویت</button><button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>confirm('حذف شود؟')&&setSubs((s:any[])=>s.filter(x=>x.id!==sub.id))}>حذف</button></div>
-   </div>}
-
-   {/* تب ۴: اصلاحی — نمایش correctiveData + دکمه کپی */}
-   {subTab==='corrective'&&<div>
-    {sub.correctiveData&&typeof sub.correctiveData==='object'?<div style={{display:'grid',gap:9,fontSize:12,lineHeight:1.9}}>
-     <h4 style={{color:T.ttl,margin:'0 0 8px',fontWeight:800}}><ZkDocIcon size={14} color={T.ttl}/> اطلاعات اصلاحی تکمیل‌شده توسط کاربر</h4>
-     {Object.entries(sub.correctiveData).filter(([k,v])=>!['_trackingCodeRaw','_phoneRaw','submittedAt'].includes(k)&&v).map(([k,v])=>{
-      const labels:Record<string,string>={height:'قد (سانتیمتر)',weight:'وزن (کیلوگرم)',appetite:'اشتها',sleep:'خواب',activity:'فعالیت',exercise:'ورزش',puberty:'بلوغ',waterIntake:'مصرف آب',snacks:'تنقلات',parentsHeight:'قد والدین',allergies:'حساسیت‌ها',diseases:'بیماری‌ها',medications:'داروها',temperament:'طبع',childName:'نام فرزند',age:'سن',additionalNotes:'توضیحات اضافی'};
-      return <div key={k} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:10,padding:'8px 10px'}}><span style={{color:T.mut}}>{labels[k]||k}: </span><b>{String(v)}</b></div>;
-     })}
-     {sub.correctiveData.submittedAt&&<div style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:10,padding:'8px 10px'}}><span style={{color:T.mut}}>تاریخ ثبت: </span><b>{new Date(sub.correctiveData.submittedAt).toLocaleString('fa-IR')}</b></div>}
-     {/* دکمه کپی */}
-     <button style={{...AdminBtn(),width:'100%',marginTop:10}} onClick={()=>{
-      let text='اطلاعات اصلاحی:\n\n';
-      const labels:Record<string,string>={height:'قد (سانتیمتر)',weight:'وزن (کیلوگرم)',appetite:'اشتها',sleep:'خواب',activity:'فعالیت',exercise:'ورزش',puberty:'بلوغ',waterIntake:'مصرف آب',snacks:'تنقلات',parentsHeight:'قد والدین',allergies:'حساسیت‌ها',diseases:'بیماری‌ها',medications:'داروها',temperament:'طبع',childName:'نام فرزند',age:'سن',additionalNotes:'توضیحات اضافی'};
-      Object.entries(sub.correctiveData).filter(([k,v])=>!['_trackingCodeRaw','_phoneRaw','submittedAt'].includes(k)&&v).forEach(([k,v])=>{text+=`${labels[k]||k}: ${v}\n`;});
-      if(sub.correctiveData.submittedAt) text+=`\nتاریخ ثبت: ${new Date(sub.correctiveData.submittedAt).toLocaleString('fa-IR')}\n`;
-      if(sub.course) text+=`\nدوره تهیه‌شده: ${sub.course.title||'—'}\n`;
-      if(sub.course?.price) text+=`هزینه دوره: ${Number(sub.course.price).toLocaleString()} تومان\n`;
-      if(navigator.clipboard?.writeText) navigator.clipboard.writeText(text); else {const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
-      alert('اطلاعات اصلاحی با موفقیت کپی شد!');
-     }}><ZkCopyIcon size={13}/> کپی اطلاعات اصلاحی</button>
-    </div>:<div style={{color:T.mut,textAlign:'center',padding:'20px 0'}}>کاربر هنوز فرم اصلاحی را تکمیل نکرده است.</div>}
-    {sub.editHistory?.length>0&&<details style={{marginTop:10,border:`1px solid ${T.brd}`,borderRadius:10,padding:9,background:T.soft}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,color:T.ttl}}>تاریخچه ویرایش‌های قبلی ({sub.editHistory.length} نسخه)</summary>{sub.editHistory.map((h:any,i:number)=><pre key={i} style={{whiteSpace:'pre-wrap',background:T.inp,padding:8,borderRadius:8,overflow:'auto',fontSize:11}}>`نسخه ${i+1} — تاریخ: ${h.date} ${h.time}
-${JSON.stringify(h.data,null,2)}`</pre>)}</details>}
-   </div>}
-  </div>}
- </div>}
- function GrowthBox({sub}:any){const nr=normRange(sub.age,sub.gender);const h=+p2e(sub.height),w=+p2e(sub.weight);if(!nr||(!h&&!w))return <div style={{marginTop:8,padding:10,borderRadius:10,background:T.soft,color:T.mut}}>اطلاعاتی برای تحلیل وجود ندارد</div>;const row=(kind:'h'|'w')=>{const isH=kind==='h';const val=isH?h:w;if(!val)return null;const min=isH?nr.hMin:nr.wMin,med=isH?nr.hMed:nr.wMed,max=isH?nr.hMax:nr.wMax,unit=isH?'cm':'kg';const st=growthStatus(val,min,med,max);const diff=Math.round((val-med)*10)/10;return <div style={{background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,padding:10}}><b>{isH?'قد':'وزن'}: {val} {unit}</b><div style={{color:st.color,fontWeight:800}}>وضعیت: {st.label}</div><div style={{color:T.mut}}>میانه WHO: {med} {unit} / بازه نرمال: {min} تا {max} {unit}</div><div style={{color:diff>=0?T.ok:T.err}}>اختلاف با میانه: {diff>0?`+${diff}`:diff} {unit}</div></div>};return <div style={{marginTop:10,padding:10,border:`1px solid ${T.brd}`,borderRadius:12,background:T.soft}}><b style={{color:T.ttl}}>تحلیل رشد بر اساس WHO</b><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:8,marginTop:8}}>{row('h')}{row('w')}</div></div>}
- function SummarySub({sub}:any){return <div><div><b>اطلاعات کودک:</b> سن {sub.age||'—'}، {sub.gender==='male'?'پسر':sub.gender==='female'?'دختر':'—'}، قد {sub.height||'—'}، وزن {sub.weight||'—'}</div><GrowthBox sub={sub}/><div><b>والد:</b> {sub.pName||'—'} / <PhoneAction sub={sub} phone={sub.fullPhone}/></div><div><b>موضوع:</b> {(sub.topics||[]).join('، ')||'—'} / <b>دسته:</b> {sub.category}</div>{sub.shipping&&<div style={{marginTop:8,padding:9,borderRadius:10,background:T.soft}}><b>اطلاعات ارسال:</b><br/>مقصد: {sub.shipping.dest==='iran'?'ایران':'خارج'} / شهر/کشور: {sub.shipping.city||sub.shipping.country||'—'} / روش: {sub.shipping.method} / واتساپ: {sub.shipping.whatsapp?<PhoneAction sub={sub} phone={(sub.shipping.whatsappCc||'')+sub.shipping.whatsapp} whatsappOnly/>:'—'} / زمان تحویل: {sub.shipping.estimatedDelivery}</div>}{sub.course&&<div><b>دوره:</b> {sub.course.title}</div>}{sub.payment&&<div><b>پرداخت:</b> {sub.payment.bank?.name||'—'} / فیش: {sub.payment.receipt?'عکس دارد':sub.payment.receiptText?'متن پیامک دارد':'ندارد'}{sub.payment.receiptText&&<details style={{marginTop:6}}><summary>مشاهده متن پیامک واریز</summary><div style={{whiteSpace:'pre-wrap',background:T.inp,borderRadius:8,padding:8,marginTop:4}}>{sub.payment.receiptText}</div></details>}</div>}{sub.editHistory?.length>0&&<details style={{marginTop:8}}><summary>مشاهده اطلاعات اولیه و تاریخچه ویرایش</summary>{sub.editHistory.map((h:any,i:number)=><pre key={i} style={{whiteSpace:'pre-wrap',background:T.inp,padding:8,borderRadius:8,overflow:'auto'}}>نسخه {i+1} - {h.date} {h.time}
-{JSON.stringify(h.data,null,2)}</pre>)}</details>}</div>}
 
  function ArrEditor({k,title}:any){const inputRef=useRef<HTMLInputElement|null>(null); const addVal=useCallback((raw?:string)=>{const v=p2e(raw ?? inputRef.current?.value ?? '').trim(); if(v){setEditCfg((prev:any)=>({...prev,[k]:[...(prev[k]||[]),v]})); if(inputRef.current) inputRef.current.value='';}},[k,setEditCfg]); const onNewChange=useCallback((e:any)=>{e.target.value=p2e(e.target.value)},[]); return <Box title={title}><div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>{(editCfg[k]||[]).map((x:string,i:number)=><span key={`${k}-${i}-${String(x).slice(0,10)}`} style={{padding:'5px 8px',border:`1px solid ${T.brd}`,borderRadius:9}}><input style={{background:'transparent',border:0,color:T.txt,fontSize:16,width:130}} defaultValue={x} onBlur={e=>{const val=p2e(e.target.value); setEditCfg((prev:any)=>{const a=[...(prev[k]||[])];a[i]=val; return {...prev,[k]:a}})}}/><button className="zkad-iconbtn t-err" title="حذف مورد" onClick={()=>setEditCfg((prev:any)=>({...prev,[k]:(prev[k]||[]).filter((_:any,j:number)=>j!==i)}))}><ZkCloseIcon size={13}/></button></span>)}</div><div style={{display:'flex',gap:6}}><input ref={inputRef} style={S.inp} onChange={onNewChange} onKeyDown={e=>{if(e.key==='Enter')addVal((e.target as HTMLInputElement).value)}} placeholder="مورد جدید"/><button style={AdminBtn()} onClick={()=>addVal()}>+</button></div></Box>}
 

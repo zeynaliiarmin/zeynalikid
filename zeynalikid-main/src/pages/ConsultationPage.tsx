@@ -266,8 +266,20 @@ export default function ConsultationPage({ app }: { app: any }) {
     if (!fd.gender) e.gender = lang === 'en' ? 'Select gender' : 'جنسیت فرزند را انتخاب کنید';
     const ag = +p2e(fd.age);
     if (ff?.age?.show !== false && (!fd.age || isNaN(ag) || ag < minAge || ag > maxAge)) e.age = lang === 'en' ? `Age must be ${minAge} to ${maxAge}` : `سن ${minAge} تا ${maxAge} سال`;
+    // FIX باگ «نام والد»:
+    // کلیدهای formFields همیشه با نام state یکی نیستند (parentName -> pName، parentPhone -> pPhone).
+    // حلقه قبلی fd['parentName'] را می‌خواند که هرگز وجود ندارد ⇒ همیشه undefined ⇒
+    // خطای «این فیلد الزامی است» با کلید parentName ثبت می‌شد. چون UI خطا را با کلید pName
+    // نمایش می‌دهد، کاربر هیچ پیامی نمی‌دید ولی ارسال فرم برای همیشه بلاک می‌شد.
+    // اکنون: نگاشت صریح کلیدها + کنارگذاشتن فیلدهایی که بالاتر جداگانه اعتبارسنجی شده‌اند.
+    const FIELD_STATE_KEY: Record<string, string> = { parentName: 'pName', parentPhone: 'pPhone' };
+    const ALREADY_VALIDATED = ['parentName', 'parentPhone', 'age', 'gender', 'topics'];
     Object.entries(ff || {}).forEach(([k, v]: any) => {
-      if (v.show !== false && v.required && k !== 'parentPhone' && k !== 'age' && !fd[k]) e[k] = 'این فیلد الزامی است';
+      if (ALREADY_VALIDATED.includes(k)) return;
+      const stateKey = FIELD_STATE_KEY[k] || k;
+      if (v.show !== false && v.required && !String((fd as any)[stateKey] ?? '').trim()) {
+        e[stateKey] = 'این فیلد الزامی است';
+      }
     });
     setErrs(e);
     return !Object.keys(e).length;

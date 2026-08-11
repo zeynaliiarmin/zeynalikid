@@ -1,0 +1,479 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Zeynalikid Admin — Forms & Orders workspace (SubCard)
+   بازنویسی کامل تجربه کارت فرم/سفارش.
+   قواعد:
+   - همه رنگ‌ها از توکن‌های --zkad-* موجود در zkadmin-tokens.css می‌آیند.
+   - هیچ رنگ hardcoded سرمه‌ای/تیره‌ای که در وایت‌مود ناخوانا شود وجود ندارد.
+   - همه selectorها زیر body.admin-root هستند تا به صفحات عمومی نشت نکنند.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── tone helpers ── */
+body.admin-root .t-ok   { color: var(--zkad-tag-ok-tx); }
+body.admin-root .t-warn { color: var(--zkad-tag-warn-tx); }
+body.admin-root .t-err  { color: var(--zkad-tag-err-tx); }
+body.admin-root .t-info { color: var(--zkad-tag-info-tx); }
+body.admin-root .t-mut  { color: var(--zkad-tag-mut-tx); }
+body.admin-root .t-acc  { color: var(--zkad-acc); }
+body.admin-root .zkad-mut { color: var(--zkad-mut); font-size: 11.5px; }
+body.admin-root .zkad-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction: ltr; unicode-bidi: isolate; }
+body.admin-root .zkad-link { color: var(--zkad-acc); text-decoration: none; font-size: 11.5px; font-weight: 700; }
+body.admin-root .zkad-link:hover { text-decoration: underline; }
+
+/* ── tag ── */
+body.admin-root .zkad-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: var(--zkad-r-pill, 999px);
+  font-size: 11px; font-weight: 800; line-height: 1.7;
+  background: var(--zkad-tag-mut-bg); color: var(--zkad-tag-mut-tx);
+  white-space: nowrap;
+}
+body.admin-root .zkad-tag.t-ok   { background: var(--zkad-tag-ok-bg);   color: var(--zkad-tag-ok-tx); }
+body.admin-root .zkad-tag.t-warn { background: var(--zkad-tag-warn-bg); color: var(--zkad-tag-warn-tx); }
+body.admin-root .zkad-tag.t-err  { background: var(--zkad-tag-err-bg);  color: var(--zkad-tag-err-tx); }
+body.admin-root .zkad-tag.t-info { background: var(--zkad-tag-info-bg); color: var(--zkad-tag-info-tx); }
+body.admin-root .zkad-tag.t-mut  { background: var(--zkad-tag-mut-bg);  color: var(--zkad-tag-mut-tx); }
+body.admin-root .zkad-tag.t-acc  { background: var(--zkad-acc-soft);    color: var(--zkad-acc); }
+
+/* ═══════════ CARD SHELL ═══════════ */
+body.admin-root .zkad-sub-slot { display: block; }
+body.admin-root .zkad-sub-skeleton {
+  height: 74px; margin-bottom: 10px; border-radius: var(--zkad-r-card, 8px);
+  background: var(--zkad-card); border: 1px solid var(--zkad-brd);
+  opacity: .55;
+}
+body.admin-root .zkad-sub {
+  background: var(--zkad-card);
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-card, 8px);
+  margin-bottom: 10px;
+  overflow: visible;              /* حیاتی: Popover دیگر portal است، ولی سایه‌ها بریده نشوند */
+  transition: border-color var(--zkad-dur-fast, 180ms) var(--zkad-ease, ease),
+              box-shadow var(--zkad-dur-fast, 180ms) var(--zkad-ease, ease);
+}
+body.admin-root .zkad-sub.is-open { border-color: var(--zkad-brd-strong); box-shadow: var(--zkad-shadow-md); }
+body.admin-root .zkad-sub.is-unread { border-inline-start: 3px solid var(--zkad-acc); }
+body.admin-root .zkad-sub.is-priority { border-inline-start: 3px solid var(--zkad-err); }
+
+/* ═══════════ HEADER ═══════════ */
+/* Header یک grid مستقل است؛ هیچ handler سراسری روی آن نیست.
+   فقط .zkad-sub-title کارت را باز/بسته می‌کند. */
+body.admin-root .zkad-sub-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+body.admin-root .zkad-sub-check { display: inline-flex; align-items: center; cursor: pointer; }
+body.admin-root .zkad-sub-check input { width: 17px; height: 17px; accent-color: var(--zkad-acc); cursor: pointer; }
+
+body.admin-root .zkad-sub-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-width: 0; padding: 4px 2px;
+  background: none; border: 0; cursor: pointer; text-align: start;
+  color: var(--zkad-ttl); font-family: inherit;
+  border-radius: var(--zkad-r-btn, 6px);
+}
+body.admin-root .zkad-sub-title:hover { background: var(--zkad-hover); }
+body.admin-root .zkad-sub-title:focus-visible { outline: 2px solid var(--zkad-acc); outline-offset: 2px; }
+body.admin-root .zkad-sub-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+body.admin-root .zkad-sub-name b { font-size: 13.5px; font-weight: 800; color: var(--zkad-ttl); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.admin-root .zkad-remind { display: inline-flex; color: var(--zkad-warn); }
+body.admin-root .zkad-sub-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+body.admin-root .zkad-sub-time { font-size: 11px; color: var(--zkad-mut); white-space: nowrap; }
+
+body.admin-root .zkad-sub-quick { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+body.admin-root .zkad-sub-flags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; padding-top: 2px; }
+
+/* ── phone button ── */
+body.admin-root .zkad-phone-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: var(--zkad-r-pill, 999px);
+  border: 1px solid var(--zkad-brd);
+  background: var(--zkad-inp); color: var(--zkad-txt);
+  font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  max-width: 100%;
+}
+body.admin-root .zkad-phone-btn:hover { background: var(--zkad-hover-strong); border-color: var(--zkad-acc); color: var(--zkad-acc); }
+body.admin-root .zkad-phone-num { direction: ltr; unicode-bidi: isolate; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; }
+body.admin-root .zkad-phone-link { text-decoration: none; font-weight: 700; font-size: 11.5px; direction: ltr; unicode-bidi: isolate; }
+
+/* ── tracking code ── */
+body.admin-root .zkad-track {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: var(--zkad-r-pill, 999px);
+  border: 1px dashed var(--zkad-brd-strong);
+  background: transparent; color: var(--zkad-mut);
+  font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+body.admin-root .zkad-track:hover { border-style: solid; border-color: var(--zkad-acc); color: var(--zkad-acc); }
+body.admin-root .zkad-track.is-copied { border-style: solid; background: var(--zkad-tag-ok-bg); border-color: var(--zkad-tag-ok-tx); color: var(--zkad-tag-ok-tx); }
+
+/* ── icon button ── */
+body.admin-root .zkad-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--zkad-r-btn, 6px);
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-mut); cursor: pointer; flex-shrink: 0;
+}
+body.admin-root .zkad-iconbtn:hover { background: var(--zkad-hover-strong); color: var(--zkad-txt); }
+body.admin-root .zkad-iconbtn.t-err:hover { background: var(--zkad-tag-err-bg); color: var(--zkad-tag-err-tx); border-color: var(--zkad-tag-err-tx); }
+
+/* ═══════════ POPOVER (Portal روی body) ═══════════ */
+/* روی body است نه داخل کارت ⇒ هیچ overflow/transform والدی آن را نمی‌بُرد
+   و هرگز از لبه صفحه بیرون نمی‌زند (clamp در JS). */
+.zkad-popover {
+  position: fixed;
+  z-index: 9999;
+  background: var(--zkad-pop, #fff);
+  border: 1px solid var(--zkad-brd);
+  border-radius: 12px;
+  box-shadow: var(--zkad-shadow-lg, 0 18px 40px rgba(2, 12, 27, .22));
+  padding: 6px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  font-family: var(--zkad-font, inherit);
+  direction: rtl;
+}
+.zkad-pop-head {
+  padding: 6px 10px 8px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--zkad-brd);
+  font-size: 12px; font-weight: 800; color: var(--zkad-ttl);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+.zkad-pop-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 10px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--zkad-txt);
+  font-family: inherit; font-size: 12.5px; font-weight: 700;
+  text-align: start; text-decoration: none; cursor: pointer;
+}
+.zkad-pop-item:hover { background: var(--zkad-hover-strong); }
+.zkad-pop-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* ═══════════ BODY / TABS ═══════════ */
+body.admin-root .zkad-sub-body { border-top: 1px solid var(--zkad-brd); padding: 12px; }
+
+body.admin-root .zkad-subtabs {
+  display: flex; gap: 6px; margin-bottom: 12px;
+  overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+}
+body.admin-root .zkad-subtabs::-webkit-scrollbar { display: none; }
+body.admin-root .zkad-subtab {
+  flex: 0 0 auto;
+  padding: 8px 13px; border-radius: var(--zkad-r-pill, 999px);
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-mut); font-family: inherit; font-size: 12px; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--zkad-dur-fast, 180ms) var(--zkad-ease, ease);
+}
+body.admin-root .zkad-subtab:hover { background: var(--zkad-hover-strong); color: var(--zkad-txt); }
+body.admin-root .zkad-subtab.is-active { background: var(--zkad-acc); border-color: var(--zkad-acc); color: var(--zkad-acc-contrast, #fff); }
+body.admin-root .zkad-subtab-short { display: none; }
+
+body.admin-root .zkad-pane { display: flex; flex-direction: column; gap: 12px; }
+body.admin-root .zkad-pane-title { margin: 0; font-size: 13px; font-weight: 800; color: var(--zkad-ttl); display: flex; align-items: center; gap: 6px; }
+
+/* ═══════════ FIELDS ═══════════ */
+body.admin-root .zkad-grid { display: grid; gap: 10px; }
+body.admin-root .zkad-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.admin-root .zkad-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+body.admin-root .zkad-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+body.admin-root .zkad-f > span {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 800; color: var(--zkad-mut);
+}
+body.admin-root .zkad-input,
+body.admin-root .zkad-textarea {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 11px;
+  border: 1px solid var(--zkad-brd);
+  border-radius: var(--zkad-r-input, 6px);
+  background: var(--zkad-inp);
+  color: var(--zkad-txt);
+  font-family: inherit; font-size: 13px; line-height: 1.6;
+  /* 16px روی موبایل تا iOS صفحه را زوم نکند (عامل پرش اسکرول) */
+  transition: border-color var(--zkad-dur-fast, 180ms) var(--zkad-ease, ease);
+}
+body.admin-root .zkad-input:focus,
+body.admin-root .zkad-textarea:focus {
+  outline: none; border-color: var(--zkad-acc);
+  box-shadow: 0 0 0 3px var(--zkad-acc-soft);
+}
+body.admin-root .zkad-input::placeholder,
+body.admin-root .zkad-textarea::placeholder { color: var(--zkad-faint); }
+body.admin-root .zkad-textarea { min-height: 84px; resize: vertical; }
+body.admin-root .zkad-textarea.sm { min-height: 56px; }
+body.admin-root select.zkad-input { cursor: pointer; }
+
+body.admin-root .zkad-switch-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 11px; border-radius: var(--zkad-r-input, 6px);
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  font-size: 12.5px; font-weight: 700; color: var(--zkad-txt); cursor: pointer;
+}
+body.admin-root .zkad-switch-row input { width: 17px; height: 17px; accent-color: var(--zkad-acc); cursor: pointer; flex-shrink: 0; }
+
+/* ═══════════ BUTTONS ═══════════ */
+body.admin-root .zkad-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 14px; border-radius: var(--zkad-r-btn, 6px);
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-txt); font-family: inherit; font-size: 12.5px; font-weight: 800;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background var(--zkad-dur-fast, 180ms) var(--zkad-ease, ease);
+}
+body.admin-root .zkad-btn:hover { background: var(--zkad-hover-strong); }
+body.admin-root .zkad-btn.sm { padding: 6px 11px; font-size: 11.5px; }
+body.admin-root .zkad-btn.full { width: 100%; }
+body.admin-root .zkad-btn.t-ok    { color: var(--zkad-tag-ok-tx);   border-color: var(--zkad-tag-ok-tx); }
+body.admin-root .zkad-btn.t-warn  { color: var(--zkad-tag-warn-tx); border-color: var(--zkad-tag-warn-tx); }
+body.admin-root .zkad-btn.t-err   { color: var(--zkad-tag-err-tx);  border-color: var(--zkad-tag-err-tx); }
+body.admin-root .zkad-btn.t-ok.solid   { background: var(--zkad-tag-ok-bg); }
+body.admin-root .zkad-btn.t-warn.solid { background: var(--zkad-tag-warn-bg); }
+body.admin-root .zkad-btn.t-err.solid  { background: var(--zkad-tag-err-bg); }
+
+body.admin-root .zkad-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.admin-root .zkad-actions-label { font-size: 11.5px; font-weight: 800; color: var(--zkad-mut); }
+
+/* ═══════════ BLOCKS ═══════════ */
+body.admin-root .zkad-block {
+  border: 1px solid var(--zkad-brd);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--zkad-bg);
+  display: flex; flex-direction: column; gap: 10px;
+}
+body.admin-root .zkad-block.t-pay { border-color: var(--zkad-acc); }
+body.admin-root .zkad-block-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+body.admin-root .zkad-block-head b { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: var(--zkad-ttl); }
+
+body.admin-root .zkad-origin {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 9px 11px; border-radius: 10px;
+  background: var(--zkad-bg); border: 1px solid var(--zkad-brd);
+}
+body.admin-root .zkad-origin-tags,
+body.admin-root .zkad-origin-side { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+body.admin-root .zkad-alert {
+  border-radius: 10px; padding: 10px 12px;
+  background: var(--zkad-tag-warn-bg); border: 1px solid var(--zkad-tag-warn-tx);
+  color: var(--zkad-txt);
+}
+body.admin-root .zkad-alert-title { font-size: 12px; font-weight: 800; color: var(--zkad-tag-warn-tx); margin-bottom: 7px; }
+body.admin-root .zkad-diff-grid { display: flex; flex-direction: column; gap: 5px; }
+body.admin-root .zkad-diff { font-size: 12px; }
+body.admin-root .zkad-diff s { color: var(--zkad-mut); }
+body.admin-root .zkad-diff b { color: var(--zkad-ttl); }
+body.admin-root .zkad-diff-arrow { margin: 0 6px; color: var(--zkad-mut); }
+
+/* ── switcher chips ── */
+body.admin-root .zkad-switcher { display: flex; flex-direction: column; gap: 6px; }
+body.admin-root .zkad-switcher-list { display: flex; flex-wrap: wrap; gap: 6px; }
+body.admin-root .zkad-chip {
+  padding: 6px 12px; border-radius: var(--zkad-r-pill, 999px);
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-mut); font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+body.admin-root .zkad-chip:hover { background: var(--zkad-hover-strong); }
+body.admin-root .zkad-chip.is-active { background: var(--zkad-acc-soft); border-color: var(--zkad-acc); color: var(--zkad-acc); }
+
+/* ── facts (dl) ── */
+body.admin-root .zkad-facts {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0;
+}
+body.admin-root .zkad-facts.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.admin-root .zkad-facts > div {
+  padding: 9px 11px; border-radius: 9px;
+  background: var(--zkad-inp); border: 1px solid var(--zkad-brd);
+  min-width: 0;
+}
+body.admin-root .zkad-facts dt { font-size: 11px; font-weight: 800; color: var(--zkad-mut); margin-bottom: 3px; }
+body.admin-root .zkad-facts dd { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--zkad-txt); word-break: break-word; }
+body.admin-root .zkad-fact-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+body.admin-root .zkad-note {
+  padding: 10px 12px; border-radius: 9px;
+  background: var(--zkad-inp); border: 1px solid var(--zkad-brd);
+  font-size: 12.5px; line-height: 1.85; color: var(--zkad-txt); white-space: pre-wrap;
+}
+body.admin-root .zkad-note.sm { font-size: 11.5px; padding: 8px 10px; }
+body.admin-root .zkad-note b { color: var(--zkad-ttl); }
+body.admin-root .zkad-empty-note {
+  padding: 18px; text-align: center; border-radius: 9px;
+  border: 1px dashed var(--zkad-brd-strong); color: var(--zkad-mut); font-size: 12.5px;
+}
+body.admin-root .zkad-inline-row { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--zkad-txt); align-items: center; }
+
+/* ── growth ── */
+body.admin-root .zkad-growth {
+  border-radius: 10px; padding: 11px;
+  background: var(--zkad-acc-soft); border: 1px solid var(--zkad-acc);
+}
+body.admin-root .zkad-growth-title { display: block; font-size: 12px; color: var(--zkad-acc); margin-bottom: 8px; }
+body.admin-root .zkad-growth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+body.admin-root .zkad-growth-item {
+  padding: 9px 11px; border-radius: 9px;
+  background: var(--zkad-card); border: 1px solid var(--zkad-brd);
+  font-size: 11.5px; line-height: 1.85; color: var(--zkad-txt);
+}
+body.admin-root .zkad-growth-item b { font-size: 12.5px; color: var(--zkad-ttl); display: block; }
+body.admin-root .zkad-growth-status { font-weight: 800; }
+
+/* ── media ── */
+body.admin-root .zkad-media { display: flex; flex-direction: column; gap: 8px; }
+body.admin-root .zkad-media-title,
+body.admin-root .zkad-media-head { font-size: 12px; font-weight: 800; color: var(--zkad-ttl); }
+body.admin-root .zkad-media-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+body.admin-root .zkad-media-head b { display: flex; align-items: center; gap: 6px; }
+body.admin-root .zkad-audio { width: 100%; height: 38px; }
+body.admin-root .zkad-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+body.admin-root .zkad-thumbs img {
+  width: 92px; height: 92px; object-fit: cover;
+  border-radius: 9px; border: 1px solid var(--zkad-brd); display: block;
+}
+
+/* ── receipt ── */
+body.admin-root .zkad-receipt {
+  display: flex; align-items: flex-start; gap: 11px; flex-wrap: wrap;
+  padding: 10px; border-radius: 10px;
+  background: var(--zkad-inp); border: 1px solid var(--zkad-brd);
+}
+body.admin-root .zkad-receipt img {
+  width: 108px; height: 108px; object-fit: cover;
+  border-radius: 9px; border: 1px solid var(--zkad-brd); display: block;
+}
+body.admin-root .zkad-receipt-info { flex: 1 1 160px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; }
+body.admin-root .zkad-receipt-info > div { display: flex; align-items: center; gap: 5px; }
+
+/* ── follow-ups ── */
+body.admin-root .zkad-fu { display: flex; gap: 6px; }
+body.admin-root .zkad-fu-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-mut); font-family: inherit; font-size: 12px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+body.admin-root .zkad-fu-btn:hover { background: var(--zkad-hover-strong); }
+body.admin-root .zkad-fu-btn.is-done { background: var(--zkad-tag-ok-bg); border-color: var(--zkad-tag-ok-tx); color: var(--zkad-tag-ok-tx); }
+body.admin-root .zkad-fu-btn.is-miss { background: var(--zkad-tag-err-bg); border-color: var(--zkad-tag-err-tx); color: var(--zkad-tag-err-tx); }
+
+/* ── details ── */
+body.admin-root .zkad-details {
+  border: 1px solid var(--zkad-brd); border-radius: 10px;
+  padding: 10px 12px; background: var(--zkad-bg);
+}
+body.admin-root .zkad-details > summary {
+  cursor: pointer; font-size: 12px; font-weight: 800; color: var(--zkad-ttl);
+  display: flex; align-items: center; gap: 6px; list-style: none;
+}
+body.admin-root .zkad-details > summary::-webkit-details-marker { display: none; }
+body.admin-root .zkad-details > summary::after { content: '▾'; margin-inline-start: auto; color: var(--zkad-mut); }
+body.admin-root .zkad-details[open] > summary::after { content: '▴'; }
+body.admin-root .zkad-details[open] > summary { margin-bottom: 9px; padding-bottom: 8px; border-bottom: 1px solid var(--zkad-brd); }
+
+body.admin-root .zkad-pre {
+  background: var(--zkad-inp); border: 1px solid var(--zkad-brd);
+  border-radius: 8px; padding: 9px; margin: 7px 0 0;
+  font-size: 10.5px; line-height: 1.7; color: var(--zkad-txt);
+  white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto; direction: ltr;
+}
+body.admin-root .zkad-history { margin: 0; padding-inline-start: 16px; display: flex; flex-direction: column; gap: 5px; }
+body.admin-root .zkad-history li { font-size: 11.5px; line-height: 1.8; color: var(--zkad-txt); }
+
+/* ── related ── */
+body.admin-root .zkad-related-list { display: flex; flex-direction: column; gap: 7px; }
+body.admin-root .zkad-related {
+  display: flex; flex-direction: column; gap: 4px; width: 100%;
+  padding: 9px 11px; border-radius: 9px;
+  border: 1px solid var(--zkad-brd); background: var(--zkad-inp);
+  color: var(--zkad-txt); font-family: inherit; text-align: start; cursor: pointer;
+}
+body.admin-root .zkad-related:hover { background: var(--zkad-hover-strong); border-color: var(--zkad-acc); }
+body.admin-root .zkad-related-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11.5px; }
+body.admin-root .zkad-related-cta { margin-inline-start: auto; color: var(--zkad-acc); font-weight: 800; }
+body.admin-root .zkad-related-sub { font-size: 11px; color: var(--zkad-mut); }
+
+/* ── files / products ── */
+body.admin-root .zkad-file {
+  border: 1px solid var(--zkad-brd); border-radius: 10px; padding: 10px 12px; background: var(--zkad-bg);
+  display: flex; flex-direction: column; gap: 8px;
+}
+body.admin-root .zkad-file-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--zkad-ttl); }
+body.admin-root .zkad-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.admin-root .zkad-file-row label.zkad-btn { cursor: pointer; }
+
+body.admin-root .zkad-product {
+  border: 1px solid var(--zkad-brd); border-radius: 10px;
+  padding: 9px 11px; margin-top: 8px; background: var(--zkad-inp);
+}
+body.admin-root .zkad-product.is-on { border-color: var(--zkad-acc); }
+body.admin-root .zkad-product .zkad-switch-row { border: 0; background: none; padding: 0; }
+body.admin-root .zkad-product-name { display: flex; align-items: center; gap: 6px; font-weight: 800; color: var(--zkad-ttl); }
+body.admin-root .zkad-product-body { margin-top: 9px; display: flex; flex-direction: column; gap: 9px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  body.admin-root .zkad-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.admin-root .zkad-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  body.admin-root .zkad-sub-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 10px;
+    row-gap: 8px;
+  }
+  /* ردیف عملیات سریع در موبایل زیر عنوان می‌رود و کامل قابل لمس است */
+  body.admin-root .zkad-sub-quick {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  body.admin-root .zkad-sub-title { flex-direction: column; align-items: flex-start; gap: 4px; }
+  body.admin-root .zkad-sub-meta { flex-wrap: wrap; }
+  body.admin-root .zkad-sub-body { padding: 10px; }
+
+  body.admin-root .zkad-subtab-full { display: none; }
+  body.admin-root .zkad-subtab-short { display: inline; }
+  body.admin-root .zkad-subtab { padding: 9px 12px; }
+
+  body.admin-root .zkad-grid.two,
+  body.admin-root .zkad-grid.three { grid-template-columns: minmax(0, 1fr); }
+  body.admin-root .zkad-facts,
+  body.admin-root .zkad-facts.wide { grid-template-columns: minmax(0, 1fr); }
+  body.admin-root .zkad-growth-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* حیاتی برای iOS: زیر 16px مرورگر هنگام focus زوم می‌کند
+     و همین زوم عامل «پرش اسکرول» و «بسته‌شدن کیبورد» بود. */
+  body.admin-root .zkad-input,
+  body.admin-root .zkad-textarea,
+  body.admin-root select.zkad-input { font-size: 16px; padding: 11px 12px; }
+
+  /* هدف لمس حداقل 40px */
+  body.admin-root .zkad-btn { padding: 11px 14px; }
+  body.admin-root .zkad-btn.sm { padding: 9px 12px; }
+  body.admin-root .zkad-iconbtn { width: 36px; height: 36px; }
+  body.admin-root .zkad-phone-btn,
+  body.admin-root .zkad-track { padding: 7px 11px; }
+  body.admin-root .zkad-thumbs img { width: 76px; height: 76px; }
+  body.admin-root .zkad-receipt img { width: 100%; height: 168px; }
+  body.admin-root .zkad-actions .zkad-btn { flex: 1 1 auto; }
+  .zkad-pop-item { padding: 12px 12px; font-size: 13.5px; }
+}
+
+/* کاهش حرکت برای کاربران حساس */
+@media (prefers-reduced-motion: reduce) {
+  body.admin-root .zkad-sub,
+  body.admin-root .zkad-subtab,
+  body.admin-root .zkad-btn,
+  body.admin-root .zkad-input,
+  body.admin-root .zkad-textarea { transition: none; }
+}
