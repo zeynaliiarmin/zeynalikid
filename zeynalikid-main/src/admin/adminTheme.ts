@@ -15,7 +15,10 @@ export const ZK_THEME_EVENT = 'zk-admin-theme-changed';
 export function getZkThemePref(): ZkThemePref {
   try {
     const v = localStorage.getItem(ZK_THEME_KEY);
-    if (v === 'light' || v === 'dark' || v === 'auto') return v;
+    // تم پنل فقط انتخاب شخصی مدیر است؛ حالت auto قدیمی را برای جلوگیری از
+    // تداخل با دارک‌مود سیستم، معادل روشن در نظر می‌گیریم.
+    if (v === 'light' || v === 'dark') return v;
+    if (v === 'auto') return 'light';
   } catch {}
   return 'light';
 }
