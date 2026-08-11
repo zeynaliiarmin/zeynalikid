@@ -100,61 +100,9 @@ export default function AdminPanel({app}:{app:any}){
  // قبلی فقط .zkad-content/.admin-main را حفظ می‌کرد و در تب‌ها/لیست‌ها همچنان پرش دیده می‌شد
  // اکنون: تمام اسکرول‌های window + کانتینرهای اسکرول‌پذیر + فوکوس فعال را ذخیره و بعد از رندر با rAF برمی‌گردانیم
  const setEditCfgRaw=useCallback((u:any)=>{
-   const active=document.activeElement as HTMLElement|null;
-   const activeIsText = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || (active as any).isContentEditable);
-   const activeRect = activeIsText ? active!.getBoundingClientRect() : null;
-   // ذخیره اسکرول window + تمام کانتینرهای ممکن
-   const scrollSnap:Array<{el: any, top:number, left:number}> = [];
-   try{ scrollSnap.push({el: window, top: window.scrollY, left: window.scrollX}); }catch{}
-   const selectors = ['.zkad-content','.admin-main','.admin-root','.zkad-panel-card','[data-scroll]'];
-   const seen=new Set<Element>();
-   selectors.forEach(sel=>{
-     document.querySelectorAll(sel).forEach((el:any)=>{
-       if(seen.has(el)) return; seen.add(el);
-       try{ if(el.scrollTop||el.scrollLeft) scrollSnap.push({el, top: el.scrollTop, left: el.scrollLeft}); }catch{}
-     });
-   });
-   // اگر هیچکدام اسکرول نداشت ولی کانتینر اصلی صفر بود، آن را هم ذخیره کن تا قبل از پرش بگیریم
-   if(!scrollSnap.find(s=> s.el!==window && (s.el as HTMLElement).classList?.contains('zkad-content'))){
-     const z=document.querySelector('.zkad-content') as HTMLElement|null;
-     if(z) scrollSnap.push({el: z, top: z.scrollTop, left: z.scrollLeft});
-   }
-   if(!scrollSnap.find(s=> s.el!==window && (s.el as HTMLElement).classList?.contains('admin-main'))){
-     const m=document.querySelector('.admin-main') as HTMLElement|null;
-     if(m) scrollSnap.push({el: m, top: m.scrollTop, left: m.scrollLeft});
-   }
-   const restore=()=>{
-     scrollSnap.forEach(s=>{
-       try{
-         if(s.el===window) window.scrollTo(s.left, s.top);
-         else (s.el as HTMLElement).scrollTop=s.top, (s.el as HTMLElement).scrollLeft=s.left;
-       }catch{}
-     });
-     if(activeIsText && active && document.activeElement!==active){
-       try{
-         // فقط اگر المنت هنوز در DOM است و قابل فوکوس است
-         if(document.contains(active)){
-           (active as HTMLElement).focus({preventScroll:true} as any);
-           if(activeRect){
-             // جلوگیری از پرش ناشی از focus
-             window.scrollTo(scrollSnap.find(s=>s.el===window)?.left||0, scrollSnap.find(s=>s.el===window)?.top||0);
-           }
-           const inp=active as HTMLInputElement;
-           if(inp.setSelectionRange && (inp.tagName==='INPUT' || inp.tagName==='TEXTAREA')){
-             const len=inp.value.length; try{inp.setSelectionRange(len,len);}catch{}
-           }
-         }
-       }catch{}
-     }
-   };
-   setTimeout(()=>{
-     // @ts-ignore - functional or object
-     setEditCfgRawRaw(u);
-     requestAnimationFrame(()=>{
-       restore();
-       requestAnimationFrame(restore);
-     });
-   },0);
+   // رندر مستقیم بدون setTimeout، بازگردانی اجباری focus یا scroll.
+   // نسخه قبلی در موبایل کیبورد را می‌بست و صفحه را به بخش دیگری می‌پراند.
+   setEditCfgRawRaw(u as any);
  },[]); const [msg,setMsg]=useState(''); const [trashKey,setTrashKey]=useState(0);
  const setEditCfg=useCallback((u:any)=>{setEditCfgRaw(u as any)},[]);
  // FIX: Preserve <details> open state across re-renders.
