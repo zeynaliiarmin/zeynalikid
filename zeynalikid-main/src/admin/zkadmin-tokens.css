@@ -924,28 +924,38 @@ body.admin-root .admin-main label[style*="display: block"] {
   line-height: 1.6;
 }
 
-/* ── toggle switch (جایگزین بصری چک‌باکس‌های فعال/نمایش) ── */
+/* ── گزینه‌های نمایشی: چک‌باکس واضح و حرفه‌ای، نه toggle مبهم ── */
 body.admin-root .zkad-switch {
   appearance: none; -webkit-appearance: none;
-  width: 40px !important; height: 22px !important;
-  border-radius: 999px !important;
-  background: var(--zkad-brd-strong) !important;
-  border: 0 !important;
-  position: relative; cursor: pointer; flex-shrink: 0;
-  transition: background 180ms var(--zkad-ease);
+  width: 24px !important; height: 24px !important;
+  margin: 0;
+  border-radius: 7px !important;
+  background: var(--zkad-inp) !important;
+  border: 2px solid var(--zkad-brd-strong) !important;
+  position: relative; cursor: pointer; flex: 0 0 24px;
+  transition: background 160ms var(--zkad-ease), border-color 160ms var(--zkad-ease), transform 160ms var(--zkad-ease);
   vertical-align: middle;
 }
-body.admin-root .zkad-switch::before {
+body.admin-root .zkad-switch::after {
   content: '';
-  position: absolute; top: 2px; inset-inline-start: 2px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #fff; box-shadow: var(--zkad-shadow-sm);
-  transition: transform 180ms var(--zkad-ease);
+  position: absolute;
+  width: 10px; height: 5px;
+  border-inline-start: 2px solid var(--zkad-acc-contrast, #fff);
+  border-bottom: 2px solid var(--zkad-acc-contrast, #fff);
+  transform: rotate(-45deg) scale(0);
+  top: 6px; inset-inline-start: 5px;
+  transition: transform 150ms var(--zkad-ease);
 }
-body.admin-root .zkad-switch:checked { background: var(--zkad-acc) !important; }
-body.admin-root .zkad-switch:checked::before { transform: translateX(-18px); }
-html[dir="ltr"] body.admin-root .zkad-switch:checked::before,
-body.admin-root.admin-ltr .zkad-switch:checked::before { transform: translateX(18px); }
+body.admin-root .zkad-switch:checked {
+  background: var(--zkad-acc) !important;
+  border-color: var(--zkad-acc) !important;
+}
+body.admin-root .zkad-switch:checked::after { transform: rotate(-45deg) scale(1); }
+body.admin-root .zkad-switch:focus-visible {
+  outline: 2px solid var(--zkad-acc);
+  outline-offset: 3px;
+}
+body.admin-root .zkad-switch:active { transform: scale(.94); }
 
 /* ── color swatch دایره‌ای ── */
 body.admin-root .admin-main input[type="color"] {
