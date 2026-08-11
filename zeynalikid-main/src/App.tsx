@@ -16,6 +16,8 @@ import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, fetchS
 import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
 import { resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
+// PWA admin: shared session utils (clear on logout, validate on /admin/app)
+import { clearAdminSession, getAdminSessionToken } from './utils/adminSession';
 // اصلاح چانک-۱: Lazy Loading صفحات برای کاهش حجم باندل اولیه
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CoursesPage = lazy(() => import('./pages/CoursesPage'));
@@ -943,7 +945,9 @@ const pathToView: Record<string, string> = {
   '/faq': 'faq',
   '/contact': 'contact',
   '/admin-login': 'admin-login',
+  '/admin/login': 'admin-login',
   '/admin': 'admin',
+  '/admin/app': 'admin',
   '/child-info': 'child-info',
   '/course-shipping': 'course-shipping',
   '/course-payment': 'course-payment',
@@ -958,8 +962,11 @@ const viewToPath: Record<string, string> = Object.fromEntries(Object.entries(pat
 function App(){
  const [cfg,setCfg]=useState(()=>mergeSettings(getLS(SK.settings,null)));
  const location=useLocation(); const navigate=useNavigate();
- // اعتبار ورود پنل مدیریت: فقط state داخلی نشست فعلی (بدون persist)؛ ورود مستقیم به /admin بدون لاگین ممنوع (مطابق رفتار قبلی)
- const [adminAuthed,setAdminAuthed]=useState(false); const [adminTab,setAdminTab]=useState('dashboard');
+ // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
+ // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
+ const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return sessionStorage.getItem('zk_admin_authed')==='true' && !!getAdminSessionToken(); } catch { return false; } }); const [adminTab,setAdminTab]=useState('dashboard');
+ // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
+ useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&!adminAuthed){ navigate('/admin/login',{replace:true}); } },[location.pathname,adminAuthed,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin')setAdminAuthed(true); if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
@@ -1078,7 +1085,7 @@ function App(){
 const sameNumberAll=existingList.filter((x:any)=>digits(x.fullPhone||'')===digits(fp)); const hasConsultPrev=sameNumberAll.some((x:any)=>x.type==='consultation'); const consultCountPrev=sameNumberAll.filter((x:any)=>x.type==='consultation').length; const courseCountPrev=sameNumberAll.filter((x:any)=>x.type==='course').length; const autoPriority=(hasConsultPrev||consultCountPrev>=1||courseCountPrev>=1)?'high':'normal';
 const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data,category:'ثبتی',consultationStatus:'ثبتی',orderStatus:'جدید',priority:autoPriority,unread:true,isNew:true,followReminder:true,followUps:[null,null,null,null,null],adminNotes:'',usageInstructions:'',timeSlot:'',course:course.selected,shipping:{dest:course.dest,method:course.shippingMethod,...course.form,estimatedDelivery:deliveryText(),optionalSendDate:course.optionalSendDate},payment:{...pay,receipt_image:pay.receipt||'',receipt_text:pay.receiptText||'',bank:(cfg.banks||[]).find((b:any)=>b.id===pay.bankId)},childInfo:course.childInfo||null,tonguePhotos:course.tonguePhotos||[],editHistory:course.editedHistory||[]}; if(isSupabaseConfigured){try{await createSubmission(entry as any)}catch(e){console.warn('Could not save submission to Supabase, falling back to localStorage',e);const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])}}else{const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])} setCourseResult(entry); clearPublicFormDrafts(); setFd(emptyFd()); setCourse(emptyCourse()); setEditChild(false); setShipModal(null); setView('course-confirm')}
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
- const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e};
+ const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
  // اصلاح چانک-۱: Suspense برای Lazy Loading
  
@@ -1109,7 +1116,9 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   <Route path="/form" element={<ConsultationPage app={app}/>}/>
   <Route path="/consultation" element={<ConsultationPage app={app}/>}/>
   <Route path="/admin-login" element={<AdminLoginPage app={app}/>}/>
-  <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin-login" replace/>}/>
+  <Route path="/admin/login" element={<AdminLoginPage app={app}/>}/>
+  <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
+  <Route path="/admin/app" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
   <Route path="*" element={<Navigate to="/" replace/>}/>
  </Routes></Suspense>;
  // اصلاح ۲۱: حذف هدر (لوگو، منو، تغییر زبان) در صفحات انتخاب دوره، ارسال، پرداخت، تأیید و موفقیت

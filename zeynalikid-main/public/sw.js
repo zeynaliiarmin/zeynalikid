@@ -27,6 +27,11 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;      // هرگز Supabase/API/فونت CDN
   if (url.pathname.startsWith('/sw.js')) return;
+  // مسیرهای /admin/* توسط admin-sw.js (scope /admin/) مدیریت می‌شوند — اینجا مداخله نکن.
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return;
+  // فایل‌های اختصاصی اپ مدیریت نیز توسط admin-sw مدیریت می‌شوند.
+  if (url.pathname === '/admin-sw.js' || url.pathname === '/admin-manifest.webmanifest') return;
+  if (url.pathname.startsWith('/icons/admin-icon')) return;
 
   if (req.mode === 'navigate') {
     // Network-First برای HTML تا دیپلوی تازه همیشه برسد

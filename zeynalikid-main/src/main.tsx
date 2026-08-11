@@ -6,6 +6,176 @@ import App from './App';
 import AppLaunchSplash from './components/AppLaunchSplash';
 import './index.css';
 
+// ─── PWA: dynamic manifest & service worker based on route ──────────────
+// مسیرهای /admin/* از manifest و SW مستقل مدیریت استفاده می‌کنند تا
+// اپ PWA "زینالیکید | مدیریت" به‌صورت یک اپ جداگانه نصب شود.
+function isAdminRoute(pathname: string): boolean {
+  return pathname === '/admin' || pathname.startsWith('/admin/');
+}
+
+function applyAdminPwaMeta() {
+  // manifest
+  let manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  if (!manifestLink) {
+    manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    document.head.appendChild(manifestLink);
+  }
+  manifestLink.href = '/admin-manifest.webmanifest';
+
+  // apple-touch-icon
+  let appleTouch = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+  if (!appleTouch) {
+    appleTouch = document.createElement('link');
+    appleTouch.rel = 'apple-touch-icon';
+    document.head.appendChild(appleTouch);
+  }
+  appleTouch.href = '/icons/admin-icon-192.png';
+
+  // favicon svg
+  let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]');
+  if (!iconLink) {
+    iconLink = document.createElement('link');
+    iconLink.rel = 'icon';
+    iconLink.type = 'image/svg+xml';
+    document.head.appendChild(iconLink);
+  }
+  iconLink.href = '/icons/admin-icon.svg';
+
+  // apple-mobile-web-app-title
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'apple-mobile-web-app-title';
+    document.head.appendChild(meta);
+  }
+  meta.content = 'مدیریت زینالیکید';
+
+  // theme-color (keep teal, but darker for admin if desired)
+  let themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!themeColor) {
+    themeColor = document.createElement('meta');
+    themeColor.name = 'theme-color';
+    document.head.appendChild(themeColor);
+  }
+  themeColor.content = '#0F766E';
+
+  // robots: noindex admin routes
+  let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  if (!robots) {
+    robots = document.createElement('meta');
+    robots.name = 'robots';
+    document.head.appendChild(robots);
+  }
+  robots.content = 'noindex, nofollow';
+
+  document.title = 'زینالیکید | مدیریت';
+}
+
+function applyPublicPwaMeta() {
+  let manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  if (!manifestLink) {
+    manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    document.head.appendChild(manifestLink);
+  }
+  manifestLink.href = '/manifest.webmanifest';
+
+  let appleTouch = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+  if (!appleTouch) {
+    appleTouch = document.createElement('link');
+    appleTouch.rel = 'apple-touch-icon';
+    document.head.appendChild(appleTouch);
+  }
+  appleTouch.href = '/icons/apple-touch-icon.png';
+
+  let iconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]');
+  if (!iconLink) {
+    iconLink = document.createElement('link');
+    iconLink.rel = 'icon';
+    iconLink.type = 'image/svg+xml';
+    document.head.appendChild(iconLink);
+  }
+  iconLink.href = '/icons/icon.svg';
+
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'apple-mobile-web-app-title';
+    document.head.appendChild(meta);
+  }
+  meta.content = 'زینالیکید';
+
+  let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  if (robots) robots.content = 'index, follow';
+}
+
+function setupPwaForCurrentRoute() {
+  const isAdmin = isAdminRoute(window.location.pathname);
+  if (isAdmin) {
+    applyAdminPwaMeta();
+  } else {
+    applyPublicPwaMeta();
+  }
+
+  if (!('serviceWorker' in navigator)) return;
+
+  // Only register in production to avoid dev-time caching issues.
+  if (!import.meta.env.PROD) return;
+
+  window.addEventListener('load', () => {
+    if (isAdmin) {
+      // Admin route: only register the admin SW (scope /admin/).
+      // Do NOT register the public sw.js here — it would conflict with admin-sw.js
+      // because both would try to control /admin/* navigations.
+      navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin/' })
+        .catch((err) => { console.warn('[admin] SW registration failed:', err); });
+    } else {
+      // Public route: register the public sw.js (scope /).
+      // If a previous registration of admin-sw exists on this origin, leave it alone.
+      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
+        .catch(() => {});
+      navigator.serviceWorker.ready.then((reg) => {
+        try { reg.active && reg.active.postMessage('zk-clean-caches'); } catch {}
+      }).catch(() => {});
+    }
+  });
+}
+
+// Apply on initial load
+setupPwaForCurrentRoute();
+
+// Re-apply on route changes (in case user navigates between public and admin)
+// Listen to popstate (back/forward) and pushstate/replacestate (router navigation).
+let lastPath = window.location.pathname;
+const checkPathChange = () => {
+  const current = window.location.pathname;
+  if (current !== lastPath) {
+    const wasAdmin = isAdminRoute(lastPath);
+    const isAdmin = isAdminRoute(current);
+    if (wasAdmin !== isAdmin) {
+      setupPwaForCurrentRoute();
+    }
+    lastPath = current;
+  }
+};
+window.addEventListener('popstate', checkPathChange);
+window.addEventListener('pushstate', checkPathChange);
+window.addEventListener('replacestate', checkPathChange);
+// Patch history methods to emit our custom events
+const origPush = history.pushState;
+const origReplace = history.replaceState;
+history.pushState = function (...args) {
+  const r = origPush.apply(this, args as any);
+  window.dispatchEvent(new Event('pushstate'));
+  return r;
+};
+history.replaceState = function (...args) {
+  const r = origReplace.apply(this, args as any);
+  window.dispatchEvent(new Event('replacestate'));
+  return r;
+};
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
@@ -15,11 +185,3 @@ createRoot(document.getElementById('root')!).render(
     </HelmetProvider>
   </React.StrictMode>
 );
-
-// Stage 9: ثبت Service Worker فقط در build تولیدی (در dev فعال نمی‌شود)
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
-    navigator.serviceWorker.ready.then((reg) => { try { reg.active && reg.active.postMessage('zk-clean-caches'); } catch {} }).catch(() => {});
-  });
-}
