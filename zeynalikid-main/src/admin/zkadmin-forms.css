@@ -577,3 +577,9 @@ body.admin-root .zkad-sub-actions .zkad-sub-toggle {
   width: 72px !important;
   min-width: 72px;
 }
+
+/* Deletion remains secondary to opening, but gets a slightly wider hit area. */
+body.admin-root .zkad-sub-actions .zkad-sub-header-icon.t-err {
+  width: 48px !important;
+  min-width: 48px;
+}
