@@ -1101,3 +1101,13 @@ body.admin-root .zkad-filter-toggle button:first-child{color:var(--zkad-acc);bor
 body.admin-root .zkad-card{overflow:hidden}
 body.admin-root .zkad-row-head{min-height:68px}
 @media(max-width:640px){body.admin-root .zkad-data-hero{padding:12px}body.admin-root .zkad-toolbar-actions{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}body.admin-root .zkad-toolbtn{justify-content:center;padding:5px 6px}body.admin-root .zkad-row-head{padding:12px!important;gap:8px!important}}
+
+/* Refined filter drawer: compact cards with clear groups */
+body.admin-root .zkad-chips-area{padding:12px;border:1px solid var(--zkad-brd);border-radius:16px;background:linear-gradient(135deg,var(--zkad-card),var(--zkad-hover));box-shadow:var(--zkad-shadow-sm);gap:10px}
+body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:9px 10px;border:1px solid var(--zkad-brd);border-radius:12px;background:var(--zkad-card);align-items:flex-start}
+body.admin-root .zkad-chips-area>.zkad-chipgroup .zkad-chipgroup-lbl{padding-top:5px;color:var(--zkad-acc);font-size:11px}
+body.admin-root .zkad-chips-area>div[style*="grid"]{padding:9px 10px;border:1px solid var(--zkad-brd);border-radius:12px;background:var(--zkad-card)}
+body.admin-root .zkad-chips-area>div[style*="grid"] .zkad-chipgroup{align-items:flex-start}
+body.admin-root .zkad-chips-area>div[style*="grid"] .zkad-chipgroup-lbl{padding-top:5px;color:var(--zkad-acc);font-size:11px;width:auto}
+body.admin-root .zkad-filter-toggle{padding:8px 10px;border:1px solid var(--zkad-brd);border-radius:13px;background:var(--zkad-card);box-shadow:var(--zkad-shadow-sm)}
+@media(max-width:640px){body.admin-root .zkad-chips-area{padding:9px}body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:8px}body.admin-root .zkad-chips-area>div[style*="grid"]{grid-template-columns:1fr!important;padding:8px;gap:10px!important}body.admin-root .zkad-chips-area .zkad-chiprow{padding-bottom:3px}}
