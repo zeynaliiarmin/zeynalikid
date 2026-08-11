@@ -415,6 +415,12 @@ body.admin-root .zkad-file {
 body.admin-root .zkad-file-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--zkad-ttl); }
 body.admin-root .zkad-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 body.admin-root .zkad-file-row label.zkad-btn { cursor: pointer; }
+/* The two related PDF controls share one compact row on normal mobile widths. */
+body.admin-root .zkad-file-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+body.admin-root .zkad-file-grid .zkad-file { min-width: 0; }
+body.admin-root .zkad-file-grid .zkad-file-title { font-size: 11.5px; }
+body.admin-root .zkad-file-grid .zkad-file-row { gap: 6px; }
+@media (max-width: 340px) { body.admin-root .zkad-file-grid { grid-template-columns: minmax(0, 1fr); } }
 
 body.admin-root .zkad-product {
   border: 1px solid var(--zkad-brd); border-radius: 10px;

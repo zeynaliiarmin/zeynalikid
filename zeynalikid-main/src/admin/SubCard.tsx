@@ -888,10 +888,11 @@ function SubCardBase({
                 <span>نمایش برنامه غذایی در صفحه پیگیری</span>
               </label>
 
-              {/* PDFها */}
+              {/* PDFها — دو کارت هم‌اندازه در یک ردیف */}
+              <div className="zkad-file-grid">
               {([
-                { key: 'usagePdfUrl', title: 'فایل PDF طریقه مصرف (اختیاری)', folder: 'usage-pdf', log: 'طریقه مصرف' },
-                { key: 'mealPdfUrl', title: 'فایل PDF برنامه غذایی (اختیاری)', folder: 'meal-pdf', log: 'برنامه غذایی' },
+                { key: 'usagePdfUrl', title: 'فایل PDF طریقه مصرف', folder: 'usage-pdf', log: 'طریقه مصرف' },
+                { key: 'mealPdfUrl', title: 'فایل PDF برنامه غذایی', folder: 'meal-pdf', log: 'برنامه غذایی' },
               ] as const).map(f => (
                 <div className="zkad-file" key={f.key}>
                   <div className="zkad-file-title"><ZkDocIcon size={13} /> {f.title}</div>
@@ -921,6 +922,7 @@ function SubCardBase({
                   </div>
                 </div>
               ))}
+              </div>
 
               {/* طریقه مصرف محصولات */}
               <details className="zkad-details">
