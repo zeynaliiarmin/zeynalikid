@@ -889,7 +889,7 @@ function SubCardBase({
               </label>
 
               <label className="zkad-switch-row">
-                <input className="zkad-switch" type="checkbox" checked={!!sub.showMealPlan}
+                <input className="zkad-display-check" type="checkbox" checked={!!sub.showMealPlan}
                   onChange={e => patchSelf({ showMealPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه غذایی' : 'غیرفعال‌سازی نمایش برنامه غذایی')} />
                 <span>نمایش برنامه غذایی در صفحه پیگیری</span>
               </label>
@@ -965,9 +965,9 @@ function SubCardBase({
               </details>
 
               <label className="zkad-switch-row">
-                <input className="zkad-switch" type="checkbox" checked={!!sub.showCorrectiveTab}
+                <input className="zkad-display-check" type="checkbox" checked={!!sub.showCorrectiveTab}
                   onChange={e => patchSelf({ showCorrectiveTab: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش اصلاحی' : 'غیرفعال‌سازی نمایش اصلاحی')} />
-                <span>نمایش تب «اصلاحی» به کاربر در صفحه پیگیری (قابل ویرایش توسط کاربر)</span>
+                <span>نمایش تب «اصلاحی» به کاربر در صفحه پیگیری</span>
               </label>
 
               <label className="zkad-f">
