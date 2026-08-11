@@ -260,7 +260,8 @@ export default function ConsultationPage({ app }: { app: any }) {
     const minAge = Number(ff?.age?.min ?? 2) || 2;
     const maxAge = Number(ff?.age?.max ?? 17) || 17;
     if (!fd.topics.length) e.topics = lang === 'en' ? 'Select at least one topic' : 'حداقل یک موضوع مشاوره انتخاب کنید';
-    if (!String(fd.pName || '').trim()) e.pName = lang === 'en' ? 'Enter parent name' : 'نام و نام خانوادگی والد را وارد کنید';
+    // نام والد فقط وقتی الزامی است که از پنل مدیریت برای این فیلد Required فعال شده باشد.
+    if (ff?.parentName?.show !== false && ff?.parentName?.required === true && !String(fd.pName || '').trim()) e.pName = lang === 'en' ? 'Enter parent name' : 'نام و نام خانوادگی والد را وارد کنید';
     if (ff?.parentPhone?.show !== false && ff?.parentPhone?.required !== false && !validPhone(fd.pPhone, country)) e.pPhone = lang === 'en' ? 'Phone number is invalid for selected country' : 'شماره تماس برای کشور انتخاب شده معتبر نیست';
     if (!fd.gender) e.gender = lang === 'en' ? 'Select gender' : 'جنسیت فرزند را انتخاب کنید';
     const ag = +p2e(fd.age);
