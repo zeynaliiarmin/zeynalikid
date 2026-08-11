@@ -1152,3 +1152,13 @@ body.admin-root .zkad-popup-actions{width:min(240px,calc(100vw - 28px))!importan
  body.admin-root .admin-main input,body.admin-root .admin-main select{min-height:44px}
  body.admin-root .admin-main button{touch-action:manipulation}
 }
+
+/* Selected-record toolbar: compact destructive icon, with text available via title/aria-label. */
+body.admin-root .zkad-selected-delete {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  color: var(--zkad-err) !important;
+  border-color: var(--zkad-err) !important;
+}
+body.admin-root .zkad-selected-delete:hover { background: var(--zkad-tag-err-bg); }
