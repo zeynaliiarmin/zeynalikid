@@ -532,3 +532,34 @@ body.admin-root .zkad-product-body { margin-top: 9px; display: flex; flex-direct
   body.admin-root .zkad-grid.two,
   body.admin-root .zkad-grid.three { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Compact record header: identity stays together; date and controls stay together. */
+body.admin-root .zkad-sub-head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+body.admin-root .zkad-sub-identity,
+body.admin-root .zkad-sub-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+body.admin-root .zkad-sub-identity { flex-wrap: wrap; }
+body.admin-root .zkad-sub-actions { justify-content: flex-end; flex-wrap: wrap; }
+body.admin-root .zkad-sub-identity .zkad-sub-title { flex: 0 1 auto; padding: 4px 3px; }
+body.admin-root .zkad-sub-identity .zkad-phone-btn { flex: 0 1 auto; }
+body.admin-root .zkad-sub-actions .zkad-sub-time { margin-inline: 2px; }
+
+@media (max-width: 640px) {
+  body.admin-root .zkad-sub-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "check identity" "check actions";
+    align-items: center;
+    gap: 6px 8px;
+  }
+  body.admin-root .zkad-sub-check { grid-area: check; align-self: start; padding-top: 7px; }
+  body.admin-root .zkad-sub-identity { grid-area: identity; }
+  body.admin-root .zkad-sub-actions { grid-area: actions; justify-content: flex-start; }
+  body.admin-root .zkad-sub-identity .zkad-sub-title { width: auto; flex: 0 0 auto; }
+  body.admin-root .zkad-sub-actions .zkad-sub-time { font-size: 10.5px; }
+}

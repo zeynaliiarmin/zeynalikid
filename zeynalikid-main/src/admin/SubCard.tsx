@@ -359,18 +359,14 @@ function SubCardBase({
           />
         </label>
 
-        <button type="button" className="zkad-sub-title" onClick={mark} aria-expanded={open}>
-          <span className="zkad-sub-name">
-            {needsReminder(sub) && <span className="zkad-remind" title="بیش از ۳ روز بدون پیگیری"><ZkBellIcon size={14} /></span>}
-            <b>{sub.pName || sub.shipping?.receiver || '—'}</b>
-          </span>
-          <span className="zkad-sub-meta">
-            <span className={`zkad-tag t-${statusTone(status)}`}>{status}</span>
-            <span className="zkad-sub-time">{fmtWhen(sub)}</span>
-          </span>
-        </button>
-
-        <div className="zkad-sub-quick" onClick={e => e.stopPropagation()}>
+        {/* اطلاعات هویتی در یک ردیف: نام، شماره تماس و کد پیگیری. */}
+        <div className="zkad-sub-identity" onClick={e => e.stopPropagation()}>
+          <button type="button" className="zkad-sub-title" onClick={mark} aria-expanded={open}>
+            <span className="zkad-sub-name">
+              {needsReminder(sub) && <span className="zkad-remind" title="بیش از ۳ روز بدون پیگیری"><ZkBellIcon size={14} /></span>}
+              <b>{sub.pName || sub.shipping?.receiver || '—'}</b>
+            </span>
+          </button>
           <PhoneAction sub={sub} phone={sub.fullPhone || sub.shipping?.phone || sub.pPhone || ''} />
           {sub.trackingCode && (
             <button
@@ -383,6 +379,12 @@ function SubCardBase({
               {trackCopied ? <ZkCheckIcon size={12} /> : <ZkCopyIcon size={12} />}
             </button>
           )}
+        </div>
+
+        {/* وضعیت، تاریخ و عملیات فرم کنار هم می‌مانند تا سربرگ ارتفاع اضافه نگیرد. */}
+        <div className="zkad-sub-actions" onClick={e => e.stopPropagation()}>
+          <span className={`zkad-tag t-${statusTone(status)}`}>{status}</span>
+          <span className="zkad-sub-time">{fmtWhen(sub)}</span>
           <button
             type="button"
             className="zkad-iconbtn t-err"
