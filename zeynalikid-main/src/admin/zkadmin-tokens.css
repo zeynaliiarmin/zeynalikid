@@ -1111,3 +1111,13 @@ body.admin-root .zkad-chips-area>div[style*="grid"] .zkad-chipgroup{align-items:
 body.admin-root .zkad-chips-area>div[style*="grid"] .zkad-chipgroup-lbl{padding-top:5px;color:var(--zkad-acc);font-size:11px;width:auto}
 body.admin-root .zkad-filter-toggle{padding:8px 10px;border:1px solid var(--zkad-brd);border-radius:13px;background:var(--zkad-card);box-shadow:var(--zkad-shadow-sm)}
 @media(max-width:640px){body.admin-root .zkad-chips-area{padding:9px}body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:8px}body.admin-root .zkad-chips-area>div[style*="grid"]{grid-template-columns:1fr!important;padding:8px;gap:10px!important}body.admin-root .zkad-chips-area .zkad-chiprow{padding-bottom:3px}}
+
+/* Mobile-first collapsible filter cards */
+body.admin-root .zkad-chips-area{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+body.admin-root .zkad-filter-card{min-width:0;border:1px solid var(--zkad-brd);border-radius:13px;background:var(--zkad-card);overflow:hidden}
+body.admin-root .zkad-filter-card-head{width:100%;min-height:44px;padding:8px 10px;background:transparent;border:0;color:var(--zkad-txt);font:800 12px inherit;display:flex;align-items:center;gap:6px;cursor:pointer;text-align:right}
+body.admin-root .zkad-filter-card-head span{color:var(--zkad-acc);white-space:nowrap}.zkad-filter-card-head small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--zkad-mut);font:600 10.5px inherit}.zkad-filter-card-head b{font-size:15px;color:var(--zkad-faint)}
+body.admin-root .zkad-filter-card .zkad-chiprow{padding:0 8px 9px;flex-wrap:wrap;overflow:visible;gap:5px}.zkad-filter-card .zkad-chip{font-size:10.5px;padding:5px 9px;min-height:29px}
+body.admin-root .zkad-chips-area>div[style*="grid"]{display:contents!important;padding:0!important;border:0!important;background:transparent!important}
+body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:0;border:0;background:transparent}
+@media(max-width:640px){body.admin-root .zkad-chips-area{grid-template-columns:1fr;gap:8px}body.admin-root .zkad-filter-card-head{min-height:48px;padding:9px 12px;font-size:13px}body.admin-root .zkad-chips-area .zkad-datechip{width:100%;min-height:42px}body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:10px!important;border:1px solid var(--zkad-brd)!important;border-radius:13px;background:var(--zkad-card)!important}}
