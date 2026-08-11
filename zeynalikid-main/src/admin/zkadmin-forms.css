@@ -571,3 +571,9 @@ body.admin-root .zkad-sub-actions .zkad-sub-header-icon {
   min-width: 32px;
   min-height: 32px;
 }
+
+/* Opening a record is the primary header action: a wider hit area without increasing row height. */
+body.admin-root .zkad-sub-actions .zkad-sub-toggle {
+  width: 48px !important;
+  min-width: 48px;
+}

@@ -393,7 +393,7 @@ function SubCardBase({
           >
             <ZkTrashIcon size={15} />
           </button>
-          <button type="button" className="zkad-iconbtn zkad-sub-header-icon" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
+          <button type="button" className="zkad-iconbtn zkad-sub-header-icon zkad-sub-toggle" onClick={mark} aria-label={open ? 'بستن' : 'باز کردن'}>
             {open ? <ZkChevronUpIcon size={15} /> : <ZkChevronDownIcon size={15} />}
           </button>
         </div>
