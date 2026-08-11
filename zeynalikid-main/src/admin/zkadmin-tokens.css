@@ -1124,3 +1124,21 @@ body.admin-root .zkad-chips-area>.zkad-chipgroup{padding:0;border:0;background:t
 
 /* compact follow-up controls inside consultation status row */
 body.admin-root .zkad-fu-btn{width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+
+/* Comprehensive mobile form workspace refinements */
+html[data-theme="light"] body.admin-root .admin-main [style*="background: rgb(13, 19, 51)"],
+html[data-theme="light"] body.admin-root .admin-main [style*="background:#0"],
+html[data-theme="light"] body.admin-root .admin-main [style*="background: #0"]{background:var(--zkad-card)!important;color:var(--zkad-txt)!important}
+html[data-theme="light"] body.admin-root .admin-main textarea,
+html[data-theme="light"] body.admin-root .admin-main select,
+html[data-theme="light"] body.admin-root .admin-main input{background:var(--zkad-card)!important;color:var(--zkad-txt)!important;border-color:var(--zkad-brd-strong)!important}
+body.admin-root .admin-main textarea{min-height:108px;line-height:1.85;resize:vertical}
+body.admin-root .admin-main select{min-height:44px}
+body.admin-root .zkad-popup-actions{width:min(240px,calc(100vw - 28px))!important}
+@media(max-width:640px){
+ body.admin-root .admin-main [style*="grid-template-columns"]{max-width:100%}
+ body.admin-root .admin-main .zkad-card{border-radius:16px}
+ body.admin-root .admin-main textarea{min-height:96px;font-size:16px!important}
+ body.admin-root .admin-main input,body.admin-root .admin-main select{min-height:44px}
+ body.admin-root .admin-main button{touch-action:manipulation}
+}
