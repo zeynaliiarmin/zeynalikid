@@ -477,3 +477,36 @@ body.admin-root .zkad-product-body { margin-top: 9px; display: flex; flex-direct
   body.admin-root .zkad-input,
   body.admin-root .zkad-textarea { transition: none; }
 }
+
+/* ═══════════ COMPACT MOBILE FORM DENSITY ═══════════
+   Keep concise values side by side on phones. Long-form notes remain full-width.
+   CSS-only to preserve component identity, focus and scroll stability. */
+@media (max-width: 620px) {
+  body.admin-root .zkad-pane { gap: 10px; }
+  body.admin-root .zkad-block { padding: 10px; gap: 8px; }
+  body.admin-root .zkad-block-head b { font-size: 12px; }
+  body.admin-root .zkad-f { gap: 4px; }
+  body.admin-root .zkad-f > span { font-size: 11px; }
+
+  /* Compact operational fields: payment, shipping, product dosage and statuses. */
+  body.admin-root .zkad-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  body.admin-root .zkad-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+  /* 44px remains a dependable touch target without oversized controls. */
+  body.admin-root .zkad-input,
+  body.admin-root select.zkad-input { min-height: 44px; padding: 8px 10px; line-height: 1.35; }
+  body.admin-root .zkad-switch-row { min-height: 44px; padding: 8px 10px; }
+
+  /* Free text stays readable, while using proportionate vertical room. */
+  body.admin-root .zkad-textarea { min-height: 72px; padding: 9px 10px; line-height: 1.5; }
+  body.admin-root .zkad-textarea.sm { min-height: 52px; }
+  body.admin-root .zkad-facts > div { padding: 8px 9px; }
+  body.admin-root .zkad-note { padding: 9px 10px; }
+  body.admin-root .zkad-file { padding: 9px 10px; }
+}
+
+/* At exceptionally narrow widths, fields stack to avoid cramped/accidental taps. */
+@media (max-width: 340px) {
+  body.admin-root .zkad-grid.two,
+  body.admin-root .zkad-grid.three { grid-template-columns: minmax(0, 1fr); }
+}
