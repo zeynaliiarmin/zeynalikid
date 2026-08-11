@@ -4,8 +4,8 @@ export default function AppLaunchSplash({ children }: { children: React.ReactNod
   const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
-    const show = window.setTimeout(() => setLeaving(true), 950);
-    const done = window.setTimeout(() => setReady(true), 1260);
+    const show = window.setTimeout(() => setLeaving(true), 620);
+    const done = window.setTimeout(() => setReady(true), 850);
     return () => { window.clearTimeout(show); window.clearTimeout(done); };
   }, []);
   return <>
