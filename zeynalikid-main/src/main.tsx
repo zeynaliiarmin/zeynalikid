@@ -3,14 +3,15 @@ import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import AppLaunchSplash from './components/AppLaunchSplash';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
-      <BrowserRouter>
+      <AppLaunchSplash><BrowserRouter>
         <App />
-      </BrowserRouter>
+      </BrowserRouter></AppLaunchSplash>
     </HelmetProvider>
   </React.StrictMode>
 );
