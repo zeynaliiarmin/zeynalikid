@@ -81,7 +81,7 @@ const uploadPdfFile=async(f:File,folder='pdf-docs')=>{
 const deleteStoredFile=async(u?:string)=>{try{if(!u)return; if(getAdminSessionToken()){const{adminDeleteStorageFiles}=await import('./lib/adminApi'); await adminDeleteStorageFiles([u]); return;} if(!isSupabaseConfigured||!supabase)return;const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/files\/(.+)$/);const path=m?decodeURIComponent(m[1]):null;if(path)await supabase.storage.from(FILES_BUCKET).remove([path])}catch(e){console.warn('Could not delete old file',e)}};
 const allowedImageTypes=['image/jpeg','image/jpg','image/png','image/webp','image/heic','image/heif'];
 const isStorageUrl=(u?:string)=>!!u&&/^https?:\/\/.+\/storage\/v1\/object\/public\//.test(u);
-const storagePathFromUrl=(u:string)=>{try{const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/images\/(.+)$/);return m?decodeURIComponent(m[1]):null}catch{return null}};
+const storagePathFromUrl=(u:string)=>{try{const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);return m?decodeURIComponent(m[2]):null}catch{return null}};
 const deleteStoredImage=async(u?:string)=>{try{if(!u)return; if(getAdminSessionToken()){const{adminDeleteStorageFiles}=await import('./lib/adminApi'); await adminDeleteStorageFiles([u]); return;} if(!isSupabaseConfigured||!supabase||!isStorageUrl(u))return;const path=storagePathFromUrl(u);if(path)await supabase.storage.from(IMAGE_BUCKET).remove([path])}catch(e){console.warn('Could not delete old image',e)}};
 // اصلاح ۳۰ (مرحله ۷): پشتیبانی از فرمت‌های heic/heif — مرورگرهایی که این فرمت‌ها را در canvas پشتیبانی نمی‌کنند
 // با خطای createImageBitmap مواجه می‌شوند؛ در این حالت فایل بدون تغییر اندازه (بدون فشرده‌سازی) آپلود می‌شود.
@@ -131,8 +131,10 @@ const uploadFileWithProgress=async(f:File,bucket:string,folder:string,onProgress
 };
 const uploadTonguePhoto=(f:File,onProgress?:(p:number)=>void,maxBytes?:number)=>uploadFileWithProgress(f,TONGUE_BUCKET,'tongue',onProgress,maxBytes,'tongue-photos');
 const deleteStoredTonguePhoto=async(u?:string)=>{try{if(!u)return; if(getAdminSessionToken()){const{adminDeleteStorageFiles}=await import('./lib/adminApi'); await adminDeleteStorageFiles([u]); return;} if(!isSupabaseConfigured||!supabase)return;const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/tongue-photos\/(.+)$/);const path=m?decodeURIComponent(m[1]):null;if(path)await supabase.storage.from(TONGUE_BUCKET).remove([path])}catch(e){console.warn('Could not delete tongue photo',e)}};
-// اصلاح ۳۰ (مرحله ۷): آپلود فیش واریزی با نوار پیشرفت واقعی (همان باکت images قبلی، فقط اکنون progress دارد)
-const uploadReceiptWithProgress=async(f:File,oldUrl:string|undefined,onProgress?:(p:number)=>void)=>{const optimized=await optimizeForUpload(f);const fileToUpload=optimized instanceof File?optimized:f;const url=await uploadFileWithProgress(fileToUpload,IMAGE_BUCKET,'receipts',onProgress,undefined,'images');await deleteStoredImage(oldUrl);return url;};
+// اصلاح ۳۰ (مرحله ۷): آپلود فیش واریزی با نوار پیشرفت واقعی
+// Phase 6: فیش‌ها به باکت خصوصی «receipts» منتقل شدند (حریم خصوصی — فقط پنل ادمین می‌بیند).
+const RECEIPTS_BUCKET='receipts';
+const uploadReceiptWithProgress=async(f:File,oldUrl:string|undefined,onProgress?:(p:number)=>void)=>{const optimized=await optimizeForUpload(f);const fileToUpload=optimized instanceof File?optimized:f;const url=await uploadFileWithProgress(fileToUpload,RECEIPTS_BUCKET,'receipts',onProgress,undefined,'receipts');await deleteStoredImage(oldUrl);return url;};
 
 const VOICE_BUCKET = 'voice-notes';
 const uploadVoiceNote = async (blob: Blob): Promise<string | null> => {

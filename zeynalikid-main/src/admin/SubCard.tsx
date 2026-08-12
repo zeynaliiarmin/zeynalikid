@@ -20,6 +20,8 @@ import {
 } from './adminUtils';
 import { generateFormImage } from '../utils/exportFormToImage';
 import { productVectorIcon, BoxIcon } from '../components/Icons';
+// Phase 6: Signed URL برای فایل‌های خصوصی (فیش/عکس زبان/ویس/PDF)
+import { adminGetSignedUrls } from '../lib/adminApi';
 import {
   ZkChevronUpIcon, ZkChevronDownIcon, ZkCheckIcon, ZkCloseIcon, ZkCameraIcon, ZkDocIcon,
   ZkMoneyIcon, ZkCalendarIcon, ZkPillIcon, ZkStethoscopeIcon, ZkCardIcon, ZkCopyIcon,
@@ -280,6 +282,27 @@ function SubCardBase({
   const activeCourseRecord = courseRecords[selectedCourseIdx] || courseRecords[0] || sub;
   const activeConsultRecord = consultRecords[selectedConsultIdx] || consultRecords[0] || sub;
 
+  // Phase 6: فایل‌های خصوصی (فیش/عکس زبان/ویس/PDF) با Signed URL کوتاه‌مدت نمایش داده می‌شوند.
+  // وقتی کارت باز می‌شود، همهٔ URL های ذخیره‌شده در این رکورد به Signed URL تبدیل می‌شوند.
+  const [signedMap, setSignedMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    const urls = new Set<string>();
+    const push = (u?: string) => { if (u && u.startsWith('http')) urls.add(u); };
+    push(activeCourseRecord.payment?.receipt);
+    push(activeConsultRecord.voice_note_url); push(sub.voice_note_url);
+    (activeConsultRecord.tonguePhotos || []).forEach(push);
+    (sub.tonguePhotos || []).forEach(push);
+    push(sub.usagePdfUrl); push(sub.mealPdfUrl);
+    if (urls.size === 0) { setSignedMap({}); return; }
+    const arr = [...urls];
+    adminGetSignedUrls(arr)
+      .then(map => { if (alive) setSignedMap(map || {}); })
+      .catch(() => { if (alive) setSignedMap({}); });
+    return () => { alive = false; };
+  }, [open, sub, activeCourseRecord, activeConsultRecord]);
+
   const relatedSubs = useMemo(() => {
     if (!myPhone) return [];
     return allSubs.filter((x: any) => x.id !== sub.id && digits(x.fullPhone || '') === myPhone).sort((a: any, b: any) => subTime(b) - subTime(a));
@@ -512,7 +535,7 @@ function SubCardBase({
               {(activeConsultRecord.voice_note_url || sub.voice_note_url) && (
                 <div className="zkad-media">
                   <div className="zkad-media-title">یادداشت صوتی ارسالی والد</div>
-                  <audio controls src={activeConsultRecord.voice_note_url || sub.voice_note_url} className="zkad-audio" />
+                  <audio controls src={signedMap[activeConsultRecord.voice_note_url || sub.voice_note_url] || activeConsultRecord.voice_note_url || sub.voice_note_url} className="zkad-audio" />
                 </div>
               )}
 
@@ -543,7 +566,7 @@ function SubCardBase({
                   </div>
                   <div className="zkad-thumbs">
                     {(activeConsultRecord.tonguePhotos || sub.tonguePhotos || []).map((url: string, i: number) => (
-                      <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`عکس زبان ${i + 1}`} /></a>
+                      <a key={i} href={signedMap[url] || url} target="_blank" rel="noreferrer"><img src={signedMap[url] || url} alt={`عکس زبان ${i + 1}`} /></a>
                     ))}
                   </div>
                 </div>
@@ -701,12 +724,12 @@ function SubCardBase({
 
                 {activeCourseRecord.payment?.receipt && (
                   <div className="zkad-receipt">
-                    <a href={activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" title="مشاهده بزرگ فیش">
-                      <img src={activeCourseRecord.payment.receipt} alt="فیش واریزی" />
+                    <a href={signedMap[activeCourseRecord.payment.receipt] || activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" title="مشاهده بزرگ فیش">
+                      <img src={signedMap[activeCourseRecord.payment.receipt] || activeCourseRecord.payment.receipt} alt="فیش واریزی" />
                     </a>
                     <div className="zkad-receipt-info">
                       <div className="t-ok"><ZkCheckIcon size={12} /> فیش واریزی آپلود شده</div>
-                      <a href={activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" className="zkad-link">مشاهده تصویر کامل فیش ↗</a>
+                      <a href={signedMap[activeCourseRecord.payment.receipt] || activeCourseRecord.payment.receipt} target="_blank" rel="noreferrer" className="zkad-link">مشاهده تصویر کامل فیش ↗</a>
                     </div>
                     <button
                       type="button"
@@ -915,7 +938,7 @@ function SubCardBase({
                     </label>
                     {sub[f.key] && (
                       <>
-                        <a href={sub[f.key]} target="_blank" rel="noreferrer" className="zkad-link t-ok"><ZkCheckIcon size={11} /> مشاهده فایل فعلی</a>
+                        <a href={signedMap[sub[f.key]] || sub[f.key]} target="_blank" rel="noreferrer" className="zkad-link t-ok"><ZkCheckIcon size={11} /> مشاهده فایل فعلی</a>
                         <button type="button" className="zkad-btn sm t-err" onClick={async () => {
                           if (!confirm(`فایل PDF ${f.log} حذف شود؟`)) return;
                           await deleteStoredFile(sub[f.key]);

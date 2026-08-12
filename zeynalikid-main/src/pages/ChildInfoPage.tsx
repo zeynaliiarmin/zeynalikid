@@ -145,6 +145,9 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
  const maxSizeMB=cfg.maxTonguePhotoSizeMB||5;
  const required=!!cfg.isTonguePhotoRequired;
  const showHint=cfg.showTonguePhotoHint!==false;
+ // Phase 6: پیش‌نمایش محلی با blob — چون باکت tongue-photos خصوصی می‌شود و URL عمومی
+ // دیگر قابل نمایش نیست. بعد از ثبت فرم، پنل ادمین Signed URL می‌گیرد.
+ const [previewMap,setPreviewMap]=useState<Record<string,string>>({});
 
  const doUpload=async(f:File)=>{
   setErr('');
@@ -153,6 +156,8 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
   setProgress(0);
   try{
    const url=await uploadTonguePhoto(f,(p:number)=>setProgress(p),maxSizeMB*1024*1024);
+   const blobUrl=URL.createObjectURL(f);
+   setPreviewMap(m=>({...m,[url]:blobUrl}));
    onChange([...tonguePhotos,url]);
   }catch(e:any){
    setErr(e?.message||(lang==='en'?'Upload failed.':'آپلود انجام نشد.'));
@@ -163,6 +168,9 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
 
  const removePhoto=async(url:string)=>{
   try{ await deleteStoredTonguePhoto(url); }catch{}
+  const blobUrl=previewMap[url];
+  if(blobUrl){ try{URL.revokeObjectURL(blobUrl);}catch{} }
+  setPreviewMap(m=>{const n={...m};delete n[url];return n;});
   onChange(tonguePhotos.filter((u)=>u!==url));
  };
 
@@ -264,7 +272,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
     <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
      {tonguePhotos.map((url)=>(
       <div key={url} style={{position:'relative',width:76,height:76,borderRadius:12,overflow:'hidden',boxShadow:T.neuOut}}>
-       <img src={url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+       <img src={previewMap[url]||url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
        <button type="button" onClick={()=>removePhoto(url)} style={{position:'absolute',top:3,insetInlineEnd:3,width:20,height:20,borderRadius:'50%',border:0,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
       </div>
      ))}

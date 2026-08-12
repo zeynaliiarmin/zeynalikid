@@ -264,6 +264,17 @@ export async function adminFetchPageViewStats(days: number = 30): Promise<{
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Signed URLs for private storage (Phase 6)
+// Converts private storage public-format URLs into short-lived signed URLs
+// so the admin panel can display receipts / tongue photos / voice notes / PDFs.
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function adminGetSignedUrls(urls: string[]): Promise<Record<string, string>> {
+  const body = await callAdminApi('get_signed_urls', { urls });
+  return body.urls ?? {};
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Storage file deletion (via admin-api delete_storage_files action)
 // Phase 5: anon storage DELETE is revoked; file removal happens server-side
 // with service_role so only an authenticated admin session can delete files.

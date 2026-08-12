@@ -571,7 +571,7 @@ async function listPageViewStats(body: any, origin: string): Promise<Response> {
 // only path that removes receipt / voice / tongue / PDF files.
 // ──────────────────────────────────────────────────────────────────────────
 
-const ALLOWED_STORAGE_BUCKETS = new Set(["images", "files", "voice-notes", "tongue-photos"]);
+const ALLOWED_STORAGE_BUCKETS = new Set(["images", "files", "voice-notes", "tongue-photos", "receipts"]);
 
 async function deleteStorageFiles(body: any, origin: string, _session: any): Promise<Response> {
   if (!Array.isArray(body.urls) || body.urls.length === 0) {
@@ -601,6 +601,38 @@ async function deleteStorageFiles(body: any, origin: string, _session: any): Pro
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Signed URLs for private storage (Phase 6)
+// Receives an array of public-format storage URLs (buckets: receipts,
+// tongue-photos, voice-notes, files) and returns a map of url -> short-lived
+// signed URL so the admin panel can display private files. Never returns
+// signed URLs for non-whitelisted buckets.
+// ──────────────────────────────────────────────────────────────────────────
+
+async function getSignedUrls(body: any, origin: string, _session: any): Promise<Response> {
+  if (!Array.isArray(body.urls) || body.urls.length === 0) {
+    return err("urls الزامی است", origin, 400);
+  }
+  const supabase = getSupabaseAdmin();
+  const result: Record<string, string> = {};
+  for (const u of body.urls.slice(0, 50)) {
+    if (typeof u !== "string" || !u.startsWith("http")) continue;
+    const m = u.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+    if (!m) continue;
+    const bucket = decodeURIComponent(m[1]);
+    const path = decodeURIComponent(m[2]);
+    if (!ALLOWED_STORAGE_BUCKETS.has(bucket) || !path) continue;
+    try {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+      if (error || !data) continue;
+      result[u] = data.signedUrl;
+    } catch {
+      continue;
+    }
+  }
+  return ok({ urls: result }, origin);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -612,6 +644,7 @@ const ACTION_HANDLERS: Record<string, (body: any, origin: string, session: any) 
   restore_submission: restoreSubmission,
   permanent_delete_submission: permanentDeleteSubmission,
   delete_storage_files: deleteStorageFiles,
+  get_signed_urls: getSignedUrls,
   list_settings: listSettings,
   save_settings: saveSettings,
   list_questions: listQuestions,

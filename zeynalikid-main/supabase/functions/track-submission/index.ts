@@ -114,6 +114,26 @@ serve(async (req) => {
       p.orderStatus ||
       (p.payment?.receipt ? "پرداخت‌شده" : p.course ? "در انتظار پرداخت" : "جدید");
 
+    // Phase 6: فایل‌های PDF در باکت خصوصی «files» هستند — برای نمایش در صفحهٔ عمومی Track
+    // باید Signed URL کوتاه‌مدت تولید شود (service_role فقط داخل Function).
+    const signPrivateUrl = async (url: string): Promise<string> => {
+      if (!url) return "";
+      const m = url.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+      if (!m) return url;
+      const bucket = decodeURIComponent(m[1]);
+      const path = decodeURIComponent(m[2]);
+      if (bucket !== "files" && bucket !== "receipts" && bucket !== "tongue-photos" && bucket !== "voice-notes") {
+        return url; // باکت عمومی (images) — بدون تغییر
+      }
+      try {
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+        if (error || !data) return url;
+        return data.signedUrl;
+      } catch {
+        return url;
+      }
+    };
+
     // فقط اطلاعات عمومی — بدون نام و شماره کامل
     const publicData = {
       trackingCode: code,
@@ -125,8 +145,8 @@ serve(async (req) => {
       usage: p.usageInstructions || "",
       mealPlan: p.mealPlan || "",
       showMealPlan: p.showMealPlan === true,
-      usagePdfUrl: p.usagePdfUrl || "",
-      mealPdfUrl: p.mealPdfUrl || "",
+      usagePdfUrl: await signPrivateUrl(p.usagePdfUrl || ""),
+      mealPdfUrl: await signPrivateUrl(p.mealPdfUrl || ""),
       userNotes: p.userNotes || "",
       productUsage: p.productUsage || {},
       lastEdit: Array.isArray(p.editHistory) && p.editHistory.length
