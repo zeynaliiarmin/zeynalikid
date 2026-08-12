@@ -7,6 +7,8 @@ import TrashPanel from './TrashPanel';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
+// Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
+import { revokeAllAdminSessions, clearAdminSession } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
@@ -139,9 +141,8 @@ export default function AdminPanel({app}:{app:any}){
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
- const secVals=useRef<any>({curPh:'',newPh:'',repPh:'',curPwd:'',newPwd:'',repPwd:''});
- const [secErr,setSecErr]=useState(''); const [pwdErr,setPwdErr]=useState(''); const [clearKey,setClearKey]=useState(0);
- const secSetVal=useCallback((k:string,v:string)=>{secVals.current[k]=k.toLowerCase().includes('ph')?p2e(v):v},[]);
+ // Phase 7: state های «تغییر رمز/شماره» حذف شدند — آن فیلدها سمت سرور block هستند (موفقیت کاذب).
+ // فقط بیومتریک و خروج از نشست‌ها باقی می‌مانند.
  useEffect(()=>{const t=setTimeout(()=>setDebouncedSrch(srch),300);return()=>clearTimeout(t)},[srch]);
  // اصلاح ۹: رفع کامل مشکل پرش صفحه در پنل مدیریت — فیلد فوکوس‌شده به‌جای پرش ناگهانی مرورگر،
  // با اسکرول نرم (smooth) به مرکز دید (center) منتقل می‌شود. این افکت روی همه ورودی‌های
@@ -1579,40 +1580,37 @@ function ThemeManagerEditor(){
  }
 
  function SecurityEditor(){
-  const vals=secVals; const setVal=secSetVal;
+  // Phase 7: «تغییر رمز عبور» و «تغییر شماره تماس» حذف شدند — admin-api آن‌ها را در
+  // save_settings block می‌کند (adminPassword/adminPhone در SETTINGS_SAVE_BLOCKLIST هستند)؛
+  // پس این فرم‌ها موفقیت کاذب می‌دادند. رمز و شماره فقط از Supabase Edge Function Secrets
+  // (ADMIN_PASSWORD / ADMIN_PHONE) قابل تغییر است.
+  const [revokeBusy,setRevokeBusy]=useState(false);
   const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');alert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{alert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
   const disableBio=()=>{removeAdminBiometric();alert('ورود بیومتریک این دستگاه غیرفعال شد.');};
-  const logoutEverywhere=()=>{sessionStorage.removeItem('zk_admin_authed');alert('نشست این دستگاه بسته شد. برای خروج همه دستگاه‌ها، رمز عبور پنل را تغییر دهید.');};
-  const savePhone=()=>{const v=vals.current;setSecErr('');if(v.curPh!==cfg.adminPhone){setSecErr('شماره تماس فعلی صحیح نیست');return}if(!v.newPh||v.newPh!==v.repPh){setSecErr('شماره تماس جدید با تکرار آن مطابقت ندارد');return}setSave({...cfg,adminPhone:v.newPh});vals.current={...vals.current,curPh:'',newPh:'',repPh:''};setClearKey(x=>x+1)};
-  // اصلاح ۱۹: تغییر رمز عبور از داخل پنل مدیریت — فقط رمز ذخیره‌شده فعلی (یا رمز env اولیه) معتبر است
-  const savePassword=()=>{
-   const v=vals.current; setPwdErr('');
-   const currentStored=cfg.adminPassword||'';
-   const curOk=!!currentStored&&v.curPwd===currentStored;
-   if(!curOk){setPwdErr('رمز عبور فعلی صحیح نیست');return}
-   if(!v.newPwd||v.newPwd.length<4){setPwdErr('رمز جدید باید حداقل ۴ کاراکتر باشد');return}
-   if(v.newPwd!==v.repPwd){setPwdErr('رمز جدید با تکرار آن مطابقت ندارد');return}
-   setSave({...cfg,adminPassword:v.newPwd});
-   vals.current={...vals.current,curPwd:'',newPwd:'',repPwd:''};
-   setClearKey(x=>x+1);
+  const logoutEverywhere=async()=>{
+   if(!confirm('همهٔ نشست‌های پنل مدیریت (این دستگاه و همهٔ دستگاه‌های دیگر) بسته شوند؟'))return;
+   setRevokeBusy(true);
+   try{
+    await revokeAllAdminSessions();
+    try{clearAdminSession()}catch{}
+    alert('همهٔ نشست‌های پنل بسته شد. برای ورود دوباره باید با شماره و رمز وارد شوید.');
+   }catch(e:any){
+    alert(e?.message||'خروج از همهٔ نشست‌ها انجام نشد. اتصال را بررسی کنید.');
+   }finally{setRevokeBusy(false)}
   };
   return <Box title="امنیت">
-   <h4>تغییر رمز عبور</h4>
-   {pwdErr&&<Err x={pwdErr}/>}
-   <div style={{marginBottom:13}}><label style={S.lbl}>رمز عبور فعلی</label><StableAdminInput key={clearKey+'-curPwd'} type="password" style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('curPwd',v)}/></div>
-   <div style={{marginBottom:13}}><label style={S.lbl}>رمز عبور جدید</label><StableAdminInput key={clearKey+'-newPwd'} type="password" style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('newPwd',v)}/></div>
-   <div style={{marginBottom:13}}><label style={S.lbl}>تکرار رمز عبور جدید</label><StableAdminInput key={clearKey+'-repPwd'} type="password" style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('repPwd',v)}/></div>
-   <button style={AdminBtn()} onClick={savePassword}>ذخیره رمز جدید</button>
-   <h4 style={{marginTop:20}}>تغییر شماره تماس</h4>
-   {secErr&&<Err x={secErr}/>}
-   <div style={{marginBottom:13}}><label style={S.lbl}>شماره تماس فعلی</label><StableAdminInput key={clearKey+'-curPh'} numeric style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('curPh',v)}/></div>
-   <div style={{marginBottom:13}}><label style={S.lbl}>شماره تماس جدید</label><StableAdminInput key={clearKey+'-newPh'} numeric style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('newPh',v)}/></div>
-   <div style={{marginBottom:13}}><label style={S.lbl}>تکرار شماره تماس جدید</label><StableAdminInput key={clearKey+'-repPh'} numeric style={S.inp} defaultValue="" onCommit={(v:string)=>setVal('repPh',v)}/></div>
-   <button style={AdminBtn()} onClick={savePhone}>ذخیره شماره جدید</button>
-   <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
+   <div style={{marginBottom:8,padding:12,borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`,fontSize:12,color:T.mut,lineHeight:1.9}}>
+    تغییر رمز عبور و شماره تماس از داخل پنل غیرفعال است؛ این مقادیر فقط از سمت مدیریت سرویس (Supabase Edge Function Secrets) قابل تغییرند.
+   </div>
+   <div style={{marginTop:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
     <b style={{display:'block',color:T.ttl,marginBottom:6}}>ورود با اثر انگشت / Face ID</b>
     <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دستگاه فعلی: {hasAdminBiometric()?'فعال':'غیرفعال'}. اثر انگشت و چهره هرگز در سایت ذخیره نمی‌شوند.</p>
-    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{hasAdminBiometric()?<button type="button" style={{...AdminBtn(),color:T.err}} onClick={disableBio}>غیرفعال‌سازی این دستگاه</button>:<button type="button" style={AdminBtn()} onClick={enableBio}>فعال‌سازی اثر انگشت / Face ID</button>}<button type="button" style={AdminBtn()} onClick={logoutEverywhere}>خروج از نشست‌ها</button></div>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{hasAdminBiometric()?<button type="button" style={{...AdminBtn(),color:T.err}} onClick={disableBio}>غیرفعال‌سازی این دستگاه</button>:<button type="button" style={AdminBtn()} onClick={enableBio}>فعال‌سازی اثر انگشت / Face ID</button>}</div>
+   </div>
+   <div style={{marginTop:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
+    <b style={{display:'block',color:T.ttl,marginBottom:6}}>نشست‌های فعال</b>
+    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>با بستن همهٔ نشست‌ها، همهٔ دستگاه‌هایی که به پنل وارد شده‌اند (شامل این دستگاه) از پنل خارج می‌شوند.</p>
+    <button type="button" style={{...AdminBtn(),color:T.err}} onClick={logoutEverywhere} disabled={revokeBusy}>{revokeBusy?'در حال بستن نشست‌ها…':'بستن همهٔ نشست‌ها'}</button>
    </div>
    <AdminInstallControl/>
   </Box>}

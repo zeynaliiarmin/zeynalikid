@@ -27,6 +27,21 @@ export const getAdminDeviceId = () => sessionStorage.getItem(DEVICE_KEY) || '';
 export const clearAdminSession = () => { sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(DEVICE_KEY); sessionStorage.removeItem(AUTHED_KEY); };
 
 /**
+ * Revoke ALL admin sessions (every device) via admin-session revoke_all action.
+ * The current device's session is included in the revocation, so we also clear
+ * local session state afterwards. Throws on failure so the UI can show a message.
+ */
+export async function revokeAllAdminSessions(): Promise<void> {
+  const token = getAdminSessionToken();
+  if (!token) return;
+  const data = await adminSessionAction('revoke_all', { sessionToken: token });
+  if (data?.revoked !== true) {
+    throw new Error(data?.message || data?.error || 'خروج از همهٔ نشست‌ها انجام نشد');
+  }
+  clearAdminSession();
+}
+
+/**
  * Validate the current admin session by calling admin-session's validate_session action.
  * Returns { valid: true } on success or { valid: false } on failure (and clears session).
  * Network errors return { valid: false } to be safe (fail-closed).
