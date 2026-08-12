@@ -581,7 +581,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                   </div>
 
                   {/* Action Buttons — تماس تلفنی، سپس افزودن به سوالات متداول */}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div className="zkad-qu-actions" style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                     {phone && (
                       <a
                         href={`tel:${phone}`}
@@ -596,7 +596,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                           gap: 6,
                         }}
                       >
-                        تماس تلفنی با کاربر
+                        تماس تلفنی
                       </a>
                     )}
 

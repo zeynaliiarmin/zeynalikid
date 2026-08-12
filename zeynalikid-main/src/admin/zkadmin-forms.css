@@ -747,8 +747,9 @@ body.admin-root .zkad-qu-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; al
 body.admin-root .zkad-qu-meta > * { flex: 0 1 auto; min-width: 0; }
 body.admin-root .zkad-qu-meta > span:nth-last-child(-n+2) { font-size: 10.5px !important; }
 @media (max-width: 480px) {
-  body.admin-root .zkad-qu-meta { display: grid; grid-template-columns: minmax(0,1fr); gap: 6px; align-items: stretch; }
-  body.admin-root .zkad-qu-meta .zkad-qu-phone { justify-content: flex-start; width: fit-content; max-width: 100%; }
+  body.admin-root .zkad-qu-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  /* شماره تماس باریک‌تر تا سطل آشغال کنارش بماند */
+  body.admin-root .zkad-qu-meta .zkad-qu-phone { padding: 3px 8px !important; font-size: 11.5px !important; gap: 4px; }
   body.admin-root .zkad-qu-phone-call { display: none; }
   body.admin-root .zkad-qu-meta > span { font-size: 11px !important; }
 }
@@ -800,4 +801,18 @@ body.admin-root .zkad-qu-cats > button {
 @media (min-width: 700px) {
   body.admin-root .zkad-qu-cats { display: flex !important; }
   body.admin-root .zkad-qu-cats > button { width: auto; padding: 5px 12px !important; font-size: 12px !important; }
+}
+
+/* دکمه‌های اکشن سوال — تماس + افزودن به FAQ در یک سطر (موبایل) */
+body.admin-root .zkad-qu-actions { flex-wrap: nowrap !important; }
+body.admin-root .zkad-qu-actions > * {
+  white-space: nowrap;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+@media (max-width: 480px) {
+  body.admin-root .zkad-qu-actions { gap: 6px !important; }
+  body.admin-root .zkad-qu-actions > * { padding: 7px 9px !important; font-size: 11px !important; }
 }
