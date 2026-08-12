@@ -485,18 +485,19 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                     boxShadow: isSelected ? '0 4px 12px rgba(59,130,246,0.15)' : (T.neuOut || '0 4px 15px rgba(0,0,0,0.06)'),
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                  <div className="zkad-qu-card-top" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'), padding: '4px 8px', borderRadius: 8, border: `1px solid ${isSelected ? '#93c5fd' : 'transparent'}` }}>
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(q.id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{isSelected ? 'انتخاب شد' : 'انتخاب'}</span>
                     </label>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                      <div className="zkad-qu-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                         <span style={getStatusBadgeStyle(q.status)}>{getStatusLabel(q.status)}</span>
 
                         {phone && (
                           <a
                             href={`tel:${phone}`}
+                            className="zkad-qu-phone"
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -513,7 +514,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                             }}
                           >
                             <span>📞 {phone}</span>
-                            <span style={{ fontSize: 11, color: '#0284c7' }}>(تماس مستقیم)</span>
+                            <span className="zkad-qu-phone-call" style={{ fontSize: 11, color: '#0284c7' }}>(تماس مستقیم)</span>
                           </a>
                         )}
 

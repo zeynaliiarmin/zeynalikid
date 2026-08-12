@@ -736,3 +736,23 @@ body.admin-root .zkad-rev-course-chips > button span:last-child { overflow: hidd
   body.admin-root .zkad-rev-course-chips { display: flex !important; }
   body.admin-root .zkad-rev-course-chips > button { width: auto; padding: 4px 10px !important; font-size: 11.5px !important; }
 }
+
+/* ============================================================
+   UserQuestionsEditor — کارت سوال: ریسپانسیو موبایل
+   فقط استایل؛ بدون تغییر ساختار/state
+   ============================================================ */
+/* ردیف اطلاعات سربرگ کارت سوال: موبایل به‌صورت دو ستون مرتب */
+body.admin-root .zkad-qu-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+body.admin-root .zkad-qu-meta > * { flex: 0 1 auto; min-width: 0; }
+body.admin-root .zkad-qu-meta > span:nth-last-child(-n+2) { font-size: 10.5px !important; }
+@media (max-width: 480px) {
+  body.admin-root .zkad-qu-meta { display: grid; grid-template-columns: minmax(0,1fr); gap: 6px; align-items: stretch; }
+  body.admin-root .zkad-qu-meta .zkad-qu-phone { justify-content: flex-start; width: fit-content; max-width: 100%; }
+  body.admin-root .zkad-qu-phone-call { display: none; }
+  body.admin-root .zkad-qu-meta > span { font-size: 11px !important; }
+}
+/* سربرگ کارت: چیدمان عمودی در موبایل (چک‌باکس بالا، محتوا زیر آن) */
+@media (max-width: 480px) {
+  body.admin-root .zkad-qu-card-top { flex-direction: column; align-items: stretch !important; }
+  body.admin-root .zkad-qu-card-top > label { align-self: flex-start; }
+}
