@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
-import { isSupabaseConfigured, supabase, createSubmission, updateSubmission, fetchSubmissions, trackPageView } from '../lib/supabase';
+import { isSupabaseConfigured, supabase, createSubmission, trackPageView } from '../lib/supabase';
 import { generateTrackingCode, generateUniqueTrackingCode } from '../utils/tracking';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
@@ -170,9 +170,10 @@ export default function ConsultationPage({ app }: { app: any }) {
   // Track page view
   useEffect(() => { try { trackPageView(formView === 'success' ? '/form-success' : '/form') } catch { } }, [formView]);
 
-  // Load submissions cache
+  // Load submissions cache — Phase 4 fix: ConsultationPage is a PUBLIC page, so it must
+  // NOT call fetchSubmissions (which now routes through admin-api and requires admin session).
+  // Use localStorage cache only; admin panel will fetch from admin-api when needed.
   const loadSubs = async (): Promise<any[]> => {
-    if (isSupabaseConfigured) { try { return await fetchSubmissions() } catch { return getLS(SK.subs, []) } }
     return getLS(SK.subs, []);
   };
   useEffect(() => {
@@ -305,11 +306,11 @@ export default function ConsultationPage({ app }: { app: any }) {
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
         };
         if (isSupabaseConfigured) {
-          updateSubmission(editId, updated as any).catch(e => {
-            console.warn('update failed, falling back to localStorage', e);
-            const subs = getLS(SK.subs, []);
-            setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
-          });
+          // Phase 4 fix: ConsultationPage is public — cannot use admin-api updateSubmission.
+          // For now, only localStorage update; the admin panel can update via admin-api.
+          // (The track-submission + update-corrective flow handles user-side corrective edits.)
+          const subs = getLS(SK.subs, []);
+          setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
         } else {
           const subs = getLS(SK.subs, []);
           setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
@@ -408,12 +409,10 @@ export default function ConsultationPage({ app }: { app: any }) {
   const updateTimeSlot = (nv: string) => {
     setTsSlot(nv);
     if (!lastId) return;
-    if (isSupabaseConfigured) {
-      updateSubmission(lastId, { timeSlot: nv } as any).catch(e => console.warn('Could not update time slot', e));
-    } else {
-      const subs = getLS(SK.subs, []);
-      setLS(SK.subs, subs.map((y: any) => y.id === lastId ? { ...y, timeSlot: nv } : y));
-    }
+    // Phase 4 fix: ConsultationPage is public — cannot use admin-api updateSubmission.
+    // Only update localStorage; the admin panel can update timeSlot via admin-api.
+    const subs = getLS(SK.subs, []);
+    setLS(SK.subs, subs.map((y: any) => y.id === lastId ? { ...y, timeSlot: nv } : y));
   };
 
   const fallbackCopy = (value: string) => {
