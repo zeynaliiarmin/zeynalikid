@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import JsonLd from '../components/JsonLd';
 import ProductCard from '../components/ProductCard';
@@ -44,13 +45,8 @@ export default function ProductsPage({ app }: { app: any }) {
 
   const closeDetail = () => setSelectedProduct(null);
   if (!showSection) {
-    return (
-      <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', padding: 20, textAlign: 'center' }}>
-        <div style={{ maxWidth: 420, margin: '80px auto' }}>
-          <p style={{ color: 'var(--zk-text-muted)' }}>{lang === 'en' ? 'Products section is currently disabled.' : 'بخش محصولات غیرفعال است.'}</p>
-        </div>
-      </div>
-    );
+    // Phase 8: به‌جای نمایش پیام «غیرفعال است»، مستقیماً به صفحهٔ اصلی هدایت می‌شود
+    return <Navigate to="/" replace />;
   }
 
   return (

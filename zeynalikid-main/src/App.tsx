@@ -405,7 +405,7 @@ const defTabs=[
  ]}
 ];
 const defaultSettings:Any={
- theme:'light',publicThemeMode:'auto',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
+ theme:'light',publicThemeMode:'auto',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,showLicensesPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
  // اصلاح ۱-۶ (مرحله ۴): عناوین کنار عکس پروفایل — دو زبانه، قابل ویرایش از پنل مدیریت
  specialistTitle:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',specialistTitleEn:'Child and Adolescent Growth and Nutrition Specialist at Zeynalikid',heroSubtitle:'ضمن آرزوی اوقاتی خوش برای شما',heroSubtitleEn:'Wishing you a pleasant time',
  heroTitle:'ضمن آرزوی اوقاتی خوش برای شما',heroDesc:'این فرم برای بررسی شرایط فرزند شما و تعیین نوبت مشاوره خصوصی طراحی شده است.',noticeText:'این مشاوره فقط به والدین یا سرپرست قانونی فرزند ارائه می‌شود. لطفاً اطلاعات را با دقت تکمیل فرمایید.',phoneNote:'مشاوره فقط به‌صورت تلفنی',submitBtnText:'ثبت درخواست مشاوره',successMsg:'اطلاعات فرزند شما با موفقیت ثبت شد',successSubMsg:'طی ۲۴ الی ۴۸ ساعت آینده با شما تماس می‌گیریم',timeSlotLabel:'بازه زمانی مناسب برای تماس (اختیاری)',
@@ -837,10 +837,12 @@ function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)
   const [openAcc, setOpenAcc] = useState<string | null>(null);
   const toggleAcc = (key: string) => setOpenAcc(openAcc === key ? null : key);
 
+  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک فوتر هم نمایش داده نشود
+  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
   const navLinks = [
     { key: 'about', label: lang==='en'?'About Us':'درباره ما', view: 'about' },
     { key: 'experience', label: lang==='en'?'Parents’ Experience':'تجربه والدین', view: 'experience' },
-    { key: 'licenses', label: lang==='en'?'Licenses & Certificates':'مجوزها و گواهینامه‌ها', view: 'licenses' },
+    ...(showLicensesPage ? [{ key: 'licenses', label: lang==='en'?'Licenses & Certificates':'مجوزها و گواهینامه‌ها', view: 'licenses' }] : []),
     { key: 'contact', label: lang==='en'?'Contact':'ارتباط با ما', view: 'contact' },
     { key: 'faq', label: lang==='en'?'FAQ':'سوالات متداول', view: 'faq' },
     { key: 'education', label: lang==='en'?'Education & Articles':'آموزش و مقالات', view: 'education' },

@@ -26,7 +26,9 @@ export default function HomePage({app}:{app:any}){
   contact:{icon:<ContactIcon size={24} color={T.acc}/>,title:publicText('menuContact','ارتباط با ما'),desc:lang==='en'?'Contact the support team':'ارتباط با تیم پشتیبانی',to:'/contact'},
  };
  const homeLayout=(cfg.homeLayout&&cfg.homeLayout.length?cfg.homeLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'contact',show:true}]);
- const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]).map((x:any)=>shortcutsBase[x.id]);
+ // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، میانبر آن در صفحهٔ اصلی هم نمایش داده نشود (داده‌ها حذف نمی‌شوند)
+ const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
+ const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)).map((x:any)=>shortcutsBase[x.id]);
  const heroImage=cfg.images?.hero||{}; const trustBoxImage=cfg.images?.trustBox||{};
  const allCourses:any[]=[];(cfg.courseTabs||[]).forEach((tab:any)=>(tab.courses||[]).forEach((c:any)=>{if(c.active!==false)allCourses.push({...c,tabId:tab.id})}));
  const fc=cfg.featuredCourses||{}; const featuredCourseIds=Array.isArray(fc.courseIds)?fc.courseIds:[];
@@ -51,7 +53,8 @@ export default function HomePage({app}:{app:any}){
    {fc.enabled!==false&&selectedCourses.length>0&&<section className="zk-home-section"><div className="zk-home-section-heading"><h2 className="zk-home-section-title">{lang==='en'?(fc.titleEn||'Featured courses'):(fc.title||'دوره‌های منتخب')}</h2><Link className="zk-home-section-link" to="/courses">{lang==='en'?'View all':'مشاهده همه'}</Link></div><FeaturedCourses courses={selectedCourses} heroCourseId={heroId} title="" T={T} lang={lang} showStock={fc.showStock!==false} showDiscount={fc.showDiscount!==false}/></section>}
 
    {/* Stage 3: Featured Products — mobile horizontal swipe (exact pattern as FeaturedCourses) */}
-   {(cfg.products?.showSection ?? true) && ((cfg.products?.list || cfg.products?.items)?.length > 0) && (
+   {/* Phase 8: شرط نمایش هماهنگ با toggle محصولات در پنل (showProductsPage/showSection) */}
+   {(cfg.products?.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true) !== false && ((cfg.products?.list || cfg.products?.items)?.length > 0) && (
      <section className="zk-home-section">
        <div className="zk-home-section-heading">
          <h2 className="zk-home-section-title">{lang==='en' ? 'Featured Products & Plans' : 'محصولات و برنامه‌های منتخب'}</h2>

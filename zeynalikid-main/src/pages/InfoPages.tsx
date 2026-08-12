@@ -1,5 +1,6 @@
 // صفحات اطلاعاتی: تجربه والدین / مجوزها / آموزش‌ها / درباره ما / ارتباط با ما
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { isValidMediaUrl } from '../utils/detectCountry';
 import { detectVpnOn, forceRedetectVpn } from '../utils/vpn';
@@ -265,6 +266,9 @@ export function EducationPage({app}:{app:any}){
 // ===== مجوزها / درباره ما / ارتباط با ما =====
 export function LicensesPage({app}:{app:any}){
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
+ // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک مستقیم به صفحهٔ اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
+ const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
+ if(!showLicensesPage) return <Navigate to="/" replace/>;
  const title = lang==='en'?'Licenses':'مجوزها';
  return (
    <>

@@ -265,7 +265,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
   {id:'products',label:'محصولات',icon:<ZkProductsIcon size={17}/>,items:[{id:'services',label:'خدمات'}]},
   {id:'trustbox',label:'جملات اعتمادساز',icon:<ZkReviewsIcon size={17}/>,items:[{id:'trust',label:'جملات صفحه موفقیت'}]},
   {id:'shipping',label:'ارسال و پرداخت',icon:<ZkTruckIcon size={17}/>},
-  {id:'content',label:'محتوا و صفحات',icon:<ZkContentIcon size={17}/>,items:[{id:'images',label:'تصاویر'},{id:'highlights',label:'هایلایت'},{id:'licenses',label:'مجوزها'},{id:'contacts',label:'راه‌های ارتباطی'},{id:'userQuestions',label:'سوالات کاربران'}]},
+  {id:'content',label:'محتوا و صفحات',icon:<ZkContentIcon size={17}/>,items:[{id:'images',label:'تصاویر'},{id:'highlights',label:'هایلایت'},{id:'licenses',label:'مجوزها'},{id:'contacts',label:'راه‌های ارتباطی'}]},
   {id:'settings',label:'تنظیمات',icon:<ZkSettingsIcon size={17}/>,items:[{id:'design',label:'مدیریت دیزاین'},{id:'security',label:'امنیت'},{id:'analytics',label:'آمار بازدید'}]},
   {id:'trash',label:'سطل بازیافت',icon:<ZkTrashIcon size={17}/>},
  ];
@@ -1717,12 +1717,23 @@ function ThemeManagerEditor(){
  function LicensesTabEditor(){
   const rawLic=editCfg.licenses;
   const items:any[]=Array.isArray(rawLic)?rawLic:(rawLic&&typeof rawLic==='object'?Object.values(rawLic):[]);
+  // Phase 8: نمایش/عدم‌نمایش کل صفحهٔ مجوزها در سایت (بدون حذف داده‌های ذخیره‌شده)
+  const showLicensesPage=(editCfg.showLicensesPage ?? editCfg.menuVisibility?.licenses ?? true)!==false;
   const upd=(newItems:any[])=>setEditCfg({...editCfg,licenses:newItems});
   const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};upd(a)};
   const addLicense=()=>upd([...items,{id:'lc'+uid(),title:'مجوز جدید',description:'',image:'',isVisible:true}]);
   const removeLicense=(i:number)=>upd(items.filter((_:any,j:number)=>j!==i));
   const moveLicense=(i:number,dir:-1|1)=>{const a=[...items];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd(a)};
   return <>
+   <Box title="نمایش صفحه مجوزها در سایت">
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>با خاموش‌کردن این گزینه، صفحهٔ مجوزها در منوی سایت، صفحهٔ اصلی و لینک مستقیم نمایش داده نمی‌شود و بازدیدکننده به صفحهٔ اصلی هدایت می‌شود. <b>هیچ‌کدام از مجوزهای ذخیره‌شده حذف نمی‌شوند.</b></p>
+    <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',marginBottom:4}}>
+     <input className="zkad-display-check" type="checkbox" checked={showLicensesPage} onChange={e=>{
+      const val=e.target.checked;
+      setEditCfg({...editCfg, showLicensesPage:val, menuVisibility:{...(editCfg.menuVisibility||{}), licenses:val}});
+     }}/> نمایش صفحه مجوزها
+    </label>
+   </Box>
    <Box title={`مدیریت مجوزها (${items.length})`}>
     {items.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>

@@ -26,6 +26,7 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "showSpecialistPhoto",
   "photoUrl",
   "showProductsPage",
+  "showLicensesPage",
   "adminLoginText",
   "designSystem",
   "sections",

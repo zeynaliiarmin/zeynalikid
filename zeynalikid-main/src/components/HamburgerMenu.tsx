@@ -18,7 +18,7 @@ export default function HamburgerMenu({T,lang,setLang,cfg,publicText,APP_A_URL,s
   ['consult',{label: publicText('menuConsultation','فرم مشاوره'), icon: <ConsultIcon size={20} color={T.acc} />, to:'/form'}],
   ['courses',{label: publicText('menuCourses','معرفی دوره‌ها'), icon: <CoursesIcon size={20} color={T.acc} />, to:'/courses'}],
   ['experience',{label: lang==='en'?"Parents' Experience":'تجربه والدین', icon: <VideoIcon size={20} color={T.acc} />, to:'/experience'}],
-  ['licenses',{label: publicText('menuLicenses','مجوزها'), icon: <LicensesIcon size={20} color={T.acc} />, to:'/licenses'}],
+  ...((cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true) !== false ?[['licenses',{label: publicText('menuLicenses','مجوزها'), icon: <LicensesIcon size={20} color={T.acc} />, to:'/licenses'}] as const]:[] as const),
   ['education',{label: lang==='en'?'Tutorials':'آموزش‌ها', icon: <EducationIcon size={20} color={T.acc} />, to:'/education'}],
   ['faq',{label: lang==='en'?'FAQ':'سوالات متداول', icon: <FAQIcon size={20} color={T.acc} />, to:'/faq'}],
   ...((cfg.products?.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage) !== false ?[['products',{label: publicText('menuProducts','محصولات'), icon: <ProductsIcon size={20} color={T.acc} />, to:'/products'}] as const]:[] as const),
