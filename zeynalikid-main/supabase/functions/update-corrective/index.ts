@@ -1,22 +1,24 @@
 // supabase/functions/update-corrective/index.ts
-// اصلاح ۱۲: به‌روزرسانی امن «اطلاعات اصلاحی» توسط خودِ کاربر از صفحه پیگیری (Track).
+// به‌روزرسانی امن «اطلاعات اصلاحی» توسط خودِ کاربر از صفحه پیگیری (Track).
 // فقط با «کد پیگیری + شماره تماس» احراز هویت می‌شود و فقط کلید payload.correctiveData را
-// (بدون دست‌زدن به بقیه اطلاعات فرم مانند دوره، ارسال، پرداخت و ...) به‌صورت امن merge می‌کند.
-// دیپلوی:  supabase functions deploy update-corrective --no-verify-jwt
+// (بدون دست‌زدن به بقیه اطلاعات فرم) merge می‌کند.
+//
+// Security:
+//   - CORS فقط برای zeynalikid.vercel.app و previewهای *.vercel.app
+//   - Rate Limit: حداکثر ۲۰ درخواست در دقیقه برای هر IP
+//   - service_role داخل Function فقط
+//   - فقط فیلدهای مجاز (whitelist) در correctiveData ذخیره می‌شوند
+//
+// Deploy: supabase functions deploy update-corrective --no-verify-jwt
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
-};
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
+import {
+  handleOptions, jsonResponse, getOrigin,
+} from "../_shared/cors.ts";
+import {
+  rateLimit, rateLimitKey, cleanupExpiredBuckets,
+} from "../_shared/rateLimit.ts";
 
 const digitsOnly = (v: string) =>
   String(v ?? "")
@@ -31,29 +33,41 @@ const ALLOWED_FIELDS = [
 ];
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const optionsResp = handleOptions(req);
+  if (optionsResp) return optionsResp;
+  const origin = getOrigin(req);
+
   if (req.method !== "POST") {
-    return json({ error: "Method not allowed" }, 405);
+    return jsonResponse({ error: "Method not allowed" }, 405, origin);
+  }
+
+  // Rate limit: 20 req/min per IP
+  cleanupExpiredBuckets();
+  const rl = rateLimit(rateLimitKey(req, "corrective"), {
+    maxRequests: 20,
+    windowMs: 60_000,
+  });
+  if (!rl.ok) {
+    return jsonResponse(
+      { error: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً یک دقیقه بعد تلاش کنید." },
+      429,
+      origin,
+    );
   }
 
   try {
     const { trackingCode, fullPhone, correctiveData } = await req.json();
 
     if (!trackingCode || !fullPhone || !correctiveData || typeof correctiveData !== "object") {
-      return json({ error: "اطلاعات ارسالی ناقص است" }, 400);
+      return jsonResponse({ error: "اطلاعات ارسالی ناقص است" }, 400, origin);
     }
 
     const code = String(trackingCode).trim().toUpperCase();
     if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code)) {
-      return json({ error: "فرمت کد پیگیری معتبر نیست" }, 400);
+      return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست" }, 400, origin);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("VITE_SUPABASE_URL")!;
-    const supabaseKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("VITE_SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
       .from("submissions")
@@ -63,7 +77,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (error || !data) {
-      return json({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404);
+      return jsonResponse({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404, origin);
     }
 
     const storedPhone = String(data.full_phone ?? data.payload?.fullPhone ?? "");
@@ -77,12 +91,12 @@ serve(async (req) => {
         storedDigits.slice(-10) === inputDigits.slice(-10));
 
     if (!match) {
-      return json({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404);
+      return jsonResponse({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404, origin);
     }
 
     const payload = (data.payload && typeof data.payload === "object" ? data.payload : {}) as Record<string, any>;
     if (!payload.showCorrectiveTab) {
-      return json({ error: "امکان ویرایش اطلاعات اصلاحی برای این فرم فعال نیست." }, 403);
+      return jsonResponse({ error: "امکان ویرایش اطلاعات اصلاحی برای این فرم فعال نیست." }, 403, origin);
     }
 
     // فقط فیلدهای مجاز را merge می‌کنیم (بدون دست‌زدن به بقیه payload)
@@ -102,11 +116,11 @@ serve(async (req) => {
       .eq("id", data.id);
 
     if (updateError) {
-      return json({ error: "خطا در ذخیره‌سازی اطلاعات اصلاحی." }, 500);
+      return jsonResponse({ error: "خطا در ذخیره‌سازی اطلاعات اصلاحی." }, 500, origin);
     }
 
-    return json({ ok: true, correctiveData: newPayload.correctiveData }, 200);
+    return jsonResponse({ ok: true, correctiveData: newPayload.correctiveData }, 200, origin);
   } catch (_e) {
-    return json({ error: "خطای سرور. لطفاً مجدداً تلاش کنید." }, 500);
+    return jsonResponse({ error: "خطای سرور. لطفاً مجدداً تلاش کنید." }, 500, origin);
   }
 });

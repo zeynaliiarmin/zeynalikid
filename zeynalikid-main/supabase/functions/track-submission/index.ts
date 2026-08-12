@@ -1,20 +1,23 @@
 // supabase/functions/track-submission/index.ts
 // Edge Function برای پیگیری امن سفارش: فقط با «کد پیگیری + شماره تماس» و فقط فیلدهای عمومی.
-// دیپلوی:  supabase functions deploy track-submission --no-verify-jwt
+//
+// Security:
+//   - CORS فقط برای zeynalikid.vercel.app و previewهای *.vercel.app
+//   - Rate Limit: حداکثر ۳۰ درخواست در دقیقه برای هر IP
+//   - service_role داخل Function فقط (هیچ‌وقت به کلاینت نمی‌رسد)
+//   - هیچ اطلاعات هویتی کامل (نام، شماره کامل) به کلاینت برگردانده نمی‌شود
+//   - شماره تماس ماسک‌شده برمی‌گردد
+//
+// Deploy: supabase functions deploy track-submission --no-verify-jwt
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
-};
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
+import {
+  handleOptions, jsonResponse, getOrigin,
+} from "../_shared/cors.ts";
+import {
+  rateLimit, rateLimitKey, cleanupExpiredBuckets,
+} from "../_shared/rateLimit.ts";
 
 const digitsOnly = (v: string) =>
   String(v ?? "")
@@ -23,32 +26,44 @@ const digitsOnly = (v: string) =>
     .replace(/\D/g, "");
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // CORS preflight
+  const optionsResp = handleOptions(req);
+  if (optionsResp) return optionsResp;
+  const origin = getOrigin(req);
+
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405, origin);
+  }
+
+  // Rate limit: 30 req/min per IP
+  cleanupExpiredBuckets();
+  const rl = rateLimit(rateLimitKey(req, "track"), {
+    maxRequests: 30,
+    windowMs: 60_000,
+  });
+  if (!rl.ok) {
+    return jsonResponse(
+      { error: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً یک دقیقه بعد تلاش کنید." },
+      429,
+      origin,
+    );
   }
 
   try {
     const { trackingCode, fullPhone } = await req.json();
 
     if (!trackingCode || !fullPhone) {
-      return json({ error: "کد پیگیری و شماره تماس الزامی است" }, 400);
+      return jsonResponse({ error: "کد پیگیری و شماره تماس الزامی است" }, 400, origin);
     }
 
     const code = String(trackingCode).trim().toUpperCase();
     if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code)) {
-      return json({ error: "فرمت کد پیگیری معتبر نیست (مثال: ZK12345)" }, 400);
+      return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست (مثال: ZK12345)" }, 400, origin);
     }
 
-    // SUPABASE_URL و SUPABASE_SERVICE_ROLE_KEY به‌صورت خودکار در Edge Functions تزریق می‌شوند.
-    // Service Role برای عبور از RLS استفاده می‌شود؛ این کلید هرگز به کلاینت نمی‌رسد.
-    const supabaseUrl =
-      Deno.env.get("SUPABASE_URL") ?? Deno.env.get("VITE_SUPABASE_URL")!;
-    const supabaseKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-      Deno.env.get("VITE_SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getSupabaseAdmin();
 
-    // جستجو با کد پیگیری (داخل payload) — ساختار جدول: full_phone + payload(jsonb)
+    // جستجو با کد پیگیری (داخل payload)
     const { data, error } = await supabase
       .from("submissions")
       .select("full_phone, payload, created_at")
@@ -57,9 +72,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (error || !data) {
-      return json(
+      return jsonResponse(
         { error: "شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید." },
         404,
+        origin,
       );
     }
 
@@ -75,9 +91,10 @@ serve(async (req) => {
         storedDigits.slice(-10) === inputDigits.slice(-10));
 
     if (!match) {
-      return json(
+      return jsonResponse(
         { error: "شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید." },
         404,
+        origin,
       );
     }
 
@@ -107,8 +124,7 @@ serve(async (req) => {
         : null,
       usage: p.usageInstructions || "",
       mealPlan: p.mealPlan || "",
-      showMealPlan: p.showMealPlan === true, // اصلاح: کنترل نمایش برنامه غذایی
-      // اصلاح ۶: لینک فایل‌های PDF طریقه مصرف / برنامه غذایی (در صورت وجود)
+      showMealPlan: p.showMealPlan === true,
       usagePdfUrl: p.usagePdfUrl || "",
       mealPdfUrl: p.mealPdfUrl || "",
       userNotes: p.userNotes || "",
@@ -118,15 +134,13 @@ serve(async (req) => {
         : "",
       maskedPhone,
       canEdit: true,
-      // اصلاح ۱۲: در صورت فعال بودن نمایش اصلاحی توسط ادمین، اطلاعات ساختاریافته اصلاحی هم ارسال می‌شود.
       showCorrectiveTab: !!p.showCorrectiveTab,
       correctiveData: p.correctiveData || {},
-      // اصلاح جدید: اطلاعات اصلاحی متنی (textarea)
       corrective: p.corrective || null,
     };
 
-    return json(publicData, 200);
+    return jsonResponse(publicData, 200, origin);
   } catch (_e) {
-    return json({ error: "خطای سرور. لطفاً مجدداً تلاش کنید." }, 500);
+    return jsonResponse({ error: "خطای سرور. لطفاً مجدداً تلاش کنید." }, 500, origin);
   }
 });
