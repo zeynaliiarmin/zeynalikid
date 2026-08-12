@@ -32,6 +32,7 @@ import AnalyticsPanel from './AnalyticsPanel';
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 import ContentManager from './ContentManager';
+import SettingsManager from './SettingsManager';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -484,155 +485,26 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
 <div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>}
 
 
- function ArrEditor({k,title}:any){const inputRef=useRef<HTMLInputElement|null>(null); const addVal=useCallback((raw?:string)=>{const v=p2e(raw ?? inputRef.current?.value ?? '').trim(); if(v){setEditCfg((prev:any)=>({...prev,[k]:[...(prev[k]||[]),v]})); if(inputRef.current) inputRef.current.value='';}},[k,setEditCfg]); const onNewChange=useCallback((e:any)=>{e.target.value=p2e(e.target.value)},[]); return <Box title={title}><div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>{(editCfg[k]||[]).map((x:string,i:number)=><span key={`${k}-${i}-${String(x).slice(0,10)}`} style={{padding:'5px 8px',border:`1px solid ${T.brd}`,borderRadius:9}}><input style={{background:'transparent',border:0,color:T.txt,fontSize:16,width:130}} defaultValue={x} onBlur={e=>{const val=p2e(e.target.value); setEditCfg((prev:any)=>{const a=[...(prev[k]||[])];a[i]=val; return {...prev,[k]:a}})}}/><button className="zkad-iconbtn t-err" title="حذف مورد" onClick={()=>setEditCfg((prev:any)=>({...prev,[k]:(prev[k]||[]).filter((_:any,j:number)=>j!==i)}))}><ZkCloseIcon size={13}/></button></span>)}</div><div style={{display:'flex',gap:6}}><input ref={inputRef} style={S.inp} onChange={onNewChange} onKeyDown={e=>{if(e.key==='Enter')addVal((e.target as HTMLInputElement).value)}} placeholder="مورد جدید"/><button style={AdminBtn()} onClick={()=>addVal()}>+</button></div></Box>}
-
  // بازطراحی: بخش‌های ادیتور پنل مدیریت با کارت نئومورفیک (سایه نرم به‌جای بردر ساده)
  // FIX: Stabilize Box component identity — used 59+ times, remount caused all nested inputs/details to reset
  const Box=useMemo(()=>({title,children}:any)=><section className="zkad-panel-card" style={{marginBottom:12}}><h3 style={{fontSize:13.5,color:T.ttl,margin:'0 0 12px',fontWeight:800,lineHeight:1.6,display:'flex',alignItems:'center',gap:7}}>{title}</h3>{children}</section>,[T.ttl]);
- function SettingsEditor(){const up=(k:string,v:any)=>setEditCfg({...editCfg,[k]:v}); const ff=editCfg.formFields; return <>
-  {/* اصلاح ۲۶: دو تب مجزا برای تنظیمات پروژه ثانویه (فرم مشاوره) و پروژه اصلی (دوره‌ها + پنل) */}
-  <div style={{display:'flex',gap:6,marginBottom:14}}>
-   <button onClick={()=>setSettingsSubTab('secondary')} style={{...AdminBtn(),background:settingsSubTab==='secondary'?T.soft:T.card,color:settingsSubTab==='secondary'?T.acc:T.mut,boxShadow:settingsSubTab==='secondary'?T.neuIn:T.neuOut}}>تنظیمات پروژه ثانویه (فرم مشاوره)</button>
-   <button onClick={()=>setSettingsSubTab('primary')} style={{...AdminBtn(),background:settingsSubTab==='primary'?T.soft:T.card,color:settingsSubTab==='primary'?T.acc:T.mut,boxShadow:settingsSubTab==='primary'?T.neuIn:T.neuOut}}>تنظیمات پروژه اصلی (دوره‌ها + پنل)</button>
-   {/* اصلاح ۲: تب جدید چیدمان صفحه اصلی و منوی همبرگری */}
-   <button onClick={()=>setSettingsSubTab('layout')} style={{...AdminBtn(),background:settingsSubTab==='layout'?T.soft:T.card,color:settingsSubTab==='layout'?T.acc:T.mut,boxShadow:settingsSubTab==='layout'?T.neuIn:T.neuOut}}>چیدمان صفحه اصلی و منوی همبرگری</button>
-   {/* اصلاح ۲ (مرحله ۴): تب مستقل مدیریت متن‌ها و ترجمه‌ها */}
-   <button onClick={()=>setSettingsSubTab('translations')} style={{...AdminBtn(),background:settingsSubTab==='translations'?T.soft:T.card,color:settingsSubTab==='translations'?T.acc:T.mut,boxShadow:settingsSubTab==='translations'?T.neuIn:T.neuOut}}>مدیریت متن‌ها و ترجمه‌ها</button>
-  </div>
-  {settingsSubTab==='secondary'&&<>
-   <Box title="تنظیمات ظاهری (فرم مشاوره)"><label style={S.lbl}>تم</label><select style={S.inp} value={editCfg.theme} onChange={e=>up('theme',e.target.value)}>{Object.values(TH).map((th:any)=><option key={th.id} value={th.id}>{th.name}</option>)}</select>{['siteTitle','browserTitle','specialistName','heroTitle','heroDesc','noticeText','phoneNote','submitBtnText','successMsg','successSubMsg','timeSlotLabel'].map(k=><Field key={k} label={k} value={editCfg[k]||''} onChange={(v:string)=>up(k,v)} ph=""/>)}<label><input type="checkbox" checked={!!editCfg.showSpecialistPhoto} onChange={e=>up('showSpecialistPhoto',e.target.checked)}/> نمایش عکس متخصص در صفحه مشاوره</label><input type="file" accept="image/jpeg,image/png,image/webp" style={{...S.inp,marginTop:8}} onChange={async e=>{const f=e.target.files?.[0];if(f)up('photoUrl',await fileToData(f,editCfg.photoUrl,'profile'))}}/><button style={{...AdminBtn(),marginTop:8}} onClick={async()=>{await deleteStoredImage(editCfg.photoUrl);up('photoUrl',PROFILE_PHOTO)}}>بازگشت به عکس پیش‌فرض</button></Box>
-   <Box title="تنظیمات فیلدهای فرم مشاوره">{Object.keys(ff).map(k=><div key={k} style={{borderBottom:`1px solid ${T.brd}`,padding:'8px 0'}}><b>{k}</b><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:7}}><input style={S.inp} defaultValue={ff[k].label} onBlur={e=>setEditCfg({...editCfg,formFields:{...ff,[k]:{...ff[k],label:e.target.value}}})}/><input style={S.inp} defaultValue={ff[k].placeholder} onBlur={e=>setEditCfg({...editCfg,formFields:{...ff,[k]:{...ff[k],placeholder:e.target.value}}})}/></div><label><input type="checkbox" checked={ff[k].show!==false} onChange={e=>setEditCfg({...editCfg,formFields:{...ff,[k]:{...ff[k],show:e.target.checked}}})}/> نمایش</label> <label><input type="checkbox" checked={!!ff[k].required} onChange={e=>setEditCfg({...editCfg,formFields:{...ff,[k]:{...ff[k],required:e.target.checked}}})}/> اجباری</label>{k === 'age' && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8,background:T.soft,padding:10,borderRadius:12}}><div><label style={{fontSize:11,color:T.mut,display:'block',marginBottom:4}}>حداقل سن مجاز (سال)</label><input type="number" style={{...S.inp,minHeight:38,fontSize:14}} defaultValue={ff.age?.min ?? 2} onBlur={e=>setEditCfg({...editCfg,formFields:{...ff,age:{...ff.age,min:Number(p2e(e.target.value))||2}}})}/></div><div><label style={{fontSize:11,color:T.mut,display:'block',marginBottom:4}}>حداکثر سن مجاز (سال)</label><input type="number" style={{...S.inp,minHeight:38,fontSize:14}} defaultValue={ff.age?.max ?? 17} onBlur={e=>setEditCfg({...editCfg,formFields:{...ff,age:{...ff.age,max:Number(p2e(e.target.value))||17}}})}/></div></div>}</div>)}</Box>
-   {[['consultTopics','موضوعات مشاوره'],['digestiveOptions','گزینه‌های گوارش'],['appetiteOptions','گزینه‌های اشتها'],['specialConditions','شرایط خاص'],['timeSlots','بازه‌های تماس'],['categories','دسته‌بندی‌ها']].map(x=><ArrEditor key={x[0]} k={x[0]} title={x[1]}/>) }
-   <Box title="پیام‌های موفقیت و راهنما"><Field label="متن پیام موفقیت" value={editCfg.successMsg||''} onChange={(v:string)=>up('successMsg',v)} ph=""/><Field label="متن زیرِ پیام موفقیت" value={editCfg.successSubMsg||''} onChange={(v:string)=>up('successSubMsg',v)} ph=""/><Field label="متن دکمه ثبت فرم جدید" value={editCfg.newFormBtn||''} onChange={(v:string)=>up('newFormBtn',v)} ph=""/><Field label="متن دکمه ثبت مستقیم دوره" value={editCfg.directCourseBtn||''} onChange={(v:string)=>up('directCourseBtn',v)} ph=""/></Box>
-   <Box title="ورود مهمان - محتوای عمومی"><label style={S.lbl}>طریقه مصرف عمومی برای مهمان (guestUsage)</label><textarea style={S.ta} defaultValue={editCfg.guestUsage||""} onBlur={e=>up("guestUsage",e.target.value)} placeholder="متن طریقه مصرف عمومی..."/><label style={{...S.lbl,marginTop:10}}>برنامه غذایی عمومی برای مهمان (guestMealPlan)</label><textarea style={S.ta} defaultValue={editCfg.guestMealPlan||""} onBlur={e=>up("guestMealPlan",e.target.value)} placeholder="برنامه غذایی عمومی..."/></Box>
-  </>}
-  {settingsSubTab==='primary'&&<>
-   <Box title="تنظیمات ظاهری (دوره‌ها + پنل)">{['adminLoginText'].map(k=><Field key={k} label={k} value={editCfg[k]||''} onChange={(v:string)=>up(k,v)} ph=""/>)}<label style={S.lbl}>حداکثر حجم فیش واریزی (کیلوبایت)</label><input style={S.inp} inputMode="numeric" type="number" min={100} max={1000} defaultValue={editCfg.imageCompressionKB||500} onBlur={e=>up('imageCompressionKB',Math.min(1000,Math.max(100,+p2e(e.target.value)||500)))}/><p style={{fontSize:11,color:T.mut,margin:'4px 0 12px'}}>عکس‌های آپلودی به این حجم فشرده می‌شوند (بین ۱۰۰ تا ۱۰۰۰ کیلوبایت).</p><button style={{...AdminBtn(),display:'block',marginBottom:12}} onClick={async()=>{if(!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.'))return; try{const {adminCleanupReceiptsDryRun,adminCleanupReceiptsExecute}=await import('../lib/adminApi'); const dry=await adminCleanupReceiptsDryRun(); if(dry.targetFiles===0){alert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.');return} if(!confirm(`${dry.targetFiles} فیش قدیمی یافت شد. ادامه می‌دهید؟`))return; const r=await adminCleanupReceiptsExecute(); alert(`پاک‌سازی موفق بود.\nفایل‌های حذف‌شده: ${r.deleted}\nرکوردهای به‌روزرسانی‌شده: ${r.cleanedRows}`)}catch(e:any){if(e?.status===401){alert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.')}else{alert(e?.message||'خطا در پاک‌سازی فیش‌ها.')}}}}><ZkTrashIcon size={13}/> پاک‌سازی فیش‌های قدیمی (بیش از ۱ ماه)</button><label style={S.lbl}>تعداد ارقام کد پیگیری</label><select style={S.inp} value={editCfg.trackingDigitCount||5} onChange={e=>up('trackingDigitCount',parseInt(e.target.value))}><option value={4}>۴ رقم (ZK1234)</option><option value={5}>۵ رقم (ZK12345) — پیش‌فرض</option><option value={6}>۶ رقم (ZK123456)</option><option value={7}>۷ رقم (ZK1234567)</option><option value={8}>۸ رقم (ZK12345678)</option></select><p style={{fontSize:12,color:T.mut,marginTop:6,marginBottom:12}}>تغییر این مقدار فقط برای فرم‌های جدید اعمال می‌شود. فرم‌های قبلی با همان کد قبلی باقی می‌مانند.</p></Box>
+ function SettingsEditor(){
+  // بازطراحی کامل — SettingsManager مستقل با state محلی (رفع fg / پرش صفحه)
+  return <SettingsManager
+    T={T} S={S} AdminBtn={AdminBtn} Box={Box} Field={Field}
+    StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
+    editCfg={editCfg} setSave={setSave} fileToData={fileToData}
+    deleteStoredImage={deleteStoredImage} PROFILE_PHOTO={PROFILE_PHOTO} TH={TH}
+    p2e={p2e} uid={uid}
+  />;
+ }
 
-   {/* اصلاح ۳۰ (مرحله ۷): تنظیمات آپلود عکس زبان فرزند */}
-   <Box title="عکس زبان فرزند (صفحه اطلاعات فرزند)">
-    <label style={{display:'flex',alignItems:'center',gap:7,marginBottom:10,cursor:'pointer'}}><input type="checkbox" checked={!!editCfg.isTonguePhotoRequired} onChange={e=>up('isTonguePhotoRequired',e.target.checked)}/> اجباری بودن بارگذاری عکس زبان</label>
-    <label style={S.lbl}>حداکثر حجم هر عکس (مگابایت)</label>
-    <StableAdminInput style={S.inp} inputMode="numeric" type="number" min={1} max={15} defaultValue={editCfg.maxTonguePhotoSizeMB||5} onCommit={(v:string)=>up('maxTonguePhotoSizeMB',Math.min(15,Math.max(1,+p2e(v)||5)))} numeric/>
-    <label style={{...S.lbl,marginTop:10}}>حداکثر تعداد عکس‌ها</label>
-    <StableAdminInput style={S.inp} inputMode="numeric" type="number" min={1} max={10} defaultValue={editCfg.maxTonguePhotoCount||3} onCommit={(v:string)=>up('maxTonguePhotoCount',Math.min(10,Math.max(1,+p2e(v)||3)))} numeric/>
-    <label style={{display:'flex',alignItems:'center',gap:7,marginTop:10,cursor:'pointer'}}><input type="checkbox" checked={editCfg.showTonguePhotoHint!==false} onChange={e=>up('showTonguePhotoHint',e.target.checked)}/> نمایش متن راهنما زیر عنوان بخش</label>
-   </Box>
-   {/* تنظیمات باکس معرفی کارشناس در صفحه دوره‌ها */}
-   <Box title="باکس معرفی کارشناس در صفحه دوره‌ها">
-    <label style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,cursor:'pointer',fontWeight:700,fontSize:13}}>
-     <input type="checkbox" checked={editCfg.courseInstructor?.show!==false} onChange={e=>up('courseInstructor',{...(editCfg.courseInstructor||{}),show:e.target.checked})}/>
-     نمایش باکس کارشناس در صفحه معرفی دوره
-    </label>
-    <label style={S.lbl}>نام کارشناس</label>
-    <StableAdminInput style={{...S.inp,marginBottom:10}} defaultValue={editCfg.courseInstructor?.name||'آرمین زینالی'} onCommit={(v:string)=>up('courseInstructor',{...(editCfg.courseInstructor||{}),name:v})} />
-    <label style={S.lbl}>توضیحات و سمت کارشناس</label>
-    <StableAdminTextarea style={{...S.ta,minHeight:60}} defaultValue={editCfg.courseInstructor?.desc||'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onCommit={(v:string)=>up('courseInstructor',{...(editCfg.courseInstructor||{}),desc:v})} placeholder="متن سمت و تخصص کارشناس..." rows={3}/>
-   </Box>
-   <ProductsEditor/>
-   <CountryEditor/>
-   {/* اصلاح ۲ (مرحله ۴): مدیریت ترجمه‌ها به تب مستقل «مدیریت متن‌ها و ترجمه‌ها» منتقل شد (حذف تکرار از این‌جا) */}
-  </>}
-  {settingsSubTab==='layout'&&<LayoutEditor/>}
-  {settingsSubTab==='translations'&&<TranslationsEditor/>}
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تغییرات</button>
- </>}
  // اصلاح ۱-۶ و ۲ و ۳ (مرحله ۴): تب مستقل مدیریت متن‌ها و ترجمه‌ها — شامل عناوین دوزبانه کنار عکس پروفایل،
  // متن صفحه درباره ما (دوزبانه) و ویرایش تمام کلیدهای ترجمه fa/en موجود در cfg.translations
- function TranslationsEditor(){const up=(k:string,v:any)=>setEditCfg({...editCfg,[k]:v}); return <>
-  <Box title="عناوین کنار عکس پروفایل (دوزبانه)">
-   <Field label="عنوان متخصص (فارسی)" value={editCfg.specialistTitle||''} onChange={(v:string)=>up('specialistTitle',v)} ph=""/>
-   <Field label="عنوان متخصص (انگلیسی)" value={editCfg.specialistTitleEn||''} onChange={(v:string)=>up('specialistTitleEn',v)} ph=""/>
-   <Field label="زیرعنوان خوش‌آمدگویی (فارسی)" value={editCfg.heroSubtitle||''} onChange={(v:string)=>up('heroSubtitle',v)} ph=""/>
-   <Field label="زیرعنوان خوش‌آمدگویی (انگلیسی)" value={editCfg.heroSubtitleEn||''} onChange={(v:string)=>up('heroSubtitleEn',v)} ph=""/>
-  </Box>
-  <Box title="متن صفحه درباره ما (دوزبانه)">
-   <label style={S.lbl}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutText||''} onCommit={(v:string)=>up('aboutText',v)} placeholder="متن صفحه درباره ما به فارسی..." rows={3}/>
-   <label style={{...S.lbl,marginTop:10}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutTextEn||''} onCommit={(v:string)=>up('aboutTextEn',v)} placeholder="About us content in English..." rows={3}/>
-  </Box>
-  {/* اصلاح ۳۲ (مرحله ۹): متن‌های سئوی سوال‌محور/کلیدواژه‌محور برای صفحات دوره‌ها، تجربه والدین، آموزش‌ها و درباره ما (دوزبانه) */}
-  <Box title="متن‌های سئو در انتهای صفحات (دوزبانه)">
-   <details style={{marginBottom:10}}>
-    <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>معرفی دوره‌ها</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesIntroText||''} onCommit={(v:string)=>up('coursesIntroText',v)} placeholder="متن سئوی کوتاه صفحه دوره‌ها به فارسی..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن کوتاه (بالای صفحه) — انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesIntroTextEn||''} onCommit={(v:string)=>up('coursesIntroTextEn',v)} placeholder="Short SEO text for Courses page in English..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه، بین FAQ و ارتباط) — فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesSeoFullText||''} onCommit={(v:string)=>up('coursesSeoFullText',v)} placeholder="متن سئوی کامل پایین صفحه دوره‌ها به فارسی..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن کامل (پایین صفحه) — انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.coursesSeoFullTextEn||''} onCommit={(v:string)=>up('coursesSeoFullTextEn',v)} placeholder="Full SEO text for bottom of Courses page in English..." rows={3}/>
-   </details>
-   <details style={{marginBottom:10}}>
-    <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>تجربه والدین</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.experienceIntroText||''} onCommit={(v:string)=>up('experienceIntroText',v)} placeholder="متن سئوی صفحه تجربه والدین به فارسی..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.experienceIntroTextEn||''} onCommit={(v:string)=>up('experienceIntroTextEn',v)} placeholder="Parents' experience page SEO text in English..." rows={3}/>
-   </details>
-   <details style={{marginBottom:10}}>
-    <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>آموزش‌ها</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.educationIntroText||''} onCommit={(v:string)=>up('educationIntroText',v)} placeholder="متن سئوی صفحه آموزش‌ها به فارسی..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.educationIntroTextEn||''} onCommit={(v:string)=>up('educationIntroTextEn',v)} placeholder="Tutorials page SEO text in English..." rows={3}/>
-   </details>
-   <details>
-    <summary style={{cursor:'pointer',fontWeight:800,fontSize:13,color:T.ttl}}>درباره ما</summary>
-    <label style={{...S.lbl,marginTop:8}}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutIntroText||''} onCommit={(v:string)=>up('aboutIntroText',v)} placeholder="متن سئوی صفحه درباره ما به فارسی..." rows={3}/>
-    <label style={{...S.lbl,marginTop:8}}>متن انگلیسی</label><StableAdminTextarea style={S.ta} defaultValue={editCfg.aboutIntroTextEn||''} onCommit={(v:string)=>up('aboutIntroTextEn',v)} placeholder="About page SEO text in English..." rows={3}/>
-   </details>
-  </Box>
-  {/* مدیریت FAQ به صفحه سوالات کاربران منتقل شده است. */}
-  <DailyTipsEditor/>
-  <Box title="مدیریت کلیدهای ترجمه (fa / en)">{(['fa','en'] as const).map(l=><details key={l} style={{marginBottom:10}}><summary style={{cursor:'pointer',fontWeight:800}}>{l==='fa'?'فارسی':'English'} ({Object.keys(editCfg.translations?.[l]||{}).length} کلید)</summary>{Object.keys(editCfg.translations?.[l]||{}).sort().map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'150px 1fr',gap:8,marginTop:6,alignItems:'center'}}><label style={{fontSize:11,color:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={k}>{k}</label><input style={S.inp} defaultValue={editCfg.translations[l][k]||''} onBlur={e=>setEditCfg({...editCfg,translations:{...editCfg.translations,[l]:{...editCfg.translations[l],[k]:e.target.value}}})}/></div>)}</details>)}</Box>
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره متن‌ها و ترجمه‌ها</button>
- </>}
+
  // اصلاح ۳۲ (مرحله ۹): ادیتور کامل سوالات متداول — دو ستون فارسی/انگلیسی، افزودن/ویرایش/حذف/تغییر ترتیب + تنظیمات نمایش در هوم
  
-function DailyTipsEditor() {
-  const list: any[] = editCfg.dailyTips || [];
-  const upd = (arr: any[]) => setEditCfg({ ...editCfg, dailyTips: arr });
-  return (
-    <Box title="مدیریت نکات روزانه (Daily Tips)">
-      {list.map((tip: any, i: number) => (
-        <div key={tip.id || i} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginBottom: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <textarea
-              style={S.ta}
-              rows={2}
-              defaultValue={tip.fa || ''}
-              onBlur={(e) => {
-                const a = [...list];
-                a[i] = { ...a[i], fa: e.target.value };
-                upd(a);
-              }}
-              placeholder="نکته (فارسی)"
-            />
-            <textarea
-              style={S.ta}
-              rows={2}
-              dir="ltr"
-              defaultValue={tip.en || ''}
-              onBlur={(e) => {
-                const a = [...list];
-                a[i] = { ...a[i], en: e.target.value };
-                upd(a);
-              }}
-              placeholder="Tip (English)"
-            />
-          </div>
-          <button
-            type="button"
-            style={{ ...AdminBtn(), color: T.err, marginTop: 6 }}
-            onClick={() => upd(list.filter((_, j) => j !== i))}
-          >
-            حذف نکته
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        style={AdminBtn()}
-        onClick={() => upd([...list, { id: 't' + uid(), fa: 'نکته جدید', en: 'New tip' }])}
-      >
-        افزودن نکته روزانه
-      </button>
-    </Box>
-  );
-}
+
 
 function FAQEditor(){
   const faList:any[]=editCfg.faqItems||[]; const enList:any[]=editCfg.faqItemsEn||[];
@@ -732,45 +604,7 @@ function FAQEditor(){
  }
 
  // اصلاح ۲: ادیتور مشترک چیدمان (ترتیب بالا/پایین + نمایش/پنهان) برای صفحه هوم و منوی همبرگری
- function LayoutEditor(){
-  const homeLabels:Record<string,string>={consult:'ثبت درخواست مشاوره',courses:'معرفی دوره‌ها',experience:'تجربه والدین',licenses:'مجوزها',contact:'ارتباط با ما'};
-  const menuLabels:Record<string,string>={consult:'فرم مشاوره',courses:'معرفی دوره‌ها',experience:'تجربه والدین',licenses:'مجوزها',education:'آموزش‌ها',faq:'سوالات متداول',about:'درباره ما',contact:'ارتباط با ما',track:'وارد کردن کد پیگیری'};
-  const move=(key:'homeLayout'|'menuLayout',i:number,dir:-1|1)=>{const list=[...(editCfg[key]||[])]; const j=i+dir; if(j<0||j>=list.length)return; [list[i],list[j]]=[list[j],list[i]]; setEditCfg({...editCfg,[key]:list})};
-  const toggle=(key:'homeLayout'|'menuLayout',i:number)=>{const list=[...(editCfg[key]||[])]; list[i]={...list[i],show:!list[i].show}; setEditCfg({...editCfg,[key]:list})};
-  const Section=({title,items,labels,stateKey}:{title:string,items:any[],labels:Record<string,string>,stateKey:'homeLayout'|'menuLayout'})=><Box title={title}>{items.map((it:any,i:number)=><div key={it.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 6px',borderRadius:10,background:T.soft,marginBottom:6}}><label style={{display:'flex',alignItems:'center',gap:6,flex:1,fontSize:13,fontWeight:700,cursor:'pointer'}}><input type="checkbox" checked={it.show!==false} onChange={()=>toggle(stateKey,i)}/> {labels[it.id]||it.id}</label><button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===0} onClick={()=>move(stateKey,i,-1)}><ZkArrowUpIcon size={13}/></button><button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===items.length-1} onClick={()=>move(stateKey,i,1)}><ZkArrowDownIcon size={13}/></button></div>)}</Box>;
-  // اصلاح ۵: بخش «صفحات دارای منوی همبرگری» — چک‌باکس برای هر view پروژه (شامل admin-login)
-  const viewLabels:[string,string][]=[['home','صفحه اصلی (Home)'],['courses','معرفی دوره‌ها'],['child-info','اطلاعات فرزند'],['course-shipping','اطلاعات ارسال'],['course-payment','پرداخت'],['course-confirm','تأیید ثبت‌نام'],['course-done','اتمام ثبت‌نام'],['track','پیگیری'],['experience','تجربه والدین'],['licenses','مجوزها'],['education','آموزش‌ها'],['about','درباره ما'],['contact','ارتباط با ما'],['admin-login','ورود پنل مدیریت'],['admin','پنل مدیریت']];
-  const toggleMenuVis=(id:string)=>{const cur=editCfg.menuVisibility||{}; setEditCfg({...editCfg,menuVisibility:{...cur,[id]:!(cur[id]!==undefined?cur[id]:true)}})};
-  // اصلاح ۳۲ (مرحله ۹): «ترتیب نمایش محتوا در صفحات» — برای هر صفحه، نمایش/عدم‌نمایش محتوای سئو و ترتیب آن نسبت به «ارتباط با ما»
-  const contentOrderPages:[string,string][]=[['home','صفحه اصلی'],['courses','معرفی دوره‌ها'],['experience','تجربه والدین'],['education','آموزش‌ها'],['about','درباره ما']];
-  const pco=editCfg.pageContentOrder||{};
-  const updPco=(id:string,patch:any)=>setEditCfg({...editCfg,pageContentOrder:{...pco,[id]:{...(pco[id]||{}),...patch}}});
-  return <>
-   <Section title="چیدمان صفحه اصلی (میانبرهای هوم)" items={editCfg.homeLayout||[]} labels={homeLabels} stateKey="homeLayout"/>
-   <Box title="مدل نمایش خدمات">
-    <p style={{fontSize:11,color:T.mut,marginBottom:8,lineHeight:1.8}}>تنظیمات تفکیکی هر صفحه در تب «خدمات» قابل ویرایش است.</p>
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-     <div><label style={S.lbl}>صفحه اصلی</label><select style={S.inp} value={editCfg.servicesDisplayMode?.home||'list'} onChange={e=>setEditCfg({...editCfg,servicesDisplayMode:{...(editCfg.servicesDisplayMode||{}),home:e.target.value}})}><option value="list">لیست</option><option value="carousel">کاروسل</option></select></div>
-     <div><label style={S.lbl}>صفحه دوره‌ها</label><select style={S.inp} value={editCfg.servicesDisplayMode?.courses||'list'} onChange={e=>setEditCfg({...editCfg,servicesDisplayMode:{...(editCfg.servicesDisplayMode||{}),courses:e.target.value}})}><option value="list">لیست</option><option value="carousel">کاروسل</option></select></div>
-    </div>
-   </Box>
-   <Section title="چیدمان منوی همبرگری" items={editCfg.menuLayout||[]} labels={menuLabels} stateKey="menuLayout"/>
-   <Box title="صفحات دارای منوی همبرگری">{viewLabels.map(([id,label])=><label key={id} style={{display:'flex',alignItems:'center',gap:7,padding:'7px 6px',fontSize:13,fontWeight:700,cursor:'pointer'}}><input type="checkbox" checked={(editCfg.menuVisibility||{})[id]!==undefined?!!(editCfg.menuVisibility||{})[id]:true} onChange={()=>toggleMenuVis(id)}/> {label}</label>)}<p style={{fontSize:11,color:T.mut,marginTop:6}}>در صفحاتی که این گزینه فعال باشد، آیکون منوی همبرگری نمایش داده می‌شود.</p></Box>
-   {/* اصلاح ۳۲ (مرحله ۹): ترتیب نمایش محتوای سئو نسبت به ارتباط با ما، برای هر صفحه به‌صورت مجزا */}
-   <Box title="ترتیب نمایش محتوا در صفحات">
-    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>برای هر صفحه مشخص کنید آیا محتوای سئوی انتهای صفحه نمایش داده شود یا نه، و ترتیب آن نسبت به بخش «ارتباط با ما» چگونه باشد.</p>
-    {contentOrderPages.map(([id,label])=>{const cfgRow=pco[id]||{showIntro:true,order:'contentFirst'}; return <div key={id} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.soft}}>
-     <b style={{fontSize:13,color:T.ttl,display:'block',marginBottom:8}}>{label}</b>
-     <label style={{display:'flex',alignItems:'center',gap:7,fontSize:13,cursor:'pointer',marginBottom:8}}><input type="checkbox" checked={cfgRow.showIntro!==false} onChange={e=>updPco(id,{showIntro:e.target.checked})}/> نمایش محتوای سئو در این صفحه</label>
-     <div style={{display:'flex',gap:14,flexWrap:'wrap'}}>
-      <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,cursor:'pointer'}}><input type="radio" name={`order-${id}`} checked={cfgRow.order!=='contactFirst'} onChange={()=>updPco(id,{order:'contentFirst'})}/> اول محتوا، سپس ارتباط با ما</label>
-      <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,cursor:'pointer'}}><input type="radio" name={`order-${id}`} checked={cfgRow.order==='contactFirst'} onChange={()=>updPco(id,{order:'contactFirst'})}/> اول ارتباط با ما، سپس محتوا</label>
-     </div>
-    </div>})}
-   </Box>
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره چیدمان</button>
-  </>;
- }
+
  // اصلاح ۷: تب مستقل «مدیریت محتوا» شامل محتوای چندرسانه‌ای، تجربه والدین، مجوزها و آموزش‌ها
  function ContentEditor(){
   // بازطراحی کامل «محتوا و صفحات» — ContentManager مستقل با state محلی
@@ -783,8 +617,8 @@ function FAQEditor(){
  }
 
  // اصلاح ۱۸: بازطراحی کامل هایلایت و استوری — چند هایلایت، هر کدام چند اسلاید (کد تصویر خارجی/داخلی)
- function CountryEditor(){return <Box title="مدیریت کدهای کشور">{editCfg.countryCodes.map((c:any,i:number)=><div key={c.id} style={{display:'grid',gridTemplateColumns:'85px 1fr 80px 1.4fr 45px',gap:6,marginBottom:6}}><div style={{display:'flex',gap:4,alignItems:'center'}}><span style={{fontSize:20}}>{getCountryFlag(c)}</span><StableAdminInput style={{...S.inp,flex:1}} defaultValue={c.flag} onCommit={(v:string)=>chgCountry(i,'flag',v)}/></div><StableAdminInput style={S.inp} defaultValue={c.name} onCommit={(v:string)=>chgCountry(i,'name',v)}/><StableAdminInput style={S.inp} defaultValue={c.code} onCommit={(v:string)=>chgCountry(i,'code',p2e(v))}/><StableAdminInput style={S.inp} defaultValue={c.regex} onCommit={(v:string)=>chgCountry(i,'regex',v)}/><button className="zkad-iconbtn t-err" title="حذف کشور" disabled={c.locked} onClick={()=>setEditCfg({...editCfg,countryCodes:editCfg.countryCodes.filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,countryCodes:[...editCfg.countryCodes,{id:'c'+uid(),name:'کشور جدید',code:'+0',flag:'',regex:'^\\d{7,}$'}]})}><ZkPlusIcon size={13}/> افزودن کشور</button></Box>}
- function chgCountry(i:number,k:string,v:any){const a=[...editCfg.countryCodes];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,countryCodes:a})}
+
+
  function ContactsEditor(){
   // بازطراحی: state محلی در سطح AdminPanel (cc) + ذخیرهٔ مستقیم
   // (رفع race condition و رعایت قوانین hooks — این تابع با () فراخوانی می‌شود)
@@ -950,90 +784,7 @@ function TaggedCoursesEditor(){
 
 function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array.isArray(rawTabs)?rawTabs:(rawTabs&&typeof rawTabs==='object'?Object.values(rawTabs):[]); const chg=(ti:number,k:string,v:any)=>{const a=[...tabs];a[ti]={...a[ti],[k]:v};setEditCfg({...editCfg,courseTabs:a})}; const chgC=(ti:number,ci:number,k:string,v:any)=>{const a=[...tabs];a[ti].courses=[...a[ti].courses];a[ti].courses[ci]={...a[ti].courses[ci],[k]:v};setEditCfg({...editCfg,courseTabs:a})}; return <><Box title="واحد پول دوره‌ها"><label style={S.lbl}>واحد پول</label><select style={S.inp} value={editCfg.currencyUnit||'تومان'} onChange={e=>setEditCfg({...editCfg,currencyUnit:e.target.value})}><option value="تومان">تومان</option><option value="ریال">ریال</option></select></Box><Box title="مدیریت تب‌ها و دوره‌ها">{tabs.map((tab:any,ti:number)=><details key={tab.id} style={{marginBottom:10,background:T.badge,borderRadius:12,padding:10}}><summary style={{cursor:'pointer',fontWeight:800}}>{tab.title}</summary><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}><input style={S.inp} defaultValue={tab.title} onBlur={e=>chg(ti,'title',e.target.value)}/><input style={S.inp} defaultValue={tab.inactiveMessage} onBlur={e=>chg(ti,'inactiveMessage',e.target.value)}/></div><label style={{...S.lbl,marginTop:8}}>خلاصه اطلاعات بیشتر</label><input style={S.inp} defaultValue={tab.detailedInfo?.summary||''} onBlur={e=>chg(ti,'detailedInfo',{...(tab.detailedInfo||{}),summary:e.target.value})}/><label style={{...S.lbl,marginTop:8}}>متن کامل اطلاعات بیشتر</label><textarea style={S.ta} defaultValue={tab.detailedInfo?.fullText||''} onBlur={e=>chg(ti,'detailedInfo',{...(tab.detailedInfo||{}),fullText:e.target.value})}/><label><input type="checkbox" checked={tab.active} onChange={e=>chg(ti,'active',e.target.checked)}/> فعال</label> <label><input type="checkbox" checked={tab.showImage!==false} onChange={e=>chg(ti,'showImage',e.target.checked)}/> نمایش تصویر تب</label><div style={{margin:'8px 0'}}><label className="zkad-drop" onDragOver={e=>e.preventDefault()} onDrop={async e=>{e.preventDefault();const f=e.dataTransfer.files?.[0];if(f)chg(ti,'image',await fileToData(f,tab.image,'course-tabs'))}}><ZkUploadIcon size={20}/><span>برای آپلود تصویر تب کلیک کنید یا فایل را بکشید</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(f)chg(ti,'image',await fileToData(f,tab.image,'course-tabs'))}}/></label><button style={{...AdminBtn(),marginTop:6}} onClick={async()=>{await deleteStoredImage(tab.image);chg(ti,'image','')}}>حذف تصویر تب و بازگشت به عکس پیش‌فرض</button></div> {!tab.base&&<button className="zkad-del" title="حذف تب" onClick={()=>setEditCfg({...editCfg,courseTabs:tabs.filter((_:any,j:number)=>j!==ti)})}>حذف تب</button>}{tab.courses.map((cr:any,ci:number)=><div key={cr.id} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginTop:10}}><input style={S.inp} defaultValue={cr.title} onBlur={e=>chgC(ti,ci,'title',e.target.value)} placeholder="عنوان"/><textarea style={{...S.ta,marginTop:6}} defaultValue={cr.desc} onBlur={e=>chgC(ti,ci,'desc',e.target.value)} placeholder="توضیحات"/><input style={{...S.inp,marginTop:6}} inputMode="numeric" defaultValue={cr.price} onBlur={e=>chgC(ti,ci,'price',p2e(e.target.value))} placeholder="قیمت"/><label style={{...S.lbl, marginTop: 6, fontSize: 11}}>تاریخ پایان تخفیف (اختیاری)</label><input type="datetime-local" style={S.inp} defaultValue={cr.discountEnd||''} onBlur={e=>chgC(ti,ci,'discountEnd',e.target.value)}/><input style={{...S.inp,marginTop:6}} defaultValue={(cr.features||[]).join('|')} onBlur={e=>chgC(ti,ci,'features',e.target.value.split('|'))} placeholder="ویژگی‌ها با |"/><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:6}}>{['active','popular','bestseller','trending','ageBadge'].map(k=><label key={k}><input type="checkbox" checked={!!cr[k]} onChange={e=>chgC(ti,ci,k,e.target.checked)}/> {k}</label>)}</div><button className="zkad-del" title="حذف دوره" onClick={()=>{const a=[...tabs];a[ti].courses=a[ti].courses.filter((_:any,j:number)=>j!==ci);setEditCfg({...editCfg,courseTabs:a})}}>حذف دوره</button></div>)}<button style={AdminBtn()} onClick={()=>{const a=[...tabs];a[ti].courses=[...a[ti].courses,{id:'c'+uid(),title:'دوره جدید',desc:'',features:[],price:'',active:true,ageBadge:true,btnText:'ثبت مستقیم این دوره',order:a[ti].courses.length+1}];setEditCfg({...editCfg,courseTabs:a})}}><ZkPlusIcon size={13}/> افزودن دوره</button></details>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,courseTabs:[...tabs,{id:'t'+uid(),title:'تب جدید',active:true,inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',courses:[]}]})}><ZkPlusIcon size={13}/> افزودن تب</button></Box><button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
  // اصلاح ۱۷: ادغام مدیریت محتوا — حذف لینک مستقیم یوتیوب/آپارات، جایگزینی با کد دستی
- function ProductsEditor(){
-  // اصلاح ۴۶-۴۷: مدیریت کامل محصولات با عکس و نمایش/پنهان + toggle نمایش بخش
-  const rawProducts = editCfg.products;
-  const productsCfg = (rawProducts && typeof rawProducts === 'object' && !Array.isArray(rawProducts))
-    ? rawProducts
-    : { showSection: true, list: Array.isArray(rawProducts) ? rawProducts : [] };
-  const list=Array.isArray(productsCfg.list)?productsCfg.list:[];
-  const showSection = (productsCfg.showSection ?? editCfg.showProductsSection ?? editCfg.showProductsPage ?? true) !== false;
-  const upd=(items:any[])=>setEditCfg({...editCfg,products:{...productsCfg,list:items}, showProductsSection: showSection, showProductsPage: showSection});
-  const chg=(i:number,k:string,v:any)=>{const a=[...list];a[i]={...a[i],[k]:v};upd(a)};
-  const updShowSection=(val:boolean)=>{
-    setEditCfg({...editCfg,products:{...productsCfg,showSection:val}, showProductsSection: val, showProductsPage: val});
-  };
-  const chgFeatures=(i:number,featuresStr:string)=>{
-    const feats = featuresStr.split(/[|,\n]/).map((s:string)=>s.trim()).filter(Boolean);
-    chg(i,'features',feats);
-  };
-  return <>
-  <Box title="مدیریت نمایش بخش محصولات (اصلاح ۴۷)">
-    <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',background:showSection?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showSection?T.ok:T.err}`,borderRadius:12}}>
-      <input type="checkbox" checked={showSection} onChange={e=>updShowSection(e.target.checked)} style={{width:18,height:18}}/>
-      <span>{showSection ? <span style={{color:T.ok,display:'inline-flex',alignItems:'center',gap:6}}><ZkCheckCircleIcon size={15}/>بخش محصولات فعال است (در منو و صفحه نمایش داده می‌شود)</span> : <span style={{color:T.err,display:'inline-flex',alignItems:'center',gap:6}}><ZkXCircleIcon size={15}/>بخش محصولات غیرفعال است (در منو و صفحه پنهان است)</span>}</span>
-    </label>
-    <p style={{fontSize:11,color:T.mut,marginTop:8,lineHeight:1.8}}>
-      اصلاح ۴۷: این گزینه هم آیتم «محصولات» در منوی همبرگری و هم صفحه `/products` را کنترل می‌کند. اگر غیرفعال باشد، کاربر پیام «این بخش غیرفعال است» می‌بیند.
-    </p>
-  </Box>
-  <Box title={`لیست محصولات (${list.length}) - اصلاح ۴۶ (عکس + مدیریت کامل)`}>
-    {list.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
-      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>
-        <span>{it.icon||<BoxIcon size={14} color={T.mut}/>}</span>
-        <span style={{flex:1}}>{it.name||'بدون نام'} {it.isVisible===false && '(مخفی)'}</span>
-        <span style={{fontSize:10,color:it.isVisible!==false?T.ok:T.err}}>{it.isVisible!==false?<ZkEyeIcon size={14} color={T.ok}/>:<ZkEyeOffIcon size={14} color={T.err}/>}</span>
-      </summary>
-      <div style={{marginTop:10}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-          <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}>
-            <input className="zkad-switch" type="checkbox" checked={it.isVisible!==false} onChange={e=>chg(i,'isVisible',e.target.checked)}/> نمایش محصول
-          </label>
-          <span style={{fontSize:11,color:T.mut}}>ترتیب: {it.order||i+1}</span>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'70px 1fr',gap:8,marginBottom:8}}>
-          <StableAdminInput style={S.inp} defaultValue={it.icon||''} onCommit={(v:string)=>chg(i,'icon',v)} placeholder="آیکون"/>
-          <StableAdminInput style={S.inp} defaultValue={it.name||''} onCommit={(v:string)=>chg(i,'name',v)} placeholder="نام محصول - مثلا داینامین"/>
-        </div>
-        <label style={S.lbl}>توضیحات محصول</label>
-        <StableAdminTextarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||''} onCommit={(v:string)=>chg(i,'description',v)} placeholder="توضیحات کامل محصول..." rows={3}/>
 
-        <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label>
-        <textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="جذب سریع | مناسب برای رشد | ..."/>
-
-        {/* اصلاح ۴۶: فیلد عکس */}
-        <label style={S.lbl}>عکس محصول (آپلود یا لینک مستقیم)</label>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
-          {it.image && <img src={it.image} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-          <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{
-            const f=e.target.files?.[0];
-            if(f){
-              try{
-                const url = await fileToData(f, it.image, 'products');
-                chg(i,'image',url);
-              }catch(err:any){ alert(err?.message||'آپلود انجام نشد'); }
-            }
-          }}/>
-        </div>
-        <StableAdminInput style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onCommit={(v:string)=>chg(i,'image',v.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
-
-        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-          <button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...list];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowUpIcon size={13}/> بالا</button>
-          <button style={AdminBtn()} onClick={()=>{if(i<list.length-1){const a=[...list];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowDownIcon size={13}/> پایین</button>
-          <button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>upd(list.filter((_:any,j:number)=>j!==i))}><ZkTrashIcon size={13}/> حذف</button>
-          <button style={AdminBtn()} onClick={async()=>{
-            if(it.image){
-              try{ await deleteStoredImage(it.image); }catch{}
-              chg(i,'image','');
-            }
-          }}>حذف عکس</button>
-        </div>
-      </div>
-    </details>)}
-    <button style={AdminBtn()} onClick={()=>upd([...list,{id:'p'+uid(),name:'محصول جدید',title:'محصول جدید',icon:'',description:'توضیحات محصول جدید',features:['ویژگی ۱','ویژگی ۲'],image:'',isVisible:true,order:list.length+1,price:''}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
-  </Box>
-  </>
-  }
 
  // مرحله ۵۱-۳: ادیتور پلتفرم‌های سفارشی
  function TrustEditor(){
