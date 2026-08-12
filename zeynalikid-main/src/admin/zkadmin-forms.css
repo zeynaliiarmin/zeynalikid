@@ -559,7 +559,8 @@ body.admin-root .zkad-sub-actions .zkad-sub-time { margin-inline: 2px; }
   }
   body.admin-root .zkad-sub-check { grid-area: check; align-self: start; padding-top: 7px; }
   body.admin-root .zkad-sub-identity { grid-area: identity; }
-  body.admin-root .zkad-sub-actions { grid-area: actions; justify-content: flex-start; }
+  body.admin-root .zkad-sub-actions { grid-area: actions; justify-content: flex-start; flex-wrap: nowrap; }
+  body.admin-root .zkad-sub-actions .zkad-sub-controls { flex: 0 0 auto; gap: 6px; }
   body.admin-root .zkad-sub-identity .zkad-sub-title { width: auto; flex: 0 0 auto; }
   body.admin-root .zkad-sub-actions .zkad-sub-time { font-size: 10.5px; }
 }
@@ -574,14 +575,14 @@ body.admin-root .zkad-sub-actions .zkad-sub-header-icon {
 
 /* Opening a record is the primary header action: a wider hit area without increasing row height. */
 body.admin-root .zkad-sub-actions .zkad-sub-toggle {
-  width: 72px !important;
-  min-width: 72px;
+  width: 54px !important;
+  min-width: 54px;
 }
 
 /* Deletion remains secondary to opening, but gets a slightly wider hit area. */
 body.admin-root .zkad-sub-actions .zkad-sub-header-icon.t-err {
-  width: 42px !important;
-  min-width: 42px;
+  width: 36px !important;
+  min-width: 36px;
 }
 
 /* Keep destructive and open controls as one intentional pair, with breathable spacing. */
