@@ -7,10 +7,31 @@ import {
   deleteUserQuestion,
 } from '../lib/supabase';
 
+// فیلد پاسخ — کامپوننت جدا با state محلی تا تایپ باعث re-render کل لیست نشود (رفع fg)
+const AnswerField = React.memo(function AnswerField({ initial, onCommit, T, S }: { initial: string; onCommit: (v: string) => void; T: any; S: any }) {
+  const [val, setVal] = React.useState(initial);
+  React.useEffect(() => { setVal(initial); }, [initial]);
+  return (
+    <div style={{ marginTop: 12 }}>
+      <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 6, fontWeight: 700 }}>
+        پاسخ مشاور / ادمین:
+      </label>
+      <textarea
+        rows={3}
+        style={{ ...S.ta, minHeight: 70 }}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={() => { if (val !== initial) onCommit(val); }}
+        placeholder="متن پاسخ خود را اینجا بنویسید..."
+      />
+    </div>
+  );
+});
+
 export default function UserQuestionsEditor({ app }: { app: any }) {
   const { T, S, AdminBtn, Box, cfg, saveCfg, setEditCfg } = app;
   const [questions, setQuestions] = useState<UserQuestion[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'answered' | 'archived'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'answered'>('all');
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [page, setPage] = useState(1);
@@ -121,7 +142,6 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
   const pendingCount = questions.filter((q) => q.status === 'pending').length;
   const answeredCount = questions.filter((q) => q.status === 'answered').length;
-  const archivedCount = questions.filter((q) => q.status === 'archived').length;
 
   const filtered = questions
     .filter((q) => {
@@ -362,7 +382,6 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
             { id: 'all', label: `همه سوالات (${questions.length})` },
             { id: 'pending', label: `در انتظار پاسخ (${pendingCount})` },
             { id: 'answered', label: `پاسخ‌داده‌شده (${answeredCount})` },
-            { id: 'archived', label: `بایگانی (${archivedCount})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -566,19 +585,12 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                     </div>
                   )}
 
-                  {/* Answer Field */}
-                  <div style={{ marginTop: 12 }}>
-                    <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 6, fontWeight: 700 }}>
-                      پاسخ مشاور / ادمین:
-                    </label>
-                    <textarea
-                      rows={3}
-                      style={{ ...S.ta, minHeight: 70 }}
-                      value={answers[q.id] || ''}
-                      onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-                      placeholder="متن پاسخ خود را اینجا بنویسید..."
-                    />
-                  </div>
+                  {/* Answer Field — کامپوننت جدا (رفع fg: تایپ فقط همین فیلد را re-render می‌کند) */}
+                  <AnswerField
+                    initial={answers[q.id] || ''}
+                    onCommit={(v: string) => setAnswers((prev: any) => ({ ...prev, [q.id]: v }))}
+                    T={T} S={S}
+                  />
 
                   {/* Action Buttons — تماس تلفنی، سپس افزودن به سوالات متداول */}
                   <div className="zkad-qu-actions" style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>

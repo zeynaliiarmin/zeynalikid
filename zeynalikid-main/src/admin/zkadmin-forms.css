@@ -866,3 +866,29 @@ body.admin-root .zkad-pay-badge {
   font-weight: 800;
   line-height: 1;
 }
+
+/* ============================================================
+   سوالات مخاطبین — یکدست‌سازی چیدمان کارت (اندازه‌های منظم)
+   ============================================================ */
+/* دکمه‌های اکشن (تماس + افزودن به FAQ): هم‌قد و هم‌تراز */
+body.admin-root .zkad-qu-actions > * {
+  min-height: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* فیلدهای ورودی در کارت: هم‌عرض و هم‌قد */
+body.admin-root .zkad-qu-card-top input,
+body.admin-root .zkad-qu-card-top select,
+body.admin-root .zkad-qu-card-top textarea {
+  box-sizing: border-box;
+  width: 100%;
+}
+/* کارت: حاشیه و فاصله‌های منظم */
+body.admin-root .zkad-qu-card-top > div { min-width: 0; }
+/* چیپ شماره تماس: ارتفاع ثابت هم‌تراز با چک‌باکس */
+body.admin-root .zkad-qu-phone { height: 32px; }
+@media (max-width: 480px) {
+  body.admin-root .zkad-qu-phone { height: 36px; }
+}
