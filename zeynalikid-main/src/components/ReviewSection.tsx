@@ -37,10 +37,22 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   const isFa = lang === 'fa';
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // نرمال‌سازی شماره موبایل ایرانی (پشتیبانی از ارقام فارسی/عربی و +98)
+  const normalizePhone = (raw: string): string => {
+    let d = raw.replace(/[۰-۹]/g, (c) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c).toString())
+      .replace(/[٠-٩]/g, (c) => '٠١٢٣٤٥٦٧٨٩'.indexOf(c).toString())
+      .replace(/[\s\-().]/g, '');
+    if (d.startsWith('0098')) d = '0' + d.slice(4);
+    else if (d.startsWith('+98')) d = '0' + d.slice(3);
+    else if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2);
+    return d;
+  };
 
   useEffect(() => {
     let active = true;
@@ -79,14 +91,21 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || submitting) return;
+    // شماره تماس برای ثبت نظر در سایت الزامی است (فقط برای پنل ادمین؛ هنگام پخش از نظر حذف می‌شود)
+    const normPhone = normalizePhone(phone);
+    if (!/^09\d{9}$/.test(normPhone)) {
+      alert(isFa ? 'لطفاً شماره تماس معتبر وارد کنید (مثال: 09123456789).' : 'Please enter a valid phone number.');
+      return;
+    }
     setSubmitting(true);
     try {
       await submitReview(courseId || 'عمومی', name.trim(), rating, comment.trim(), [
         placement || 'course_detail',
         'courses',
         'home',
-      ]);
+      ], normPhone);
       setName('');
+      setPhone('');
       setComment('');
       setRating(5);
       setSuccess(true);
@@ -260,6 +279,37 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
                   boxSizing: 'border-box',
                 }}
               />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>
+                {isFa ? 'شماره تماس' : 'Phone Number'} *
+              </label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={isFa ? '09123456789' : '09123456789'}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: T.inputRadius || 10,
+                  border: `1px solid ${T.brd}`,
+                  background: T.inp,
+                  color: T.txt,
+                  fontSize: 14,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  direction: 'ltr',
+                  textAlign: 'left',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 3 }}>
+                {isFa ? 'شماره شما فقط در پنل مدیریت دیده می‌شود و در سایت نمایش داده نمی‌شود.' : 'Your number is only visible to admins and never published.'}
+              </small>
             </div>
 
             <div style={{ marginBottom: 14 }}>

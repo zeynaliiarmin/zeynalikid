@@ -12,8 +12,6 @@ import {
   bulkDeleteReviews,
   bulkUpdateReviewPlacements,
   downloadReviewsAsCSV,
-  downloadReviewsAsJSON,
-  downloadSingleReview,
   REVIEW_PLACEMENT_OPTIONS,
 } from '../lib/supabase';
 import {
@@ -61,7 +59,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newReview, setNewReview] = useState({
     name: '',
-    courseId: 'تک دوره رشد قد',
+    courseId: 'عمومی',
     rating: 5,
     comment: '',
     status: 'approved' as 'approved' | 'pending',
@@ -104,17 +102,32 @@ export default function ReviewsEditor({ app }: { app: any }) {
     load();
   }, []);
 
-  const coursesList = useMemo(() => {
-    const fromTabs: string[] = [];
+  // گزینه‌های دوره با شناسهٔ واقعی (id) — نه عنوان — تا نظر دقیقاً به همان دوره در سایت وصل شود
+  const coursesOptions = useMemo(() => {
+    const list: { id: string; title: string }[] = [{ id: 'عمومی', title: 'عمومی' }];
+    const seen = new Set<string>(['عمومی']);
     (cfg?.courseTabs || []).forEach((t: any) => {
       (t.courses || []).forEach((c: any) => {
-        if (c.title) fromTabs.push(c.title);
+        const id = c.id ? String(c.id) : '';
+        if (id && c.title && !seen.has(id)) {
+          seen.add(id);
+          list.push({ id, title: c.title });
+        }
       });
     });
-    return Array.from(
-      new Set(['عمومی', 'تک دوره رشد قد', 'دوره بی‌اشتهایی و وزن‌گیری', 'دوره هوش و تمرکز', ...fromTabs])
-    );
+    return list;
   }, [cfg]);
+  const courseTitle = (id?: string) => {
+    if (!id) return 'عمومی';
+    const found = coursesOptions.find((c) => c.id === id);
+    return found ? found.title : id;
+  };
+  const maskPhone = (p?: string) => {
+    const d = String(p || '').replace(/[۰-۹]/g, (c) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c).toString()).replace(/[٠-٩]/g, (c) => '٠١٢٣٤٥٦٧٨٩'.indexOf(c).toString()).replace(/\D/g, '');
+    if (d.length < 7) return p || '';
+    const tail = d.slice(-3);
+    return d.startsWith('98') ? `+98(xxxxxx)${tail}` : `09(xxxxxx)${tail}`;
+  };
 
   const pendingCount = reviews.filter((r) => r.status === 'pending').length;
   const approvedCount = reviews.filter((r) => r.status === 'approved').length;
@@ -140,7 +153,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
           return (
             (r.reviewer_name || '').toLowerCase().includes(kw) ||
             (r.comment || '').toLowerCase().includes(kw) ||
-            (r.course_id || '').toLowerCase().includes(kw)
+            courseTitle(r.course_id).toLowerCase().includes(kw)
           );
         }
         return true;
@@ -334,24 +347,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
     showToast(`فایل اکسل ${selectedIds.length} نظر انتخابی دانلود شد.`);
   };
 
-  const handleDownloadSelectedJSON = () => {
-    if (!selectedIds.length) {
-      alert('لطفاً ابتدا حداقل یک نظر را انتخاب نمایید.');
-      return;
-    }
-    const targetReviews = reviews.filter((r) => selectedIds.includes(r.id));
-    downloadReviewsAsJSON(targetReviews, `zeynalikid-selected-reviews-${selectedIds.length}.json`);
-    showToast(`فایل JSON برای ${selectedIds.length} نظر انتخابی دانلود شد.`);
-  };
-
   const handleDownloadAllCSV = () => {
     downloadReviewsAsCSV(reviews, `zeynalikid-all-reviews-${reviews.length}.csv`);
     showToast(`فایل اکسل کل نظرات (${reviews.length} مورد) دانلود شد.`);
-  };
-
-  const handleDownloadAllJSON = () => {
-    downloadReviewsAsJSON(reviews, `zeynalikid-all-reviews-${reviews.length}.json`);
-    showToast(`فایل کامل JSON نظرات (${reviews.length} مورد) دانلود شد.`);
   };
 
   const handleAddNewReview = async (e: React.FormEvent) => {
@@ -380,7 +378,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       setAddModalOpen(false);
       setNewReview({
         name: '',
-        courseId: 'تک دوره رشد قد',
+        courseId: 'عمومی',
         rating: 5,
         comment: '',
         status: 'approved',
@@ -509,26 +507,6 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
             <button
               type="button"
-              onClick={handleDownloadAllJSON}
-              title="دانلود کامل دیتابیس نظرات به فرمت JSON"
-              style={{
-                ...AdminBtn(),
-                background: T.card || '#fff',
-                color: T.txt || '#1F2937',
-                border: `1px solid ${T.brd || '#E5E0D8'}`,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontWeight: 700,
-                fontSize: 12.5,
-              }}
-            >
-              <ZkDownloadIcon size={14} />
-              <span>خروجی JSON</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setAddModalOpen(true)}
               style={{
                 ...AdminBtn(),
@@ -576,9 +554,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
             style={S.inp}
           >
             <option value="all">همه دوره‌ها</option>
-            {coursesList.map((c) => (
-              <option key={c} value={c}>
-                دوره: {c}
+            {coursesOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                دوره: {c.title}
               </option>
             ))}
           </select>
@@ -870,6 +848,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       </span>
                       <span style={{ fontSize: 11.5, color: T.mut }}>تاریخ: {fmtDate(r.created_at)}</span>
                       <span style={{ fontSize: 11.5, color: T.mut, fontFamily: 'monospace' }}>#{r.id}</span>
+                      {r.phone && <span style={{ fontSize: 11.5, color: T.mut }} title="فقط برای پنل ادمین — در سایت نمایش داده نمی‌شود">📞 {maskPhone(r.phone)}</span>}
                     </div>
 
                     {/* Interactive Star Rating Selector & Single Download */}
@@ -904,28 +883,6 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           ({currentEdit.rating} از ۵)
                         </span>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => downloadSingleReview(r)}
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: 8,
-                          border: `1px solid ${T.brd || '#E5E0D8'}`,
-                          background: T.soft || '#F4F1EA',
-                          color: T.txt || '#1F2937',
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                        title="دانلود اکسل تک‌نظر با جزئیات کامل"
-                      >
-                        <ZkDownloadIcon size={12} />
-                        <span>دانلود این نظر</span>
-                      </button>
                     </div>
                   </div>
 
@@ -970,11 +927,15 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           });
                         }}
                       >
-                        {coursesList.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
+                        {coursesOptions.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.title}
                           </option>
                         ))}
+                        {/* اگر مقدار قدیمی (مثلاً عنوان) در گزینه‌ها نبود، همان را نگه دار تا قابل مشاهده باشد */}
+                        {!coursesOptions.some((c) => c.id === currentEdit.courseId) && currentEdit.courseId && (
+                          <option value={currentEdit.courseId}>{courseTitle(currentEdit.courseId)}</option>
+                        )}
                       </select>
                     </div>
                   </div>
@@ -1006,6 +967,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     <div>
 {/* بخش دسترسی جداگانه برای هر نظر: انتخاب محل‌های نمایش در سایت */}
                   <div
+                    className="zkad-rev-place-box"
                     style={{
                       marginBottom: 12,
                       background: T.soft || '#F4F1EA',
@@ -1015,6 +977,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     }}
                   >
                     <div
+                      className="zkad-rev-place-head"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1032,7 +995,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div className="zkad-rev-place-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {REVIEW_PLACEMENT_OPTIONS.map((opt) => {
                         const isAll = opt.id === 'all_places';
                         const isPlaced =
@@ -1071,7 +1034,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     </div>
                   </details>
 
-                  {/* Action Buttons */}
+                  {/* Action Buttons — فقط: ذخیره، پخش در سایت، حذف (آیکون) */}
                   <div className="zkad-rev-cardbtns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     {/* دکمه ذخیره تغییرات */}
                     <button
@@ -1082,14 +1045,16 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         color: '#fff',
                         border: 0,
                         fontWeight: 700,
+                        minWidth: 110,
+                        justifyContent: 'center',
                       }}
                       onClick={() => handleSaveEdit(r)}
                       title="ذخیره ویرایش‌های نام، امتیاز، دوره، محل‌های نمایش و متن نظر"
                     >
-                      💾 ذخیره تغییرات
+                      ذخیره تغییرات
                     </button>
 
-                    {/* دکمه تایید و پخش در سایت */}
+                    {/* دکمه پخش در سایت */}
                     {r.status !== 'approved' && (
                       <button
                         type="button"
@@ -1099,47 +1064,36 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           color: '#fff',
                           border: 0,
                           fontWeight: 700,
+                          minWidth: 110,
+                          justifyContent: 'center',
                         }}
                         onClick={() => handleApprove(r.id)}
                         title="تایید برای نمایش زنده در سایت و بخش‌های انتخاب‌شده"
                       >
-                        ✓ تایید و پخش در سایت
+                        پخش در سایت
                       </button>
                     )}
 
-                    {/* دکمه تعلیق و غیرقابل پخش */}
-                    {r.status !== 'rejected' && (
-                      <button
-                        type="button"
-                        style={{
-                          ...AdminBtn(),
-                          background: '#eab308',
-                          color: '#422006',
-                          border: 0,
-                          fontWeight: 700,
-                        }}
-                        onClick={() => handleReject(r.id)}
-                        title="تعلیق و عدم نمایش در سایت"
-                      >
-                        ✕ غیرقابل پخش (رد)
-                      </button>
-                    )}
-
-                    {/* دکمه حذف کامل */}
+                    {/* دکمه حذف — فقط آیکون */}
                     <button
                       type="button"
+                      aria-label="حذف نظر"
+                      title="حذف دائمی نظر از دیتابیس"
                       style={{
                         ...AdminBtn(),
                         color: T.err || '#DC2626',
                         border: `1px solid ${(T.err || '#DC2626')}33`,
                         background: `${(T.err || '#DC2626')}10`,
-                        marginInlineStart: 'auto',
-                        fontWeight: 700,
+                        width: 44,
+                        minWidth: 44,
+                        padding: 0,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                       onClick={() => handleDelete(r.id)}
-                      title="حذف دائمی نظر از دیتابیس"
                     >
-                      <ZkTrashIcon size={13} /> حذف نظر
+                      <ZkTrashIcon size={15} />
                     </button>
                   </div>
                 </div>
@@ -1268,9 +1222,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                   value={newReview.courseId}
                   onChange={(e) => setNewReview({ ...newReview, courseId: e.target.value })}
                 >
-                  {coursesList.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {coursesOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
                     </option>
                   ))}
                 </select>

@@ -681,3 +681,25 @@ body.admin-root .zkad-rev-editgrid { display: grid; grid-template-columns: minma
   body.admin-root .zkad-rev-editgrid { grid-template-columns: minmax(140px, 1fr) minmax(180px, 1.4fr); }
 }
 body.admin-root .zkad-rev-editgrid > * { min-width: 0; }
+
+/* محل‌های نمایش نظر — ریسپانسیو موبایل */
+body.admin-root .zkad-rev-place-box { overflow: hidden; }
+body.admin-root .zkad-rev-place-head { flex-direction: column; align-items: flex-start !important; }
+body.admin-root .zkad-rev-place-head > span { font-size: 10.5px !important; line-height: 1.6; }
+body.admin-root .zkad-rev-place-chips { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 6px; }
+body.admin-root .zkad-rev-place-chips > button {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+  padding: 7px 6px !important;
+  font-size: 11px !important;
+  line-height: 1.4;
+}
+body.admin-root .zkad-rev-place-chips > button span:last-child { overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 700px) {
+  body.admin-root .zkad-rev-place-head { flex-direction: row; align-items: center !important; }
+  body.admin-root .zkad-rev-place-chips { display: flex !important; }
+  body.admin-root .zkad-rev-place-chips > button { width: auto; padding: 4px 10px !important; font-size: 11.5px !important; }
+}
