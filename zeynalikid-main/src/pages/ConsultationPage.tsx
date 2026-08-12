@@ -305,10 +305,27 @@ export default function ConsultationPage({ app }: { app: any }) {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
         };
-        if (isSupabaseConfigured) {
-          // Phase 4 fix: ConsultationPage is public — cannot use admin-api updateSubmission.
-          // For now, only localStorage update; the admin panel can update via admin-api.
-          // (The track-submission + update-corrective flow handles user-side corrective edits.)
+        if (isSupabaseConfigured && trackingCode) {
+          // Phase 4.5: use update-submission-public edge function for real DB update.
+          // Only whitelisted fields (timeSlot, notes) are accepted; blocklisted fields silently ignored.
+          const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
+          try {
+            const resp = await fetch(`${base}/functions/v1/update-submission-public`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                trackingCode,
+                fullPhone: fp,
+                updates: { notes: fd.notes || '' },
+              }),
+            });
+            if (!resp.ok) {
+              console.warn('update-submission-public failed:', resp.status);
+            }
+          } catch (e) {
+            console.warn('update-submission-public error:', e);
+          }
+          // Also update localStorage for immediate UI feedback
           const subs = getLS(SK.subs, []);
           setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
         } else {
@@ -409,10 +426,24 @@ export default function ConsultationPage({ app }: { app: any }) {
   const updateTimeSlot = (nv: string) => {
     setTsSlot(nv);
     if (!lastId) return;
-    // Phase 4 fix: ConsultationPage is public — cannot use admin-api updateSubmission.
-    // Only update localStorage; the admin panel can update timeSlot via admin-api.
+    // Phase 4.5: use update-submission-public edge function for real DB update.
+    // Also update localStorage for immediate UI feedback.
     const subs = getLS(SK.subs, []);
     setLS(SK.subs, subs.map((y: any) => y.id === lastId ? { ...y, timeSlot: nv } : y));
+    // Find trackingCode + phone for this submission
+    const entry = subs.find((y: any) => y.id === lastId);
+    if (entry && entry.trackingCode && entry.fullPhone && isSupabaseConfigured) {
+      const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
+      fetch(`${base}/functions/v1/update-submission-public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackingCode: entry.trackingCode,
+          fullPhone: entry.fullPhone,
+          updates: { timeSlot: nv },
+        }),
+      }).catch(e => console.warn('update-submission-public error:', e));
+    }
   };
 
   const fallbackCopy = (value: string) => {

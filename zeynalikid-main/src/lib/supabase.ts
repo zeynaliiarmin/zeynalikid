@@ -239,31 +239,37 @@ export const updateMultipleSubmissions = async (
   return [];
 };
 
-export const checkDuplicatePhone = async (phone: string): Promise<boolean> => {
-  if (!phone) return false;
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .select('id')
-    .eq('full_phone', phone)
-    .limit(1);
-
-  if (error) throw error;
-  return Boolean(data && data.length > 0);
-};
+// Phase 4.5: checkDuplicatePhone REMOVED — it was an enumeration risk (anyone with anon key
+// could check if a phone number exists in submissions). The duplicate-checking logic in
+// ConsultationPage now uses localStorage cache only, and the server-side duplicate prevention
+// happens via the unique trackingCode generation + createSubmission's insert-or-fail behavior.
 
 export const fetchSettings = async (): Promise<AppSettings | null> => {
-  // Phase 3: try admin-api first (returns full settings, masked sensitive keys).
-  // If no admin session (public context), fall back to anon read (which will be
-  // restricted by RLS in Phase 5 — for now anon can still SELECT settings).
+  // Phase 4.5: split settings fetching by context:
+  // - Admin context (has sessionToken): use admin-api (returns full settings with sensitive keys masked)
+  // - Public context (no sessionToken): use public-settings edge function (returns only whitelisted keys)
   try {
     if (getAdminSessionToken()) {
       const { adminFetchSettings } = await import('./adminApi');
       const s = await adminFetchSettings();
       if (s) return s;
     }
-  } catch { /* fall through to anon read */ }
+  } catch { /* fall through to public-settings */ }
 
+  // Public context: use public-settings edge function (sanitized, no sensitive data)
+  const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
+  try {
+    const resp = await fetch(`${base}/functions/v1/public-settings`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (resp.ok) {
+      const body = await resp.json();
+      if (body.settings) return body.settings;
+    }
+  } catch { /* fall through to legacy anon read */ }
+
+  // Legacy fallback: direct anon read (will be removed in Phase 5 when RLS is tightened)
   const client = requireSupabase();
   const { data, error } = await client
     .from(SETTINGS_TABLE)
@@ -313,49 +319,27 @@ export type PageViewStats = {
 };
 
 export const fetchPageViewStats = async (): Promise<PageViewStats> => {
-  // Phase 3: route through admin-api
-  try {
-    const { adminFetchPageViewStats } = await import('./adminApi');
-    const stats = await adminFetchPageViewStats(30);
-    // Map admin-api response to the PageViewStats shape used by the frontend
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().slice(0, 10);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const todayCount = (stats.dailyCounts || [])
-      .filter((d: any) => d.date === startOfDay)
-      .reduce((sum: number, d: any) => sum + d.views, 0);
-    const thisMonthCount = (stats.dailyCounts || [])
-      .filter((d: any) => d.date >= startOfMonth)
-      .reduce((sum: number, d: any) => sum + d.views, 0);
-    return {
-      total: stats.totalViews || 0,
-      today: todayCount,
-      thisMonth: thisMonthCount,
-      topPages: (stats.topPages || []).slice(0, 5).map((p: any) => ({ page_path: p.page_path, count: p.views })),
-    };
-  } catch {
-    // Fall back to direct Supabase if admin-api fails
-    const client = requireSupabase();
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const [{ count: total }, { count: today }, { count: thisMonth }, { data: recentRows }] = await Promise.all([
-      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }),
-      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfDay),
-      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
-      client.from(PAGE_VIEWS_TABLE).select('page_path').gte('created_at', startOfMonth).limit(5000),
-    ]);
-    const counts: Record<string, number> = {};
-    (recentRows || []).forEach((row: any) => {
-      const p = row.page_path || '/';
-      counts[p] = (counts[p] || 0) + 1;
-    });
-    const topPages = Object.entries(counts)
-      .map(([page_path, count]) => ({ page_path, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-    return { total: total || 0, today: today || 0, thisMonth: thisMonth || 0, topPages };
-  }
+  // Phase 4.5: route ONLY through admin-api — no direct Supabase fallback.
+  // If admin-api fails (e.g. no admin session), throw an error. The caller
+  // (AnalyticsPanel) should catch and show an error/retry message.
+  const { adminFetchPageViewStats } = await import('./adminApi');
+  const stats = await adminFetchPageViewStats(30);
+  // Map admin-api response to the PageViewStats shape used by the frontend
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().slice(0, 10);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const todayCount = (stats.dailyCounts || [])
+    .filter((d: any) => d.date === startOfDay)
+    .reduce((sum: number, d: any) => sum + d.views, 0);
+  const thisMonthCount = (stats.dailyCounts || [])
+    .filter((d: any) => d.date >= startOfMonth)
+    .reduce((sum: number, d: any) => sum + d.views, 0);
+  return {
+    total: stats.totalViews || 0,
+    today: todayCount,
+    thisMonth: thisMonthCount,
+    topPages: (stats.topPages || []).slice(0, 5).map((p: any) => ({ page_path: p.page_path, count: p.views })),
+  };
 };
 
 
