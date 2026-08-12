@@ -774,3 +774,13 @@ body.admin-root .zkad-edited-badge {
   z-index: 2;
   pointer-events: none;
 }
+
+/* دکمه انتخاب سوال — بدون عنوان، هم‌اندازه فیلد شماره تماس */
+body.admin-root .zkad-qu-check {
+  flex: 0 0 auto;
+  height: 32px;
+  min-width: 44px;
+}
+@media (max-width: 480px) {
+  body.admin-root .zkad-qu-check { height: 36px; min-width: 48px; }
+}

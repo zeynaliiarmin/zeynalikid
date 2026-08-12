@@ -486,12 +486,13 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                   }}
                 >
                   <div className="zkad-qu-card-top" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'), padding: '4px 8px', borderRadius: 8, border: `1px solid ${isSelected ? '#93c5fd' : 'transparent'}` }}>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(q.id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-                      <span style={{ fontSize: 12, fontWeight: 700 }}>{isSelected ? 'انتخاب شد' : 'انتخاب'}</span>
-                    </label>
                     <div style={{ flex: 1 }}>
                       <div className="zkad-qu-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                        {/* دکمه انتخاب — بدون عنوان، هم‌اندازه فیلد شماره تماس، قبل از وضعیت */}
+                        <label className="zkad-qu-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'), borderRadius: 8, border: `1px solid ${isSelected ? '#93c5fd' : 'transparent'}`, height: 32, minWidth: 44, padding: '0 10px' }} title={isSelected ? 'لغو انتخاب' : 'انتخاب سوال'}>
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(q.id)} style={{ width: 17, height: 17, cursor: 'pointer', accentColor: T.acc || '#0F766E', margin: 0 }} />
+                        </label>
+
                         <span style={getStatusBadgeStyle(q.status)}>{getStatusLabel(q.status)}</span>
 
                         {phone && (
@@ -615,19 +616,26 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                       </button>
                     )}
 
-                    {/* دکمه حذف سوال */}
+                    {/* دکمه حذف سوال — فقط آیکون سطل آشغال، کنار بایگانی */}
                     <button
                       type="button"
+                      aria-label="حذف سوال"
+                      title="حذف کامل این سؤال"
                       style={{
                         ...AdminBtn(),
                         color: T.err || '#DC2626',
                         border: `1px solid ${(T.err || '#DC2626')}33`,
                         background: `${(T.err || '#DC2626')}10`,
+                        width: 44,
+                        minWidth: 44,
+                        padding: 0,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                       onClick={() => handleDelete(q.id)}
-                      title="حذف کامل این سؤال"
                     >
-                      حذف سوال ✕
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button>
                   </div>
                 </div>
