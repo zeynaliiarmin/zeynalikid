@@ -1522,51 +1522,62 @@ function ThemeManagerEditor(){
   </>}
 
  function HighlightsTabEditor(){
-  const rawHL=editCfg.highlights;
-  const items:any[]=Array.isArray(rawHL)?rawHL:(rawHL&&typeof rawHL==='object'?Object.values(rawHL):[]);
-  const upd=(newItems:any[])=>setEditCfg({...editCfg,highlights:newItems});
+  // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
+  // قبلاً از `highlights` استفاده می‌کرد که در سایت اثری نداشت — باگ رفع شد.
+  const rawSH=editCfg.storyHighlights&&typeof editCfg.storyHighlights==='object'?editCfg.storyHighlights:{};
+  const items:any[]=Array.isArray(rawSH.highlights)?rawSH.highlights:(rawSH.highlights&&typeof rawSH.highlights==='object'?Object.values(rawSH.highlights):[]);
+  const upd=(list:any[])=>setEditCfg({...editCfg,storyHighlights:{...rawSH,highlights:list}});
   const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};upd(a)};
-  const addHl=()=>upd([...items,{id:'hl'+uid(),title:'هایلایت جدید',coverImage:'',stories:[]}]);
+  const addHl=()=>upd([...items,{id:'hl'+uid(),title:'هایلایت جدید',coverUrl:'',active:true,order:items.length+1,stories:[]}]);
   const removeHl=(i:number)=>upd(items.filter((_:any,j:number)=>j!==i));
-  const moveHl=(i:number,dir:-1|1)=>{const a=[...items];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd(a)};
-  const chgStory=(hi:number,si:number,k:string,v:any)=>{const a=[...items];const stories=[...a[hi].stories];stories[si]={...stories[si],[k]:v};a[hi]={...a[hi],stories};upd(a)};
-  const addStory=(hi:number)=>{const a=[...items];const stories=[...(a[hi].stories||[])];stories.push({id:'st'+uid(),title:'',imageCodeExternal:'',imageCodeInternal:''});a[hi]={...a[hi],stories};upd(a)};
-  const removeStory=(hi:number,si:number)=>{const a=[...items];const stories=a[hi].stories.filter((_:any,j:number)=>j!==si);a[hi]={...a[hi],stories};upd(a)};
+  const moveHl=(i:number,dir:-1|1)=>{const a=[...items];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))};
+  const chgStory=(hi:number,si:number,k:string,v:any)=>{const a=[...items];const stories=[...(a[hi].stories||[])];if(stories[si])stories[si]={...stories[si],[k]:v};a[hi]={...a[hi],stories};upd(a)};
+  const addStory=(hi:number)=>{const a=[...items];const stories=[...(a[hi].stories||[])];stories.push({id:'st'+uid(),title:'',imageCodeExternal:'',imageCodeInternal:'',active:true,order:stories.length+1});a[hi]={...a[hi],stories};upd(a)};
+  const removeStory=(hi:number,si:number)=>{const a=[...items];a[hi]={...a[hi],stories:(a[hi].stories||[]).filter((_:any,j:number)=>j!==si)};upd(a)};
+  const moveStory=(hi:number,si:number,dir:-1|1)=>{const a=[...items];const stories=[...(a[hi].stories||[])];const j=si+dir;if(j<0||j>=stories.length)return;[stories[si],stories[j]]=[stories[j],stories[si]];a[hi]={...a[hi],stories:stories.map((x:any,idx:number)=>({...x,order:idx+1}))};upd(a)};
+  const migrateItems=()=>{const legacyItems:any[]=Array.isArray(rawSH.items)?rawSH.items:(rawSH.items&&typeof rawSH.items==='object'?Object.values(rawSH.items):[]);if(!legacyItems.length)return;const legacy={id:'legacy',title:'استوری',coverUrl:'',active:true,order:1,stories:legacyItems.map((it:any,idx:number)=>({id:it.id,title:it.title||'',imageCodeExternal:it.embedCode||'',imageCodeInternal:it.embedCode||'',active:it.active!==false,order:it.order||idx+1}))};upd([...items,legacy]);setEditCfg({...editCfg,storyHighlights:{...rawSH,highlights:[...items,legacy],items:[]}});};
   return <>
    <Box title={`مدیریت هایلایت‌ها (${items.length})`}>
-    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر هایلایت شامل یک عکس کاور و چند اسلاید (استوری) است. اسلایدها می‌توانند کد تصویر خارجی و داخلی داشته باشند.</p>
+    <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر هایلایت یک دایره در بالای صفحات «تجربه والدین» و «آموزش‌ها» است. هر هایلایت شامل چند اسلاید (استوری) با دو کد تصویر (خارجی/داخلی) می‌باشد.</p>
+    {(rawSH.items&&Array.isArray(rawSH.items)?rawSH.items:[]).length>0&&<div style={{marginBottom:12,padding:10,background:`${T.warn}18`,border:`1px solid ${T.warn}`,borderRadius:10,fontSize:12,color:T.warn}}>{rawSH.items.length} استوری قدیمی موجود است. <button type="button" style={{...AdminBtn(),marginInlineStart:8}} onClick={migrateItems}>انتقال به ساختار جدید</button></div>}
     {items.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>
-      <span style={{flex:1}}>{it.title||'بدون عنوان'} ({(it.stories||[]).length} استوری)</span>
+      <span style={{flex:1}}>{it.title||'بدون عنوان'} ({(it.stories||[]).length} استوری){it.active===false?' (غیرفعال)':''}</span>
      </summary>
      <div style={{marginTop:10}}>
-      <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
-      <label style={S.lbl}>عکس کاور (آپلود یا لینک مستقیم)</label>
-      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
-       {it.coverImage&&<img src={it.coverImage} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.coverImage,'highlights');chg(i,'coverImage',url)}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+       <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}><input className="zkad-switch" type="checkbox" checked={it.active!==false} onChange={e=>chg(i,'active',e.target.checked)}/> فعال</label>
       </div>
-      <input style={{...S.inp,marginBottom:8}} defaultValue={it.coverImage||''} onBlur={e=>chg(i,'coverImage',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس کاور"/>
+      <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
+      <Field label="آدرس کاور (اختیاری)" value={it.coverUrl||''} onChange={(v:string)=>chg(i,'coverUrl',v)} ph="https://..."/>
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
-       <button style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
-       <button style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
-       <button style={{...AdminBtn(),color:T.err}} onClick={()=>removeHl(i)}><ZkTrashIcon size={13}/> حذف هایلایت</button>
+       <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
+       <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
+       <button type="button" style={{...AdminBtn(),color:T.err}} onClick={()=>removeHl(i)}><ZkTrashIcon size={13}/> حذف هایلایت</button>
       </div>
       <div style={{marginTop:10,padding:10,background:T.soft,borderRadius:10}}>
        <b style={{fontSize:12,color:T.ttl,display:'block',marginBottom:8}}>استوری‌ها</b>
        {(it.stories||[]).map((st:any,si:number)=><div key={st.id||si} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:8,marginTop:8,background:T.card}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+         <label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={st.active!==false} onChange={e=>chgStory(i,si,'active',e.target.checked)}/> فعال</label>
+         <span style={{fontSize:12,color:T.mut}}>اسلاید {si+1}</span>
+        </div>
         <Field label="عنوان اسلاید" value={st.title||''} onChange={(v:string)=>chgStory(i,si,'title',v)} ph=""/>
         <label style={S.lbl}>کد تصویر خارجی (VPN روشن)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeExternal||''} onBlur={e=>chgStory(i,si,'imageCodeExternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
+        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeExternal||''} onBlur={e=>chgStory(i,si,'imageCodeExternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
         <label style={S.lbl}>کد تصویر داخلی (VPN خاموش)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeInternal||''} onBlur={e=>chgStory(i,si,'imageCodeInternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
-        <button style={{...AdminBtn(),color:T.err,marginTop:6}} onClick={()=>removeStory(i,si)}>حذف اسلاید</button>
+        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeInternal||''} onBlur={e=>chgStory(i,si,'imageCodeInternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
+         <button type="button" style={AdminBtn()} disabled={si===0} onClick={()=>moveStory(i,si,-1)}>بالا</button>
+         <button type="button" style={AdminBtn()} disabled={si===(it.stories||[]).length-1} onClick={()=>moveStory(i,si,1)}>پایین</button>
+         <button type="button" style={{...AdminBtn(),color:T.err}} onClick={()=>removeStory(i,si)}>حذف اسلاید</button>
+        </div>
        </div>)}
-       <button style={{...AdminBtn(),marginTop:8}} onClick={()=>addStory(i)}>+ افزودن اسلاید</button>
+       <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={()=>addStory(i)}>+ افزودن اسلاید</button>
       </div>
      </div>
     </details>)}
-    <button style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
+    <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
    </Box>
    <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره هایلایت‌ها</button>
   </>}
@@ -1590,6 +1601,10 @@ function ThemeManagerEditor(){
       setEditCfg({...editCfg, showLicensesPage:val, menuVisibility:{...(editCfg.menuVisibility||{}), licenses:val}});
      }}/> نمایش صفحه مجوزها
     </label>
+   </Box>
+   <Box title="متن صفحه مجوزها">
+    <label style={S.lbl}>متن صفحه مجوزها (در صفحه /licenses نمایش داده می‌شود)</label>
+    <textarea style={{...S.ta,minHeight:80}} defaultValue={editCfg.licensesText||''} onBlur={e=>setEditCfg({...editCfg,licensesText:e.target.value})} placeholder="متن یا توضیحات مجوزها و گواهینامه‌ها..."/>
    </Box>
    <Box title={`مدیریت مجوزها (${items.length})`}>
     {items.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>

@@ -46,17 +46,10 @@ export default function ContentManager(props: Props) {
       ? [...(cfg.mediaItems.videos || []), ...(cfg.mediaItems.audios || []), ...(cfg.mediaItems.images || [])]
       : [])
   );
-  const [storyHighlights, setStoryHighlights] = useState<any[]>(() => {
-    const sh = cfg.storyHighlights && typeof cfg.storyHighlights === 'object' ? cfg.storyHighlights : {};
-    return Array.isArray(sh.highlights) ? sh.highlights :
-      (sh.highlights && typeof sh.highlights === 'object' ? Object.values(sh.highlights) : []);
-  });
   const [expItems, setExpItems] = useState<any[]>(() => (cfg.experience?.items || []));
   const [eduItems, setEduItems] = useState<any[]>(() => (cfg.education?.items || []));
-  const [licensesText, setLicensesText] = useState<string>(() => cfg.licensesText || '');
   const [expTabs, setExpTabs] = useState<any>(() => cfg.experienceTabs || {});
   const [mediaCountryMode, setMediaCountryMode] = useState<string>(() => cfg.mediaCountryMode || 'auto');
-  const [legacyMigrated, setLegacyMigrated] = useState<boolean>(false);
 
   // ── ذخیرهٔ همهٔ بخش‌ها با یک دکمه ──
   const saveAll = useCallback(() => {
@@ -64,15 +57,13 @@ export default function ContentManager(props: Props) {
       ...cfg,
       customPlatforms,
       mediaItems,
-      storyHighlights: { ...(cfg.storyHighlights || {}), highlights: storyHighlights, ...(legacyMigrated ? { items: [] } : {}) },
       experience: { ...(cfg.experience || {}), items: expItems },
       education: { ...(cfg.education || {}), items: eduItems },
-      licensesText,
       experienceTabs: expTabs,
       mediaCountryMode,
     };
     setSave(next);
-  }, [cfg, customPlatforms, mediaItems, storyHighlights, expItems, eduItems, licensesText, expTabs, mediaCountryMode, setSave]);
+  }, [cfg, customPlatforms, mediaItems, expItems, eduItems, expTabs, mediaCountryMode, setSave]);
 
   const rowBtn = useCallback((color: string, children: React.ReactNode, onClick: () => void, extra?: any) => (
     <button type="button" onClick={onClick} style={{ ...AdminBtn(), ...(extra || {}) }}>{children}</button>
@@ -111,20 +102,6 @@ export default function ContentManager(props: Props) {
         customPlatforms={customPlatforms}
       />
 
-      {/* ═══════════ هایلایت استوری ═══════════ */}
-      <StoryManager
-        T={T} S={S} AdminBtn={AdminBtn} Box={Box} Field={Field}
-        StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
-        highlights={storyHighlights} setHighlights={setStoryHighlights} uid={uid}
-        legacyItems={(cfg.storyHighlights?.items) || []}
-        migrate={(items: any[]) => {
-          const legacy = { id: 'legacy', title: 'استوری', coverUrl: '', active: true, order: 1, stories: items.map((it: any, idx: number) => ({ id: it.id, title: it.title || '', imageCodeExternal: it.embedCode || '', imageCodeInternal: it.embedCode || '', active: it.active !== false, order: it.order || idx + 1 })) };
-          setStoryHighlights((prev) => [...prev, legacy]);
-          setLegacyMigrated(true);
-        }}
-        setLegacyCleared={() => {}}
-      />
-
       {/* ═══════════ تجربه والدین ═══════════ */}
       <MediaLibraryManager
         title="تجربه والدین (صفحه تجربه والدین)" withText
@@ -140,12 +117,6 @@ export default function ContentManager(props: Props) {
         StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
         items={eduItems} setItems={setEduItems} uid={uid} sectionKey="education" p2e={p2e}
       />
-
-      {/* ═══════════ متن صفحه مجوزها ═══════════ */}
-      <Box title="مجوزها">
-        <label style={S.lbl}>متن صفحه مجوزها</label>
-        <StableAdminTextarea style={S.ta} defaultValue={licensesText} onCommit={(v: string) => setLicensesText(v)} placeholder="متن یا توضیحات مجوزها و گواهینامه‌ها..." rows={4} />
-      </Box>
 
       {/* ═══════════ کنترل نمایش تب‌های تجربه والدین ═══════════ */}
       <Box title="کنترل نمایش تب‌ها (تجربه والدین)">
@@ -319,96 +290,6 @@ function MediaManager(props: any) {
           </details>
         );
       })}
-    </Box>
-  );
-}
-
-// ============================================================================
-// StoryManager — هایلایت استوری — state محلی
-// ============================================================================
-function StoryManager(props: any) {
-  const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, highlights, setHighlights, uid, legacyItems, migrate } = props;
-  const chgHl = useCallback((i: number, k: string, v: any) => setHighlights((prev: any[]) => prev.map((x, j) => j === i ? { ...x, [k]: v } : x)), [setHighlights]);
-  const addHl = useCallback(() => setHighlights((prev: any[]) => [...prev, { id: 'hl' + uid(), title: 'هایلایت جدید', coverUrl: '', active: true, order: prev.length + 1, stories: [] }]), [setHighlights, uid]);
-  const removeHl = useCallback((i: number) => setHighlights((prev: any[]) => prev.filter((_, j) => j !== i)), [setHighlights]);
-  const moveHl = useCallback((i: number, dir: -1 | 1) => setHighlights((prev: any[]) => {
-    const a = [...prev]; const j = i + dir; if (j < 0 || j >= a.length) return prev;
-    [a[i], a[j]] = [a[j], a[i]]; return a.map((x, idx) => ({ ...x, order: idx + 1 }));
-  }), [setHighlights]);
-  const chgStory = useCallback((hi: number, si: number, k: string, v: any) => setHighlights((prev: any[]) => prev.map((x, j) => {
-    if (j !== hi) return x;
-    const stories = [...(x.stories || [])];
-    if (stories[si]) stories[si] = { ...stories[si], [k]: v };
-    return { ...x, stories };
-  })), [setHighlights]);
-  const addStory = useCallback((hi: number) => setHighlights((prev: any[]) => prev.map((x, j) => {
-    if (j !== hi) return x;
-    const stories = [...(x.stories || [])];
-    stories.push({ id: 'st' + uid(), title: '', imageCodeExternal: '', imageCodeInternal: '', active: true, order: stories.length + 1 });
-    return { ...x, stories };
-  })), [setHighlights, uid]);
-  const removeStory = useCallback((hi: number, si: number) => setHighlights((prev: any[]) => prev.map((x, j) => j !== hi ? x : { ...x, stories: (x.stories || []).filter((_: any, k: number) => k !== si) })), [setHighlights]);
-  const moveStory = useCallback((hi: number, si: number, dir: -1 | 1) => setHighlights((prev: any[]) => prev.map((x, j) => {
-    if (j !== hi) return x;
-    const stories = [...(x.stories || [])]; const k = si + dir;
-    if (k < 0 || k >= stories.length) return x;
-    [stories[si], stories[k]] = [stories[k], stories[si]];
-    return { ...x, stories: stories.map((s, idx) => ({ ...s, order: idx + 1 })) };
-  })), [setHighlights]);
-
-  return (
-    <Box title="مدیریت هایلایت استوری (تجربه والدین / آموزش‌ها)">
-      <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>
-        هر هایلایت یک دایره در بالای صفحات «تجربه والدین» و «آموزش‌ها» است. هر هایلایت شامل چند استوری (اسلاید) با دو کد دستی تصویر (خارجی/داخلی) می‌باشد.
-      </p>
-      {legacyItems.length > 0 && (
-        <div style={{ marginBottom: 12, padding: 10, background: `${T.warn}18`, border: `1px solid ${T.warn}`, borderRadius: 10, fontSize: 12, color: T.warn }}>
-          {legacyItems.length} استوری قدیمی موجود است.{' '}
-          <button type="button" style={{ ...AdminBtn(), marginInlineStart: 8 }} onClick={() => migrate(legacyItems)}>انتقال به ساختار جدید</button>
-        </div>
-      )}
-      {highlights.map((hl: any, hi: number) => (
-        <details key={hl.id || hi} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginBottom: 8, background: T.badge }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12 }}>{hi + 1}. {hl.title || 'بدون عنوان'} ({(hl.stories || []).length} استوری)</summary>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0' }}>
-            <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-              <input type="checkbox" checked={hl.active !== false} onChange={(e) => chgHl(hi, 'active', e.target.checked)} /> فعال
-            </label>
-          </div>
-          <Field label="عنوان هایلایت" value={hl.title || ''} onChange={(v: string) => chgHl(hi, 'title', v)} ph="" />
-          <Field label="آدرس کاور (اختیاری)" value={hl.coverUrl || ''} onChange={(v: string) => chgHl(hi, 'coverUrl', v)} ph="https://..." />
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '8px 0' }}>
-            <button type="button" style={AdminBtn()} disabled={hi === 0} onClick={() => moveHl(hi, -1)}>بالا</button>
-            <button type="button" style={AdminBtn()} disabled={hi === highlights.length - 1} onClick={() => moveHl(hi, 1)}>پایین</button>
-            <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => removeHl(hi)}>حذف هایلایت</button>
-          </div>
-          <div style={{ marginTop: 10, padding: 10, background: T.soft, borderRadius: 10 }}>
-            <b style={{ fontSize: 12, color: T.ttl, display: 'block', marginBottom: 8 }}>استوری‌ها</b>
-            {(hl.stories || []).map((st: any, si: number) => (
-              <div key={st.id || si} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 8, marginTop: 8, background: T.card }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                    <input type="checkbox" checked={st.active !== false} onChange={(e) => chgStory(hi, si, 'active', e.target.checked)} /> فعال
-                  </label>
-                  <span style={{ fontSize: 12, color: T.mut }}>اسلاید {si + 1}</span>
-                </div>
-                <Field label="عنوان اسلاید" value={st.title || ''} onChange={(v: string) => chgStory(hi, si, 'title', v)} ph="" />
-                <label style={S.lbl}>کد تصویر خارجی (VPN روشن)</label>
-                <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 6, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={st.imageCodeExternal || ''} onCommit={(v: string) => chgStory(hi, si, 'imageCodeExternal', v.trim())} placeholder='<img src="https://..." />' rows={3} />
-                <label style={S.lbl}>کد تصویر داخلی (VPN خاموش)</label>
-                <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 6, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={st.imageCodeInternal || ''} onCommit={(v: string) => chgStory(hi, si, 'imageCodeInternal', v.trim())} placeholder='<img src="https://..." />' rows={3} />
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button type="button" style={AdminBtn()} disabled={si === 0} onClick={() => moveStory(hi, si, -1)}>بالا</button>
-                  <button type="button" style={AdminBtn()} disabled={si === (hl.stories || []).length - 1} onClick={() => moveStory(hi, si, 1)}>پایین</button>
-                  <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => removeStory(hi, si)}>حذف اسلاید</button>
-                </div>
-              </div>
-            ))}
-            <button type="button" style={{ ...AdminBtn(), marginTop: 8 }} onClick={() => addStory(hi)}>+ افزودن اسلاید</button>
-          </div>
-        </details>
-      ))}
-      <button type="button" style={{ ...AdminBtn(), marginTop: 8 }} onClick={addHl}>+ افزودن هایلایت</button>
     </Box>
   );
 }
