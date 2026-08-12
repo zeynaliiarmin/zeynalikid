@@ -437,6 +437,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
         {/* Top Header Toolbar & Global Download Actions */}
         <div
+          className="zkad-rev-toolbar"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -451,7 +452,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
           }}
         >
           {/* Status Filter Tabs */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="zkad-rev-tabs">
             {[
               { id: 'all', label: `همه نظرات (${reviews.length})` },
               { id: 'approved', label: `قابل پخش (${approvedCount})` },
@@ -485,7 +486,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
           </div>
 
           {/* Action Buttons: Add Review, Full CSV Download, Full JSON Download */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="zkad-rev-topbtns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
               onClick={handleDownloadAllCSV}
@@ -549,12 +550,8 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
         {/* Filters, Placement Filter, Search & Sort Controls */}
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(200px, 1.3fr) minmax(140px, 1fr) minmax(160px, 1.1fr) 140px',
-            gap: 10,
-            marginBottom: 16,
-          }}
+          className="zkad-rev-filters"
+          style={{ display: 'grid', gap: 10, marginBottom: 16 }}
         >
           <div style={{ position: 'relative' }}>
             <input
@@ -830,6 +827,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 >
                   {/* Top Bar: Checkbox (Select Button), Name, Rating, Status & Single Download */}
                   <div
+                    className="zkad-rev-card-top"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -931,14 +929,14 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     </div>
                   </div>
 
+                  {/* بخش‌های ویرایشی — در تب باز/بسته (کم‌استفاده‌تر) تا کارت کوتاه بماند */}
+                  <details className="zkad-rev-collapse">
+                    <summary>✏️ ویرایش نام، دوره و متن نظر</summary>
+                    <div>
                   {/* Inline Editable Fields: Name & Course */}
                   <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(140px, 1fr) minmax(180px, 1.4fr)',
-                      gap: 10,
-                      marginBottom: 10,
-                    }}
+                    className="zkad-rev-editgrid"
+                    style={{ display: 'grid', gap: 10, marginBottom: 10 }}
                   >
                     <div>
                       <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>
@@ -981,7 +979,32 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     </div>
                   </div>
 
-                  {/* بخش دسترسی جداگانه برای هر نظر: انتخاب محل‌های نمایش در سایت */}
+                  {/* Editable Comment Textarea */}
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>
+                      متن نظر والد / تجربه دوره:
+                    </label>
+                    <textarea
+                      rows={3}
+                      style={{ ...S.ta, minHeight: 65 }}
+                      value={currentEdit.comment}
+                      onChange={(e) => {
+                        setEditMap({
+                          ...editMap,
+                          [r.id]: { ...currentEdit, comment: e.target.value },
+                        });
+                      }}
+                      placeholder="متن تجربه و میزان رضایت والد از دوره..."
+                    />
+                  </div>
+                    </div>
+                  </details>
+
+                    {/* محل‌های نمایش در سایت — تب باز/بسته */}
+                  <details className="zkad-rev-collapse">
+                    <summary>📍 محل‌های نمایش این نظر در سایت</summary>
+                    <div>
+{/* بخش دسترسی جداگانه برای هر نظر: انتخاب محل‌های نمایش در سایت */}
                   <div
                     style={{
                       marginBottom: 12,
@@ -1045,28 +1068,11 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       })}
                     </div>
                   </div>
-
-                  {/* Editable Comment Textarea */}
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>
-                      متن نظر والد / تجربه دوره:
-                    </label>
-                    <textarea
-                      rows={3}
-                      style={{ ...S.ta, minHeight: 65 }}
-                      value={currentEdit.comment}
-                      onChange={(e) => {
-                        setEditMap({
-                          ...editMap,
-                          [r.id]: { ...currentEdit, comment: e.target.value },
-                        });
-                      }}
-                      placeholder="متن تجربه و میزان رضایت والد از دوره..."
-                    />
-                  </div>
+                    </div>
+                  </details>
 
                   {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div className="zkad-rev-cardbtns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     {/* دکمه ذخیره تغییرات */}
                     <button
                       type="button"

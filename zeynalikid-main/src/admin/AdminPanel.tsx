@@ -8,7 +8,7 @@ import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 // Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
-import { revokeAllAdminSessions, clearAdminSession } from '../utils/adminSession';
+import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
@@ -137,13 +137,23 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
+ const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
  // Phase 7: state های «تغییر رمز/شماره» حذف شدند — آن فیلدها سمت سرور block هستند (موفقیت کاذب).
  // فقط بیومتریک و خروج از نشست‌ها باقی می‌مانند.
  useEffect(()=>{const t=setTimeout(()=>setDebouncedSrch(srch),300);return()=>clearTimeout(t)},[srch]);
+ // بارگذاری لیست دستگاه‌های فعال وقتی تب امنیت باز می‌شود (لیست واقعی نشست‌ها)
+ useEffect(()=>{
+   if(aTab!=='security')return;
+   let alive=true;
+   setDevicesErr('');
+   listAdminDevices()
+     .then(list=>{ if(alive) setDevicesList(list); })
+     .catch(()=>{ if(alive){ setDevicesList([]); setDevicesErr('دریافت لیست دستگاه‌ها ممکن نشد.'); } });
+   return ()=>{ alive=false; };
+ },[aTab]);
  // اصلاح ۹: رفع کامل مشکل پرش صفحه در پنل مدیریت — فیلد فوکوس‌شده به‌جای پرش ناگهانی مرورگر،
  // با اسکرول نرم (smooth) به مرکز دید (center) منتقل می‌شود. این افکت روی همه ورودی‌های
  // پنل مدیریت (شامل SubCard، SettingsEditor و سایر ادیتورها) به‌صورت سراسری اعمال می‌شود.
@@ -1610,7 +1620,26 @@ function ThemeManagerEditor(){
    </div>
    <div style={{marginTop:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
     <b style={{display:'block',color:T.ttl,marginBottom:6}}>نشست‌های فعال</b>
-    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>با بستن همهٔ نشست‌ها، همهٔ دستگاه‌هایی که به پنل وارد شده‌اند (شامل این دستگاه) از پنل خارج می‌شوند.</p>
+    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دستگاه‌هایی که هم‌اکنون به پنل وارد شده‌اند. دستگاهی که الان با آن کار می‌کنید با «این دستگاه» مشخص شده است.</p>
+    {devicesErr&&<div style={{fontSize:11.5,color:T.err,marginBottom:8}}>{devicesErr}</div>}
+    {devicesList===null?<div style={{fontSize:12,color:T.mut,padding:'6px 0'}}>در حال دریافت لیست دستگاه‌ها...</div>:
+     devicesList.length===0?<div style={{fontSize:12,color:T.mut,padding:'6px 0'}}>هیچ نشست فعالی یافت نشد.</div>:
+     <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12}}>
+      {devicesList.map((d:any)=>{
+       const isCurrent = String(d.id)===String(getAdminDeviceId());
+       return <div key={d.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap',background:T.card||'#fff',border:`1px solid ${T.brd||'#E5E0D8'}`,borderRadius:10,padding:'8px 10px'}}>
+        <div style={{minWidth:0,flex:1}}>
+         <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <span style={{fontSize:12.5,fontWeight:800,color:T.txt,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{d.device_name||'دستگاه ناشناخته'}</span>
+          {isCurrent&&<span style={{fontSize:10,fontWeight:800,background:T.acc||'#0F766E',color:'#fff',borderRadius:6,padding:'1px 7px'}}>این دستگاه</span>}
+          {d.biometric_enabled&&<span style={{fontSize:10,fontWeight:800,background:'#ede9fe',color:'#6d28d9',borderRadius:6,padding:'1px 7px'}}>بیومتریک</span>}
+         </div>
+         <div style={{fontSize:10.5,color:T.mut,marginTop:3}}>{d.browser||''}{d.platform?` • ${d.platform}`:''}{d.last_seen_at?` • آخرین فعالیت: ${new Date(d.last_seen_at).toLocaleDateString('fa-IR')} ${new Date(d.last_seen_at).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}`:''}</div>
+        </div>
+        <button type="button" style={{...AdminBtn(),padding:'5px 10px',fontSize:11.5,color:T.err||'#DC2626',border:`1px solid ${(T.err||'#DC2626')}33`,background:`${(T.err||'#DC2626')}08`,flex:'0 0 auto'}} disabled={revokeBusy} onClick={async()=>{ if(!confirm('این دستگاه از پنل خارج شود؟'))return; setRevokeBusy(true); try{ await revokeAdminDevice(String(d.id)); const list=await listAdminDevices(); setDevicesList(list); alert('دستگاه از پنل خارج شد.'); }catch(e:any){ alert(e?.message||'خروج دستگاه انجام نشد.'); }finally{ setRevokeBusy(false); } }}>خروج دستگاه</button>
+       </div>;
+      })}
+     </div>}
     <button type="button" style={{...AdminBtn(),color:T.err}} onClick={logoutEverywhere} disabled={revokeBusy}>{revokeBusy?'در حال بستن نشست‌ها…':'بستن همهٔ نشست‌ها'}</button>
    </div>
    <AdminInstallControl/>

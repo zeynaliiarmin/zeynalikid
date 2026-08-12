@@ -632,3 +632,52 @@ body.admin-root .zkad-qu-faq-pair { display: grid; grid-template-columns: minmax
   body.admin-root .zkad-qu-faq-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 body.admin-root .zkad-qu-faq-pair > * { min-width: 0; }
+
+/* ============================================================
+   ReviewsEditor — ریسپانسیو موبایل + بخش‌های باز/بسته‌شونده
+   فقط استایل؛ بدون تغییر state/ساختار (بدون Remount/Focus/Scroll)
+   ============================================================ */
+/* فیلترها: موبایل تک‌ستونه، دسکتاپ ۴ ستونه */
+body.admin-root .zkad-rev-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (min-width: 700px) {
+  body.admin-root .zkad-rev-filters { grid-template-columns: minmax(200px,1.3fr) minmax(140px,1fr) minmax(160px,1.1fr) 140px; }
+}
+body.admin-root .zkad-rev-filters > * { min-width: 0; }
+
+/* تولبار بالای صفحه */
+body.admin-root .zkad-rev-toolbar { align-items: flex-start !important; }
+@media (min-width: 700px) { body.admin-root .zkad-rev-toolbar { align-items: center !important; } }
+
+/* تب‌های وضعیت: موبایل تمام‌عرض */
+body.admin-root .zkad-rev-tabs { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+body.admin-root .zkad-rev-tabs > button { flex: 1 1 auto; min-width: 0; padding: 9px 8px !important; font-size: 12px !important; white-space: normal; line-height: 1.35; text-align: center; }
+@media (min-width: 700px) { body.admin-root .zkad-rev-tabs { width: auto; } body.admin-root .zkad-rev-tabs > button { flex: 0 0 auto; padding: 7px 14px !important; font-size: 12.5px !important; } }
+
+/* دکمه‌های اکشن بالای صفحه (دانلود/افزودن): موبایل تمام‌عرض */
+body.admin-root .zkad-rev-topbtns { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+body.admin-root .zkad-rev-topbtns > * { flex: 1 1 100%; }
+@media (min-width: 700px) { body.admin-root .zkad-rev-topbtns { width: auto; } body.admin-root .zkad-rev-topbtns > * { flex: 0 0 auto; } }
+
+/* بخش‌های باز/بسته‌شونده داخل کارت نظر */
+body.admin-root .zkad-rev-collapse { border: 1px solid var(--zkad-brd, #E5E0D8); border-radius: 10px; background: var(--zkad-badge, #F4F1EA); margin-bottom: 10px; }
+body.admin-root .zkad-rev-collapse > summary { cursor: pointer; padding: 9px 12px; font-weight: 800; font-size: 12.5px; color: var(--zkad-acc, #0F766E); list-style: none; display: flex; align-items: center; gap: 6px; min-height: 42px; user-select: none; }
+body.admin-root .zkad-rev-collapse > summary::-webkit-details-marker { display: none; }
+body.admin-root .zkad-rev-collapse > summary::before { content: '▸'; display: inline-block; transition: transform .15s ease; color: var(--zkad-mut, #6B7280); }
+body.admin-root .zkad-rev-collapse[open] > summary::before { transform: rotate(90deg); }
+body.admin-root .zkad-rev-collapse > div { padding: 10px 12px; border-top: 1px solid var(--zkad-brd, #E5E0D8); }
+
+/* سربرگ کارت نظر: فشرده در موبایل */
+body.admin-root .zkad-rev-card-top { align-items: flex-start !important; }
+@media (min-width: 700px) { body.admin-root .zkad-rev-card-top { align-items: center !important; } }
+
+/* دکمه‌های اکشن داخل کارت: موبایل تمام‌عرض */
+body.admin-root .zkad-rev-cardbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+body.admin-root .zkad-rev-cardbtns > * { flex: 1 1 100%; }
+@media (min-width: 700px) { body.admin-root .zkad-rev-cardbtns > * { flex: 0 0 auto; } }
+
+/* grid نام/دوره در بخش ویرایش کارت: موبایل تک‌ستونه */
+body.admin-root .zkad-rev-editgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+@media (min-width: 700px) {
+  body.admin-root .zkad-rev-editgrid { grid-template-columns: minmax(140px, 1fr) minmax(180px, 1.4fr); }
+}
+body.admin-root .zkad-rev-editgrid > * { min-width: 0; }

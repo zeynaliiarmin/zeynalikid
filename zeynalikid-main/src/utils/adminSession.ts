@@ -42,6 +42,31 @@ export async function revokeAllAdminSessions(): Promise<void> {
 }
 
 /**
+ * List active admin devices/sessions via admin-session list_devices action.
+ * Returns an array of devices (id, device_name, platform, browser,
+ * is_active, last_seen_at, ...). Throws on failure.
+ */
+export async function listAdminDevices(): Promise<any[]> {
+  const token = getAdminSessionToken();
+  if (!token) return [];
+  const data = await adminSessionAction('list_devices', { sessionToken: token });
+  return Array.isArray(data?.devices) ? data.devices : [];
+}
+
+/**
+ * Revoke a single device session via admin-session revoke_device action.
+ * Throws on failure so the UI can show a message.
+ */
+export async function revokeAdminDevice(deviceId: string): Promise<void> {
+  const token = getAdminSessionToken();
+  if (!token) return;
+  const data = await adminSessionAction('revoke_device', { deviceId, sessionToken: token });
+  if (data?.revoked !== true) {
+    throw new Error(data?.message || data?.error || 'خروج این دستگاه انجام نشد');
+  }
+}
+
+/**
  * Validate the current admin session by calling admin-session's validate_session action.
  * Returns { valid: true } on success or { valid: false } on failure (and clears session).
  * Network errors return { valid: false } to be safe (fail-closed).
