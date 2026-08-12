@@ -186,17 +186,6 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     } finally { setLoading(false); }
   };
 
-  const handleAnswerSubmit = async (q: UserQuestion) => {
-    const ansText = answers[q.id] || '';
-    if (!ansText.trim()) {
-      alert('لطفاً متن پاسخ را وارد کنید.');
-      return;
-    }
-    await answerUserQuestion(q.id, ansText.trim());
-    await loadQuestions();
-    showToast('پاسخ با موفقیت ثبت شد.');
-  };
-
   const handleArchive = async (id: number) => {
     await archiveUserQuestion(id);
     await loadQuestions();
@@ -564,14 +553,6 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
                   {/* Action Buttons */}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <button
-                      type="button"
-                      style={{ ...AdminBtn(), background: T.acc || '#0F766E', color: '#fff', border: 0 }}
-                      onClick={() => handleAnswerSubmit(q)}
-                    >
-                      ثبت پاسخ
-                    </button>
-
                     {/* دکمه افزودن به سوالات متداول با تمام جزئیات */}
                     <button
                       type="button"
