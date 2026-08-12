@@ -671,9 +671,23 @@ body.admin-root .zkad-rev-card-top { align-items: flex-start !important; }
 @media (min-width: 700px) { body.admin-root .zkad-rev-card-top { align-items: center !important; } }
 
 /* دکمه‌های اکشن داخل کارت: موبایل تمام‌عرض */
-body.admin-root .zkad-rev-cardbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-body.admin-root .zkad-rev-cardbtns > * { flex: 1 1 100%; }
-@media (min-width: 700px) { body.admin-root .zkad-rev-cardbtns > * { flex: 0 0 auto; } }
+body.admin-root .zkad-rev-cardbtns { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; }
+body.admin-root .zkad-rev-cardbtns > * {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  min-width: 0;
+}
+body.admin-root .zkad-rev-cardbtns > button:first-child { min-width: 88px; }
+body.admin-root .zkad-rev-cardbtns > button:nth-child(2) { min-width: 88px; }
+body.admin-root .zkad-rev-cardbtns > button:last-child { min-width: 40px !important; width: 40px; padding: 0 !important; flex: 0 0 auto; }
+@media (max-width: 480px) {
+  body.admin-root .zkad-rev-cardbtns { gap: 4px; }
+  body.admin-root .zkad-rev-cardbtns > * { padding: 7px 8px !important; font-size: 11px !important; }
+  body.admin-root .zkad-rev-cardbtns > button:first-child,
+  body.admin-root .zkad-rev-cardbtns > button:nth-child(2) { min-width: 74px; }
+}
 
 /* grid نام/دوره در بخش ویرایش کارت: موبایل تک‌ستونه */
 body.admin-root .zkad-rev-editgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }

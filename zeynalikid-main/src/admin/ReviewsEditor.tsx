@@ -1045,7 +1045,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         color: '#fff',
                         border: 0,
                         fontWeight: 700,
-                        minWidth: 110,
+                        minWidth: 88,
                         justifyContent: 'center',
                       }}
                       onClick={() => handleSaveEdit(r)}
@@ -1064,7 +1064,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           color: '#fff',
                           border: 0,
                           fontWeight: 700,
-                          minWidth: 110,
+                          minWidth: 88,
                           justifyContent: 'center',
                         }}
                         onClick={() => handleApprove(r.id)}
