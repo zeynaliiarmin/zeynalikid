@@ -785,7 +785,47 @@ function FAQEditor(){
  // اصلاح ۱۸: بازطراحی کامل هایلایت و استوری — چند هایلایت، هر کدام چند اسلاید (کد تصویر خارجی/داخلی)
  function CountryEditor(){return <Box title="مدیریت کدهای کشور">{editCfg.countryCodes.map((c:any,i:number)=><div key={c.id} style={{display:'grid',gridTemplateColumns:'85px 1fr 80px 1.4fr 45px',gap:6,marginBottom:6}}><div style={{display:'flex',gap:4,alignItems:'center'}}><span style={{fontSize:20}}>{getCountryFlag(c)}</span><StableAdminInput style={{...S.inp,flex:1}} defaultValue={c.flag} onCommit={(v:string)=>chgCountry(i,'flag',v)}/></div><StableAdminInput style={S.inp} defaultValue={c.name} onCommit={(v:string)=>chgCountry(i,'name',v)}/><StableAdminInput style={S.inp} defaultValue={c.code} onCommit={(v:string)=>chgCountry(i,'code',p2e(v))}/><StableAdminInput style={S.inp} defaultValue={c.regex} onCommit={(v:string)=>chgCountry(i,'regex',v)}/><button className="zkad-iconbtn t-err" title="حذف کشور" disabled={c.locked} onClick={()=>setEditCfg({...editCfg,countryCodes:editCfg.countryCodes.filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,countryCodes:[...editCfg.countryCodes,{id:'c'+uid(),name:'کشور جدید',code:'+0',flag:'',regex:'^\\d{7,}$'}]})}><ZkPlusIcon size={13}/> افزودن کشور</button></Box>}
  function chgCountry(i:number,k:string,v:any){const a=[...editCfg.countryCodes];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,countryCodes:a})}
- function ContactsEditor(){const custom=editCfg.contacts.custom||[];const updCustom=(i:number,k:string,v:any)=>{const a=[...custom];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})};return <><Box title="اطلاعات تماس">{['phone','whatsapp','telegram','instagram','rubika','bale'].map(k=><Field key={k} label={k} value={editCfg.contacts[k]||''} onChange={(v:string)=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,[k]:v}})} ph=""/>)}<h4>نمایش در صفحات</h4>{Object.keys(editCfg.contactVisibility).map(k=><label key={k} style={{display:'block',marginBottom:6}}><input type="checkbox" checked={!!editCfg.contactVisibility[k]} onChange={e=>setEditCfg({...editCfg,contactVisibility:{...editCfg.contactVisibility,[k]:e.target.checked}})}/> {k}</label>)}</Box><Box title="مدیریت راه‌های ارتباطی">{custom.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><input style={S.inp} defaultValue={it.title||''} onBlur={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان"/><input style={S.inp} defaultValue={it.url||''} onBlur={e=>updCustom(i,'url',e.target.value)} placeholder="URL"/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}><input type="color" style={{...S.inp,height:44,padding:4}} value={it.color||'#2564a8'} onChange={e=>updCustom(i,'color',e.target.value)}/><label className="zkad-drop" onDragOver={e=>e.preventDefault()} onDrop={async e=>{e.preventDefault();const f=e.dataTransfer.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}><ZkUploadIcon size={20}/><span>برای آپلود آیکون کلیک کنید یا فایل را بکشید</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}/></label></div><div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}><button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...custom];[a[i-1],a[i]]=[a[i],a[i-1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>بالا</button><button style={AdminBtn()} onClick={()=>{if(i<custom.length-1){const a=[...custom];[a[i+1],a[i]]=[a[i],a[i+1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>پایین</button><button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:custom.filter((_:any,j:number)=>j!==i)}})}>حذف</button></div></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:[...custom,{id:'ct'+uid(),title:'راه ارتباطی جدید',url:'',color:'#2564a8',order:custom.length+1}]}})}><ZkPlusIcon size={13}/> افزودن راه ارتباطی</button></Box><Box title="مدیریت آیکون‌های ارتباط با ما">{Object.keys(editCfg.contactIcons||{}).map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'120px 1fr',gap:8,marginBottom:8,alignItems:'center'}}><label>{k}</label><input type="color" style={{...S.inp,height:44,padding:4}} value={editCfg.contactIcons[k]?.color||'#2564a8'} onChange={e=>setEditCfg({...editCfg,contactIcons:{...editCfg.contactIcons,[k]:{...(editCfg.contactIcons[k]||{}),color:e.target.value}}})}/></div>)}</Box><button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
+ function ContactsEditor(){
+  // بازطراحی: state محلی + ذخیرهٔ مستقیم (رفع race condition که باعث می‌شد
+  // راه‌های ارتباطی تازه‌اضافه‌شده بعد از ذخیره ناپدید شوند)
+  const [cc, setCc] = useState<any>(() => JSON.parse(JSON.stringify(editCfg.contacts || {})));
+  const custom:any[] = Array.isArray(cc.custom) ? cc.custom : [];
+  const updCustom=(i:number,k:string,v:any)=>{const a=[...custom];a[i]={...a[i],[k]:v};setCc({...cc,custom:a})};
+  const addCustom=()=>setCc({...cc,custom:[...custom,{id:'ct'+uid(),title:'راه ارتباطی جدید',url:'',color:'#2564a8',order:custom.length+1}]});
+  const removeCustom=(i:number)=>setCc({...cc,custom:custom.filter((_:any,j:number)=>j!==i)});
+  const moveCustom=(i:number,dir:-1|1)=>{const a=[...custom];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];setCc({...cc,custom:a.map((x:any,idx:number)=>({...x,order:idx+1}))})};
+  const save=()=>{setSave({...editCfg,contacts:cc});};
+  return <>
+   <Box title="اطلاعات تماس">
+    {['phone','whatsapp','telegram','instagram','rubika','bale'].map(k=><Field key={k} label={k} value={cc[k]||''} onChange={(v:string)=>setCc({...cc,[k]:v})} ph=""/>)}
+    <h4>نمایش در صفحات</h4>
+    {Object.keys(editCfg.contactVisibility||{}).map(k=><label key={k} style={{display:'block',marginBottom:6}}><input type="checkbox" checked={!!editCfg.contactVisibility[k]} onChange={e=>setEditCfg({...editCfg,contactVisibility:{...editCfg.contactVisibility,[k]:e.target.checked}})}/> {k}</label>)}
+   </Box>
+   <Box title="مدیریت راه‌های ارتباطی">
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>برای هر راه ارتباطی عنوان (مثلاً «ایتا») و لینک/شماره را وارد کنید. رنگ و آیکون دلخواه هم قابل تنظیم است.</p>
+    {custom.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}>
+     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+      <input style={S.inp} value={it.title||''} onChange={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان (مثلاً ایتا)"/>
+      <input style={S.inp} value={it.url||''} onChange={e=>updCustom(i,'url',e.target.value)} placeholder="لینک یا شماره"/>
+     </div>
+     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
+      <input type="color" style={{...S.inp,height:44,padding:4}} value={it.color||'#2564a8'} onChange={e=>updCustom(i,'color',e.target.value)}/>
+      <input style={S.inp} value={it.iconUrl||''} onChange={e=>updCustom(i,'iconUrl',e.target.value)} placeholder="لینک آیکون (اختیاری)"/>
+     </div>
+     <div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}>
+      <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveCustom(i,-1)}>بالا</button>
+      <button type="button" style={AdminBtn()} disabled={i===custom.length-1} onClick={()=>moveCustom(i,1)}>پایین</button>
+      <button type="button" style={{...AdminBtn(),color:T.err}} onClick={()=>removeCustom(i)}>حذف</button>
+     </div>
+    </div>)}
+    <button type="button" style={AdminBtn()} onClick={addCustom}><ZkPlusIcon size={13}/> افزودن راه ارتباطی</button>
+   </Box>
+   <Box title="مدیریت آیکون‌های ارتباط با ما">
+    {Object.keys(editCfg.contactIcons||{}).map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'120px 1fr',gap:8,marginBottom:8,alignItems:'center'}}><label>{k}</label><input type="color" style={{...S.inp,height:44,padding:4}} value={editCfg.contactIcons[k]?.color||'#2564a8'} onChange={e=>setEditCfg({...editCfg,contactIcons:{...editCfg.contactIcons,[k]:{...(editCfg.contactIcons[k]||{}),color:e.target.value}}})}/></div>)}
+   </Box>
+   <button style={S.btn} onClick={save}>ذخیره</button>
+  </>}
+
 
  // --- مدیریت دوره‌های ویژه ---
 function FeaturedCoursesEditor(){
