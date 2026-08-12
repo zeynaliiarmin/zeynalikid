@@ -586,3 +586,49 @@ body.admin-root .zkad-sub-actions .zkad-sub-header-icon.t-err {
 
 /* Keep destructive and open controls as one intentional pair, with breathable spacing. */
 body.admin-root .zkad-sub-controls { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+/* ============================================================
+   UserQuestionsEditor — سربرگ ریسپانسیو برای موبایل
+   فقط استایل؛ بدون تغییر ساختار/state (بدون Remount/Focus/Scroll)
+   ============================================================ */
+body.admin-root .zkad-qu-top { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+
+/* تبهای وضعیت: در موبایل تمامعرض و قابل لمس، در دسکتاپ خودکار */
+body.admin-root .zkad-qu-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+body.admin-root .zkad-qu-tabs > button {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  padding: 10px 8px !important;
+  font-size: 12.5px !important;
+  line-height: 1.35;
+}
+@media (min-width: 640px) {
+  body.admin-root .zkad-qu-tabs > button { flex: 0 0 auto; padding: 8px 14px !important; font-size: 13px !important; }
+}
+
+/* جستجو + مرتبسازی: در موبایل تکستونه، در دسکتاپ دوستونه */
+body.admin-root .zkad-qu-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (min-width: 640px) {
+  body.admin-root .zkad-qu-search { grid-template-columns: minmax(200px, 1fr) 180px; }
+}
+body.admin-root .zkad-qu-search > * { min-width: 0; }
+
+/* تولبار انتخاب گروهی: چیدمان عمودی تمیز در موبایل */
+body.admin-root .zkad-qu-bulk { align-items: flex-start !important; }
+@media (min-width: 640px) {
+  body.admin-root .zkad-qu-bulk { align-items: center !important; }
+}
+
+/* FAQ مدیریت (بخش دوم صفحه سوالات کاربران) — در موبایل تکستونه */
+body.admin-root .zkad-qu-faq-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 9px; }
+@media (min-width: 640px) {
+  body.admin-root .zkad-qu-faq-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+body.admin-root .zkad-qu-faq-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 640px) {
+  body.admin-root .zkad-qu-faq-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+body.admin-root .zkad-qu-faq-pair > * { min-width: 0; }

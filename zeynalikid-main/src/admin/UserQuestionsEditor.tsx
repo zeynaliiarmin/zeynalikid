@@ -337,7 +337,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     const addPair=()=>{const id=`faq_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;save({faqItems:[...fa,{id,question:'',answer:'',placements:['home','faq']}],faqItemsEn:[...en,{id:`${id}_en`,question:'',answer:'',placements:['home','faq']}]},'یک جفت سوال فارسی و انگلیسی افزوده شد.');};
     const movePair=(i:number,d:-1|1)=>{const j=i+d;if(j<0||j>=pairCount)return;const a=[...fa],b=[...en];[a[i],a[j]]=[a[j],a[i]];[b[i],b[j]]=[b[j],b[i]];save({faqItems:a,faqItemsEn:b},'ترتیب جفت سوال تغییر کرد.');};
     const deletePair=(i:number)=>save({faqItems:fa.filter((_:any,j:number)=>j!==i),faqItemsEn:en.filter((_:any,j:number)=>j!==i)},'جفت سوال حذف شد.');
-    return <Box title="مدیریت سوالات متداول (FAQ)"><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:9}}><h4 style={{color:T.ttl,margin:0,textAlign:'right'}}>فارسی ({fa.length})</h4><h4 style={{color:T.ttl,margin:0,textAlign:'left'}}>English ({en.length})</h4></div><div style={{display:'flex',flexDirection:'column',gap:10}}>{Array.from({length:pairCount},(_,i)=><div key={i} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:14,padding:8,background:T.soft||'#f5fbfb'}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{card(fa[i],i,'faqItems',fa)}{card(en[i],i,'faqItemsEn',en,true)}</div><div style={{display:'flex',justifyContent:'center',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===0} onClick={()=>movePair(i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===pairCount-1} onClick={()=>movePair(i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'4px 9px',color:T.err||'#dc2626'}} onClick={()=>deletePair(i)}>حذف</button></div></div>)}</div><button type="button" style={{...AdminBtn(),marginTop:12}} onClick={addPair}>+ افزودن سوال جدید</button><button type="button" style={{...AdminBtn(),marginTop:12,marginInlineStart:8,background:T.acc||'#0f766e',color:'#fff',border:0}} onClick={()=>save({},'همه سوالات متداول ذخیره و منتشر شد.')}>ذخیره</button></Box>;
+    return <Box title="مدیریت سوالات متداول (FAQ)"><div className="zkad-qu-faq-head"><h4 style={{color:T.ttl,margin:0,textAlign:'right'}}>فارسی ({fa.length})</h4><h4 style={{color:T.ttl,margin:0,textAlign:'left'}}>English ({en.length})</h4></div><div style={{display:'flex',flexDirection:'column',gap:10}}>{Array.from({length:pairCount},(_,i)=><div key={i} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:14,padding:8,background:T.soft||'#f5fbfb'}}><div className="zkad-qu-faq-pair">{card(fa[i],i,'faqItems',fa)}{card(en[i],i,'faqItemsEn',en,true)}</div><div style={{display:'flex',justifyContent:'center',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===0} onClick={()=>movePair(i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===pairCount-1} onClick={()=>movePair(i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'4px 9px',color:T.err||'#dc2626'}} onClick={()=>deletePair(i)}>حذف</button></div></div>)}</div><button type="button" style={{...AdminBtn(),marginTop:12}} onClick={addPair}>+ افزودن سوال جدید</button><button type="button" style={{...AdminBtn(),marginTop:12,marginInlineStart:8,background:T.acc||'#0f766e',color:'#fff',border:0}} onClick={()=>save({},'همه سوالات متداول ذخیره و منتشر شد.')}>ذخیره</button></Box>;
   };
 
   return (
@@ -362,8 +362,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           </div>
         )}
 
-        {/* Status Filter Tabs */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        {/* Status Filter Tabs — responsive (zkad-qu-tabs) */}
+        <div className="zkad-qu-tabs" style={{ marginBottom: 14 }}>
           {[
             { id: 'all', label: `همه سوالات (${questions.length})` },
             { id: 'pending', label: `در انتظار پاسخ (${pendingCount})` },
@@ -394,8 +394,9 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           ))}
         </div>
 
-        {/* Bulk Select Toolbar */}
+        {/* Bulk Select Toolbar — responsive (zkad-qu-bulk) */}
         <div
+          className="zkad-qu-bulk"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -435,8 +436,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           )}
         </div>
 
-        {/* Search and Sort */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 180px', gap: 10, marginBottom: 16 }}>
+        {/* Search and Sort — responsive (zkad-qu-search) */}
+        <div className="zkad-qu-search">
           <input
             type="text"
             value={search}
