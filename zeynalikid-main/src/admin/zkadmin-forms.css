@@ -784,3 +784,20 @@ body.admin-root .zkad-qu-check {
 @media (max-width: 480px) {
   body.admin-root .zkad-qu-check { height: 36px; min-width: 48px; }
 }
+
+/* چیپ‌های دسته‌بندی موضوعی چندانتخابی در مودال FAQ — ریسپانسیو */
+body.admin-root .zkad-qu-cats { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 6px; }
+body.admin-root .zkad-qu-cats > button {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+  padding: 7px 6px !important;
+  font-size: 11px !important;
+  line-height: 1.4;
+}
+@media (min-width: 700px) {
+  body.admin-root .zkad-qu-cats { display: flex !important; }
+  body.admin-root .zkad-qu-cats > button { width: auto; padding: 5px 12px !important; font-size: 12px !important; }
+}

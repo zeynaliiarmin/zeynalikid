@@ -72,9 +72,11 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     sourceQId?: number;
     questionFa: string;
     answerFa: string;
+    answerTitle: string;
     questionEn: string;
     answerEn: string;
-    category: string;
+    answerTitleEn: string;
+    categories: string[];
     showInHome: boolean;
   } | null>(null);
 
@@ -213,9 +215,11 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
       sourceQId: q.id,
       questionFa: cleanQ === 'درخواست تماس تلفنی جهت پاسخ به سؤال' ? '' : cleanQ,
       answerFa: existingAns,
+      answerTitle: 'پاسخ کارشناس',
       questionEn: q.question_en || '',
       answerEn: q.answer_en || '',
-      category: q.page_source === 'education' ? 'آموزش و رشد' : 'رشد قد و تغذیه',
+      answerTitleEn: 'Expert Answer',
+      categories: [q.page_source === 'education' ? 'آموزش و رشد' : 'رشد قد و تغذیه'],
       showInHome: true,
     });
   };
@@ -238,11 +242,16 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
       const curEnList: any[] = Array.isArray(currentCfg.faqItemsEn) ? [...currentCfg.faqItemsEn] : [];
 
       const newFaqId = 'faq_' + Date.now();
+      const cats = Array.isArray(faqModalItem.categories) && faqModalItem.categories.length
+        ? faqModalItem.categories
+        : ['عمومی'];
       const newFaItem = {
         id: newFaqId,
         question: faqModalItem.questionFa.trim(),
         answer: faqModalItem.answerFa.trim(),
-        category: faqModalItem.category || 'عمومی',
+        answerTitle: faqModalItem.answerTitle.trim(),
+        categories: cats,
+        category: cats[0] || 'عمومی',
       };
 
       curFaList.unshift(newFaItem);
@@ -252,7 +261,9 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           id: newFaqId + '_en',
           question: faqModalItem.questionEn.trim(),
           answer: faqModalItem.answerEn.trim(),
-          category: faqModalItem.category || 'General',
+          answerTitle: faqModalItem.answerTitleEn.trim(),
+          categories: cats,
+          category: cats[0] || 'General',
         });
       }
 
@@ -752,23 +763,63 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                 />
               </div>
 
-              {/* دسته‌بندی موضوعی */}
+              {/* عنوان پاسخ سفارشی — با همین عنوان در سایت پخش می‌شود */}
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>
-                  دسته‌بندی موضوعی سؤال
+                  عنوان پاسخ (پیش‌فرض: «پاسخ کارشناس»)
                 </label>
-                <select
+                <input
+                  type="text"
                   style={S.inp}
-                  value={faqModalItem.category}
-                  onChange={(e) => setFaqModalItem({ ...faqModalItem, category: e.target.value })}
-                >
-                  <option value="رشد قد و استخوان‌بندی">رشد قد و استخوان‌بندی</option>
-                  <option value="بی‌اشتهایی و وزن‌گیری">بی‌اشتهایی و وزن‌گیری</option>
-                  <option value="هوش، تمرکز و یادگیری">هوش، تمرکز و یادگیری</option>
-                  <option value="آموزش و دوره‌ها">آموزش و دوره‌ها</option>
-                  <option value="ارسال، بسته‌بندی و پیگیری">ارسال، بسته‌بندی و پیگیری</option>
-                  <option value="عمومی">عمومی</option>
-                </select>
+                  value={faqModalItem.answerTitle}
+                  onChange={(e) => setFaqModalItem({ ...faqModalItem, answerTitle: e.target.value })}
+                  placeholder="مثال: پاسخ کارشناس / پاسخ دکتر زینالی / توضیح تکمیلی"
+                />
+                <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 4 }}>
+                  این عنوان بالای متن پاسخ در سایت نمایش داده می‌شود.
+                </small>
+              </div>
+
+              {/* دسته‌بندی موضوعی — چندانتخابی */}
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>
+                  دسته‌بندی موضوعی سؤال (چند انتخابی)
+                </label>
+                <div className="zkad-qu-cats" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {['رشد قد و استخوان‌بندی','بی‌اشتهایی و وزن‌گیری','هوش، تمرکز و یادگیری','آموزش و دوره‌ها','ارسال، بسته‌بندی و پیگیری','عمومی'].map((c) => {
+                    const on = Array.isArray(faqModalItem.categories) && faqModalItem.categories.includes(c);
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          const cur = Array.isArray(faqModalItem.categories) ? faqModalItem.categories : [];
+                          setFaqModalItem({
+                            ...faqModalItem,
+                            categories: on ? cur.filter((x) => x !== c) : [...cur, c],
+                          });
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 20,
+                          border: `1px solid ${on ? (T.acc || '#0F766E') : (T.brd || '#E5E0D8')}`,
+                          background: on ? `${(T.acc || '#0F766E')}18` : (T.card || '#fff'),
+                          color: on ? (T.acc || '#0F766E') : (T.mut || '#6B7280'),
+                          fontWeight: on ? 800 : 500,
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <span>{on ? '✓' : '+'}</span>
+                        <span>{c}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* ترجمه انگلیسی اختیاری */}
@@ -801,6 +852,19 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                       value={faqModalItem.answerEn}
                       onChange={(e) => setFaqModalItem({ ...faqModalItem, answerEn: e.target.value })}
                       placeholder="Comprehensive and clear answer in English..."
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.txt, marginBottom: 4 }}>
+                      Answer Title (English)
+                    </label>
+                    <input
+                      dir="ltr"
+                      type="text"
+                      style={S.inp}
+                      value={faqModalItem.answerTitleEn}
+                      onChange={(e) => setFaqModalItem({ ...faqModalItem, answerTitleEn: e.target.value })}
+                      placeholder="e.g., Expert Answer"
                     />
                   </div>
                 </div>

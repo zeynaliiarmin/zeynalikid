@@ -5,7 +5,7 @@ import ServicesSection from '../components/ServicesSection';
 import AskQuestionForm from '../components/AskQuestionForm';
 import { submitUserQuestion } from '../lib/supabase';
 
-type FAQItem = { id: string; question: string; answer: string };
+type FAQItem = { id: string; question: string; answer: string; answerTitle?: string };
 
 export default function FAQPage({ app }: { app: any }) {
   const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
@@ -245,6 +245,9 @@ export default function FAQPage({ app }: { app: any }) {
                         whiteSpace: 'pre-wrap',
                       }}
                     >
+                      {item.answerTitle ? (
+                        <div style={{ fontWeight: 800, color: T.acc, fontSize: 13, marginBottom: 6 }}>{item.answerTitle}</div>
+                      ) : null}
                       {item.answer}
                     </div>
                   )}
