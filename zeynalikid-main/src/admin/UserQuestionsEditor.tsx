@@ -188,12 +188,6 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     } finally { setLoading(false); }
   };
 
-  const handleArchive = async (id: number) => {
-    await archiveUserQuestion(id);
-    await loadQuestions();
-    showToast('سؤال با موفقیت بایگانی شد.');
-  };
-
   const handleDelete = async (id: number) => {
     if (!window.confirm('آیا از حذف کامل این سؤال اطمینان دارید؟ این عملیات غیرقابل بازگشت است.')) return;
     try {
@@ -519,6 +513,30 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                           </a>
                         )}
 
+                        {/* دکمه حذف سوال — فقط آیکون سطل، کنار شماره تماس */}
+                        <button
+                          type="button"
+                          aria-label="حذف سوال"
+                          title="حذف کامل این سؤال"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 32,
+                            minWidth: 32,
+                            height: 32,
+                            padding: 0,
+                            borderRadius: 8,
+                            border: `1px solid ${(T.err || '#DC2626')}33`,
+                            background: `${(T.err || '#DC2626')}10`,
+                            color: T.err || '#DC2626',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => handleDelete(q.id)}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+
                         <span style={{ fontSize: 11, color: T.mut }}>تاریخ: {fmtDate(q.created_at)}</span>
                         <span style={{ fontSize: 11, color: T.mut }}>صفحه مبدأ: <b>{q.page_source || '—'}</b></span>
                       </div>
@@ -562,24 +580,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                     />
                   </div>
 
-                  {/* Action Buttons */}
+                  {/* Action Buttons — تماس تلفنی، سپس افزودن به سوالات متداول */}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {/* دکمه افزودن به سوالات متداول با تمام جزئیات */}
-                    <button
-                      type="button"
-                      style={{
-                        ...AdminBtn(),
-                        background: '#f0fdf4',
-                        color: '#16a34a',
-                        border: '1px solid #bbf7d0',
-                        fontWeight: 700,
-                      }}
-                      onClick={() => handleOpenAddToFAQ(q)}
-                      title="تبدیل این سوال به پرسش متداول و انتشار در سایت"
-                    >
-                      ★ افزودن به سوالات متداول (FAQ)
-                    </button>
-
                     {phone && (
                       <a
                         href={`tel:${phone}`}
@@ -598,36 +600,20 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                       </a>
                     )}
 
-                    {q.status !== 'archived' && (
-                      <button
-                        type="button"
-                        style={AdminBtn()}
-                        onClick={() => handleArchive(q.id)}
-                      >
-                        بایگانی
-                      </button>
-                    )}
-
-                    {/* دکمه حذف سوال — فقط آیکون سطل آشغال، کنار بایگانی */}
+                    {/* دکمه افزودن به سوالات متداول با تمام جزئیات */}
                     <button
                       type="button"
-                      aria-label="حذف سوال"
-                      title="حذف کامل این سؤال"
                       style={{
                         ...AdminBtn(),
-                        color: T.err || '#DC2626',
-                        border: `1px solid ${(T.err || '#DC2626')}33`,
-                        background: `${(T.err || '#DC2626')}10`,
-                        width: 44,
-                        minWidth: 44,
-                        padding: 0,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        background: '#f0fdf4',
+                        color: '#16a34a',
+                        border: '1px solid #bbf7d0',
+                        fontWeight: 700,
                       }}
-                      onClick={() => handleDelete(q.id)}
+                      onClick={() => handleOpenAddToFAQ(q)}
+                      title="تبدیل این سوال به پرسش متداول و انتشار در سایت"
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      ★ افزودن به سوالات متداول
                     </button>
                   </div>
                 </div>
