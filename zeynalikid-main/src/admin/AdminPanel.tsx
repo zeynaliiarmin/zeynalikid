@@ -491,7 +491,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
  function SettingsEditor(){
   // بازطراحی کامل — SettingsManager مستقل با state محلی (رفع fg / پرش صفحه)
   return <SettingsManager
-    T={T} S={S} AdminBtn={AdminBtn} Box={Box} Field={Field}
+    T={T} S={S} AdminBtn={AdminBtn} Box={Box}
     StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
     editCfg={editCfg} setSave={setSave} fileToData={fileToData}
     deleteStoredImage={deleteStoredImage} PROFILE_PHOTO={PROFILE_PHOTO} TH={TH}

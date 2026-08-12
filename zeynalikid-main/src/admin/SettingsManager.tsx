@@ -16,7 +16,7 @@ import { getCountryFlag } from '../utils/phone';
 import { ZkCloseIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon, ZkXCircleIcon, ZkBellIcon, ZkUploadIcon } from './adminIcons';
 
 interface Props {
-  T: any; S: any; AdminBtn: () => any; Box: any; Field: any;
+  T: any; S: any; AdminBtn: () => any; Box: any;
   StableAdminInput: any; StableAdminTextarea: any;
   editCfg: any; setSave: (next: any) => void;
   fileToData: (f: File, oldUrl?: string, folder?: string) => Promise<string>;
@@ -26,8 +26,18 @@ interface Props {
   uid: () => number;
 }
 
+// فیلد متنی ساده — defaultValue + onBlur (مطمئن، بدون race)
+const TextField = React.memo(function TextField({ label, defaultValue, onCommit, S }: { label: string; defaultValue: string; onCommit: (v: string) => void; S: any }) {
+  return (
+    <div style={{ marginBottom: 13 }}>
+      <label style={S.lbl}>{label}</label>
+      <input style={S.inp} defaultValue={defaultValue} onBlur={(e) => onCommit(e.target.value)} />
+    </div>
+  );
+});
+
 export default function SettingsManager(props: Props) {
-  const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, editCfg, setSave, fileToData, deleteStoredImage, PROFILE_PHOTO, TH, p2e, uid } = props;
+  const { T, S, AdminBtn, Box, StableAdminInput, StableAdminTextarea, editCfg, setSave, fileToData, deleteStoredImage, PROFILE_PHOTO, TH, p2e, uid } = props;
 
   // ── draft محلی: کپی عمیق از editCfg — فقط با دکمهٔ ذخیره به settings واقعی می‌رود ──
   const [draft, setDraft] = useState<any>(() => {
@@ -94,7 +104,7 @@ export default function SettingsManager(props: Props) {
           {Object.values(TH).map((th: any) => <option key={th.id} value={th.id}>{th.name}</option>)}
         </select>
         {['siteTitle', 'browserTitle', 'specialistName', 'heroTitle', 'heroDesc', 'noticeText', 'phoneNote', 'submitBtnText', 'successMsg', 'successSubMsg', 'timeSlotLabel'].map((k) => (
-          <Field key={k} label={k} value={draft[k] || ''} onChange={(v: string) => up(k, v)} ph="" />
+          <TextField key={k} label={k} defaultValue={draft[k] || ''} onCommit={(v: string) => up(k, v)} S={S} />
         ))}
         <Checklist label="نمایش عکس متخصص در صفحه مشاوره" value={!!draft.showSpecialistPhoto} onChange={(v) => up('showSpecialistPhoto', v)} />
         <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp, marginTop: 8 }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) up('photoUrl', await fileToData(f, draft.photoUrl, 'profile')); }} />
@@ -126,10 +136,10 @@ export default function SettingsManager(props: Props) {
       {arrKeys.map((x) => <ArrList key={x[0]} k={x[0]} title={x[1]} />)}
 
       <Box title="پیام‌های موفقیت و راهنما">
-        <Field label="متن پیام موفقیت" value={draft.successMsg || ''} onChange={(v: string) => up('successMsg', v)} ph="" />
-        <Field label="متن زیرِ پیام موفقیت" value={draft.successSubMsg || ''} onChange={(v: string) => up('successSubMsg', v)} ph="" />
-        <Field label="متن دکمه ثبت فرم جدید" value={draft.newFormBtn || ''} onChange={(v: string) => up('newFormBtn', v)} ph="" />
-        <Field label="متن دکمه ثبت مستقیم دوره" value={draft.directCourseBtn || ''} onChange={(v: string) => up('directCourseBtn', v)} ph="" />
+        <TextField label="متن پیام موفقیت" defaultValue={draft.successMsg || ''} onCommit={(v: string) => up('successMsg', v)} S={S} />
+        <TextField label="متن زیرِ پیام موفقیت" defaultValue={draft.successSubMsg || ''} onCommit={(v: string) => up('successSubMsg', v)} S={S} />
+        <TextField label="متن دکمه ثبت فرم جدید" defaultValue={draft.newFormBtn || ''} onCommit={(v: string) => up('newFormBtn', v)} S={S} />
+        <TextField label="متن دکمه ثبت مستقیم دوره" defaultValue={draft.directCourseBtn || ''} onCommit={(v: string) => up('directCourseBtn', v)} S={S} />
       </Box>
 
       <Box title="ورود مهمان - محتوای عمومی">
@@ -165,7 +175,7 @@ export default function SettingsManager(props: Props) {
   const PrimaryTab = (
     <>
       <Box title="تنظیمات ظاهری (دوره‌ها + پنل)">
-        <Field label="adminLoginText" value={draft.adminLoginText || ''} onChange={(v: string) => up('adminLoginText', v)} ph="" />
+        <TextField label="adminLoginText" defaultValue={draft.adminLoginText || ''} onCommit={(v: string) => up('adminLoginText', v)} S={S} />
         <label style={S.lbl}>حداکثر حجم فیش واریزی (کیلوبایت)</label>
         <input style={S.inp} inputMode="numeric" type="number" min={100} max={1000} defaultValue={draft.imageCompressionKB || 500} onBlur={(e) => up('imageCompressionKB', Math.min(1000, Math.max(100, +p2e(e.target.value) || 500)))} />
         <p style={{ fontSize: 11, color: T.mut, margin: '4px 0 12px' }}>عکس‌های آپلودی به این حجم فشرده می‌شوند (بین ۱۰۰ تا ۱۰۰۰ کیلوبایت).</p>
@@ -320,10 +330,10 @@ export default function SettingsManager(props: Props) {
   const TranslationsTab = (
     <>
       <Box title="عناوین کنار عکس پروفایل (دوزبانه)">
-        <Field label="عنوان متخصص (فارسی)" value={draft.specialistTitle || ''} onChange={(v: string) => up('specialistTitle', v)} ph="" />
-        <Field label="عنوان متخصص (انگلیسی)" value={draft.specialistTitleEn || ''} onChange={(v: string) => up('specialistTitleEn', v)} ph="" />
-        <Field label="زیرعنوان خوش‌آمدگویی (فارسی)" value={draft.heroSubtitle || ''} onChange={(v: string) => up('heroSubtitle', v)} ph="" />
-        <Field label="زیرعنوان خوش‌آمدگویی (انگلیسی)" value={draft.heroSubtitleEn || ''} onChange={(v: string) => up('heroSubtitleEn', v)} ph="" />
+        <TextField label="عنوان متخصص (فارسی)" defaultValue={draft.specialistTitle || ''} onCommit={(v: string) => up('specialistTitle', v)} S={S} />
+        <TextField label="عنوان متخصص (انگلیسی)" defaultValue={draft.specialistTitleEn || ''} onCommit={(v: string) => up('specialistTitleEn', v)} S={S} />
+        <TextField label="زیرعنوان خوش‌آمدگویی (فارسی)" defaultValue={draft.heroSubtitle || ''} onCommit={(v: string) => up('heroSubtitle', v)} S={S} />
+        <TextField label="زیرعنوان خوش‌آمدگویی (انگلیسی)" defaultValue={draft.heroSubtitleEn || ''} onCommit={(v: string) => up('heroSubtitleEn', v)} S={S} />
       </Box>
       <Box title="متن صفحه درباره ما (دوزبانه)">
         <label style={S.lbl}>متن فارسی</label><StableAdminTextarea style={S.ta} defaultValue={draft.aboutText || ''} onCommit={(v: string) => up('aboutText', v)} placeholder="متن صفحه درباره ما به فارسی..." rows={3} />
