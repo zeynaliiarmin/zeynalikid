@@ -138,9 +138,10 @@ export const fetchDeletedSubmissions = async (): Promise<Submission[]> => {
 };
 
 export const softDeleteSubmission = async (id: string | number): Promise<void> => {
-  // Phase 3: route through admin-api for the DB update; storage cleanup still uses
-  // anon key (storage policies are tightened in Phase 6, not now).
-  const { adminGetSubmission, adminUpdateSubmission, adminSoftDeleteSubmission } = await import('./adminApi');
+  // Phase 3: route through admin-api for the DB update.
+  // Phase 5: storage cleanup now goes through admin-api too (delete_storage_files with
+  // service_role) — anon storage DELETE will be revoked, so client-side anon remove is gone.
+  const { adminGetSubmission, adminUpdateSubmission, adminSoftDeleteSubmission, adminDeleteStorageFiles } = await import('./adminApi');
   // 1) Get current payload to find file URLs
   const sub = await adminGetSubmission(id);
   const payload = (sub as any) ?? {};
@@ -155,12 +156,14 @@ export const softDeleteSubmission = async (id: string | number): Promise<void> =
       } as any);
     } catch { /* admin-api whitelist will accept payment field; ignore if fails */ }
   }
-  // 3) Delete storage files using anon key (policies still allow this in Phase 3)
-  const client = supabase;
-  if (client) {
-    if (receiptUrl) await removeStoredImageByUrl(client, receiptUrl);
-    if (voiceUrl) await removeVoiceByUrl(client, voiceUrl);
-    for (const u of tongueArr) { if (u) await removeTongueByUrl(client, u); }
+  // 3) Delete storage files via admin-api (server-side service_role, whitelisted buckets)
+  const urls = [receiptUrl, voiceUrl, ...tongueArr].filter(Boolean) as string[];
+  if (urls.length) {
+    try {
+      await adminDeleteStorageFiles(urls);
+    } catch (e) {
+      console.warn('Could not delete submission files via admin-api:', e);
+    }
   }
   // 4) Set deleted_at via admin-api
   await adminSoftDeleteSubmission(id);
@@ -267,17 +270,11 @@ export const fetchSettings = async (): Promise<AppSettings | null> => {
       const body = await resp.json();
       if (body.settings) return body.settings;
     }
-  } catch { /* fall through to legacy anon read */ }
+  } catch { /* public-settings unavailable — fall through to null (caller uses defaults) */ }
 
-  // Legacy fallback: direct anon read (will be removed in Phase 5 when RLS is tightened)
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from(SETTINGS_TABLE)
-    .select('*')
-    .eq('key', SETTINGS_KEY)
-    .maybeSingle();
-  if (error) throw error;
-  return dbRowToSettings(data);
+  // Phase 5: direct anon read of settings REMOVED (RLS blocks anon on settings).
+  // Public context receives settings ONLY via the sanitized public-settings edge function.
+  return null;
 };
 
 export const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
@@ -441,22 +438,43 @@ export const submitUserQuestion = async (
 };
 
 export const fetchUserQuestions = async (status?: string): Promise<UserQuestion[]> => {
-  // Phase 3: route through admin-api (admin panel only — public question submit uses submitUserQuestion)
-  try {
-    const { adminFetchUserQuestions } = await import('./adminApi');
-    const result = await adminFetchUserQuestions({
-      status: status && status !== 'all' ? status : undefined,
-      limit: 1000,
-    });
-    return result.questions;
-  } catch (err) {
-    // If admin-api fails (e.g. no session), fall back to LS for offline support
-    const list = getLSQuestions();
-    if (status && status !== 'all') {
-      return list.filter((q) => q.status === status);
-    }
-    return list;
+  // Admin context (has session): full access via admin-api.
+  if (getAdminSessionToken()) {
+    try {
+      const { adminFetchUserQuestions } = await import('./adminApi');
+      const result = await adminFetchUserQuestions({
+        status: status && status !== 'all' ? status : undefined,
+        limit: 1000,
+      });
+      return result.questions;
+    } catch { /* fall through to public read below */ }
   }
+
+  // Public context (no session): sanitized answered questions via public-questions edge function.
+  // The function strips "[شماره تماس: ...]" from the question text — no PII leaks publicly.
+  // Phase 5 RLS: anon has no SELECT on user_questions, so this is the only public read path.
+  try {
+    const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
+    const resp = await fetch(`${base}/functions/v1/public-questions`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (resp.ok) {
+      const body = await resp.json();
+      const list = Array.isArray(body.questions) ? (body.questions as UserQuestion[]) : [];
+      if (status && status !== 'all') {
+        return list.filter((q) => q.status === status);
+      }
+      return list;
+    }
+  } catch { /* ignore — fall through to LS */ }
+
+  // Local fallback for offline support
+  const list = getLSQuestions();
+  if (status && status !== 'all') {
+    return list.filter((q) => q.status === status);
+  }
+  return list;
 };
 
 export const answerUserQuestion = async (
@@ -629,21 +647,35 @@ export const submitReview = async (
 };
 
 export const fetchReviews = async (status?: string): Promise<ReviewItem[]> => {
-  // Phase 3: route through admin-api
-  try {
-    const { adminFetchReviews } = await import('./adminApi');
-    const result = await adminFetchReviews({
-      status: status && status !== 'all' ? status : undefined,
-      limit: 1000,
-    });
-    return result.reviews;
-  } catch {
-    const list = getLSReviews();
-    if (status && status !== 'all') {
-      return list.filter((r) => r.status === status);
-    }
-    return list;
+  // Admin context (has session): full access via admin-api.
+  if (getAdminSessionToken()) {
+    try {
+      const { adminFetchReviews } = await import('./adminApi');
+      const result = await adminFetchReviews({
+        status: status && status !== 'all' ? status : undefined,
+        limit: 1000,
+      });
+      return result.reviews;
+    } catch { /* fall through to public read below */ }
   }
+
+  // Public context (no session): only approved reviews via anon SELECT.
+  // Phase 5 RLS: anon can SELECT only status='approved' on reviews.
+  // This keeps public ReviewSection working without an admin session (no redirect).
+  try {
+    if (isSupabaseConfigured && supabase) {
+      let query = supabase.from(REVIEWS_TABLE).select('*').limit(1000);
+      if (status && status !== 'all') query = query.eq('status', status);
+      const { data, error } = await query;
+      if (!error && data) return data as ReviewItem[];
+    }
+  } catch { /* ignore — fall through to LS */ }
+
+  const list = getLSReviews();
+  if (status && status !== 'all') {
+    return list.filter((r) => r.status === status);
+  }
+  return list;
 };
 
 export const approveReview = async (id: number): Promise<boolean> => {

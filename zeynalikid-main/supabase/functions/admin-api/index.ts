@@ -564,6 +564,43 @@ async function listPageViewStats(body: any, origin: string): Promise<Response> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Storage file deletion (Phase 5)
+// Deletes files from whitelisted buckets using service_role.
+// Only called by the admin panel after an admin session is validated.
+// Anonymous storage DELETE policy will be revoked in Phase 5 — this is the
+// only path that removes receipt / voice / tongue / PDF files.
+// ──────────────────────────────────────────────────────────────────────────
+
+const ALLOWED_STORAGE_BUCKETS = new Set(["images", "files", "voice-notes", "tongue-photos"]);
+
+async function deleteStorageFiles(body: any, origin: string, _session: any): Promise<Response> {
+  if (!Array.isArray(body.urls) || body.urls.length === 0) {
+    return err("urls الزامی است", origin, 400);
+  }
+  const supabase = getSupabaseAdmin();
+  const byBucket: Record<string, string[]> = {};
+  for (const u of body.urls) {
+    if (typeof u !== "string" || !u.startsWith("http")) continue;
+    const m = u.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+    if (!m) continue;
+    const bucket = decodeURIComponent(m[1]);
+    const path = decodeURIComponent(m[2]);
+    if (!ALLOWED_STORAGE_BUCKETS.has(bucket) || !path) continue;
+    (byBucket[bucket] ||= []).push(path);
+  }
+  let deleted = 0;
+  for (const [bucket, paths] of Object.entries(byBucket)) {
+    const { error } = await supabase.storage.from(bucket).remove(paths);
+    if (error) {
+      console.warn(`delete_storage_files: bucket ${bucket} error:`, error.message);
+    } else {
+      deleted += paths.length;
+    }
+  }
+  return ok({ deleted }, origin);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -574,6 +611,7 @@ const ACTION_HANDLERS: Record<string, (body: any, origin: string, session: any) 
   soft_delete_submission: softDeleteSubmission,
   restore_submission: restoreSubmission,
   permanent_delete_submission: permanentDeleteSubmission,
+  delete_storage_files: deleteStorageFiles,
   list_settings: listSettings,
   save_settings: saveSettings,
   list_questions: listQuestions,

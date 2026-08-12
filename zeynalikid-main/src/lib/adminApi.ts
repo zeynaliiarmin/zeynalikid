@@ -264,6 +264,17 @@ export async function adminFetchPageViewStats(days: number = 30): Promise<{
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Storage file deletion (via admin-api delete_storage_files action)
+// Phase 5: anon storage DELETE is revoked; file removal happens server-side
+// with service_role so only an authenticated admin session can delete files.
+// ──────────────────────────────────────────────────────────────────────────
+
+export async function adminDeleteStorageFiles(urls: string[]): Promise<{ deleted: number }> {
+  const body = await callAdminApi('delete_storage_files', { urls });
+  return { deleted: body.deleted ?? 0 };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Cleanup receipts (uses cleanup-receipts function directly, not admin-api)
 // ──────────────────────────────────────────────────────────────────────────
 
