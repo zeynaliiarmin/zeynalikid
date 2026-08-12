@@ -66,6 +66,46 @@ export async function revokeAdminDevice(deviceId: string): Promise<void> {
   }
 }
 
+// ── تغییر رمز/شماره ورود از داخل پنل (admin-credentials) ─────────────
+const CRED_ENDPOINT = `${base}/functions/v1/admin-credentials`;
+
+async function credAction(action: string, payload: Record<string, unknown> = {}): Promise<any> {
+  const token = getAdminSessionToken();
+  const res = await fetch(CRED_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || data?.message || 'خطا در ارتباط با سرویس امنیت');
+  return data;
+}
+
+/** شمارهٔ فعلی (ماسک‌شده) برای نمایش در پنل */
+export async function getAdminCredsInfo(): Promise<{ phoneMasked: string }> {
+  const data = await credAction('get_info');
+  return { phoneMasked: data?.phoneMasked || '' };
+}
+
+/**
+ * تغییر رمز عبور و/یا شماره تماس ورود — با چک رمز فعلی + نشست معتبر.
+ * بعد از موفقیت، همهٔ نشست‌ها بسته می‌شوند (سرور) و باید دوباره وارد شوید.
+ */
+export async function changeAdminCredentials(opts: {
+  currentPassword: string;
+  newPhone?: string;
+  newPassword?: string;
+}): Promise<void> {
+  const data = await credAction('change_credentials', {
+    currentPassword: opts.currentPassword,
+    ...(opts.newPhone ? { newPhone: opts.newPhone } : {}),
+    ...(opts.newPassword ? { newPassword: opts.newPassword } : {}),
+  });
+  if (data?.ok !== true) {
+    throw new Error(data?.error || 'تغییر اطلاعات ورود انجام نشد');
+  }
+}
+
 /**
  * Validate the current admin session by calling admin-session's validate_session action.
  * Returns { valid: true } on success or { valid: false } on failure (and clears session).

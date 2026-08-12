@@ -8,7 +8,7 @@ import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 // Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
-import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId } from '../utils/adminSession';
+import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
@@ -137,7 +137,10 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
+ const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState('');
+ // تغییر رمز/شماره ورود (admin-credentials) — state ها در سطح بالای کامپوننت (قانون hooks)
+ const [credBusy,setCredBusy]=useState(false); const [credMsg,setCredMsg]=useState(''); const [credErr,setCredErr]=useState(''); const [credPhoneMasked,setCredPhoneMasked]=useState('');
+ const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
@@ -152,6 +155,13 @@ export default function AdminPanel({app}:{app:any}){
    listAdminDevices()
      .then(list=>{ if(alive) setDevicesList(list); })
      .catch(()=>{ if(alive){ setDevicesList([]); setDevicesErr('دریافت لیست دستگاه‌ها ممکن نشد.'); } });
+   return ()=>{ alive=false; };
+ },[aTab]);
+ // بارگذاری شمارهٔ فعلی (ماسک‌شده) برای نمایش در بخش تغییر اطلاعات ورود
+ useEffect(()=>{
+   if(aTab!=='security')return;
+   let alive=true;
+   getAdminCredsInfo().then(i=>{ if(alive) setCredPhoneMasked(i.phoneMasked); }).catch(()=>{});
    return ()=>{ alive=false; };
  },[aTab]);
  // اصلاح ۹: رفع کامل مشکل پرش صفحه در پنل مدیریت — فیلد فوکوس‌شده به‌جای پرش ناگهانی مرورگر،
@@ -1590,12 +1600,10 @@ function ThemeManagerEditor(){
  }
 
  function SecurityEditor(){
-  // Phase 7: «تغییر رمز عبور» و «تغییر شماره تماس» حذف شدند — admin-api آن‌ها را در
-  // save_settings block می‌کند (adminPassword/adminPhone در SETTINGS_SAVE_BLOCKLIST هستند)؛
-  // پس این فرم‌ها موفقیت کاذب می‌دادند. رمز و شماره فقط از Supabase Edge Function Secrets
-  // (ADMIN_PASSWORD / ADMIN_PHONE) قابل تغییر است.
-  // نکته: revokeBusy در سطح AdminPanel تعریف شده (نه داخل این تابع) تا تعداد hooks
-  // بین رندرها ثابت بماند — این تابع با SecurityEditor() فراخوانی می‌شود نه JSX.
+  // Phase 7+8: تغییر رمز/شماره از داخل پنل — این بار واقعی و امن از طریق تابع
+  // admin-credentials (چک نشست + رمز فعلی + اعتبارسنجی + به‌روزرسانی Secret ها).
+  // نکته: همهٔ state/ref ها در سطح AdminPanel تعریف شده‌اند (قانون hooks — این تابع
+  // با SecurityEditor() فراخوانی می‌شود نه JSX).
   const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');alert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{alert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
   const disableBio=()=>{removeAdminBiometric();alert('ورود بیومتریک این دستگاه غیرفعال شد.');};
   const logoutEverywhere=async()=>{
@@ -1609,9 +1617,57 @@ function ThemeManagerEditor(){
     alert(e?.message||'خروج از همهٔ نشست‌ها انجام نشد. اتصال را بررسی کنید.');
    }finally{setRevokeBusy(false)}
   };
+  const doChangeCreds=async()=>{
+   setCredErr(''); setCredMsg('');
+   const cur=(credCurPwdRef.current?.value||'').trim();
+   const np=(credNewPhoneRef.current?.value||'').trim();
+   const rp=(credRepPhoneRef.current?.value||'').trim();
+   const nw=(credNewPwdRef.current?.value||'');
+   const rw=(credRepPwdRef.current?.value||'');
+   if(!cur){setCredErr('رمز عبور فعلی را وارد کنید.');return;}
+   if(!np&&!nw){setCredErr('حداقل شماره جدید یا رمز جدید را وارد کنید.');return;}
+   if(np){
+    const d=np.replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c).toString()).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c).toString()).replace(/[\s\-().+]/g,'');
+    const norm=d.startsWith('98')&&d.length===12?'0'+d.slice(2):d.startsWith('0')?d:'0'+d;
+    if(!/^09\d{9}$/.test(norm)){setCredErr('شماره موبایل معتبر نیست (مثال: 09123456789).');return;}
+    if(np!==rp){setCredErr('شماره جدید با تکرار آن مطابقت ندارد.');return;}
+   }
+   if(nw){
+    if(nw.length<4){setCredErr('رمز جدید باید حداقل ۴ کاراکتر باشد.');return;}
+    if(nw!==rw){setCredErr('رمز جدید با تکرار آن مطابقت ندارد.');return;}
+   }
+   setCredBusy(true);
+   try{
+    await changeAdminCredentials({ currentPassword:cur, newPhone:np||undefined, newPassword:nw||undefined });
+    setCredMsg('اطلاعات ورود با موفقیت تغییر کرد. برای ادامه با اطلاعات جدید وارد شوید.');
+    if(credCurPwdRef.current)credCurPwdRef.current.value='';
+    if(credNewPhoneRef.current)credNewPhoneRef.current.value='';
+    if(credRepPhoneRef.current)credRepPhoneRef.current.value='';
+    if(credNewPwdRef.current)credNewPwdRef.current.value='';
+    if(credRepPwdRef.current)credRepPwdRef.current.value='';
+    setTimeout(()=>{ try{ onLogout?.(); }catch{} }, 1400);
+   }catch(e:any){
+    setCredErr(e?.message||'خطا در تغییر اطلاعات ورود.');
+   }finally{ setCredBusy(false); }
+  };
   return <Box title="امنیت">
-   <div style={{marginBottom:8,padding:12,borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`,fontSize:12,color:T.mut,lineHeight:1.9}}>
-    تغییر رمز عبور و شماره تماس از داخل پنل غیرفعال است؛ این مقادیر فقط از سمت مدیریت سرویس (Supabase Edge Function Secrets) قابل تغییرند.
+   <div style={{marginBottom:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
+    <b style={{display:'block',color:T.ttl,marginBottom:4}}>تغییر رمز عبور و شماره تماس ورود</b>
+    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 12px'}}>شمارهٔ فعلی: <b style={{direction:'ltr',display:'inline-block'}}>{credPhoneMasked||'—'}</b>. برای تغییر، رمز فعلی را وارد کنید و حداقل یکی از موارد جدید را کامل کنید. بعد از تغییر، همهٔ نشست‌ها بسته می‌شود و با اطلاعات جدید وارد می‌شوید.</p>
+    {credMsg&&<div style={{fontSize:12,fontWeight:800,color:T.ok||'#047857',background:`${T.ok}12`,border:`1px solid ${T.ok}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>✓ {credMsg}</div>}
+    {credErr&&<div style={{fontSize:12,fontWeight:800,color:T.err||'#DC2626',background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>{credErr}</div>}
+    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+     <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور فعلی *</span><input ref={credCurPwdRef} type="password" style={S.inp} placeholder="رمز فعلی"/></label>
+     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>شمارهٔ جدید</span><input ref={credNewPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="09123456789"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شمارهٔ جدید</span><input ref={credRepPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="تکرار شماره"/></label>
+     </div>
+     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۴ کاراکتر"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار رمز جدید</span><input ref={credRepPwdRef} type="password" style={S.inp} placeholder="تکرار رمز جدید"/></label>
+     </div>
+     <div><button type="button" style={{...AdminBtn(),background:T.acc||'#0F766E',color:'#fff',border:0,fontWeight:800}} disabled={credBusy} onClick={doChangeCreds}>{credBusy?'در حال ذخیره…':'ذخیره تغییرات ورود'}</button></div>
+    </div>
    </div>
    <div style={{marginTop:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
     <b style={{display:'block',color:T.ttl,marginBottom:6}}>ورود با اثر انگشت / Face ID</b>
