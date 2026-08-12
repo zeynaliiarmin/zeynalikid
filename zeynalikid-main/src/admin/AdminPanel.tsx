@@ -1579,7 +1579,7 @@ function ThemeManagerEditor(){
     </details>)}
     <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
    </Box>
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره هایلایت‌ها</button>
+   <button style={S.btn} onClick={()=>setSave({...editCfg,storyHighlights:{...(editCfg.storyHighlights||{}),highlights:items}})}>ذخیره هایلایت‌ها</button>
   </>}
 
  function LicensesTabEditor(){
