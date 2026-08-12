@@ -478,6 +478,12 @@ async function updateReview(body: any, origin: string): Promise<Response> {
   const allowed: Record<string, any> = {};
   if (["approved", "rejected", "pending"].includes(body.status)) allowed.status = body.status;
   if (Array.isArray(body.placements)) allowed.placements = body.placements;
+  if (Array.isArray(body.course_ids)) {
+    allowed.course_ids = body.course_ids
+      .filter((c: any) => typeof c === "string" && c.trim())
+      .slice(0, 50)
+      .map((c: string) => c.trim());
+  }
   if (typeof body.reviewer_name === "string") allowed.reviewer_name = body.reviewer_name.slice(0, 100);
   if (typeof body.comment === "string") allowed.comment = body.comment.slice(0, 2000);
   if (typeof body.rating === "number" && body.rating >= 1 && body.rating <= 5) {

@@ -61,8 +61,15 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         const list = await fetchReviews('approved');
         if (!active) return;
         const filtered = (list || []).filter((r) => {
-          if (courseId && r.course_id && r.course_id !== 'عمومی' && r.course_id !== courseId) {
-            return false;
+          // فیلتر دوره‌های خاص: اگر course_ids تنظیم شده باشد، نظر فقط در همان دوره‌ها نمایش داده می‌شود
+          const cids: string[] = Array.isArray((r as any).course_ids) ? (r as any).course_ids : [];
+          if (cids.length > 0) {
+            const onThisCourse = cids.includes(courseId || '') || cids.includes('عمومی') || cids.includes('all');
+            if (!onThisCourse) return false;
+          } else {
+            if (courseId && r.course_id && r.course_id !== 'عمومی' && r.course_id !== courseId) {
+              return false;
+            }
           }
           if (placement) {
             const places = r.placements || ['course_detail', 'courses', 'home'];

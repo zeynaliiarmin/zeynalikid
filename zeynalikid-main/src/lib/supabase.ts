@@ -561,6 +561,7 @@ export interface ReviewItem {
   comment?: string;
   status: 'pending' | 'approved' | 'rejected';
   placements?: string[]; // محل‌های نمایش در بخش‌های سایت: 'home', 'courses', 'course_detail', 'consultation', 'faq', 'about', 'track', 'all_places'
+  course_ids?: string[]; // شناسه‌های دوره‌هایی که نظر باید در آن‌ها نمایش داده شود (خالی = فقط بر اساس course_id)
   phone?: string; // شماره تماس ثبت‌کننده (فقط برای پنل ادمین — هرگز در نمایش عمومی پخش نمی‌شود)
   created_at: string;
 }
@@ -599,7 +600,8 @@ export const submitReview = async (
   rating: number,
   comment?: string,
   placements?: string[],
-  phone?: string
+  phone?: string,
+  courseIds?: string[]
 ): Promise<ReviewItem> => {
   const defaultPlacements = placements && placements.length > 0
     ? placements
@@ -614,6 +616,7 @@ export const submitReview = async (
     status: 'pending',
     placements: defaultPlacements,
     phone: phone?.trim() || '',
+    course_ids: Array.isArray(courseIds) ? courseIds.filter(Boolean) : [],
     created_at: new Date().toISOString(),
   };
   if (!isSupabaseConfigured || !supabase) {
@@ -634,6 +637,7 @@ export const submitReview = async (
           status: 'pending',
           placements: newR.placements,
           phone: newR.phone || '',
+          course_ids: newR.course_ids || [],
           created_at: newR.created_at,
         },
       ]);

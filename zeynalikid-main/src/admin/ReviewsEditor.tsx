@@ -51,6 +51,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
         rating: number;
         comment: string;
         placements: string[];
+        courseIds: string[];
       }
     >
   >({});
@@ -64,6 +65,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
     comment: '',
     status: 'approved' as 'approved' | 'pending',
     placements: ['home', 'courses', 'course_detail'],
+    courseIds: [] as string[],
   });
 
   // مودال تغییر دسته‌جمعی محل‌های نمایش (Bulk Placements Modal)
@@ -219,6 +221,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       rating: 5,
       comment: '',
       placements: ['home', 'courses', 'course_detail'],
+      courseIds: [],
     };
 
     let updatedPlaces = [...(current.placements || [])];
@@ -246,6 +249,26 @@ export default function ReviewsEditor({ app }: { app: any }) {
     });
   };
 
+  // انتخاب چنددوره‌ای برای نمایش نظر در دوره‌های خاص
+  const handleToggleCourse = (reviewId: number, courseId: string) => {
+    const current = editMap[reviewId] || {
+      name: '',
+      courseId: 'عمومی',
+      rating: 5,
+      comment: '',
+      placements: ['home', 'courses', 'course_detail'],
+      courseIds: [],
+    };
+    const cur = Array.isArray(current.courseIds) ? current.courseIds : [];
+    const updated = cur.includes(courseId)
+      ? cur.filter((c: string) => c !== courseId)
+      : [...cur, courseId];
+    setEditMap({
+      ...editMap,
+      [reviewId]: { ...current, courseIds: updated },
+    });
+  };
+
   const handleSaveEdit = async (r: ReviewItem) => {
     const edit = editMap[r.id];
     if (!edit) return;
@@ -261,6 +284,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
         rating: edit.rating,
         comment: edit.comment.trim(),
         placements: edit.placements && edit.placements.length > 0 ? edit.placements : ['home', 'courses', 'course_detail'],
+        course_ids: Array.isArray(edit.courseIds) ? edit.courseIds : [],
       });
       await load();
       showToast('تغییرات نظر و محل‌های نمایش با موفقیت ذخیره شد.');
@@ -369,7 +393,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
         newReview.name.trim(),
         newReview.rating,
         newReview.comment.trim(),
-        newReview.placements
+        newReview.placements,
+        undefined,
+        newReview.courseIds
       );
       if (newReview.status === 'approved' && created?.id) {
         await approveReview(created.id);
@@ -383,6 +409,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
         comment: '',
         status: 'approved',
         placements: ['home', 'courses', 'course_detail'],
+        courseIds: [],
       });
       showToast('نظر جدید با موفقیت ثبت و در بخش‌های تعیین‌شده منتشر گردید.');
     } catch (err) {
@@ -784,6 +811,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 rating: r.rating || 5,
                 comment: r.comment || '',
                 placements: r.placements && r.placements.length > 0 ? r.placements : ['home', 'courses', 'course_detail'],
+                courseIds: Array.isArray((r as any).course_ids) ? (r as any).course_ids : [],
               };
 
               return (
@@ -1029,6 +1057,43 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           </button>
                         );
                       })}
+                    </div>
+
+                    {/* انتخاب چنددوره‌ای: نمایش این نظر در دوره‌های خاص */}
+                    <div style={{ marginTop: 10, borderTop: `1px dashed ${T.brd || '#E5E0D8'}`, paddingTop: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                        <label style={{ fontSize: 12, color: T.ttl || '#0F766E', fontWeight: 800, margin: 0 }}>🎯 نمایش این نظر در دوره‌های خاص:</label>
+                        <span style={{ fontSize: 10.5, color: T.mut }}>(چند انتخابی — اگر هیچ دوره‌ای انتخاب نشود، فقط «دوره یا بخش مربوطه» اعمال می‌شود)</span>
+                      </div>
+                      <div className="zkad-rev-course-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {coursesOptions.filter((c) => c.id !== 'عمومی').map((c) => {
+                          const on = Array.isArray(currentEdit.courseIds) && currentEdit.courseIds.includes(c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleToggleCourse(r.id, c.id)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 20,
+                                border: `1px solid ${on ? '#0d9488' : (T.brd || '#E5E0D8')}`,
+                                background: on ? '#0d948815' : (T.card || '#fff'),
+                                color: on ? '#0d9488' : (T.mut || '#6B7280'),
+                                fontWeight: on ? 800 : 500,
+                                fontSize: 11.5,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                transition: 'all .15s ease',
+                              }}
+                            >
+                              <span>{on ? '✓' : '+'}</span>
+                              <span>{c.title}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                     </div>
@@ -1280,6 +1345,51 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* انتخاب چنددوره‌ای: نمایش نظر در دوره‌های خاص (در هنگام افزودن) */}
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.ttl || '#0F766E', marginBottom: 6 }}>
+                  🎯 نمایش در دوره‌های خاص (چند انتخابی):
+                </label>
+                <div className="zkad-rev-course-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {coursesOptions.filter((c) => c.id !== 'عمومی').map((c) => {
+                    const on = newReview.courseIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setNewReview({
+                            ...newReview,
+                            courseIds: on
+                              ? newReview.courseIds.filter((x) => x !== c.id)
+                              : [...newReview.courseIds, c.id],
+                          });
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 20,
+                          border: `1px solid ${on ? '#0d9488' : (T.brd || '#E5E0D8')}`,
+                          background: on ? '#0d948815' : (T.card || '#fff'),
+                          color: on ? '#0d9488' : (T.mut || '#6B7280'),
+                          fontWeight: on ? 800 : 500,
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span>{on ? '✓' : '+'}</span>
+                        <span>{c.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 4 }}>
+                  اگر هیچ دوره‌ای انتخاب نشود، فقط «دوره مربوطه» بالایی اعمال می‌شود.
+                </small>
               </div>
 
               <div>
