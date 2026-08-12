@@ -26,12 +26,12 @@ interface Props {
   uid: () => number;
 }
 
-// فیلد متنی ساده — defaultValue + onBlur (مطمئن، بدون race)
+// فیلد متنی ساده — onChange مستقیماً draft را به‌روز می‌کند (بدون انتظار blur → رفع race ذخیره)
 const TextField = React.memo(function TextField({ label, defaultValue, onCommit, S }: { label: string; defaultValue: string; onCommit: (v: string) => void; S: any }) {
   return (
     <div style={{ marginBottom: 13 }}>
       <label style={S.lbl}>{label}</label>
-      <input style={S.inp} defaultValue={defaultValue} onBlur={(e) => onCommit(e.target.value)} />
+      <input style={S.inp} defaultValue={defaultValue} onChange={(e) => onCommit(e.target.value)} />
     </div>
   );
 });
