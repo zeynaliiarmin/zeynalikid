@@ -829,16 +829,21 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 // اصلاح ۱-۴ (مرحله ۴): متن دکمه بستن اکنون از closeLabel قابل تنظیم است (پیش‌فرض فارسی حفظ شد چون Modal در scope ماژول تعریف شده و به publicText/lang دسترسی ندارد)
 function Modal({children,onClose,T,max=520,closeLabel='بستن'}:{children:any,onClose:()=>void,T:any,max?:number,closeLabel?:string}){return <div onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}} style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(30,20,30,.45)',backdropFilter:'blur(3px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,animation:'fade .35s ease both'}}><div style={{width:'100%',maxWidth:max,maxHeight:'88vh',overflow:'auto',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||20,padding:T.cardPadding||20,boxShadow:T.shadowStrong||'0 24px 60px rgba(0,0,0,.22)',animation:'modalIn .35s ease both'}}>{children}<button onClick={onClose} style={{marginTop:12,width:'100%',padding:12,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||12,background:T.card,color:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:700,boxShadow:T.neuOut}}>{closeLabel}</button></div></div>}
 function PlatformIcon({type,color,size=18}:{type:string,color:string,size?:number}){
-  // آیکون‌های برند با رنگ واقعی لوگو — دایرهٔ رنگی + نماد سفید
-  const brand:Any={
-    rubika:{bg:'#E8433B', inner:'M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0zm2.5 0a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z'},
-    bale:{bg:'#2E9E5B', inner:'M12 3a9 9 0 0 0-9 9c0 4.1 2.8 7.5 6.5 8.6v-2.9h1.5A9 9 0 0 0 12 3zm-1.5 12H9v-2h1.5v2zm0-3.5H9v-2h1.5v2zm3.5 3.5h-1.5v-2h1.5v2zm0-3.5h-1.5v-2h1.5v2z'}
-  };
-  const b=brand[type];
-  if(b){
+  // آیکون‌های برند بر اساس لوگوی واقعی: دایرهٔ گرادیانی + حرف فارسی سفید
+  // روبیکا: دایرهٔ قرمز-نارنجی با حرف «ر» — بله: دایرهٔ سبز با حرف «ب»
+  if(type==='rubika'||type==='bale'){
+    const gid = type==='rubika' ? 'rubikaGrad' : 'baleGrad';
+    const bg = type==='rubika' ? ['#F5484D','#E0383C'] : ['#35B46C','#1F8A4D'];
+    const letter = type==='rubika' ? 'ر' : 'ب';
     return <svg width={size} height={size} viewBox="0 0 24 24" style={{flexShrink:0}}>
-      <circle cx="12" cy="12" r="11" fill={b.bg}/>
-      <path d={b.inner} fill="#fff"/>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={bg[0]}/>
+          <stop offset="100%" stopColor={bg[1]}/>
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="11" fill={`url(#${gid})`}/>
+      <text x="12" y="17" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="800" fontFamily="Vazirmatn, Tahoma, sans-serif" style={{userSelect:'none'}}>{letter}</text>
     </svg>;
   }
   const paths:Any={
