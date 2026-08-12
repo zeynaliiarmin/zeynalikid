@@ -423,12 +423,14 @@ function SubCardBase({
           </span>
         </div>
 
-        {(isChild || groupCount > 0 || sub.similarTo || sub.editHistory?.length > 0 || sub.priority === 'high') && (
+        {/* برچسب «edited» — مطلق در گوشه سربرگ، بدون افزایش ارتفاع */}
+        {sub.editHistory?.length > 0 && <span className="zkad-tag t-mut zkad-edited-badge">edited</span>}
+
+        {(isChild || groupCount > 0 || sub.similarTo || sub.priority === 'high') && (
           <div className="zkad-sub-flags">
             {isChild && <span className="zkad-tag t-warn">فرم تکراری</span>}
             {groupCount > 0 && <span className="zkad-tag t-info">{groupCount} فرم دیگر با این شماره</span>}
             {sub.similarTo && <span className="zkad-tag t-mut">مشابه</span>}
-            {sub.editHistory?.length > 0 && <span className="zkad-tag t-mut">ادیت شده</span>}
             {sub.priority === 'high' && <span className="zkad-tag t-err">اولویت زیاد</span>}
           </div>
         )}

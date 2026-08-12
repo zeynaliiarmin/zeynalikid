@@ -63,6 +63,7 @@ body.admin-root .zkad-sub-head {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
+  position: relative; /* برای برچسب مطلق «edited» */
 }
 body.admin-root .zkad-sub-check { display: inline-flex; align-items: center; cursor: pointer; }
 body.admin-root .zkad-sub-check input { width: 17px; height: 17px; accent-color: var(--zkad-acc); cursor: pointer; }
@@ -755,4 +756,21 @@ body.admin-root .zkad-qu-meta > span:nth-last-child(-n+2) { font-size: 10.5px !i
 @media (max-width: 480px) {
   body.admin-root .zkad-qu-card-top { flex-direction: column; align-items: stretch !important; }
   body.admin-root .zkad-qu-card-top > label { align-self: flex-start; }
+}
+
+/* برچسب «edited» — به‌صورت برچسب مطلق در گوشه سربرگ، بدون تغییر ارتفاع */
+body.admin-root .zkad-edited-badge {
+  position: absolute;
+  top: 4px;
+  inset-inline-end: 4px; /* گوشهٔ بالا-انتها — در RTL سمت چپ، دور از چک‌باکس */
+  font-size: 9px !important;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 1px 7px !important;
+  border-radius: 999px;
+  line-height: 1.5;
+  background: var(--zkad-tag-mut-bg, #E5E7EB);
+  color: var(--zkad-tag-mut-tx, #6B7280);
+  z-index: 2;
+  pointer-events: none;
 }
