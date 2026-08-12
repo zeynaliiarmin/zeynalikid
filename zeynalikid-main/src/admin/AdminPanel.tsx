@@ -31,6 +31,7 @@ import AnalyticsPanel from './AnalyticsPanel';
 // منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
+import ContentManager from './ContentManager';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -771,72 +772,17 @@ function FAQEditor(){
   </>;
  }
  // اصلاح ۷: تب مستقل «مدیریت محتوا» شامل محتوای چندرسانه‌ای، تجربه والدین، مجوزها و آموزش‌ها
- function ContentEditor(){const up=(k:string,v:any)=>setEditCfg({...editCfg,[k]:v}); return <>
-  <CustomPlatformsEditor/>
-  <MediaEditor/>
-  <StoryHighlightsEditor/>
-  <MediaLibraryEditor sectionKey="experience" title="تجربه والدین (صفحه تجربه والدین)" withText/>
-  <MediaLibraryEditor sectionKey="education" title="آموزش‌ها (ویدیو / ویس / عکس / متن)" withText/>
-  <Box title="مجوزها"><label style={S.lbl}>متن صفحه مجوزها</label><textarea style={S.ta} defaultValue={editCfg.licensesText||''} onBlur={e=>up('licensesText',e.target.value)} placeholder="متن یا توضیحات مجوزها و گواهینامه‌ها..."/></Box>
-  <Box title="کنترل نمایش تب‌ها (تجربه والدین)"><label><input type="checkbox" checked={editCfg.experienceTabs?.video!==false} onChange={e=>setEditCfg({...editCfg,experienceTabs:{...(editCfg.experienceTabs||{}),video:e.target.checked}})} /> ویدیو</label><br/><label><input type="checkbox" checked={editCfg.experienceTabs?.audio!==false} onChange={e=>setEditCfg({...editCfg,experienceTabs:{...(editCfg.experienceTabs||{}),audio:e.target.checked}})} /> ویس</label><br/><label><input type="checkbox" checked={editCfg.experienceTabs?.image!==false} onChange={e=>setEditCfg({...editCfg,experienceTabs:{...(editCfg.experienceTabs||{}),image:e.target.checked}})} /> عکس</label><br/><label><input type="checkbox" checked={!!editCfg.experienceTabs?.text} onChange={e=>setEditCfg({...editCfg,experienceTabs:{...(editCfg.experienceTabs||{}),text:e.target.checked}})} /> متن</label><p style={{fontSize:11,color:T.mut,marginTop:6}}>ادمین می‌تواند تعیین کند کدام تب‌ها نمایش داده شوند. گزینه «متن» بخش تجربه والدین را نیز فعال می‌کند.</p></Box>
-  <Box title="تشخیص VPN / کشور کاربر"><label style={S.lbl}>حالت تشخیص</label><select style={{...S.inp,marginBottom:8}} value={editCfg.mediaCountryMode||'auto'} onChange={e=>up('mediaCountryMode',e.target.value)}><option value="auto">خودکار (تشخیص VPN + موقعیت کاربر)</option><option value="iran">همیشه محتوای ایران (آپارات)</option><option value="intl">همیشه محتوای بین‌الملل (یوتیوب)</option></select><p style={{fontSize:11,color:T.mut,lineHeight:1.9,margin:0}}>در حالت خودکار: اگر VPN کاربر روشن باشد، محتوای یوتیوب و در غیر این صورت محتوای آپارات نمایش داده می‌شود (برای ویدیو، ویس و عکس).</p></Box>
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تغییرات محتوا</button>
- </>}
- // اصلاح ۱۸: بازطراحی کامل هایلایت و استوری — چند هایلایت، هر کدام چند اسلاید (کد تصویر خارجی/داخلی)
- function StoryHighlightsEditor(){
-  const rawSH=editCfg.storyHighlights;
-  const storyHighlights=(rawSH&&typeof rawSH==='object')?rawSH:{};
-  const highlightsRaw=(storyHighlights.highlights);
-  const highlights:any[]=Array.isArray(highlightsRaw)?highlightsRaw:(highlightsRaw&&typeof highlightsRaw==='object'?Object.values(highlightsRaw):[]);
-  const upd=(list:any)=>setEditCfg((prev:any)=>({...prev, storyHighlights:{...(prev.storyHighlights||{}), highlights:list}}));
-  const chgHl=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(a[i]) a[i]={...a[i],[k]:v}; return {...prev, storyHighlights:{...sh, highlights:a}}});
-  const addHl=()=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; return {...prev, storyHighlights:{...sh, highlights:[...hl,{id:'hl'+uid(),title:'هایلایت جدید',coverUrl:'',active:true,order:hl.length+1,stories:[]}]} } });
-  const removeHl=(i:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; return {...prev, storyHighlights:{...sh, highlights: hl.filter((_:any,j:number)=>j!==i)}}});
-  const moveHl=(i:number,dir:-1|1)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; const j=i+dir; if(j<0||j>=a.length) return prev; [a[i],a[j]]=[a[j],a[i]]; return {...prev, storyHighlights:{...sh, highlights: a.map((x:any,idx:number)=>({...x,order:idx+1}))}}});
-  const updStories=(hi:number,stories:any[])=>chgHl(hi,'stories',stories);
-  const chgStory=(hi:number,si:number,k:string,v:any)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; if(stories[si]) stories[si]={...stories[si],[k]:v}; a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
-  const addStory=(hi:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; stories.push({id:'st'+uid(),title:'',imageCodeExternal:'',imageCodeInternal:'',active:true,order:stories.length+1}); a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
-  const removeStory=(hi:number,si:number)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=(a[hi].stories||[]).filter((_:any,j:number)=>j!==si); a[hi]={...a[hi],stories}; return {...prev, storyHighlights:{...sh, highlights:a}}});
-  const moveStory=(hi:number,si:number,dir:-1|1)=>setEditCfg((prev:any)=>{const sh=prev.storyHighlights||{}; const hl=Array.isArray(sh.highlights)?sh.highlights:highlights; const a=[...hl]; if(!a[hi]) return prev; const stories=[...(a[hi].stories||[])]; const j=si+dir; if(j<0||j>=stories.length) return prev; [stories[si],stories[j]]=[stories[j],stories[si]]; a[hi]={...a[hi],stories: stories.map((x:any,idx:number)=>({...x,order:idx+1}))}; return {...prev, storyHighlights:{...sh, highlights:a}}});
-  const migrateItems=()=>{const items=(editCfg.storyHighlights?.items)||[];if(!items.length)return;const legacy={id:'legacy',title:'استوری',coverUrl:'',active:true,order:1,stories:items.map((it:any,idx:number)=>({id:it.id,title:it.title||'',imageCodeExternal:it.embedCode||'',imageCodeInternal:it.embedCode||'',active:it.active!==false,order:it.order||idx+1}))};upd([...highlights,legacy]);setEditCfg({...editCfg,storyHighlights:{...editCfg.storyHighlights,items:[]}});};
-  return <Box title="مدیریت هایلایت استوری (تجربه والدین / آموزش‌ها)">
-   <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر هایلایت یک دایره در بالای صفحات «تجربه والدین» و «آموزش‌ها» است. هر هایلایت شامل چند استوری (اسلاید) با دو کد دستی تصویر (خارجی/داخلی) می‌باشد.</p>
-   {(editCfg.storyHighlights?.items||[]).length>0&&<div style={{marginBottom:12,padding:10,background:`${T.warn}18`,border:`1px solid ${T.warn}`,borderRadius:10,fontSize:12,color:T.warn}}>{editCfg.storyHighlights.items.length} استوری قدیمی موجود است. <button style={{...AdminBtn(),marginInlineStart:8}} onClick={migrateItems}>انتقال به ساختار جدید</button></div>}
-   {highlights.map((hl:any,hi:number)=><details key={hl.id||hi} data-detail-key={`hl-${hl.id||hi}`} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}>
-    <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{hi+1}. {hl.title||'بدون عنوان'} ({(hl.stories||[]).length} استوری)</summary>
-    <div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0'}}><label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={hl.active!==false} onChange={e=>chgHl(hi,'active',e.target.checked)}/> فعال</label></div>
-    <Field label="عنوان هایلایت" value={hl.title||''} onChange={(v:string)=>chgHl(hi,'title',v)} ph=""/>
-    <Field label="آدرس کاور (اختیاری)" value={hl.coverUrl||''} onChange={(v:string)=>chgHl(hi,'coverUrl',v)} ph="https://..."/>
-    <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
-     <button style={AdminBtn()} disabled={hi===0} onClick={()=>moveHl(hi,-1)}>بالا</button>
-     <button style={AdminBtn()} disabled={hi===highlights.length-1} onClick={()=>moveHl(hi,1)}>پایین</button>
-     <button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>removeHl(hi)}>حذف هایلایت</button>
-    </div>
-    <div style={{marginTop:10,padding:10,background:T.soft,borderRadius:10}}>
-     <b style={{fontSize:12,color:T.ttl,display:'block',marginBottom:8}}>استوری‌ها</b>
-     {(hl.stories||[]).map((st:any,si:number)=><div key={st.id||si} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:8,marginTop:8,background:T.card}}>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-       <label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={st.active!==false} onChange={e=>chgStory(hi,si,'active',e.target.checked)}/> فعال</label>
-       <span style={{fontSize:12,color:T.mut}}>اسلاید {si+1}</span>
-      </div>
-      <Field label="عنوان اسلاید" value={st.title||''} onChange={(v:string)=>chgStory(hi,si,'title',v)} ph=""/>
-      <label style={S.lbl}>کد تصویر خارجی (VPN روشن)</label>
-      <StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeExternal||''} onCommit={(v:string)=>chgStory(hi,si,'imageCodeExternal',v.trim())} placeholder='<img src="https://..." />' rows={3}/>
-      <label style={S.lbl}>کد تصویر داخلی (VPN خاموش)</label>
-      <StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeInternal||''} onCommit={(v:string)=>chgStory(hi,si,'imageCodeInternal',v.trim())} placeholder='<img src="https://..." />' rows={3}/>
-      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-       <button style={AdminBtn()} disabled={si===0} onClick={()=>moveStory(hi,si,-1)}>بالا</button>
-       <button style={AdminBtn()} disabled={si===(hl.stories||[]).length-1} onClick={()=>moveStory(hi,si,1)}>پایین</button>
-       <button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>removeStory(hi,si)}>حذف اسلاید</button>
-      </div>
-     </div>)}
-     <button style={{...AdminBtn(),marginTop:8}} onClick={()=>addStory(hi)}>+ افزودن اسلاید</button>
-    </div>
-   </details>)}
-   <button style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت</button>
-   <button style={{...S.btn,marginTop:10}} onClick={()=>setSave(editCfg)}>ذخیره هایلایت استوری</button>
-  </Box>;
+ function ContentEditor(){
+  // بازطراحی کامل «محتوا و صفحات» — ContentManager مستقل با state محلی
+  // و ذخیره با دکمه (رفع پرش صفحه / fg). همهٔ قابلیت‌ها حفظ شده‌اند.
+  return <ContentManager
+    T={T} S={S} AdminBtn={AdminBtn} Box={Box} Field={Field}
+    StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
+    cfg={editCfg} setSave={setSave} fileToData={fileToData} p2e={p2e} uid={uid}
+  />;
  }
+
+ // اصلاح ۱۸: بازطراحی کامل هایلایت و استوری — چند هایلایت، هر کدام چند اسلاید (کد تصویر خارجی/داخلی)
  function CountryEditor(){return <Box title="مدیریت کدهای کشور">{editCfg.countryCodes.map((c:any,i:number)=><div key={c.id} style={{display:'grid',gridTemplateColumns:'85px 1fr 80px 1.4fr 45px',gap:6,marginBottom:6}}><div style={{display:'flex',gap:4,alignItems:'center'}}><span style={{fontSize:20}}>{getCountryFlag(c)}</span><StableAdminInput style={{...S.inp,flex:1}} defaultValue={c.flag} onCommit={(v:string)=>chgCountry(i,'flag',v)}/></div><StableAdminInput style={S.inp} defaultValue={c.name} onCommit={(v:string)=>chgCountry(i,'name',v)}/><StableAdminInput style={S.inp} defaultValue={c.code} onCommit={(v:string)=>chgCountry(i,'code',p2e(v))}/><StableAdminInput style={S.inp} defaultValue={c.regex} onCommit={(v:string)=>chgCountry(i,'regex',v)}/><button className="zkad-iconbtn t-err" title="حذف کشور" disabled={c.locked} onClick={()=>setEditCfg({...editCfg,countryCodes:editCfg.countryCodes.filter((_:any,j:number)=>j!==i)})}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,countryCodes:[...editCfg.countryCodes,{id:'c'+uid(),name:'کشور جدید',code:'+0',flag:'',regex:'^\\d{7,}$'}]})}><ZkPlusIcon size={13}/> افزودن کشور</button></Box>}
  function chgCountry(i:number,k:string,v:any){const a=[...editCfg.countryCodes];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,countryCodes:a})}
  function ContactsEditor(){const custom=editCfg.contacts.custom||[];const updCustom=(i:number,k:string,v:any)=>{const a=[...custom];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})};return <><Box title="اطلاعات تماس">{['phone','whatsapp','telegram','instagram','rubika','bale'].map(k=><Field key={k} label={k} value={editCfg.contacts[k]||''} onChange={(v:string)=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,[k]:v}})} ph=""/>)}<h4>نمایش در صفحات</h4>{Object.keys(editCfg.contactVisibility).map(k=><label key={k} style={{display:'block',marginBottom:6}}><input type="checkbox" checked={!!editCfg.contactVisibility[k]} onChange={e=>setEditCfg({...editCfg,contactVisibility:{...editCfg.contactVisibility,[k]:e.target.checked}})}/> {k}</label>)}</Box><Box title="مدیریت راه‌های ارتباطی">{custom.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><input style={S.inp} defaultValue={it.title||''} onBlur={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان"/><input style={S.inp} defaultValue={it.url||''} onBlur={e=>updCustom(i,'url',e.target.value)} placeholder="URL"/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}><input type="color" style={{...S.inp,height:44,padding:4}} value={it.color||'#2564a8'} onChange={e=>updCustom(i,'color',e.target.value)}/><label className="zkad-drop" onDragOver={e=>e.preventDefault()} onDrop={async e=>{e.preventDefault();const f=e.dataTransfer.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}><ZkUploadIcon size={20}/><span>برای آپلود آیکون کلیک کنید یا فایل را بکشید</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(f)updCustom(i,'iconUrl',await fileToData(f,it.iconUrl,'contact-icons'))}}/></label></div><div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}><button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...custom];[a[i-1],a[i]]=[a[i],a[i-1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>بالا</button><button style={AdminBtn()} onClick={()=>{if(i<custom.length-1){const a=[...custom];[a[i+1],a[i]]=[a[i],a[i+1]];setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:a}})}}}>پایین</button><button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:custom.filter((_:any,j:number)=>j!==i)}})}>حذف</button></div></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,contacts:{...editCfg.contacts,custom:[...custom,{id:'ct'+uid(),title:'راه ارتباطی جدید',url:'',color:'#2564a8',order:custom.length+1}]}})}><ZkPlusIcon size={13}/> افزودن راه ارتباطی</button></Box><Box title="مدیریت آیکون‌های ارتباط با ما">{Object.keys(editCfg.contactIcons||{}).map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'120px 1fr',gap:8,marginBottom:8,alignItems:'center'}}><label>{k}</label><input type="color" style={{...S.inp,height:44,padding:4}} value={editCfg.contactIcons[k]?.color||'#2564a8'} onChange={e=>setEditCfg({...editCfg,contactIcons:{...editCfg.contactIcons,[k]:{...(editCfg.contactIcons[k]||{}),color:e.target.value}}})}/></div>)}</Box><button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
@@ -965,25 +911,6 @@ function TaggedCoursesEditor(){
 
 function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array.isArray(rawTabs)?rawTabs:(rawTabs&&typeof rawTabs==='object'?Object.values(rawTabs):[]); const chg=(ti:number,k:string,v:any)=>{const a=[...tabs];a[ti]={...a[ti],[k]:v};setEditCfg({...editCfg,courseTabs:a})}; const chgC=(ti:number,ci:number,k:string,v:any)=>{const a=[...tabs];a[ti].courses=[...a[ti].courses];a[ti].courses[ci]={...a[ti].courses[ci],[k]:v};setEditCfg({...editCfg,courseTabs:a})}; return <><Box title="واحد پول دوره‌ها"><label style={S.lbl}>واحد پول</label><select style={S.inp} value={editCfg.currencyUnit||'تومان'} onChange={e=>setEditCfg({...editCfg,currencyUnit:e.target.value})}><option value="تومان">تومان</option><option value="ریال">ریال</option></select></Box><Box title="مدیریت تب‌ها و دوره‌ها">{tabs.map((tab:any,ti:number)=><details key={tab.id} style={{marginBottom:10,background:T.badge,borderRadius:12,padding:10}}><summary style={{cursor:'pointer',fontWeight:800}}>{tab.title}</summary><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}><input style={S.inp} defaultValue={tab.title} onBlur={e=>chg(ti,'title',e.target.value)}/><input style={S.inp} defaultValue={tab.inactiveMessage} onBlur={e=>chg(ti,'inactiveMessage',e.target.value)}/></div><label style={{...S.lbl,marginTop:8}}>خلاصه اطلاعات بیشتر</label><input style={S.inp} defaultValue={tab.detailedInfo?.summary||''} onBlur={e=>chg(ti,'detailedInfo',{...(tab.detailedInfo||{}),summary:e.target.value})}/><label style={{...S.lbl,marginTop:8}}>متن کامل اطلاعات بیشتر</label><textarea style={S.ta} defaultValue={tab.detailedInfo?.fullText||''} onBlur={e=>chg(ti,'detailedInfo',{...(tab.detailedInfo||{}),fullText:e.target.value})}/><label><input type="checkbox" checked={tab.active} onChange={e=>chg(ti,'active',e.target.checked)}/> فعال</label> <label><input type="checkbox" checked={tab.showImage!==false} onChange={e=>chg(ti,'showImage',e.target.checked)}/> نمایش تصویر تب</label><div style={{margin:'8px 0'}}><label className="zkad-drop" onDragOver={e=>e.preventDefault()} onDrop={async e=>{e.preventDefault();const f=e.dataTransfer.files?.[0];if(f)chg(ti,'image',await fileToData(f,tab.image,'course-tabs'))}}><ZkUploadIcon size={20}/><span>برای آپلود تصویر تب کلیک کنید یا فایل را بکشید</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const f=e.target.files?.[0];if(f)chg(ti,'image',await fileToData(f,tab.image,'course-tabs'))}}/></label><button style={{...AdminBtn(),marginTop:6}} onClick={async()=>{await deleteStoredImage(tab.image);chg(ti,'image','')}}>حذف تصویر تب و بازگشت به عکس پیش‌فرض</button></div> {!tab.base&&<button className="zkad-del" title="حذف تب" onClick={()=>setEditCfg({...editCfg,courseTabs:tabs.filter((_:any,j:number)=>j!==ti)})}>حذف تب</button>}{tab.courses.map((cr:any,ci:number)=><div key={cr.id} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginTop:10}}><input style={S.inp} defaultValue={cr.title} onBlur={e=>chgC(ti,ci,'title',e.target.value)} placeholder="عنوان"/><textarea style={{...S.ta,marginTop:6}} defaultValue={cr.desc} onBlur={e=>chgC(ti,ci,'desc',e.target.value)} placeholder="توضیحات"/><input style={{...S.inp,marginTop:6}} inputMode="numeric" defaultValue={cr.price} onBlur={e=>chgC(ti,ci,'price',p2e(e.target.value))} placeholder="قیمت"/><label style={{...S.lbl, marginTop: 6, fontSize: 11}}>تاریخ پایان تخفیف (اختیاری)</label><input type="datetime-local" style={S.inp} defaultValue={cr.discountEnd||''} onBlur={e=>chgC(ti,ci,'discountEnd',e.target.value)}/><input style={{...S.inp,marginTop:6}} defaultValue={(cr.features||[]).join('|')} onBlur={e=>chgC(ti,ci,'features',e.target.value.split('|'))} placeholder="ویژگی‌ها با |"/><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:6}}>{['active','popular','bestseller','trending','ageBadge'].map(k=><label key={k}><input type="checkbox" checked={!!cr[k]} onChange={e=>chgC(ti,ci,k,e.target.checked)}/> {k}</label>)}</div><button className="zkad-del" title="حذف دوره" onClick={()=>{const a=[...tabs];a[ti].courses=a[ti].courses.filter((_:any,j:number)=>j!==ci);setEditCfg({...editCfg,courseTabs:a})}}>حذف دوره</button></div>)}<button style={AdminBtn()} onClick={()=>{const a=[...tabs];a[ti].courses=[...a[ti].courses,{id:'c'+uid(),title:'دوره جدید',desc:'',features:[],price:'',active:true,ageBadge:true,btnText:'ثبت مستقیم این دوره',order:a[ti].courses.length+1}];setEditCfg({...editCfg,courseTabs:a})}}><ZkPlusIcon size={13}/> افزودن دوره</button></details>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,courseTabs:[...tabs,{id:'t'+uid(),title:'تب جدید',active:true,inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',courses:[]}]})}><ZkPlusIcon size={13}/> افزودن تب</button></Box><button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
  // اصلاح ۱۷: ادغام مدیریت محتوا — حذف لینک مستقیم یوتیوب/آپارات، جایگزینی با کد دستی
- function MediaLibraryEditor({sectionKey,title,withText=false}:{sectionKey:'experience'|'education',title:string,withText?:boolean}){
-  const typeOpts:[string,string][]=[['video','ویدیو'],['audio','ویس'],['image','عکس'],...(withText?[['text','متن'] as [string,string]]:[])];
-  const list=(editCfg[sectionKey]?.items)||[];
-  const upd=(items:any[])=>setEditCfg({...editCfg,[sectionKey]:{...(editCfg[sectionKey]||{}),items}});
-  const chg=(i:number,k:string,v:any)=>{const a=[...list];a[i]={...a[i],[k]:v};upd(a)};
-  const isValidUrl=(u:string)=>{try{const p=new URL(String(u||'').trim());return p.protocol==='https:'||p.protocol==='http:'}catch{return false}};
-  // اصلاح ۷: هر آیتم چندرسانه‌ای اکنون دو لینک مجزا دارد (یوتیوب برای VPN روشن، آپارات برای VPN خاموش)
-  // و یک فیلد شماره تماس اختیاری که به‌صورت ماسک‌شده در کارت نمایش داده می‌شود.
-  return <Box title={title}>{list.map((it:any,i:number)=><details key={it.id||i} data-detail-key={`ml-${sectionKey}-${it.id||i}`} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}><summary style={{cursor:'pointer',fontWeight:800,fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i+1}. {(it.type==='audio'?<ZkAudioIcon size={13}/>:it.type==='image'?<ZkImageIcon size={13}/>:it.type==='text'?<ZkDocIcon size={13}/>:<ZkVideoIcon size={13}/>)} {it.title||'بدون عنوان'}{it.active===false?' (غیرفعال)':''}</summary><div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0'}}><label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={it.active!==false} onChange={e=>chg(i,'active',e.target.checked)}/> فعال</label><select style={{...S.inp,flex:1}} value={it.type||'video'} onChange={e=>chg(i,'type',e.target.value)}>{typeOpts.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div><Field label="عنوان" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه تجربه والدین)</label><StableAdminTextarea style={{...S.ta,marginBottom:8}} defaultValue={it.description||''} onCommit={(v:string)=>chg(i,'description',v)} rows={3}/><label style={S.lbl}>توضیحات ویدیو (نمایش در صفحه معرفی دوره‌ها)</label><StableAdminTextarea style={{...S.ta,marginBottom:8}} defaultValue={it.descriptionCourses||''} onCommit={(v:string)=>chg(i,'descriptionCourses',v)} rows={3}/><>{sectionKey==='education'&&<><label style={S.lbl}>کلمات کلیدی (با کاما یا ویرگول جدا کنید)</label><input style={{...S.inp,marginBottom:8}} defaultValue={(it.keywords||[]).join(', ')} onBlur={e=>{const v=e.target.value.split(/[,،]/).map((s:string)=>s.trim()).filter(Boolean); const a=document.activeElement as HTMLElement|null; setTimeout(()=>chg(i,'keywords',v),0); if(a && a!==e.target) requestAnimationFrame(()=>{try{(a as HTMLElement).focus({preventScroll:true} as any)}catch{}})}} placeholder="رشد قد, بی‌اشتهایی, هوش"/></>}</>{(it.type||'video')==='text'?<><label style={S.lbl}>متن کامل</label><StableAdminTextarea style={{...S.ta,marginBottom:8}} defaultValue={it.body||''} onCommit={(v:string)=>chg(i,'body',v)} rows={3}/></>:<>{/* اصلاح ۳۷: تفکیک پلتفرم‌ها بر اساس نوع محتوا */}
-   {(it.type||'video')==='video'&&<><label style={S.lbl}>کد دستی یوتیوب (VPN روشن)</label><StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.youtubeCode||it.manualCode||''} onCommit={(v:string)=>chg(i,'youtubeCode',v.trim())} placeholder='<iframe src="https://www.youtube.com/embed/..."></iframe>' rows={3}/>
-   <label style={S.lbl}>کد دستی آپارات (VPN خاموش)</label><StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.aparatCode||''} onCommit={(v:string)=>chg(i,'aparatCode',v.trim())} placeholder='<iframe src="https://www.aparat.com/..."></iframe>' rows={3}/></>}
-   {(it.type||'video')==='image'&&<><label style={S.lbl}>کد دستی تصویر خارجی (VPN روشن)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.externalCode||it.manualCode||''} onBlur={e=>chg(i,'externalCode',e.target.value.trim())} placeholder='<img src="https://..." /> یا لینک مستقیم'/>
-   <label style={S.lbl}>کد دستی تصویر داخلی (VPN خاموش)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.internalCode||''} onBlur={e=>chg(i,'internalCode',e.target.value.trim())} placeholder='<img src="https://..." /> یا لینک مستقیم'/></>}
-   {(it.type||'video')==='audio'&&<><label style={S.lbl}>کد دستی صوتی خارجی (VPN روشن)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.externalCode||it.manualCode||''} onBlur={e=>chg(i,'externalCode',e.target.value.trim())} placeholder='<audio src="https://..." /> یا لینک مستقیم'/>
-   <label style={S.lbl}>کد دستی صوتی داخلی (VPN خاموش)</label><textarea dir="ltr" style={{...S.ta,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.internalCode||''} onBlur={e=>chg(i,'internalCode',e.target.value.trim())} placeholder='<audio src="https://..." /> یا لینک مستقیم'/></>}
-   <label style={{...S.lbl,marginTop:4}}>نمایش از طریق</label><select style={{...S.inp,marginBottom:8}} value={it.displayMode||'auto'} onChange={e=>chg(i,'displayMode',e.target.value)}><option value="aparat">فقط آپارات</option><option value="youtube">فقط یوتیوب</option><option value="auto">هر دو خودکار (بر اساس VPN)</option></select>
-   <label style={{...S.lbl,marginTop:4}}>دسته‌بندی نمایش</label><select style={{...S.inp,marginBottom:8}} value={it.mediaCategory||'experience'} onChange={e=>chg(i,'mediaCategory',e.target.value)}><option value="experience">تجربه والدین</option><option value="height">رشد قد</option><option value="appetite">بی‌اشتهایی</option><option value="mind">هوش</option></select>
-   <label style={{...S.lbl,marginTop:8}}>لینک تصویر بندانگشتی (اختیاری)</label><StableAdminInput dir="ltr" type="text" style={{...S.inp,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:12}} defaultValue={it.thumbnail||''} onCommit={(v:string)=>chg(i,'thumbnail',v.trim())} placeholder="https://...jpg"/></>}<label style={{...S.lbl,marginTop:8}}>شماره تماس نمایش‌داده‌شده روی کارت (اختیاری — به‌صورت ماسک‌شده نمایش داده می‌شود، مثلاً 0914xxxx437)</label><StableAdminInput dir="ltr" type="text" style={{...S.inp,marginBottom:8,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:12}} defaultValue={it.phone||''} onCommit={(v:string)=>chg(i,'phone',p2e(v).trim())} placeholder="0914xxxxxxx"/><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><button style={AdminBtn()} onClick={()=>{if(i>0){const a=[...list];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}>بالا</button><button style={AdminBtn()} onClick={()=>{if(i<list.length-1){const a=[...list];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}>پایین</button><button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>upd(list.filter((_:any,j:number)=>j!==i))}>حذف</button></div></details>)}<button style={AdminBtn()} onClick={()=>upd([...list,{id:sectionKey[0]+uid(),title:'آیتم جدید',description:'',keywords:sectionKey==='education'?[]:undefined,type:'video',youtubeUrl:'',aparatUrl:'',manualCode:'',platform:'other',phone:'',active:true,order:list.length+1}])}>افزودن آیتم</button></Box>}
-
  function ProductsEditor(){
   // اصلاح ۴۶-۴۷: مدیریت کامل محصولات با عکس و نمایش/پنهان + toggle نمایش بخش
   const rawProducts = editCfg.products;
@@ -1070,162 +997,6 @@ function CoursesEditor(){const rawTabs=editCfg.courseTabs;const tabs:any[]=Array
   }
 
  // مرحله ۵۱-۳: ادیتور پلتفرم‌های سفارشی
- function CustomPlatformsEditor(){
-  const rawCP:any=editCfg.customPlatforms;
-  const items:any[]=Array.isArray(rawCP)
-    ? rawCP
-    : (rawCP&&typeof rawCP==='object'?Object.values(rawCP):[]);
-  const upd=(newItems:any)=>setEditCfg((prev:any)=>({...prev, customPlatforms:newItems}));
-  const chg=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
-    const a=[...prevItems];
-    if(a[i]) a[i]={...a[i],[k]:v};
-    return {...prev, customPlatforms:a};
-  });
-  const addPlatform=()=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
-    return {...prev, customPlatforms:[...prevItems,{id:'cp'+uid(),name:'پلتفرم جدید',code:'',vpnRequired:false}]};
-  });
-  const removePlatform=(i:number)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.customPlatforms) ? prev.customPlatforms : items;
-    return {...prev, customPlatforms: prevItems.filter((_:any,j:number)=>j!==i)};
-  });
-  return <Box title={<><ZkLinkIcon size={16} color={T.ttl}/> پلتفرم‌های سفارشی</>}>
-   <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>پلتفرم‌های سفارشی در کنار یوتیوب و آپارات برای هر آیتم محتوا قابل انتخاب هستند. هر پلتفرم دارای نام، کد embed و وضعیت VPN است.</p>
-   {items.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.soft}}>
-    <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:8,alignItems:'end'}}>
-     <Field label="نام پلتفرم" value={it.name||''} onChange={(v:string)=>chg(i,'name',v)} ph="مثلاً روبیکا"/>
-     <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer',paddingBottom:10}}>
-      <input type="checkbox" checked={!!it.vpnRequired} onChange={e=>chg(i,'vpnRequired',e.target.checked)}/> نیاز به VPN
-     </label>
-    </div>
-    <label style={S.lbl}>کد پیش‌فرض (iframe / لینک)</label>
-    <StableAdminTextarea dir="ltr" style={{...S.ta,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:50}} defaultValue={it.code||''} onCommit={(v:string)=>chg(i,'code',v.trim())} placeholder="کد iframe یا لینک..." rows={3}/>
-    <div style={{display:'flex',gap:6,marginTop:6}}><button style={{...AdminBtn(),color:T.err}} onClick={()=>removePlatform(i)}>حذف پلتفرم</button></div>
-   </div>)}
-   <button style={AdminBtn()} onClick={addPlatform}><ZkPlusIcon size={13}/> افزودن پلتفرم سفارشی</button>
-   <button style={{...S.btn,marginTop:8}} onClick={()=>setSave(editCfg)}>ذخیره پلتفرم‌ها</button>
-  </Box>}
-
- // مرحله ۵۱-۳: بازطراحی MediaEditor با ساختار جدید (آرایه تخت mediaItems + customPlatforms)
- function MediaEditor(){
-  // نرمال‌سازی mediaItems: آرایه جدید یا آبجکت قدیمی
-  const rawMediaItems:any=editCfg.mediaItems;
-  const items:any[]=Array.isArray(rawMediaItems)
-    ? rawMediaItems
-    : (rawMediaItems&&typeof rawMediaItems==='object'
-        ? [...(rawMediaItems.videos||[]),...(rawMediaItems.audios||[]),...(rawMediaItems.images||[])]
-        : []);
-  // نرمال‌سازی customPlatforms: آرایه جدید یا آبجکت قدیمی
-  const rawCustomPlatforms:any=editCfg.customPlatforms;
-  const customPlatforms:any[]=Array.isArray(rawCustomPlatforms)
-    ? rawCustomPlatforms
-    : (rawCustomPlatforms&&typeof rawCustomPlatforms==='object'
-        ? Object.values(rawCustomPlatforms)
-        : []);
-  const updItems=(newItems:any)=>setEditCfg((prev:any)=>({...prev, mediaItems:newItems}));
-  const chg=(i:number,k:string,v:any)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    const a=[...prevItems];
-    if(a[i]) a[i]={...a[i],[k]:v};
-    return {...prev, mediaItems:a};
-  });
-  const chgPlatform=(i:number,platformKey:string,value:string)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    const a=[...prevItems];
-    if(a[i]) a[i]={...a[i],platforms:{...(a[i].platforms||{}),[platformKey]:value}};
-    return {...prev, mediaItems:a};
-  });
-  const toggleCategory=(i:number,catId:string)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    const a=[...prevItems];
-    const item=a[i];
-    if(!item) return prev;
-    const cats=item.categories||[];
-    const newCats=cats.includes(catId)?cats.filter((c:string)=>c!==catId):[...cats,catId];
-    a[i]={...item,categories:newCats};
-    return {...prev, mediaItems:a};
-  });
-  const categoryOptions:[string,string][]=[['parent-experience','تجربه والدین'],['growth','رشد قد'],['appetite','بی‌اشتهایی'],['intelligence','هوش']];
-  const displayModeOptions:[string,string][]=[['external','خارجی (VPN روشن)'],['internal','داخلی (VPN خاموش)'],['both','هر دو (خودکار)'],['custom','پلتفرم سفارشی']];
-  const typeSections:[('video'|'image'|'audio'),string,string][]=[['video','ویدیوها','ویدیو'],['image','عکس‌ها','عکس'],['audio','ویس‌ها','ویس']];
-  const addItem=(type:string)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    return {...prev, mediaItems:[...prevItems,{id:type[0]+uid(),title:'',description:'',type,platforms:{},displayMode:'both',categories:[],isVisible:true}]};
-  });
-  const removeItem=(i:number)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    return {...prev, mediaItems: prevItems.filter((_:any,j:number)=>j!==i)};
-  });
-  const moveItem=(i:number,dir:-1|1)=>setEditCfg((prev:any)=>{
-    const prevItems = Array.isArray(prev.mediaItems) ? prev.mediaItems : items;
-    const a=[...prevItems];
-    const j=i+dir;
-    if(j<0||j>=a.length) return prev;
-    [a[i],a[j]]=[a[j],a[i]];
-    return {...prev, mediaItems:a};
-  });
-  return <Box title="مدیریت محتوای چندرسانه‌ای (ساختار جدید)">
-   <p style={{fontSize:11,color:T.mut,margin:'0 0 10px',lineHeight:1.8}}>هر آیتم محتوا دارای نوع (ویدیو/عکس/ویس)، پلتفرم‌های مخصوص، حالت نمایش، دسته‌بندی و وضعیت نمایش است. پلتفرم‌های سفارشی از بخش بالا اضافه شده و در هر آیتم قابل فعال‌سازی هستند.</p>
-   {typeSections.map(([type,sectionLabel,addLabel])=>{
-    const filtered=items.filter((it:any)=>(it.type||'video')===type);
-    const globalIndices=items.map((it:any,idx:number)=>(it.type||'video')===type?idx:-1).filter((idx:number)=>idx>=0);
-    return <details key={type} data-detail-key={`media-${type}`} style={{marginBottom:10,background:T.badge,borderRadius:12,padding:10}}>
-     <summary style={{cursor:'pointer',fontWeight:800}}>{sectionLabel} ({filtered.length})</summary>
-     {filtered.map((it:any,localIdx:number)=>{
-      const gi=globalIndices[localIdx];
-      return <div key={it.id||gi} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,marginTop:10}}>
-       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-        <b style={{fontSize:12,color:T.txt,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{localIdx+1}. {it.title||'بدون عنوان'}</b>
-        <label style={{fontSize:12,whiteSpace:'nowrap'}}><input className="zkad-switch" type="checkbox" checked={it.isVisible!==false} onChange={e=>chg(gi,'isVisible',e.target.checked)}/> فعال</label>
-       </div>
-       <Field label="عنوان" value={it.title||''} onChange={(v:string)=>chg(gi,'title',v)} ph=""/>
-       <label style={S.lbl}>توضیحات</label>
-       <StableAdminTextarea style={{...S.ta,marginBottom:8}} defaultValue={it.description||''} onCommit={(v:string)=>chg(gi,'description',v)} rows={3}/>
-       {/* فیلدهای پلتفرم بر اساس نوع */}
-       {type==='video'&&<><label style={{...S.lbl,marginTop:4}}>لینک / کد یوتیوب (VPN روشن)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.platforms?.youtube||''} onBlur={e=>chgPlatform(gi,'youtube',e.target.value.trim())} placeholder="لینک یوتیوب یا کد iframe"/>
-        <label style={S.lbl}>لینک / کد آپارات (VPN خاموش)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:11.5,minHeight:54}} defaultValue={it.platforms?.aparat||''} onBlur={e=>chgPlatform(gi,'aparat',e.target.value.trim())} placeholder="لینک آپارات یا کد iframe"/></>}
-       {type==='image'&&<><label style={{...S.lbl,marginTop:4}}>لینک تصویر خارجی (VPN روشن)</label>
-        <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.platforms?.externalImage||''} onCommit={(v:string)=>chgPlatform(gi,'externalImage',v.trim())} placeholder="https://..."/>
-        <label style={S.lbl}>لینک تصویر داخلی (VPN خاموش)</label>
-        <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.platforms?.internalImage||''} onCommit={(v:string)=>chgPlatform(gi,'internalImage',v.trim())} placeholder="https://..."/></>}
-       {type==='audio'&&<><label style={{...S.lbl,marginTop:4}}>لینک صوتی خارجی (VPN روشن)</label>
-        <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.platforms?.externalAudio||''} onCommit={(v:string)=>chgPlatform(gi,'externalAudio',v.trim())} placeholder="https://..."/>
-        <label style={S.lbl}>لینک صوتی داخلی (VPN خاموش)</label>
-        <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.platforms?.internalAudio||''} onCommit={(v:string)=>chgPlatform(gi,'internalAudio',v.trim())} placeholder="https://..."/></>}
-       {/* پلتفرم‌های سفارشی */}
-       {customPlatforms.length>0&&<><label style={{...S.lbl,marginTop:4}}>پلتفرم‌های سفارشی</label>
-        {customPlatforms.map((cp:any)=>{const customArr:any[]=it.platforms?.custom||[];const existing=customArr.find((c:any)=>c.name===cp.name);return <div key={cp.id} style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-         <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11}}><input type="checkbox" checked={!!existing} onChange={e=>{const a=[...items];const cur:any[]=a[gi].platforms?.custom||[];if(e.target.checked){a[gi]={...a[gi],platforms:{...a[gi].platforms,custom:[...cur,{name:cp.name,code:'',vpnRequired:cp.vpnRequired}]}}}else{a[gi]={...a[gi],platforms:{...a[gi].platforms,custom:cur.filter((c:any)=>c.name!==cp.name)}}}updItems(a)}}/> {cp.name} {cp.vpnRequired?'(نیاز به VPN)':''}</label>
-         {existing&&<input dir="ltr" style={{...S.inp,flex:1,fontSize:11}} defaultValue={existing.code||''} onBlur={e=>{const a=[...items];const cur:any[]=a[gi].platforms?.custom||[];a[gi]={...a[gi],platforms:{...a[gi].platforms,custom:cur.map((c:any)=>c.name===cp.name?{...c,code:e.target.value.trim()}:c)}};updItems(a)}} placeholder="کد iframe / لینک"/>}
-        </div>})}</>}
-       {/* displayMode */}
-       <label style={{...S.lbl,marginTop:4}}>حالت نمایش</label>
-       <select style={{...S.inp,marginBottom:6}} value={it.displayMode||'both'} onChange={e=>chg(gi,'displayMode',e.target.value)}>
-        {displayModeOptions.map(([v,l])=><option key={v} value={v}>{l}</option>)}
-       </select>
-       {/* categories */}
-       <label style={{...S.lbl,marginTop:4}}>دسته‌بندی‌ها</label>
-       <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:8}}>
-        {categoryOptions.map(([catId,catLabel])=><label key={catId} style={{display:'flex',alignItems:'center',gap:4,fontSize:12,cursor:'pointer'}}>
-         <input type="checkbox" checked={(it.categories||[]).includes(catId)} onChange={()=>toggleCategory(gi,catId)}/> {catLabel}
-        </label>)}
-       </div>
-       {/* Move / Delete */}
-       <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-        <button style={AdminBtn()} disabled={localIdx===0} onClick={()=>moveItem(gi,-1)}>بالا</button>
-        <button style={AdminBtn()} disabled={localIdx===filtered.length-1} onClick={()=>moveItem(gi,1)}>پایین</button>
-        <button style={{...AdminBtn(),color:T.err}} onClick={()=>removeItem(gi)}>حذف</button>
-       </div>
-      </div>})}
-     <button style={{...AdminBtn(),marginTop:8}} onClick={()=>addItem(type)}>افزودن {addLabel}</button>
-    </details>})}
-   <button style={{...S.btn,marginTop:12}} onClick={()=>setSave(editCfg)}>ذخیره محتوا</button>
-  </Box>}
-
-
  function TrustEditor(){
   // TrustRotator از صفحات حذف شد — فقط جملات موفقیت باقی مانده
 
