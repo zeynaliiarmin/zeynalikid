@@ -17,7 +17,7 @@ import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
 import { resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
 // PWA admin: shared session utils (clear on logout, validate on /admin/app)
-import { clearAdminSession, getAdminSessionToken } from './utils/adminSession';
+import { clearAdminSession, getAdminSessionToken, validateAdminSession } from './utils/adminSession';
 // اصلاح چانک-۱: Lazy Loading صفحات برای کاهش حجم باندل اولیه
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CoursesPage = lazy(() => import('./pages/CoursesPage'));
@@ -967,6 +967,9 @@ function App(){
  const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return sessionStorage.getItem('zk_admin_authed')==='true' && !!getAdminSessionToken(); } catch { return false; } }); const [adminTab,setAdminTab]=useState('dashboard');
  // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
  useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&!adminAuthed){ navigate('/admin/login',{replace:true}); } },[location.pathname,adminAuthed,navigate]);
+ // Phase 3: هنگام ورود به /admin/app، validate_session را با Edge Function بررسی کن.
+ // فقط وجود token در sessionStorage کافی نیست — session ممکن است منقضی یا revoke شده باشد.
+ useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&getAdminSessionToken()){ let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin')setAdminAuthed(true); if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید

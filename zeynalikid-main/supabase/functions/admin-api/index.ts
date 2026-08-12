@@ -70,17 +70,11 @@ async function listSubmissions(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت فرم‌ها", origin, 500);
   }
 
-  const masked = (data || []).map((row: any) => {
-    const phone = String(row.full_phone ?? "");
-    const last4 = phone.slice(-4);
-    return {
-      ...row,
-      full_phone: phone ? `****${last4}` : "",
-    };
-  });
-
+  // NOTE: admin-api returns FULL phone numbers to the admin panel — the admin needs
+  // them for contact/WhatsApp/follow-up. token_hash/credential_public_key are not
+  // in this table anyway, so no sensitive fields to strip here.
   return ok({
-    submissions: masked,
+    submissions: data ?? [],
     total: count ?? 0,
     page,
     limit,
@@ -101,10 +95,8 @@ async function getSubmission(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت فرم", origin, 500);
   }
   if (!data) return err("فرم یافت نشد", origin, 404);
-  const phone = String(data.full_phone ?? "");
-  return ok({
-    submission: { ...data, full_phone: phone ? `****${phone.slice(-4)}` : "" },
-  }, origin);
+  // Admin needs the full record including phone for follow-up.
+  return ok({ submission: data }, origin);
 }
 
 const SUBMISSION_PAYLOAD_WHITELIST = [
@@ -408,12 +400,8 @@ async function listQuestions(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت سؤالات", origin, 500);
   }
 
-  const masked = (data || []).map((q: any) => {
-    const phone = String(q.phone ?? "");
-    return { ...q, phone: phone ? `****${phone.slice(-4)}` : "" };
-  });
-
-  return ok({ questions: masked, total: count ?? 0, page, limit }, origin);
+  // Admin needs full phone numbers to respond to questions.
+  return ok({ questions: data ?? [], total: count ?? 0, page, limit }, origin);
 }
 
 async function updateQuestion(body: any, origin: string): Promise<Response> {

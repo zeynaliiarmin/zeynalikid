@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getAdminSessionToken } from '../utils/adminSession';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -123,108 +124,73 @@ export const settingsToDbRow = (settings: AppSettings): Record<string, any> => (
 });
 
 export const fetchSubmissions = async (): Promise<Submission[]> => {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .select('*')
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return (data || []).map((row) => dbRowToSubmission(row)).filter(Boolean) as Submission[];
+  // Phase 3: route through admin-api (no direct Supabase access from admin panel)
+  const { adminFetchSubmissions } = await import('./adminApi');
+  const result = await adminFetchSubmissions({ limit: 1000 });
+  return result.submissions;
 };
 
 export const fetchDeletedSubmissions = async (): Promise<Submission[]> => {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .select('*')
-    .not('deleted_at', 'is', null)
-    .order('deleted_at', { ascending: false });
-
-  if (error) throw error;
-  return (data || []).map((row) => dbRowToSubmission(row)).filter(Boolean) as Submission[];
+  // Phase 3: route through admin-api
+  const { adminFetchDeletedSubmissions } = await import('./adminApi');
+  const result = await adminFetchDeletedSubmissions({ limit: 1000 });
+  return result.submissions;
 };
 
 export const softDeleteSubmission = async (id: string | number): Promise<void> => {
-  const client = requireSupabase();
-  // ۱) دریافت payload برای دسترسی به لینک فیش
-  const { data: row, error: fetchError } = await client
-    .from(SUBMISSIONS_TABLE)
-    .select('payload')
-    .eq('id', id)
-    .maybeSingle();
-  if (fetchError) throw fetchError;
-  const payload = (row?.payload && typeof row.payload === 'object' ? row.payload : {}) as Record<string, any>;
+  // Phase 3: route through admin-api for the DB update; storage cleanup still uses
+  // anon key (storage policies are tightened in Phase 6, not now).
+  const { adminGetSubmission, adminUpdateSubmission, adminSoftDeleteSubmission } = await import('./adminApi');
+  // 1) Get current payload to find file URLs
+  const sub = await adminGetSubmission(id);
+  const payload = (sub as any) ?? {};
   const receiptUrl = payload?.payment?.receipt;
   const voiceUrl = payload?.voice_note_url || payload?.voiceNoteUrl;
   const tongueArr: string[] = Array.isArray(payload?.tonguePhotos) ? payload.tonguePhotos : [];
-  // ۲) حذف کامل فیش، ویس و عکس زبان از Storage
-  if (receiptUrl) await removeStoredImageByUrl(client, receiptUrl);
-  if (voiceUrl) await removeVoiceByUrl(client, voiceUrl);
-  for (const u of tongueArr) { if (u) await removeTongueByUrl(client, u); }
-  // ۳) انتقال به سطل آشغال + خالی کردن receipt و ثبت تاریخ حذف فیش
-  const newPayload = receiptUrl
-    ? { ...payload, payment: { ...(payload.payment || {}), receipt: '', receipt_image: '', receiptDeletedAt: new Date().toISOString() } }
-    : payload;
-  const { error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .update({ deleted_at: new Date().toISOString(), payload: newPayload })
-    .eq('id', id);
-  if (error) throw error;
+  // 2) Optionally clear receipt URL in payload (so admin panel doesn't show stale link)
+  if (receiptUrl) {
+    try {
+      await adminUpdateSubmission(id, {
+        payment: { ...(payload.payment || {}), receipt: '', receipt_image: '', receiptDeletedAt: new Date().toISOString() },
+      } as any);
+    } catch { /* admin-api whitelist will accept payment field; ignore if fails */ }
+  }
+  // 3) Delete storage files using anon key (policies still allow this in Phase 3)
+  const client = supabase;
+  if (client) {
+    if (receiptUrl) await removeStoredImageByUrl(client, receiptUrl);
+    if (voiceUrl) await removeVoiceByUrl(client, voiceUrl);
+    for (const u of tongueArr) { if (u) await removeTongueByUrl(client, u); }
+  }
+  // 4) Set deleted_at via admin-api
+  await adminSoftDeleteSubmission(id);
 };
 
 export const softDeleteMultipleSubmissions = async (ids: Array<string | number>): Promise<void> => {
   if (!ids.length) return;
-  const client = requireSupabase();
-  // ۱) دریافت payload فرم‌ها برای دسترسی به لینک فیش‌ها
-  const { data: rows, error: fetchError } = await client
-    .from(SUBMISSIONS_TABLE)
-    .select('id, payload')
-    .in('id', ids);
-  if (fetchError) throw fetchError;
-  const now = new Date().toISOString();
-  for (const row of rows || []) {
-    const payload = (row?.payload && typeof row.payload === 'object' ? row.payload : {}) as Record<string, any>;
-    const receiptUrl = payload?.payment?.receipt;
-    const voiceUrl = payload?.voice_note_url || payload?.voiceNoteUrl;
-    const tongueArr: string[] = Array.isArray(payload?.tonguePhotos) ? payload.tonguePhotos : [];
-    // ۲) حذف فیش، ویس و عکس زبان از Storage
-    if (receiptUrl) await removeStoredImageByUrl(client, receiptUrl);
-    if (voiceUrl) await removeVoiceByUrl(client, voiceUrl);
-    for (const u of tongueArr) { if (u) await removeTongueByUrl(client, u); }
-    // ۳) به‌روزرسانی هر ردیف (payload هر فرم متفاوت است، پس تک‌به‌تک)
-    const newPayload = receiptUrl
-      ? { ...payload, payment: { ...(payload.payment || {}), receipt: '', receipt_image: '', receiptDeletedAt: now } }
-      : payload;
-    const { error } = await client
-      .from(SUBMISSIONS_TABLE)
-      .update({ deleted_at: now, payload: newPayload })
-      .eq('id', row.id);
-    if (error) console.warn('soft delete failed for', row.id, error);
+  // Phase 3: loop client-side using the single-row softDeleteSubmission
+  for (const id of ids) {
+    await softDeleteSubmission(id);
   }
 };
 
 export const restoreSubmission = async (id: string | number): Promise<void> => {
-  const client = requireSupabase();
-  const { error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .update({ deleted_at: null })
-    .eq('id', id);
-  if (error) throw error;
+  // Phase 3: route through admin-api
+  const { adminRestoreSubmission } = await import('./adminApi');
+  await adminRestoreSubmission(id);
 };
 
 export const permanentDeleteSubmission = async (id: string | number): Promise<void> => {
-  const client = requireSupabase();
-  const { error } = await client.from(SUBMISSIONS_TABLE).delete().eq('id', id);
-  if (error) throw error;
+  // Phase 3: route through admin-api
+  const { adminPermanentDeleteSubmission } = await import('./adminApi');
+  await adminPermanentDeleteSubmission(id);
 };
 
 export const permanentDeleteMultipleSubmissions = async (ids: Array<string | number>): Promise<void> => {
   if (!ids.length) return;
-  const client = requireSupabase();
-  const { error } = await client.from(SUBMISSIONS_TABLE).delete().in('id', ids);
-  if (error) throw error;
+  // Phase 3: route through admin-api (loop client-side)
+  const { adminPermanentDeleteMultipleSubmissions } = await import('./adminApi');
+  await adminPermanentDeleteMultipleSubmissions(ids);
 };
 
 export const createSubmission = async (submission: Submission): Promise<Submission> => {
@@ -246,26 +212,19 @@ export const updateSubmission = async (
   id: string | number,
   updates: Partial<Submission>,
 ): Promise<Submission> => {
-  const client = requireSupabase();
-  const row = submissionToDbRow(updates as Submission);
-  delete row.id;
-
-  const { data, error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .update(row)
-    .eq('id', id)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return dbRowToSubmission(data) as Submission;
+  // Phase 3: route through admin-api (whitelist-enforced).
+  // admin-api returns only { updated, changedFields }, so we re-fetch to get the full row.
+  const { adminUpdateSubmission, adminGetSubmission } = await import('./adminApi');
+  await adminUpdateSubmission(id, updates);
+  const updated = await adminGetSubmission(id);
+  return updated as Submission;
 };
 
 export const deleteMultipleSubmissions = async (ids: Array<string | number>): Promise<void> => {
   if (!ids.length) return;
-  const client = requireSupabase();
-  const { error } = await client.from(SUBMISSIONS_TABLE).delete().in('id', ids);
-  if (error) throw error;
+  // Phase 3: route through admin-api (permanent delete)
+  const { adminPermanentDeleteMultipleSubmissions } = await import('./adminApi');
+  await adminPermanentDeleteMultipleSubmissions(ids);
 };
 
 export const updateMultipleSubmissions = async (
@@ -273,18 +232,11 @@ export const updateMultipleSubmissions = async (
   updates: Partial<Submission>,
 ): Promise<Submission[]> => {
   if (!ids.length) return [];
-  const client = requireSupabase();
-  const row = submissionToDbRow(updates as Submission);
-  delete row.id;
-
-  const { data, error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .update(row)
-    .in('id', ids)
-    .select('*');
-
-  if (error) throw error;
-  return (data || []).map((item) => dbRowToSubmission(item)).filter(Boolean) as Submission[];
+  // Phase 3: route through admin-api (loop client-side)
+  const { adminUpdateMultipleSubmissions } = await import('./adminApi');
+  await adminUpdateMultipleSubmissions(ids, updates);
+  // Return empty array — caller (admin panel) will refetch the list anyway
+  return [];
 };
 
 export const checkDuplicatePhone = async (phone: string): Promise<boolean> => {
@@ -301,29 +253,33 @@ export const checkDuplicatePhone = async (phone: string): Promise<boolean> => {
 };
 
 export const fetchSettings = async (): Promise<AppSettings | null> => {
+  // Phase 3: try admin-api first (returns full settings, masked sensitive keys).
+  // If no admin session (public context), fall back to anon read (which will be
+  // restricted by RLS in Phase 5 — for now anon can still SELECT settings).
+  try {
+    if (getAdminSessionToken()) {
+      const { adminFetchSettings } = await import('./adminApi');
+      const s = await adminFetchSettings();
+      if (s) return s;
+    }
+  } catch { /* fall through to anon read */ }
+
   const client = requireSupabase();
   const { data, error } = await client
     .from(SETTINGS_TABLE)
     .select('*')
     .eq('key', SETTINGS_KEY)
     .maybeSingle();
-
   if (error) throw error;
   return dbRowToSettings(data);
 };
 
 export const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
-  const client = requireSupabase();
-  const row = settingsToDbRow(settings);
-
-  const { data, error } = await client
-    .from(SETTINGS_TABLE)
-    .upsert(row, { onConflict: 'key' })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return dbRowToSettings(data) as AppSettings;
+  // Phase 3: route through admin-api (blocklist prevents saving adminPassword etc.)
+  const { adminSaveSettings } = await import('./adminApi');
+  await adminSaveSettings(settings);
+  // Return the input settings (caller doesn't use the return value beyond success/failure)
+  return settings;
 };
 
 // ===== آمار بازدید صفحات (page_views) — اصلاح جدید =====
@@ -357,33 +313,49 @@ export type PageViewStats = {
 };
 
 export const fetchPageViewStats = async (): Promise<PageViewStats> => {
-  const client = requireSupabase();
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-  const [{ count: total }, { count: today }, { count: thisMonth }, { data: recentRows }] = await Promise.all([
-    client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }),
-    client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfDay),
-    client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
-    client
-      .from(PAGE_VIEWS_TABLE)
-      .select('page_path')
-      .gte('created_at', startOfMonth)
-      .limit(5000),
-  ]);
-
-  const counts: Record<string, number> = {};
-  (recentRows || []).forEach((row: any) => {
-    const p = row.page_path || '/';
-    counts[p] = (counts[p] || 0) + 1;
-  });
-  const topPages = Object.entries(counts)
-    .map(([page_path, count]) => ({ page_path, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  return { total: total || 0, today: today || 0, thisMonth: thisMonth || 0, topPages };
+  // Phase 3: route through admin-api
+  try {
+    const { adminFetchPageViewStats } = await import('./adminApi');
+    const stats = await adminFetchPageViewStats(30);
+    // Map admin-api response to the PageViewStats shape used by the frontend
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().slice(0, 10);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const todayCount = (stats.dailyCounts || [])
+      .filter((d: any) => d.date === startOfDay)
+      .reduce((sum: number, d: any) => sum + d.views, 0);
+    const thisMonthCount = (stats.dailyCounts || [])
+      .filter((d: any) => d.date >= startOfMonth)
+      .reduce((sum: number, d: any) => sum + d.views, 0);
+    return {
+      total: stats.totalViews || 0,
+      today: todayCount,
+      thisMonth: thisMonthCount,
+      topPages: (stats.topPages || []).slice(0, 5).map((p: any) => ({ page_path: p.page_path, count: p.views })),
+    };
+  } catch {
+    // Fall back to direct Supabase if admin-api fails
+    const client = requireSupabase();
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const [{ count: total }, { count: today }, { count: thisMonth }, { data: recentRows }] = await Promise.all([
+      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }),
+      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfDay),
+      client.from(PAGE_VIEWS_TABLE).select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
+      client.from(PAGE_VIEWS_TABLE).select('page_path').gte('created_at', startOfMonth).limit(5000),
+    ]);
+    const counts: Record<string, number> = {};
+    (recentRows || []).forEach((row: any) => {
+      const p = row.page_path || '/';
+      counts[p] = (counts[p] || 0) + 1;
+    });
+    const topPages = Object.entries(counts)
+      .map(([page_path, count]) => ({ page_path, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    return { total: total || 0, today: today || 0, thisMonth: thisMonth || 0, topPages };
+  }
 };
 
 
@@ -485,23 +457,16 @@ export const submitUserQuestion = async (
 };
 
 export const fetchUserQuestions = async (status?: string): Promise<UserQuestion[]> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSQuestions();
-    if (status && status !== 'all') {
-      return list.filter((q) => q.status === status);
-    }
-    return list;
-  }
-
+  // Phase 3: route through admin-api (admin panel only — public question submit uses submitUserQuestion)
   try {
-    let query = supabase.from(QUESTIONS_TABLE).select('*').order('created_at', { ascending: false });
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []) as UserQuestion[];
+    const { adminFetchUserQuestions } = await import('./adminApi');
+    const result = await adminFetchUserQuestions({
+      status: status && status !== 'all' ? status : undefined,
+      limit: 1000,
+    });
+    return result.questions;
   } catch (err) {
+    // If admin-api fails (e.g. no session), fall back to LS for offline support
     const list = getLSQuestions();
     if (status && status !== 'all') {
       return list.filter((q) => q.status === status);
@@ -515,34 +480,16 @@ export const answerUserQuestion = async (
   answer: string,
   answerEn?: string
 ): Promise<UserQuestion | null> => {
-  const answeredAt = new Date().toISOString();
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSQuestions();
-    const updated = list.map((q) =>
-      q.id === id
-        ? { ...q, answer: answer.trim(), answer_en: answerEn?.trim() || '', status: 'answered' as const, answered_at: answeredAt }
-        : q
-    );
-    setLSQuestions(updated);
-    return updated.find((q) => q.id === id) || null;
-  }
-
+  // Phase 3: route through admin-api
   try {
-    const { data, error } = await supabase
-      .from(QUESTIONS_TABLE)
-      .update({
-        answer: answer.trim(),
-        answer_en: answerEn?.trim() || '',
-        status: 'answered',
-        answered_at: answeredAt,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return (data as UserQuestion) || null;
+    const { adminAnswerUserQuestion } = await import('./adminApi');
+    await adminAnswerUserQuestion(id, answer.trim(), answerEn?.trim() || undefined);
+    // Return a partial UserQuestion (caller will refetch the list)
+    return { id, answer: answer.trim(), answer_en: answerEn?.trim() || '', status: 'answered', answered_at: new Date().toISOString() } as UserQuestion;
   } catch (err) {
+    // Fall back to LS if admin-api unavailable
     const list = getLSQuestions();
+    const answeredAt = new Date().toISOString();
     const updated = list.map((q) =>
       q.id === id
         ? { ...q, answer: answer.trim(), answer_en: answerEn?.trim() || '', status: 'answered' as const, answered_at: answeredAt }
@@ -554,16 +501,10 @@ export const answerUserQuestion = async (
 };
 
 export const archiveUserQuestion = async (id: number): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSQuestions();
-    const updated = list.map((q) => (q.id === id ? { ...q, status: 'archived' as const } : q));
-    setLSQuestions(updated);
-    return true;
-  }
-
+  // Phase 3: route through admin-api
   try {
-    const { error } = await supabase.from(QUESTIONS_TABLE).update({ status: 'archived' }).eq('id', id);
-    if (error) throw error;
+    const { adminArchiveUserQuestion } = await import('./adminApi');
+    await adminArchiveUserQuestion(id);
     return true;
   } catch {
     const list = getLSQuestions();
@@ -574,16 +515,10 @@ export const archiveUserQuestion = async (id: number): Promise<boolean> => {
 };
 
 export const deleteUserQuestion = async (id: number): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSQuestions();
-    const updated = list.filter((q) => q.id !== id);
-    setLSQuestions(updated);
-    return true;
-  }
-
+  // Phase 3: route through admin-api
   try {
-    const { error } = await supabase.from(QUESTIONS_TABLE).delete().eq('id', id);
-    if (error) throw error;
+    const { adminDeleteUserQuestion } = await import('./adminApi');
+    await adminDeleteUserQuestion(id);
     return true;
   } catch {
     const list = getLSQuestions();
@@ -710,21 +645,14 @@ export const submitReview = async (
 };
 
 export const fetchReviews = async (status?: string): Promise<ReviewItem[]> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    if (status && status !== 'all') {
-      return list.filter((r) => r.status === status);
-    }
-    return list;
-  }
+  // Phase 3: route through admin-api
   try {
-    let query = supabase.from(REVIEWS_TABLE).select('*').order('created_at', { ascending: false });
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []) as ReviewItem[];
+    const { adminFetchReviews } = await import('./adminApi');
+    const result = await adminFetchReviews({
+      status: status && status !== 'all' ? status : undefined,
+      limit: 1000,
+    });
+    return result.reviews;
   } catch {
     const list = getLSReviews();
     if (status && status !== 'all') {
@@ -735,13 +663,10 @@ export const fetchReviews = async (status?: string): Promise<ReviewItem[]> => {
 };
 
 export const approveReview = async (id: number): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    setLSReviews(list.map((r) => (r.id === id ? { ...r, status: 'approved' as const } : r)));
-    return true;
-  }
+  // Phase 3: route through admin-api
   try {
-    await supabase.from(REVIEWS_TABLE).update({ status: 'approved' }).eq('id', id);
+    const { adminApproveReview } = await import('./adminApi');
+    await adminApproveReview(id);
     return true;
   } catch {
     const list = getLSReviews();
@@ -751,13 +676,10 @@ export const approveReview = async (id: number): Promise<boolean> => {
 };
 
 export const rejectReview = async (id: number): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    setLSReviews(list.map((r) => (r.id === id ? { ...r, status: 'rejected' as const } : r)));
-    return true;
-  }
+  // Phase 3: route through admin-api
   try {
-    await supabase.from(REVIEWS_TABLE).update({ status: 'rejected' }).eq('id', id);
+    const { adminRejectReview } = await import('./adminApi');
+    await adminRejectReview(id);
     return true;
   } catch {
     const list = getLSReviews();
@@ -767,13 +689,10 @@ export const rejectReview = async (id: number): Promise<boolean> => {
 };
 
 export const deleteReview = async (id: number): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    setLSReviews(list.filter((r) => r.id !== id));
-    return true;
-  }
+  // Phase 3: route through admin-api
   try {
-    await supabase.from(REVIEWS_TABLE).delete().eq('id', id);
+    const { adminDeleteReview } = await import('./adminApi');
+    await adminDeleteReview(id);
     return true;
   } catch {
     const list = getLSReviews();
@@ -786,14 +705,10 @@ export const updateReview = async (
   id: number,
   updates: Partial<ReviewItem>
 ): Promise<boolean> => {
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    setLSReviews(list.map((r) => (r.id === id ? { ...r, ...updates } : r)));
-    return true;
-  }
+  // Phase 3: route through admin-api
   try {
-    const { error } = await supabase.from(REVIEWS_TABLE).update(updates).eq('id', id);
-    if (error) throw error;
+    const { adminUpdateReview } = await import('./adminApi');
+    await adminUpdateReview(id, updates);
     return true;
   } catch {
     const list = getLSReviews();
@@ -807,15 +722,10 @@ export const updateReview = async (
  */
 export const bulkApproveReviews = async (ids: number[]): Promise<boolean> => {
   if (!ids || ids.length === 0) return true;
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    const idSet = new Set(ids);
-    setLSReviews(list.map((r) => (idSet.has(r.id) ? { ...r, status: 'approved' as const } : r)));
-    return true;
-  }
+  // Phase 3: loop client-side via admin-api
   try {
-    const { error } = await supabase.from(REVIEWS_TABLE).update({ status: 'approved' }).in('id', ids);
-    if (error) throw error;
+    const { adminApproveReview } = await import('./adminApi');
+    await Promise.all(ids.map(id => adminApproveReview(id)));
     return true;
   } catch {
     const list = getLSReviews();
@@ -827,15 +737,10 @@ export const bulkApproveReviews = async (ids: number[]): Promise<boolean> => {
 
 export const bulkRejectReviews = async (ids: number[]): Promise<boolean> => {
   if (!ids || ids.length === 0) return true;
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    const idSet = new Set(ids);
-    setLSReviews(list.map((r) => (idSet.has(r.id) ? { ...r, status: 'rejected' as const } : r)));
-    return true;
-  }
+  // Phase 3: loop client-side via admin-api
   try {
-    const { error } = await supabase.from(REVIEWS_TABLE).update({ status: 'rejected' }).in('id', ids);
-    if (error) throw error;
+    const { adminRejectReview } = await import('./adminApi');
+    await Promise.all(ids.map(id => adminRejectReview(id)));
     return true;
   } catch {
     const list = getLSReviews();
@@ -847,15 +752,10 @@ export const bulkRejectReviews = async (ids: number[]): Promise<boolean> => {
 
 export const bulkDeleteReviews = async (ids: number[]): Promise<boolean> => {
   if (!ids || ids.length === 0) return true;
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    const idSet = new Set(ids);
-    setLSReviews(list.filter((r) => !idSet.has(r.id)));
-    return true;
-  }
+  // Phase 3: loop client-side via admin-api
   try {
-    const { error } = await supabase.from(REVIEWS_TABLE).delete().in('id', ids);
-    if (error) throw error;
+    const { adminDeleteReview } = await import('./adminApi');
+    await Promise.all(ids.map(id => adminDeleteReview(id)));
     return true;
   } catch {
     const list = getLSReviews();
@@ -867,15 +767,10 @@ export const bulkDeleteReviews = async (ids: number[]): Promise<boolean> => {
 
 export const bulkUpdateReviewPlacements = async (ids: number[], placements: string[]): Promise<boolean> => {
   if (!ids || ids.length === 0) return true;
-  if (!isSupabaseConfigured || !supabase) {
-    const list = getLSReviews();
-    const idSet = new Set(ids);
-    setLSReviews(list.map((r) => (idSet.has(r.id) ? { ...r, placements } : r)));
-    return true;
-  }
+  // Phase 3: route through admin-api (loop client-side)
   try {
-    const { error } = await supabase.from(REVIEWS_TABLE).update({ placements }).in('id', ids);
-    if (error) throw error;
+    const { adminBulkUpdateReviewPlacements } = await import('./adminApi');
+    await adminBulkUpdateReviewPlacements(ids, placements);
     return true;
   } catch {
     const list = getLSReviews();

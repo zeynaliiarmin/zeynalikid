@@ -31,7 +31,8 @@ import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, l
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 
 type Any=Record<string,any>;
-const ENV_ADMIN_PASSWORD=(import.meta.env.VITE_ADMIN_PASSWORD as string|undefined)||'';
+// Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
+// const ENV_ADMIN_PASSWORD removed.
 // Stage 7B: هِلپرهای نمایشی خالص (بدون هیچ تغییر منطقی) — عدد فارسی، تاریخ خوانا، زمان نسبی، لحن وضعیت
 
 
@@ -331,24 +332,26 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
         className="zkad-toolbtn"
         style={{background:'#fee2e2', color:'#b91c1c', borderColor:'#fca5a5', fontWeight:800}}
         onClick={async () => {
-          if (!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات فضای ذخیره‌سازی را آزاد می‌کند.')) return;
+          // Phase 3: use admin-api client with sessionToken + dryRun first
           try {
-            const base = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-            const key = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
-            if (base) {
-              const response = await fetch(`${base}/functions/v1/cleanup-receipts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'apikey': key }
-              });
-              if (response.ok) {
-                const r = await response.json().catch(() => ({}));
-                alert(`فیش‌های قدیمی با موفقیت پاک‌سازی شدند. (${r.deleted ?? 0} فایل حذف شد)`);
-                return;
-              }
+            const { adminCleanupReceiptsDryRun, adminCleanupReceiptsExecute } = await import('../lib/adminApi');
+            // 1) Dry-run to count target files
+            const dry = await adminCleanupReceiptsDryRun();
+            if (dry.targetFiles === 0) {
+              alert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.');
+              return;
             }
-            alert('دستور پاک‌سازی اجرا شد.');
-          } catch {
-            alert('عملیات پاک‌سازی انجام شد.');
+            // 2) Confirm with user — show exact count
+            if (!confirm(`آیا از پاک‌سازی ${dry.targetFiles} فیش قدیمی (بیش از ۱ ماه) مطمئن هستید؟ این عملیات قابل بازگشت نیست.`)) return;
+            // 3) Execute
+            const result = await adminCleanupReceiptsExecute();
+            alert(`پاک‌سازی با موفقیت انجام شد.\nفایل‌های حذف‌شده: ${result.deleted}\nرکوردهای به‌روزرسانی‌شده: ${result.cleanedRows}`);
+          } catch (e: any) {
+            if (e?.status === 401) {
+              alert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.');
+              return;
+            }
+            alert(e?.message || 'خطا در پاک‌سازی فیش‌ها.');
           }
         }}
       >
@@ -482,7 +485,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
    <Box title="ورود مهمان - محتوای عمومی"><label style={S.lbl}>طریقه مصرف عمومی برای مهمان (guestUsage)</label><textarea style={S.ta} defaultValue={editCfg.guestUsage||""} onBlur={e=>up("guestUsage",e.target.value)} placeholder="متن طریقه مصرف عمومی..."/><label style={{...S.lbl,marginTop:10}}>برنامه غذایی عمومی برای مهمان (guestMealPlan)</label><textarea style={S.ta} defaultValue={editCfg.guestMealPlan||""} onBlur={e=>up("guestMealPlan",e.target.value)} placeholder="برنامه غذایی عمومی..."/></Box>
   </>}
   {settingsSubTab==='primary'&&<>
-   <Box title="تنظیمات ظاهری (دوره‌ها + پنل)">{['adminLoginText'].map(k=><Field key={k} label={k} value={editCfg[k]||''} onChange={(v:string)=>up(k,v)} ph=""/>)}<label style={S.lbl}>حداکثر حجم فیش واریزی (کیلوبایت)</label><input style={S.inp} inputMode="numeric" type="number" min={100} max={1000} defaultValue={editCfg.imageCompressionKB||500} onBlur={e=>up('imageCompressionKB',Math.min(1000,Math.max(100,+p2e(e.target.value)||500)))}/><p style={{fontSize:11,color:T.mut,margin:'4px 0 12px'}}>عکس‌های آپلودی به این حجم فشرده می‌شوند (بین ۱۰۰ تا ۱۰۰۰ کیلوبایت).</p><button style={{...AdminBtn(),display:'block',marginBottom:12}} onClick={async()=>{if(!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.'))return; try{const base=(import.meta as any).env?.VITE_SUPABASE_URL||''; const key=(import.meta as any).env?.VITE_SUPABASE_ANON_KEY||''; if(!base){alert('Supabase تنظیم نشده است.');return} const response=await fetch(`${base}/functions/v1/cleanup-receipts`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'apikey':key}}); if(response.ok){const r=await response.json().catch(()=>({}));alert(`فیش‌های قدیمی با موفقیت پاک‌سازی شدند. (${r.deleted??0} فایل)`)}else{alert('خطا در پاک‌سازی فیش‌ها.')}}catch(e){alert('خطا در ارتباط با سرور.')}}}><ZkTrashIcon size={13}/> پاک‌سازی فیش‌های قدیمی (بیش از ۱ ماه)</button><label style={S.lbl}>تعداد ارقام کد پیگیری</label><select style={S.inp} value={editCfg.trackingDigitCount||5} onChange={e=>up('trackingDigitCount',parseInt(e.target.value))}><option value={4}>۴ رقم (ZK1234)</option><option value={5}>۵ رقم (ZK12345) — پیش‌فرض</option><option value={6}>۶ رقم (ZK123456)</option><option value={7}>۷ رقم (ZK1234567)</option><option value={8}>۸ رقم (ZK12345678)</option></select><p style={{fontSize:12,color:T.mut,marginTop:6,marginBottom:12}}>تغییر این مقدار فقط برای فرم‌های جدید اعمال می‌شود. فرم‌های قبلی با همان کد قبلی باقی می‌مانند.</p></Box>
+   <Box title="تنظیمات ظاهری (دوره‌ها + پنل)">{['adminLoginText'].map(k=><Field key={k} label={k} value={editCfg[k]||''} onChange={(v:string)=>up(k,v)} ph=""/>)}<label style={S.lbl}>حداکثر حجم فیش واریزی (کیلوبایت)</label><input style={S.inp} inputMode="numeric" type="number" min={100} max={1000} defaultValue={editCfg.imageCompressionKB||500} onBlur={e=>up('imageCompressionKB',Math.min(1000,Math.max(100,+p2e(e.target.value)||500)))}/><p style={{fontSize:11,color:T.mut,margin:'4px 0 12px'}}>عکس‌های آپلودی به این حجم فشرده می‌شوند (بین ۱۰۰ تا ۱۰۰۰ کیلوبایت).</p><button style={{...AdminBtn(),display:'block',marginBottom:12}} onClick={async()=>{if(!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.'))return; try{const {adminCleanupReceiptsDryRun,adminCleanupReceiptsExecute}=await import('../lib/adminApi'); const dry=await adminCleanupReceiptsDryRun(); if(dry.targetFiles===0){alert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.');return} if(!confirm(`${dry.targetFiles} فیش قدیمی یافت شد. ادامه می‌دهید؟`))return; const r=await adminCleanupReceiptsExecute(); alert(`پاک‌سازی موفق بود.\nفایل‌های حذف‌شده: ${r.deleted}\nرکوردهای به‌روزرسانی‌شده: ${r.cleanedRows}`)}catch(e:any){if(e?.status===401){alert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.')}else{alert(e?.message||'خطا در پاک‌سازی فیش‌ها.')}}}}><ZkTrashIcon size={13}/> پاک‌سازی فیش‌های قدیمی (بیش از ۱ ماه)</button><label style={S.lbl}>تعداد ارقام کد پیگیری</label><select style={S.inp} value={editCfg.trackingDigitCount||5} onChange={e=>up('trackingDigitCount',parseInt(e.target.value))}><option value={4}>۴ رقم (ZK1234)</option><option value={5}>۵ رقم (ZK12345) — پیش‌فرض</option><option value={6}>۶ رقم (ZK123456)</option><option value={7}>۷ رقم (ZK1234567)</option><option value={8}>۸ رقم (ZK12345678)</option></select><p style={{fontSize:12,color:T.mut,marginTop:6,marginBottom:12}}>تغییر این مقدار فقط برای فرم‌های جدید اعمال می‌شود. فرم‌های قبلی با همان کد قبلی باقی می‌مانند.</p></Box>
 
    {/* اصلاح ۳۰ (مرحله ۷): تنظیمات آپلود عکس زبان فرزند */}
    <Box title="عکس زبان فرزند (صفحه اطلاعات فرزند)">
@@ -1584,7 +1587,7 @@ function ThemeManagerEditor(){
   // اصلاح ۱۹: تغییر رمز عبور از داخل پنل مدیریت — فقط رمز ذخیره‌شده فعلی (یا رمز env اولیه) معتبر است
   const savePassword=()=>{
    const v=vals.current; setPwdErr('');
-   const currentStored=cfg.adminPassword||ENV_ADMIN_PASSWORD;
+   const currentStored=cfg.adminPassword||'';
    const curOk=!!currentStored&&v.curPwd===currentStored;
    if(!curOk){setPwdErr('رمز عبور فعلی صحیح نیست');return}
    if(!v.newPwd||v.newPwd.length<4){setPwdErr('رمز جدید باید حداقل ۴ کاراکتر باشد');return}
