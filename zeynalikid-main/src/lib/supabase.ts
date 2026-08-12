@@ -561,6 +561,7 @@ export interface ReviewItem {
   comment?: string;
   status: 'pending' | 'approved' | 'rejected';
   placements?: string[]; // محل‌های نمایش در بخش‌های سایت: 'home', 'courses', 'course_detail', 'consultation', 'faq', 'about', 'track', 'all_places'
+  phone?: string; // شماره تماس ثبت‌کننده (فقط برای پنل ادمین — هرگز در نمایش عمومی پخش نمی‌شود)
   created_at: string;
 }
 
@@ -597,7 +598,8 @@ export const submitReview = async (
   name: string,
   rating: number,
   comment?: string,
-  placements?: string[]
+  placements?: string[],
+  phone?: string
 ): Promise<ReviewItem> => {
   const defaultPlacements = placements && placements.length > 0
     ? placements
@@ -611,6 +613,7 @@ export const submitReview = async (
     comment: comment?.trim() || '',
     status: 'pending',
     placements: defaultPlacements,
+    phone: phone?.trim() || '',
     created_at: new Date().toISOString(),
   };
   if (!isSupabaseConfigured || !supabase) {
@@ -630,6 +633,7 @@ export const submitReview = async (
           comment: newR.comment,
           status: 'pending',
           placements: newR.placements,
+          phone: newR.phone || '',
           created_at: newR.created_at,
         },
       ]);
@@ -658,12 +662,19 @@ export const fetchReviews = async (status?: string): Promise<ReviewItem[]> => {
   // Public context (no session): only approved reviews via anon SELECT.
   // Phase 5 RLS: anon can SELECT only status='approved' on reviews.
   // This keeps public ReviewSection working without an admin session (no redirect).
+  // Privacy: phone is STRIPPED here — it is only for the admin panel and
+  // must never be published on the public site.
   try {
     if (isSupabaseConfigured && supabase) {
       let query = supabase.from(REVIEWS_TABLE).select('*').limit(1000);
       if (status && status !== 'all') query = query.eq('status', status);
       const { data, error } = await query;
-      if (!error && data) return data as ReviewItem[];
+      if (!error && data) {
+        return (data as ReviewItem[]).map((r) => {
+          const { phone: _phone, ...rest } = r;
+          return rest as ReviewItem;
+        });
+      }
     }
   } catch { /* ignore — fall through to LS */ }
 
