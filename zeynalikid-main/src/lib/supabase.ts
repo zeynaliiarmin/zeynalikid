@@ -200,15 +200,15 @@ export const createSubmission = async (submission: Submission): Promise<Submissi
   const client = requireSupabase();
   const row = submissionToDbRow(submission);
   // Keep the id (Date.now() + random) — submissions table has BIGINT PRIMARY KEY without auto-increment
-
-  const { data, error } = await client
+  // Phase 5: no `.select()` after insert — RLS allows anon INSERT only, so PostgREST
+  // cannot return the inserted row (would 401). The caller already has the full
+  // submission object; we simply return it on success.
+  const { error } = await client
     .from(SUBMISSIONS_TABLE)
-    .insert(row)
-    .select('*')
-    .single();
+    .insert(row);
 
   if (error) throw error;
-  return dbRowToSubmission(data) as Submission;
+  return submission;
 };
 
 export const updateSubmission = async (
@@ -410,25 +410,22 @@ export const submitUserQuestion = async (
     if (cleanPhone) {
       insertPayload.phone = cleanPhone;
     }
-    const { data, error } = await supabase
+    // Phase 5: no `.select()` after insert (anon INSERT-only RLS — reading back would 401).
+    const { error } = await supabase
       .from(QUESTIONS_TABLE)
-      .insert([insertPayload])
-      .select()
-      .single();
+      .insert([insertPayload]);
     if (error) {
       if (error.message?.includes('phone') || error.code === 'PGRST204') {
         delete insertPayload.phone;
-        const { data: d2, error: e2 } = await supabase
+        const { error: e2 } = await supabase
           .from(QUESTIONS_TABLE)
-          .insert([insertPayload])
-          .select()
-          .single();
+          .insert([insertPayload]);
         if (e2) throw e2;
-        return (d2 || newQ) as UserQuestion;
+        return newQ;
       }
       throw error;
     }
-    return (data || newQ) as UserQuestion;
+    return newQ;
   } catch (err) {
     console.warn('Could not insert question to Supabase, saving to localStorage:', err);
     const list = getLSQuestions();
@@ -622,7 +619,8 @@ export const submitReview = async (
     return newR;
   }
   try {
-    const { data, error } = await supabase
+    // Phase 5: no `.select()` after insert (anon INSERT-only RLS — reading back would 401).
+    const { error } = await supabase
       .from(REVIEWS_TABLE)
       .insert([
         {
@@ -634,11 +632,9 @@ export const submitReview = async (
           placements: newR.placements,
           created_at: newR.created_at,
         },
-      ])
-      .select()
-      .single();
+      ]);
     if (error) throw error;
-    return data as ReviewItem;
+    return newR;
   } catch {
     const list = getLSReviews();
     setLSReviews([newR, ...list]);
