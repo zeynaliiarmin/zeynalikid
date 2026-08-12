@@ -715,13 +715,20 @@ function SubCardBase({
                 )}
               </section>
 
-              {/* پرداخت */}
-              <section className="zkad-block t-pay">
-                <div className="zkad-block-head">
-                  <b><ZkCardIcon size={15} /> اطلاعات پرداخت و فیش واریزی</b>
+              {/* پرداخت — در تب باز/بسته (پیش‌فرض بسته) با تگ قرمز نوتیفیکیشن اگر فیش/متن پرداخت موجود باشد */}
+              <details className="zkad-pay-details" open={false}>
+                <summary className="zkad-pay-summary">
+                  <span style={{display:'inline-flex',alignItems:'center',gap:7}}><ZkCardIcon size={15} /> اطلاعات پرداخت و فیش واریزی</span>
+                  {(activeCourseRecord.payment?.receipt || activeCourseRecord.payment?.receiptText) && (
+                    <span className="zkad-pay-badge" title="فیش یا اطلاعات پرداخت ثبت شده است">!</span>
+                  )}
                   <span className={`zkad-tag ${activeCourseRecord.payment?.receipt ? 't-ok' : activeCourseRecord.payment?.receiptText ? 't-info' : 't-warn'}`}>
                     {activeCourseRecord.payment?.receipt ? 'فیش دارد' : activeCourseRecord.payment?.receiptText ? 'متن پیامک دارد' : 'بدون فیش آنلاین'}
                   </span>
+                </summary>
+              <section className="zkad-block t-pay">
+                <div className="zkad-block-head">
+                  <b style={{fontSize:12.5}}>جزئیات پرداخت</b>
                 </div>
 
                 {activeCourseRecord.payment?.receipt && (
@@ -808,15 +815,8 @@ function SubCardBase({
                   </button>
                 </div>
               </section>
+              </details>
 
-              {activeCourseRecord.editHistory?.length > 0 && (
-                <details className="zkad-details">
-                  <summary>مشاهده اطلاعات اولیه و تاریخچه ویرایش دوره ({activeCourseRecord.editHistory.length} نسخه)</summary>
-                  {activeCourseRecord.editHistory.map((h: any, i: number) => (
-                    <pre key={i} className="zkad-pre">{`نسخه ${i + 1} — ${h.date || ''} ${h.time || ''}\n${JSON.stringify(h.data, null, 2)}`}</pre>
-                  ))}
-                </details>
-              )}
             </div>
           )}
 
@@ -880,15 +880,6 @@ function SubCardBase({
                   </div>
                 </div>
               </div>
-
-              {sub.changeHistory?.length > 0 && (
-                <details className="zkad-details">
-                  <summary>تاریخچه تغییرات ({sub.changeHistory.length})</summary>
-                  <ul className="zkad-history">
-                    {sub.changeHistory.map((h: any, i: number) => <li key={i}><span className="zkad-mut">{h.at} — {h.by}:</span> {h.what}</li>)}
-                  </ul>
-                </details>
-              )}
 
               <label className="zkad-f">
                 <span>یادداشت مدیر (خصوصی)</span>
@@ -1058,14 +1049,6 @@ function SubCardBase({
                 <div className="zkad-empty-note">کاربر هنوز فرم اصلاحی را تکمیل نکرده است.</div>
               )}
 
-              {sub.editHistory?.length > 0 && (
-                <details className="zkad-details">
-                  <summary>تاریخچه ویرایش‌های قبلی ({sub.editHistory.length} نسخه)</summary>
-                  {sub.editHistory.map((h: any, i: number) => (
-                    <pre key={i} className="zkad-pre">{`نسخه ${i + 1} — تاریخ: ${h.date || ''} ${h.time || ''}\n${JSON.stringify(h.data, null, 2)}`}</pre>
-                  ))}
-                </details>
-              )}
             </div>
           )}
         </div>
