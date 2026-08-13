@@ -218,6 +218,14 @@ export const defaultSettings = {
       enabled: true,
       storagePath: '',
     },
+    tcMethodGraphic: {
+      url: '/images/graphics/graphic-tc-method.webp',
+      alt: 'تصویر روش TC',
+      enabled: true,
+      storagePath: '',
+      aspectRatio: '4 / 3',
+      objectPosition: 'center',
+    },
   },
 
   // ─── باکس جملات اعتمادساز جدید (TrustBoxNew) ───

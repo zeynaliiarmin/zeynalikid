@@ -315,6 +315,8 @@ export function AboutPage({app}:{app:any}){
  const introText=lang==="en"?(cfg.aboutIntroTextEn||""):(cfg.aboutIntroText||"");
  const showIntro=cfg.pageContentOrder?.about?.showIntro!==false&&!!introText;
  const contactFirst=cfg.pageContentOrder?.about?.order==="contactFirst";
+ const tcMethodGraphic=cfg.images?.tcMethodGraphic||{};
+ const tcMethodFallback="/images/graphics/graphic-tc-method.webp";
  const IntroBlock=showIntro?<div style={{marginTop:18,padding:"16px 18px",background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16,fontSize:14,color:T.mut,lineHeight:1.85}}>{introText}</div>:null;
  const ContactBlock=showContactOn("about")?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
 
@@ -344,9 +346,14 @@ export function AboutPage({app}:{app:any}){
      {/* TC Method + graphic */}
      <div style={{margin:"22px 0",padding:"18px",background:T.card,border:`1px solid ${T.brd}`,borderRadius:20}}>
        <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
-         <div style={{flex:"0 0 138px",maxWidth:158}}>
-           <img src="/images/graphics/graphic-tc-method.webp" style={{width:"100%",borderRadius:14,border:`1px solid ${T.brd}`}} alt={lang==="en"?"TC Method visual":"تصویر روش TC"}/>
-         </div>
+         {tcMethodGraphic.enabled!==false&&<div data-public-image="tc-method" style={{flex:"0 0 138px",maxWidth:158}}>
+           <img
+             src={tcMethodGraphic.url||tcMethodFallback}
+             style={{width:"100%",borderRadius:14,border:`1px solid ${T.brd}`,aspectRatio:tcMethodGraphic.aspectRatio||"4 / 3",objectFit:"cover",objectPosition:tcMethodGraphic.objectPosition||"center"}}
+             alt={tcMethodGraphic.alt||(lang==="en"?"TC Method visual":"تصویر روش TC")}
+             onError={(e:any)=>{const target=e.currentTarget;if(!target.src.includes("graphic-tc-method.webp"))target.src=tcMethodFallback}}
+           />
+         </div>}
          <div style={{flex:1,minWidth:180}}>
            <div style={{fontWeight:800,color:T.ttl,marginBottom:8,fontSize:15}}>{lang==="en"?"The TC Method":"روش TC"}</div>
            <div style={{fontSize:13.5,lineHeight:1.85,color:T.mut}}>{lang==="en"?"A calm, evidence-informed path: 1) Tongue analysis 2) Personalized supplement & nutrition plan 3) Weekly support 4) Growth tracking":"مسیر آرام و مبتنی بر شواهد: ۱) تحلیل زبان ۲) برنامه تغذیه و مکمل شخصی‌سازی‌شده ۳) پشتیبانی هفتگی ۴) پیگیری رشد"}</div>

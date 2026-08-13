@@ -678,6 +678,7 @@ function mergeSettings(rawParam:any){const raw=migrateSettings(rawParam);const m
    ...defaultImages,
    ...incomingImages,
    hero:{...(defaultImages.hero||{}),...(incomingImages.hero||{})},
+   tcMethodGraphic:{...(defaultImages.tcMethodGraphic||{}),...(incomingImages.tcMethodGraphic||{})},
    library:{...(defaultImages.library||{}),...(incomingImages.library||{})},
  };
  // FIX: جملات اعتمادساز ۶۳تایی — ادغام صحیح trustBoxes (health/height/appetite/mind) حتی اگر Supabase خالی باشد

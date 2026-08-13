@@ -349,6 +349,7 @@ export default function ImagesManager(props: Props) {
               fallbackUrl="/images/asset13c-hero-mother-child.webp"
               fallbackAlt="مادر و کودک در بنر اصلی صفحهٔ خانه"
               sourceFile="asset13c-hero-mother-child.webp"
+              uploadLabel="بارگذاری و جایگزینی تصویر اصلی صفحهٔ خانه"
               highlight
               defaultAspectRatio="1.05 / 1"
               imgStyle={{ width: 220, maxHeight: 200, objectFit: 'cover', objectPosition: 'center', borderRadius: 12 }}
@@ -362,6 +363,20 @@ export default function ImagesManager(props: Props) {
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
               field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" defaultAspectRatio="16 / 9" imgStyle={{ width: 220, maxHeight: 124, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+            />
+            <SingleImageEditor
+              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
+              field="tcMethodGraphic"
+              title="تصویر روش TC در صفحهٔ «درباره ما»"
+              note="این تصویر داخل کارت «روش TC» در صفحهٔ درباره ما، کنار توضیحات تحلیل زبان، برنامه شخصی‌سازی‌شده، پشتیبانی و پیگیری رشد نمایش داده می‌شود."
+              fallbackUrl="/images/graphics/graphic-tc-method.webp"
+              fallbackAlt="تصویر روش TC"
+              sourceFile="graphic-tc-method.webp"
+              uploadLabel="بارگذاری و جایگزینی تصویر روش TC"
+              highlight
+              defaultAspectRatio="4 / 3"
+              imgStyle={{ width: 220, maxHeight: 165, objectFit: 'cover', objectPosition: 'center', borderRadius: 12 }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
@@ -535,12 +550,12 @@ export function LibraryPicker({
 // ─── ویرایشگر یک تصویر تکی (برای عکس‌های عمومی مثل فرم مشاوره / دربارهٔ ما) ───
 function SingleImageEditor({
   T, S, AdminBtn, editCfg, setEditCfg, field, title, note, imgStyle, defaultAspectRatio,
-  circular = false, fallbackUrl = '', fallbackAlt = '', sourceFile = '', highlight = false,
+  circular = false, fallbackUrl = '', fallbackAlt = '', sourceFile = '', uploadLabel = '', highlight = false,
   supabase, isSupabaseConfigured, deleteStoredImage,
 }: {
   T: any; S: any; AdminBtn: () => any; editCfg: any; setEditCfg: (n: any) => void;
   field: string; title: string; note?: string; imgStyle?: React.CSSProperties; defaultAspectRatio?: string;
-  circular?: boolean; fallbackUrl?: string; fallbackAlt?: string; sourceFile?: string; highlight?: boolean;
+  circular?: boolean; fallbackUrl?: string; fallbackAlt?: string; sourceFile?: string; uploadLabel?: string; highlight?: boolean;
   supabase?: any; isSupabaseConfigured?: boolean; deleteStoredImage: (url?: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -652,13 +667,13 @@ function SingleImageEditor({
       <FrameControls T={T} S={S} value={{ aspectRatio: previewAspect, objectPosition: val.objectPosition }} onChange={(patch) => upd(patch)} />
       <label
         className="zkad-drop"
-        aria-label={highlight ? 'بارگذاری و جایگزینی تصویر اصلی صفحه خانه' : `بارگذاری ${title}`}
+        aria-label={uploadLabel || `بارگذاری ${title}`}
         style={{ marginBottom: 8, ...(highlight ? { borderColor: T.acc, background: T.card } : {}) }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={async (e) => { e.preventDefault(); await prepareFile(e.dataTransfer.files?.[0]); }}
       >
         <ZkUploadIcon size={highlight ? 25 : 22} color={highlight ? T.acc : undefined} />
-        <span>{busy ? 'در حال پردازش…' : highlight ? 'بارگذاری و جایگزینی تصویر اصلی صفحهٔ خانه' : 'انتخاب تصویر و تنظیم کادر لمسی'}</span>
+        <span>{busy ? 'در حال پردازش…' : uploadLabel || 'انتخاب تصویر و تنظیم کادر لمسی'}</span>
         <input type="file" accept="image/*" disabled={busy} onChange={async (e) => { await prepareFile(e.target.files?.[0]); e.target.value = ''; }} />
       </label>
       <label style={S.lbl}>متن جایگزین (Alt)</label>
