@@ -23,8 +23,12 @@ export default function EnrollmentStepper({ step, lang, T }: EnrollmentStepperPr
 
   return (
     <div
+      className="zk-enrollment-stepper"
       style={{
         marginBottom: 20,
+        flexShrink: 0,
+        width: '100%',
+        boxSizing: 'border-box',
         padding: '10px 6px 14px',
         background: T.card,
         borderRadius: T.cardRadius || 20,
