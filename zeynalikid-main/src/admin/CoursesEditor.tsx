@@ -39,6 +39,109 @@ function ImagePreview({ url, title, aspectRatio, objectPosition, T }: any) {
   );
 }
 
+const COURSE_BADGES = [
+  { key: 'active', label: 'فعال' },
+  { key: 'popular', label: 'محبوب' },
+  { key: 'bestseller', label: 'پرفروش' },
+  { key: 'trending', label: 'پرطرفدار' },
+  { key: 'ageBadge', label: 'نمایش بازهٔ سنی' },
+] as const;
+
+function CourseImageEditor({
+  course,
+  editCfg,
+  T,
+  S,
+  AdminBtn,
+  uploading,
+  onUpload,
+  onClear,
+  onLibrarySelect,
+  onFrameChange,
+}: any) {
+  return (
+    <section
+      data-course-image-uploader={course.id}
+      style={{
+        margin: '10px 0',
+        padding: 12,
+        border: `2px solid ${course.image ? T.acc : T.brd}`,
+        borderRadius: 14,
+        background: T.badge,
+        boxShadow: course.image ? `0 0 0 2px ${T.soft || 'transparent'}` : undefined,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+        <b style={{ fontSize: 13, color: T.ttl, flex: 1 }}>عکس اختصاصی همین دوره</b>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: course.image ? T.ok : T.mut }}>
+          {course.image ? 'عکس ثبت شده' : 'بدون عکس'}
+        </span>
+      </div>
+      <p style={{ margin: '0 0 8px', color: T.mut, fontSize: 11, lineHeight: 1.8 }}>
+        این عکس فقط برای «{course.title}» ذخیره می‌شود و روی دوره‌های دیگر تأثیری ندارد.
+      </p>
+
+      <label
+        className="zkad-drop"
+        aria-label={`آپلود عکس اختصاصی دوره ${course.title}`}
+        style={{ borderColor: T.acc, background: T.card }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          const file = event.dataTransfer.files?.[0];
+          if (file) onUpload(file);
+        }}
+      >
+        <ZkUploadIcon size={22} color={T.acc} />
+        <span>{uploading ? 'در حال آپلود عکس این دوره…' : course.image ? 'تغییر عکس همین دوره' : 'آپلود عکس برای همین دوره'}</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onUpload(file);
+            event.target.value = '';
+          }}
+        />
+      </label>
+
+      <ImagePreview url={course.image} title={course.title} aspectRatio={course.aspectRatio} objectPosition={course.objectPosition} T={T} />
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+        <LibraryPicker
+          T={T}
+          S={S}
+          editCfg={editCfg}
+          section="courses"
+          onSelect={onLibrarySelect}
+          current={course.image}
+          AdminBtn={AdminBtn}
+          label="انتخاب عکس برای همین دوره از گالری"
+        />
+        {course.image && (
+          <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={onClear}>
+            حذف عکس همین دوره
+          </button>
+        )}
+      </div>
+
+      {course.image ? (
+        <FrameControls
+          T={T}
+          S={S}
+          value={{ aspectRatio: course.aspectRatio, objectPosition: course.objectPosition }}
+          onChange={onFrameChange}
+        />
+      ) : (
+        <small style={{ display: 'block', color: T.mut, marginTop: 8 }}>
+          تا زمانی که عکسی انتخاب نشود، این دوره در سایت کاملاً بدون تصویر نمایش داده می‌شود.
+        </small>
+      )}
+    </section>
+  );
+}
+
 export default function CoursesEditor({
   T,
   S,
@@ -52,6 +155,7 @@ export default function CoursesEditor({
   AdminBtn,
   Box,
 }: Props) {
+  const [uploadingImage, setUploadingImage] = React.useState<string | null>(null);
   const rawTabs = editCfg.courseTabs;
   const tabs: any[] = Array.isArray(rawTabs)
     ? rawTabs
@@ -123,6 +227,26 @@ export default function CoursesEditor({
       await deleteStoredImage(currentUrl);
     }
     onSelect(selectedUrl);
+  };
+
+  const uploadCourseImage = async (tabIndex: number, courseIndex: number, file: File) => {
+    const tab = tabs[tabIndex];
+    const course = tab?.courses?.[courseIndex];
+    if (!tab || !course) return;
+    const uploadKey = `${tab.id}:${course.id}`;
+    setUploadingImage(uploadKey);
+    try {
+      await replaceUploadedImage(
+        file,
+        course.image,
+        `courses/${safePathSegment(tab.id)}/${safePathSegment(course.id)}`,
+        (url) => updateCourse(tabIndex, courseIndex, 'image', url),
+      );
+    } catch (error: any) {
+      alert(error?.message || 'آپلود عکس دوره انجام نشد. دوباره تلاش کنید.');
+    } finally {
+      setUploadingImage(null);
+    }
   };
 
   return (
@@ -258,8 +382,28 @@ export default function CoursesEditor({
             )}
 
             {(tab.courses || []).map((course: any, courseIndex: number) => (
-              <div key={course.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginTop: 10, background: T.card }}>
+              <div key={course.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, padding: 11, marginTop: 12, background: T.card }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <b style={{ color: T.ttl, fontSize: 12.5, flex: 1 }}>دورهٔ {courseIndex + 1}: {course.title}</b>
+                  <span style={{ color: T.mut, fontSize: 10, direction: 'ltr' }}>ID: {course.id}</span>
+                </div>
+                <label style={{ ...S.lbl, fontSize: 11 }}>عنوان دوره</label>
                 <input style={S.inp} defaultValue={course.title} onBlur={(event) => updateCourse(tabIndex, courseIndex, 'title', event.target.value)} placeholder="عنوان" />
+
+                <CourseImageEditor
+                  course={course}
+                  editCfg={editCfg}
+                  T={T}
+                  S={S}
+                  AdminBtn={AdminBtn}
+                  uploading={uploadingImage === `${tab.id}:${course.id}`}
+                  onUpload={(file: File) => uploadCourseImage(tabIndex, courseIndex, file)}
+                  onClear={() => clearImage(course.image, () => updateCourse(tabIndex, courseIndex, 'image', ''))}
+                  onLibrarySelect={(url: string) => selectLibraryImage(url, course.image, (selected) => updateCourse(tabIndex, courseIndex, 'image', selected))}
+                  onFrameChange={(patch: any) => updateCourseFrame(tabIndex, courseIndex, patch)}
+                />
+
+                <label style={{ ...S.lbl, fontSize: 11 }}>توضیحات دوره</label>
                 <textarea style={{ ...S.ta, marginTop: 6 }} defaultValue={course.desc} onBlur={(event) => updateCourse(tabIndex, courseIndex, 'desc', event.target.value)} placeholder="توضیحات" />
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
@@ -314,88 +458,36 @@ export default function CoursesEditor({
                   placeholder="ویژگی‌ها با |"
                 />
 
-                <div style={{ marginTop: 10, padding: 10, border: `1px solid ${T.brd}`, borderRadius: 12, background: T.badge }}>
-                  <b style={{ display: 'block', marginBottom: 7, fontSize: 12, color: T.ttl }}>تصویر اختصاصی دوره «{course.title}»</b>
-                  <label
-                    className="zkad-drop"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={async (event) => {
-                      event.preventDefault();
-                      const file = event.dataTransfer.files?.[0];
-                      if (file) {
-                        await replaceUploadedImage(
-                          file,
-                          course.image,
-                          `courses/${safePathSegment(tab.id)}/${safePathSegment(course.id)}`,
-                          (url) => updateCourse(tabIndex, courseIndex, 'image', url),
-                        );
-                      }
-                    }}
-                  >
-                    <ZkUploadIcon size={20} />
-                    <span>آپلود تصویر فقط برای همین دوره</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={async (event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          await replaceUploadedImage(
-                            file,
-                            course.image,
-                            `courses/${safePathSegment(tab.id)}/${safePathSegment(course.id)}`,
-                            (url) => updateCourse(tabIndex, courseIndex, 'image', url),
-                          );
-                        }
-                        event.target.value = '';
-                      }}
-                    />
-                  </label>
-
-                  <ImagePreview url={course.image} title={course.title} aspectRatio={course.aspectRatio} objectPosition={course.objectPosition} T={T} />
-
-                  {course.image && (
-                    <button
-                      type="button"
-                      style={{ ...AdminBtn(), marginTop: 6, color: T.err }}
-                      onClick={() => clearImage(course.image, () => updateCourse(tabIndex, courseIndex, 'image', ''))}
-                    >
-                      حذف تصویر این دوره
-                    </button>
-                  )}
-
-                  <LibraryPicker
-                    T={T}
-                    S={S}
-                    editCfg={editCfg}
-                    section="courses"
-                    onSelect={(url: string) => selectLibraryImage(url, course.image, (selected) => updateCourse(tabIndex, courseIndex, 'image', selected))}
-                    current={course.image}
-                    AdminBtn={AdminBtn}
-                  />
-
-                  {course.image && (
-                    <FrameControls
-                      T={T}
-                      S={S}
-                      value={{ aspectRatio: course.aspectRatio, objectPosition: course.objectPosition }}
-                      onChange={(patch: any) => updateCourseFrame(tabIndex, courseIndex, patch)}
-                    />
-                  )}
-
-                  {!course.image && (
-                    <small style={{ display: 'block', color: T.mut, marginTop: 7 }}>
-                      بدون عکس ذخیره می‌شود؛ در سایت هیچ کادر یا تصویر پیش‌فرضی نمایش داده نخواهد شد.
-                    </small>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                  {['active', 'popular', 'bestseller', 'trending', 'ageBadge'].map((key) => (
-                    <label key={key}>
-                      <input type="checkbox" checked={!!course[key]} onChange={(event) => updateCourse(tabIndex, courseIndex, key, event.target.checked)} /> {key}
-                    </label>
-                  ))}
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ ...S.lbl, fontSize: 11, marginBottom: 6 }}>وضعیت و نشان‌های دوره</label>
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                    {COURSE_BADGES.map(({ key, label }) => (
+                      <label
+                        key={key}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          minHeight: 38,
+                          padding: '6px 10px',
+                          border: `1px solid ${course[key] ? T.acc : T.brd}`,
+                          borderRadius: 999,
+                          background: course[key] ? T.soft : T.card,
+                          color: course[key] ? T.acc : T.mut,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!course[key]}
+                          onChange={(event) => updateCourse(tabIndex, courseIndex, key, event.target.checked)}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <button

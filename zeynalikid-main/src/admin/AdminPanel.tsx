@@ -774,7 +774,7 @@ function TaggedCoursesEditor(){
     {/* توضیحات */}
     <div style={{padding:12,background:T.soft,borderRadius:10,border:`1px solid ${T.brd}`}}>
      <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:0}}>
-      این بخش دوره‌هایی را نمایش می‌دهد که حداقل یکی از تگ‌های مشخص‌شده (popular, bestseller, trending) را داشته باشند. تگ‌ها در بخش «دوره‌ها» برای هر دوره قابل تنظیم هستند.
+      این بخش دوره‌هایی را نمایش می‌دهد که حداقل یکی از نشان‌های مشخص‌شده (محبوب، پرفروش یا پرطرفدار) را داشته باشند. این نشان‌ها در بخش «دوره‌ها» برای هر دوره قابل تنظیم هستند.
      </p>
     </div>
    </div>
