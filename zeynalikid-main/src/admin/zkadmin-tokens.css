@@ -1162,3 +1162,64 @@ body.admin-root .zkad-selected-delete {
   border-color: var(--zkad-err) !important;
 }
 body.admin-root .zkad-selected-delete:hover { background: var(--zkad-tag-err-bg); }
+
+/* ── چک‌باکس کوچک و صریح نمایش/فعال — رفع ابهام روشن/خاموش در وایت‌مود موبایل ── */
+html body.admin-root .admin-main input.zkad-switch {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  inline-size: 20px !important;
+  block-size: 20px !important;
+  min-inline-size: 20px !important;
+  min-block-size: 20px !important;
+  max-inline-size: 20px !important;
+  max-block-size: 20px !important;
+  flex: 0 0 20px !important;
+  margin: 0 4px !important;
+  padding: 0 !important;
+  border: 1.5px solid #64748B !important;
+  border-radius: 4px !important;
+  background: #FFFFFF !important;
+  box-shadow: none !important;
+  vertical-align: middle !important;
+  cursor: pointer;
+  color: #FFFFFF !important;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 100ms ease !important;
+}
+html body.admin-root .admin-main input.zkad-switch::after {
+  content: '✓' !important;
+  position: static !important;
+  display: block !important;
+  inline-size: auto !important;
+  block-size: auto !important;
+  border: 0 !important;
+  color: #FFFFFF !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  opacity: 0 !important;
+  transform: none !important;
+  transition: opacity 100ms ease !important;
+}
+html body.admin-root .admin-main input.zkad-switch:checked {
+  border-color: var(--zkad-acc, #0F766E) !important;
+  background: var(--zkad-acc, #0F766E) !important;
+}
+html body.admin-root .admin-main input.zkad-switch:checked::after {
+  opacity: 1 !important;
+  transform: none !important;
+}
+html body.admin-root .admin-main input.zkad-switch:focus-visible {
+  outline: 2px solid var(--zkad-accent2, #0EA5E9) !important;
+  outline-offset: 2px !important;
+}
+html body.admin-root .admin-main input.zkad-switch:active {
+  transform: scale(.92) !important;
+}
+html[data-theme="dark"] body.admin-root .admin-main input.zkad-switch:not(:checked) {
+  border-color: #94A3B8 !important;
+  background: #0F1722 !important;
+}
