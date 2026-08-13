@@ -518,7 +518,7 @@ export default function ConsultationPage({ app }: { app: any }) {
         {/* Specialist photo + title */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
           {cfg.showSpecialistPhoto && <div style={{ flexShrink: 0, position: 'relative', width: 72, height: 72, borderRadius: '50%', padding: 3, background: T.grad, boxShadow: `0 6px 16px ${T.acc}33` }}>
-            <img src={cfg.photoUrl || '/specialist-photo.webp'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
+            <img src={cfg.images?.consultationPhoto?.url || cfg.photoUrl || '/specialist-photo.webp'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
           </div>}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 16, margin: '0 0 6px', color: T.ttl, fontWeight: 800, lineHeight: 1.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{publicText('heroTitle')}</h1>

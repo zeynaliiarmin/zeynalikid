@@ -272,6 +272,22 @@ export default function ImagesManager(props: Props) {
           ))}
         </div>
 
+        {/* عکس‌های تکی عمومی (فرم مشاوره + دربارهٔ ما) + کادر هیرو — فقط در تَب عمومی */}
+        {tab === 'general' && (
+          <>
+            <SingleImageEditor
+              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
+              field="consultationPhoto" title="عکس کارشناس فرم مشاوره" note="در بالای فرم مشاوره نمایش داده می‌شود" imgStyle={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 18%' }}
+            />
+            <SingleImageEditor
+              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
+              field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" imgStyle={{ width: 200, maxHeight: 120, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+            />
+          </>
+        )}
+
         {/* منطقهٔ آپلود */}
         <div
           className="zkad-drop"
@@ -410,6 +426,67 @@ export function LibraryPicker({
         </div>
       )}
     </>
+  );
+}
+
+// ─── ویرایشگر یک تصویر تکی (برای عکس‌های عمومی مثل فرم مشاوره / دربارهٔ ما) ───
+function SingleImageEditor({
+  T, S, AdminBtn, editCfg, setEditCfg, field, title, note, imgStyle, supabase, isSupabaseConfigured,
+}: {
+  T: any; S: any; AdminBtn: () => any; editCfg: any; setEditCfg: (n: any) => void;
+  field: string; title: string; note?: string; imgStyle?: React.CSSProperties; supabase?: any; isSupabaseConfigured?: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const val = editCfg?.images?.[field] || {};
+  const upd = (patch: any) => setEditCfg({ ...editCfg, images: { ...(editCfg?.images || {}), [field]: { ...val, ...patch } } });
+  const upload = async (file?: File) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const blob = await toWebpHighQuality(file);
+      if (isSupabaseConfigured && supabase) {
+        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+        const path = `general/${field}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from('images').upload(path, blob, { contentType: blob.type, upsert: false });
+        if (error) throw new Error(error.message || 'آپلود انجام نشد');
+        const { data } = supabase.storage.from('images').getPublicUrl(path);
+        upd({ url: data.publicUrl, storagePath: path, enabled: true });
+      } else {
+        upd({ url: await blobToDataUrl(blob), storagePath: '', enabled: true });
+      }
+    } catch (err: any) {
+      alert(err?.message || 'خطا در آپلود');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="zkad-media-slot" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <b style={{ fontSize: 13, color: T.ttl }}><ZkImageIcon size={14} color={T.ttl} /> {title}</b>
+        <label style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+          <input type="checkbox" checked={val.enabled !== false} onChange={(e) => upd({ enabled: e.target.checked })} /> نمایش
+        </label>
+      </div>
+      {note && <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px' }}>{note}</p>}
+      {val.url && (
+        <img
+          src={val.url} alt={val.alt || ''}
+          style={imgStyle || { maxWidth: 200, maxHeight: 120, objectFit: 'cover', borderRadius: 10, border: `1px solid ${T.brd}`, display: 'block', marginBottom: 8 }}
+          onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+        />
+      )}
+      <div className="zkad-drop" style={{ marginBottom: 8 }} onDragOver={(e) => e.preventDefault()} onDrop={async (e) => { e.preventDefault(); await upload(e.dataTransfer.files?.[0]); }}>
+        <ZkUploadIcon size={22} />
+        <span>{busy ? 'در حال آپلود و تبدیل به webp…' : 'آپلود از حافظهٔ گوشی (به webp تبدیل می‌شود)'}</span>
+        <input type="file" accept="image/*" onChange={async (e) => { await upload(e.target.files?.[0]); e.target.value = ''; }} />
+      </div>
+      <label style={S.lbl}>متن جایگزین (Alt)</label>
+      <input style={S.inp} defaultValue={val.alt || ''} onBlur={(e) => upd({ alt: e.target.value })} placeholder="Alt" />
+      {val.url && (
+        <button type="button" style={{ ...AdminBtn(), marginTop: 6, color: T.err }} onClick={() => upd({ url: '', storagePath: '', enabled: false })}>حذف تصویر</button>
+      )}
+    </div>
   );
 }
 

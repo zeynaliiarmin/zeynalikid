@@ -302,7 +302,7 @@ export function AboutPage({app}:{app:any}){
    <PageShell app={app} title={lang==="en"?"About Us":"درباره ما"} variant="trust">
      {/* Hero with specialist-hero-master.webp */}
      <div style={{marginBottom:26,borderRadius:20,overflow:"hidden",border:`1px solid ${T.brd}`,position:"relative"}}>
-       <img src="/images/specialist/specialist-hero-master.webp" alt={lang==="en"?"Zeynalikid specialist":"کارشناس ارشد زینالیکید"} style={{width:"100%",height:220,objectFit:"cover"}}/>
+       <img src={cfg.images?.aboutHero?.url || "/images/specialist/specialist-hero-master.webp"} alt={lang==="en"?"Zeynalikid specialist":"کارشناس ارشد زینالیکید"} style={{width:"100%",height:220,objectFit:"cover"}}/>
        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent, rgba(0,0,0,.65))",padding:"48px 18px 18px"}}>
          <div style={{color:"#fff",fontSize:20,fontWeight:900,lineHeight:1.15}}>{cfg.specialistName||""}</div>
          <div style={{color:"rgba(255,255,255,.92)",fontSize:13.5,marginTop:2}}>{lang==="en"?"Child & Adolescent Growth & Nutrition Specialist":"کارشناس رشد و تغذیه کودک و نوجوان"}</div>

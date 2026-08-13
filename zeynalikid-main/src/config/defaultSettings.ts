@@ -204,6 +204,18 @@ export const defaultSettings = {
       courses: [],
       general: [],
     },
+    consultationPhoto: {
+      url: '/specialist-photo.webp',
+      alt: 'کارشناس فرم مشاوره',
+      enabled: true,
+      storagePath: '',
+    },
+    aboutHero: {
+      url: '/images/specialist/specialist-hero-master.webp',
+      alt: 'کارشناس ارشد زینالیکید',
+      enabled: true,
+      storagePath: '',
+    },
   },
 
   // ─── باکس جملات اعتمادساز جدید (TrustBoxNew) ───
@@ -466,6 +478,23 @@ export function migrateSettings(settings: any): any {
       for (const k of ['licenses', 'products', 'courses', 'general']) {
         if (!Array.isArray(migrated.images.library[k])) migrated.images.library[k] = [];
       }
+    }
+    // اطمینان از وجود عکس فرم مشاوره و عکس دربارهٔ ما
+    if (!migrated.images.consultationPhoto) {
+      migrated.images.consultationPhoto = {
+        url: migrated.photoUrl || '/specialist-photo.webp',
+        alt: 'کارشناس فرم مشاوره',
+        enabled: migrated.showSpecialistPhoto !== false,
+        storagePath: '',
+      };
+    }
+    if (!migrated.images.aboutHero) {
+      migrated.images.aboutHero = {
+        url: '/images/specialist/specialist-hero-master.webp',
+        alt: 'کارشناس ارشد',
+        enabled: true,
+        storagePath: '',
+      };
     }
   }
 
