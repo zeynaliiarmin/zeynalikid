@@ -20,6 +20,7 @@ import {
   ZkUploadIcon, ZkImageIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon,
   ZkArrowUpIcon, ZkArrowDownIcon, ZkDownloadIcon,
 } from './adminIcons';
+import ImageCropper from './ImageCropper';
 
 // ─── بخش‌ها و پوشهٔ هر بخش ──────────────────────────────────────────
 export const IMAGE_SECTIONS: { id: string; label: string; folder: string; target: string; hint: string }[] = [
@@ -87,6 +88,15 @@ interface LibraryItem {
   storagePath: string;
   enabled: boolean;
 }
+
+type CropJob = {
+  mode: 'new' | 'library';
+  src: string;
+  objectUrl: boolean;
+  originalName: string;
+  aspectRatio: string;
+  item?: LibraryItem;
+};
 
 type Props = {
   T: any;
@@ -185,6 +195,7 @@ export default function ImagesManager(props: Props) {
   const [tab, setTab] = useState('general');
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [cropJob, setCropJob] = useState<CropJob | null>(null);
 
   const lib = (editCfg?.images?.library || {});
   const items: LibraryItem[] = Array.isArray(lib[tab]) ? lib[tab] : [];
@@ -218,40 +229,85 @@ export default function ImagesManager(props: Props) {
     setItems(a);
   };
 
-  // آپلود از حافظهٔ گوشی → تبدیل webp → ذخیره در سوپابیس (پوشهٔ بخش) + افزودن به گالری
+  const closeCrop = () => {
+    if (cropJob?.objectUrl && cropJob.src.startsWith('blob:')) URL.revokeObjectURL(cropJob.src);
+    setCropJob(null);
+  };
+
+  // فایل ابتدا آماده می‌شود و پیش از هر آپلود، ویرایشگر لمسی کادر باز می‌شود.
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
-    setBusy('upload');
+    setBusy('prepare');
     try {
       const blob = await toWebpHighQuality(file);
-      const section = IMAGE_SECTIONS.find((s) => s.id === tab);
+      setCropJob({
+        mode: 'new',
+        src: URL.createObjectURL(blob),
+        objectUrl: true,
+        originalName: file.name.replace(/\.[^/.]+$/, '') || 'image',
+        aspectRatio: '4 / 3',
+      });
+    } catch (err: any) {
+      notify(err?.message || 'خطا در آماده‌سازی تصویر');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const openLibraryCrop = (item: LibraryItem) => {
+    setCropJob({
+      mode: 'library',
+      src: item.url,
+      objectUrl: false,
+      originalName: item.alt || 'image',
+      aspectRatio: item.aspectRatio || '4 / 3',
+      item,
+    });
+  };
+
+  const saveCroppedLibraryImage = async (file: File) => {
+    if (!cropJob) return;
+    setBusy('crop-save');
+    try {
+      const section = IMAGE_SECTIONS.find((item) => item.id === tab);
       const folder = section?.folder || tab;
       let url = '';
       let storagePath = '';
+
       if (isSupabaseConfigured && supabase) {
-        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
-        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error } = await supabase.storage.from('images').upload(path, blob, { contentType: blob.type, upsert: false });
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const { error } = await supabase.storage.from('images').upload(path, file, { contentType: 'image/webp', upsert: false });
         if (error) throw new Error(error.message || 'آپلود انجام نشد');
         const { data } = supabase.storage.from('images').getPublicUrl(path);
         url = data.publicUrl;
         storagePath = path;
       } else {
-        // حالت بدون Supabase: تبدیل به data URL
-        url = await blobToDataUrl(blob);
+        url = await blobToDataUrl(file);
       }
-      addItem({
-        id: String(uid()),
-        url,
-        alt: file.name.replace(/\.[^/.]+$/, ''),
-        aspectRatio: '4 / 3',
-        objectPosition: 'center',
-        storagePath,
-        enabled: true,
-      });
-      notify('تصویر آپلود و به webp تبدیل شد');
+
+      const frame = cropJob.aspectRatio || '';
+      if (cropJob.mode === 'new') {
+        addItem({
+          id: String(uid()),
+          url,
+          alt: cropJob.originalName,
+          aspectRatio: frame,
+          objectPosition: 'center',
+          storagePath,
+          enabled: true,
+        });
+        notify('تصویر با کادر انتخاب‌شده ذخیره شد');
+      } else if (cropJob.item) {
+        const oldItem = cropJob.item;
+        updateItem(oldItem.id, { url, storagePath, aspectRatio: frame, objectPosition: 'center' });
+        if (oldItem.storagePath && oldItem.url !== url) {
+          try { await deleteStoredImage(oldItem.url); } catch (error) { console.warn('old cropped image cleanup failed', error); }
+        }
+        notify('کادر تصویر بروزرسانی شد');
+      }
+      closeCrop();
     } catch (err: any) {
-      notify(err?.message || 'خطا در آپلود تصویر');
+      notify(err?.message || 'ذخیرهٔ کادر تصویر انجام نشد');
     } finally {
       setBusy(null);
     }
@@ -286,23 +342,23 @@ export default function ImagesManager(props: Props) {
           <>
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
-              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
-              field="hero" title="عکس هیرو صفحهٔ اصلی" note="عکس بزرگ بالای صفحهٔ اصلی (کنار «همراهی والدین»)" imgStyle={{ width: 200, maxHeight: 130, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
+              field="hero" title="عکس هیرو صفحهٔ اصلی" note="عکس بزرگ بالای صفحهٔ اصلی (کنار «همراهی والدین»)" defaultAspectRatio="1.05 / 1" imgStyle={{ width: 200, maxHeight: 190, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
-              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
-              field="consultationPhoto" title="عکس کارشناس فرم مشاوره" note="در بالای فرم مشاوره نمایش داده می‌شود" imgStyle={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 18%' }}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
+              field="consultationPhoto" title="عکس کارشناس فرم مشاوره" note="در بالای فرم مشاوره نمایش داده می‌شود" defaultAspectRatio="1 / 1" circular imgStyle={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center' }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
-              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
-              field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" imgStyle={{ width: 200, maxHeight: 120, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
+              field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" defaultAspectRatio="16 / 9" imgStyle={{ width: 220, maxHeight: 124, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
-              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
-              field="trustBox" title="عکس باکس اعتماد (فرمولاسیون / مجوزها)" note="عکس کنار متن اعتمادساز در صفحهٔ اصلی (مثل «فرمولاسیون آلمان»)" imgStyle={{ width: 200, maxHeight: 130, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
+              field="trustBox" title="عکس باکس اعتماد (فرمولاسیون / مجوزها)" note="عکس کنار متن اعتمادساز در صفحهٔ اصلی (مثل «فرمولاسیون آلمان»)" defaultAspectRatio="4 / 3" imgStyle={{ width: 200, maxHeight: 150, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
             />
           </>
         )}
@@ -316,10 +372,10 @@ export default function ImagesManager(props: Props) {
         >
           <ZkUploadIcon size={26} color={T.acc} />
           <div style={{ fontSize: 13, fontWeight: 800, color: T.ttl, marginTop: 6 }}>
-            {busy === 'upload' ? 'در حال آپلود و تبدیل به webp…' : `آپلود تصویر برای «${sectionInfo.label}» از حافظهٔ گوشی`}
+            {busy === 'prepare' ? 'در حال آماده‌سازی تصویر…' : `انتخاب تصویر برای «${sectionInfo.label}» و تنظیم کادر`}
           </div>
           <div style={{ fontSize: 11, color: T.mut, marginTop: 4 }}>
-            کلیک کنید یا فایل را اینجا بکشید — هر فرمتی (jpg, png, webp, heic, avif, gif, bmp) خودکار به webp تبدیل می‌شود
+            پس از انتخاب فایل، ویرایشگر لمسی باز می‌شود؛ تصویر نهایی با کادر تأییدشده و فرمت webp ذخیره خواهد شد.
           </div>
           <input
             type="file"
@@ -375,6 +431,13 @@ export default function ImagesManager(props: Props) {
                   >
                     {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
+                  <button
+                    type="button"
+                    style={{ ...AdminBtn(), width: '100%', color: T.acc }}
+                    onClick={() => openLibraryCrop(it)}
+                  >
+                    <ZkImageIcon size={14} /> تنظیم کادر لمسی
+                  </button>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 'auto' }}>
                     <button type="button" style={AdminBtn()} title="بالا" onClick={() => moveItem(i, -1)}><ZkArrowUpIcon size={13} /></button>
                     <button type="button" style={AdminBtn()} title="پایین" onClick={() => moveItem(i, 1)}><ZkArrowDownIcon size={13} /></button>
@@ -395,7 +458,20 @@ export default function ImagesManager(props: Props) {
         </div>
       </Box>
 
-      {toast && <div style={{ position: 'fixed', bottom: 20, left: 20, background: T.pop, border: `1px solid ${T.ok}`, color: T.ok, borderRadius: 12, padding: '10px 14px', zIndex: 3000 }}>{toast}</div>}
+      {cropJob && (
+        <ImageCropper
+          src={cropJob.src}
+          T={T}
+          title={cropJob.mode === 'new' ? 'تنظیم کادر تصویر جدید' : `تنظیم کادر «${cropJob.originalName}»`}
+          aspectRatio={cropJob.aspectRatio}
+          allowAspectChange
+          onAspectRatioChange={(value) => setCropJob((current) => current ? { ...current, aspectRatio: value } : current)}
+          fileName={`${cropJob.originalName || 'image'}.webp`}
+          onCancel={busy === 'crop-save' ? () => {} : closeCrop}
+          onDone={saveCroppedLibraryImage}
+        />
+      )}
+      {toast && <div style={{ position: 'fixed', bottom: 20, left: 20, background: T.pop, border: `1px solid ${T.ok}`, color: T.ok, borderRadius: 12, padding: '10px 14px', zIndex: 9600 }}>{toast}</div>}
     </>
   );
 }
@@ -450,35 +526,71 @@ export function LibraryPicker({
 
 // ─── ویرایشگر یک تصویر تکی (برای عکس‌های عمومی مثل فرم مشاوره / دربارهٔ ما) ───
 function SingleImageEditor({
-  T, S, AdminBtn, editCfg, setEditCfg, field, title, note, imgStyle, supabase, isSupabaseConfigured,
+  T, S, AdminBtn, editCfg, setEditCfg, field, title, note, imgStyle, defaultAspectRatio,
+  circular = false, supabase, isSupabaseConfigured, deleteStoredImage,
 }: {
   T: any; S: any; AdminBtn: () => any; editCfg: any; setEditCfg: (n: any) => void;
-  field: string; title: string; note?: string; imgStyle?: React.CSSProperties; supabase?: any; isSupabaseConfigured?: boolean;
+  field: string; title: string; note?: string; imgStyle?: React.CSSProperties; defaultAspectRatio?: string;
+  circular?: boolean; supabase?: any; isSupabaseConfigured?: boolean; deleteStoredImage: (url?: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropObjectUrl, setCropObjectUrl] = useState(false);
+  const [replaceOld, setReplaceOld] = useState<string | undefined>();
   const val = editCfg?.images?.[field] || {};
   const upd = (patch: any) => setEditCfg({ ...editCfg, images: { ...(editCfg?.images || {}), [field]: { ...val, ...patch } } });
-  const upload = async (file?: File) => {
+  const cropAspect = Object.prototype.hasOwnProperty.call(val, 'aspectRatio') ? (val.aspectRatio || '') : (defaultAspectRatio || '');
+
+  const closeCrop = () => {
+    if (cropObjectUrl && cropSrc?.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setCropObjectUrl(false);
+  };
+
+  const prepareFile = async (file?: File) => {
     if (!file) return;
     setBusy(true);
     try {
       const blob = await toWebpHighQuality(file);
-      if (isSupabaseConfigured && supabase) {
-        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
-        const path = `general/${field}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error } = await supabase.storage.from('images').upload(path, blob, { contentType: blob.type, upsert: false });
-        if (error) throw new Error(error.message || 'آپلود انجام نشد');
-        const { data } = supabase.storage.from('images').getPublicUrl(path);
-        upd({ url: data.publicUrl, storagePath: path, enabled: true });
-      } else {
-        upd({ url: await blobToDataUrl(blob), storagePath: '', enabled: true });
-      }
+      setReplaceOld(val.url);
+      setCropObjectUrl(true);
+      setCropSrc(URL.createObjectURL(blob));
     } catch (err: any) {
-      alert(err?.message || 'خطا در آپلود');
+      alert(err?.message || 'آماده‌سازی تصویر انجام نشد');
     } finally {
       setBusy(false);
     }
   };
+
+  const saveCrop = async (file: File) => {
+    setBusy(true);
+    try {
+      let url = '';
+      let storagePath = '';
+      if (isSupabaseConfigured && supabase) {
+        const path = `general/${field}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
+        const { error } = await supabase.storage.from('images').upload(path, file, { contentType: 'image/webp', upsert: false });
+        if (error) throw new Error(error.message || 'آپلود انجام نشد');
+        const { data } = supabase.storage.from('images').getPublicUrl(path);
+        url = data.publicUrl;
+        storagePath = path;
+      } else {
+        url = await blobToDataUrl(file);
+      }
+
+      upd({ url, storagePath, enabled: true, aspectRatio: cropAspect, objectPosition: 'center' });
+      if (replaceOld && replaceOld !== url) {
+        try { await deleteStoredImage(replaceOld); } catch (error) { console.warn('old single image cleanup failed', error); }
+      }
+      closeCrop();
+    } catch (err: any) {
+      alert(err?.message || 'ذخیرهٔ تصویر انجام نشد');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const previewAspect = Object.prototype.hasOwnProperty.call(val, 'aspectRatio') ? val.aspectRatio : defaultAspectRatio;
   return (
     <div className="zkad-media-slot" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -490,21 +602,62 @@ function SingleImageEditor({
       {note && <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px' }}>{note}</p>}
       {val.url && (
         <img
-          src={val.url} alt={val.alt || ''}
-          style={imgStyle || { maxWidth: 200, maxHeight: 120, objectFit: 'cover', borderRadius: 10, border: `1px solid ${T.brd}`, display: 'block', marginBottom: 8 }}
+          src={val.url}
+          alt={val.alt || ''}
+          style={{
+            maxWidth: 220,
+            maxHeight: 180,
+            objectFit: 'cover',
+            borderRadius: 10,
+            border: `1px solid ${T.brd}`,
+            display: 'block',
+            marginBottom: 8,
+            ...imgStyle,
+            objectPosition: val.objectPosition || imgStyle?.objectPosition || 'center',
+            aspectRatio: previewAspect || imgStyle?.aspectRatio,
+          }}
           onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
         />
       )}
-      <FrameControls T={T} S={S} value={{ aspectRatio: val.aspectRatio, objectPosition: val.objectPosition }} onChange={(p) => upd(p)} />
-      <label className="zkad-drop" style={{ marginBottom: 8 }} onDragOver={(e) => e.preventDefault()} onDrop={async (e) => { e.preventDefault(); await upload(e.dataTransfer.files?.[0]); }}>
+      <FrameControls T={T} S={S} value={{ aspectRatio: previewAspect, objectPosition: val.objectPosition }} onChange={(patch) => upd(patch)} />
+      <label
+        className="zkad-drop"
+        style={{ marginBottom: 8 }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={async (e) => { e.preventDefault(); await prepareFile(e.dataTransfer.files?.[0]); }}
+      >
         <ZkUploadIcon size={22} />
-        <span>{busy ? 'در حال آپلود و تبدیل به webp…' : 'آپلود از حافظهٔ گوشی (به webp تبدیل می‌شود)'}</span>
-        <input type="file" accept="image/*" onChange={async (e) => { await upload(e.target.files?.[0]); e.target.value = ''; }} />
+        <span>{busy ? 'در حال پردازش…' : 'انتخاب تصویر و تنظیم کادر لمسی'}</span>
+        <input type="file" accept="image/*" onChange={async (e) => { await prepareFile(e.target.files?.[0]); e.target.value = ''; }} />
       </label>
       <label style={S.lbl}>متن جایگزین (Alt)</label>
       <input style={S.inp} defaultValue={val.alt || ''} onBlur={(e) => upd({ alt: e.target.value })} placeholder="Alt" />
       {val.url && (
-        <button type="button" style={{ ...AdminBtn(), marginTop: 6, color: T.err }} onClick={() => upd({ url: '', storagePath: '', enabled: false })}>حذف تصویر</button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+          <button
+            type="button"
+            style={{ ...AdminBtn(), color: T.acc }}
+            onClick={() => { setReplaceOld(val.url); setCropObjectUrl(false); setCropSrc(val.url); }}
+          >
+            <ZkImageIcon size={14} /> تنظیم کادر لمسی
+          </button>
+          <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => upd({ url: '', storagePath: '', enabled: false })}>حذف تصویر</button>
+        </div>
+      )}
+      {cropSrc && (
+        <ImageCropper
+          src={cropSrc}
+          T={T}
+          title={`تنظیم کادر ${title}`}
+          aspectRatio={cropAspect}
+          circular={circular}
+          allowAspectChange={!circular}
+          onAspectRatioChange={circular ? undefined : (value) => upd({ aspectRatio: value })}
+          outputLongSide={circular ? 768 : 1600}
+          fileName={`${field}.webp`}
+          onCancel={busy ? () => {} : closeCrop}
+          onDone={saveCrop}
+        />
       )}
     </div>
   );

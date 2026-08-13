@@ -32,6 +32,8 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "licenses",
   "designSystem",
   "sections",
+  // Public image URLs + crop/frame metadata (no private storage or credentials)
+  "images",
   // Theme
   "theme",
   "publicThemeMode",
