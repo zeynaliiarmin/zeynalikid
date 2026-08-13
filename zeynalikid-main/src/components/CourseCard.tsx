@@ -8,6 +8,8 @@ interface CourseType {
   desc?: string;
   descEn?: string;
   image?: string;
+  aspectRatio?: string;
+  objectPosition?: string;
   price?: string;
   priceNum?: number;
   discountedPrice?: number;
@@ -38,19 +40,6 @@ interface CourseCardProps {
   T?: any;
   lang?: 'fa' | 'en';
 }
-
-const FALLBACK_IMAGE = '/images/course-default.webp';
-
-// Topic images mapping (use existing assets)
-const getTopicImage = (course: CourseType, fallback: string) => {
-  const title = (course.title || '').toLowerCase();
-  const tab = (course.tabId || '').toLowerCase();
-  if (title.includes('قد') || tab.includes('height') || title.includes('growth')) return '/images/asset13c-topic-growth.webp';
-  if (title.includes('اشتها') || tab.includes('appetite')) return '/images/asset13c-topic-appetite.webp';
-  if (title.includes('تمرکز') || title.includes('ذهن') || tab.includes('mind')) return '/images/asset13c-topic-focus.webp';
-  return course.image || fallback;
-};
-
 
 function CountdownTimer({
   targetDate,
@@ -131,12 +120,16 @@ export default function CourseCard({
   const isSmall = size === 'small';
 
   const priceNum = course.priceNum || Number(String(course.price || '').replace(/[^0-9]/g, '')) || 0;
-  const [expired, setExpired] = React.useState<boolean>(() => {
+  const isDiscountExpired = React.useCallback(() => {
     if (!course.discountEnd) return false;
     const end = new Date(course.discountEnd).getTime();
-    return !isNaN(end) && end <= Date.now();
-  });
+    return !Number.isNaN(end) && end <= Date.now();
+  }, [course.discountEnd]);
+  const [expired, setExpired] = React.useState<boolean>(isDiscountExpired);
+  React.useEffect(() => { setExpired(isDiscountExpired()); }, [isDiscountExpired]);
   const handleExpire = React.useCallback(() => { setExpired(true); }, []);
+  const [imageFailed, setImageFailed] = React.useState(false);
+  React.useEffect(() => { setImageFailed(false); }, [course.image]);
   const discountedPrice = course.discountedPrice || 0;
   const discountPercent = discountedPrice && priceNum > 0 ? Math.round(((priceNum - discountedPrice) / priceNum) * 100) : 0;
   const hasDiscount = !expired && showDiscount && discountedPrice > 0 && discountPercent > 0;
@@ -158,7 +151,8 @@ export default function CourseCard({
   };
 
   const stockValue = typeof course.stock === 'number' ? course.stock : -1;
-  const imageSrc = getTopicImage(course, FALLBACK_IMAGE);
+  const imageSrc = String(course.image || '').trim();
+  const showImage = !!imageSrc && !imageFailed;
 
   // New Stage 2 Design: Mobile-first, 16:9 image top, pill CTAs, 3 shadows, clean
   return (
@@ -178,105 +172,126 @@ export default function CourseCard({
         transition: 'box-shadow .2s ease, transform .2s ease',
       }}
     >
-      {/* Image area - 16:9 on mobile, topic-aware */}
-      <div
-        style={{
-          position: 'relative',
-          height: isSmall ? '82px' : isHero ? '178px' : '148px',
-          background: 'var(--zk-surface-muted)',
-          flex: isSmall ? '0 0 98px' : undefined,
-          overflow: 'hidden',
-        }}
-      >
-        <img
-          src={imageSrc}
-          alt={lang === 'en' ? (course.titleEn || course.title) : course.title}
-          loading="lazy"
+      {/* بخش تصویر فقط وقتی برای خود همین دوره عکس ثبت شده باشد ساخته می‌شود. */}
+      {showImage && (
+        <div
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: (course as any).objectPosition || 'center',
-            display: 'block',
+            position: 'relative',
+            height: isSmall ? '82px' : undefined,
+            aspectRatio: isSmall ? undefined : (course.aspectRatio || '16 / 9'),
+            background: 'var(--zk-surface-muted)',
+            flex: isSmall ? '0 0 98px' : undefined,
+            overflow: 'hidden',
           }}
-          onError={(e: any) => {
-            if (e.currentTarget.src !== FALLBACK_IMAGE) e.currentTarget.src = FALLBACK_IMAGE;
-          }}
-        />
+        >
+          <img
+            src={imageSrc}
+            alt={lang === 'en' ? (course.titleEn || course.title) : course.title}
+            loading="lazy"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: course.objectPosition || 'center',
+              display: 'block',
+            }}
+            onError={() => setImageFailed(true)}
+          />
 
-        {/* Top overlay bar for tags / discount / timer */}
-        <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
-          {tag && (
-            <span style={{
-              background: tag.color,
-              color: '#fff',
-              padding: '3px 9px',
-              borderRadius: '999px',
-              fontSize: '10.5px',
-              fontWeight: 700,
-              letterSpacing: '0.2px',
-            }}>
-              {tag.label}
-            </span>
-          )}
-
-          {hasDiscount && (
-            <span style={{
-              background: '#F59E0B',
-              color: '#fff',
-              padding: '2px 8px',
-              borderRadius: '999px',
-              fontSize: '10px',
-              fontWeight: 700,
-            }}>
-              {discountPercent}% تخفیف
-            </span>
-          )}
-        </div>
-
-        {/* Duration / age badge on image bottom */}
-        {!isSmall && (course.duration || course.ageBadge !== false) && (
-          <div style={{
-            position: 'absolute',
-            bottom: 8,
-            left: 8,
-            display: 'flex',
-            gap: 6,
-            alignItems: 'center',
-          }}>
-            {course.duration && (
+          {/* Top overlay bar for tags / discount / timer */}
+          <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+            {tag && (
               <span style={{
-                background: 'rgba(255,255,255,0.92)',
-                color: 'var(--zk-text)',
-                padding: '1px 7px',
+                background: tag.color,
+                color: '#fff',
+                padding: '3px 9px',
                 borderRadius: '999px',
-                fontSize: '10px',
-                fontWeight: 600,
+                fontSize: '10.5px',
+                fontWeight: 700,
+                letterSpacing: '0.2px',
               }}>
-                {course.duration}
+                {tag.label}
               </span>
             )}
-            {course.ageBadge !== false && (
-              <span style={{
-                background: 'rgba(15,118,110,0.9)',
-                color: '#fff',
-                padding: '1px 7px',
-                borderRadius: '999px',
-                fontSize: '10px',
-                fontWeight: 600,
-              }}>
-                {lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}
+
+            {hasDiscount && (
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <span style={{
+                  background: '#F59E0B',
+                  color: '#fff',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                }}>
+                  {discountPercent}% {lang === 'en' ? 'off' : 'تخفیف'}
+                </span>
+                {course.discountEnd && <CountdownTimer targetDate={course.discountEnd} lang={lang} onExpire={handleExpire} />}
               </span>
             )}
           </div>
-        )}
-      </div>
+
+          {/* Duration / age badge on image bottom */}
+          {!isSmall && (course.duration || course.ageBadge !== false) && (
+            <div style={{
+              position: 'absolute',
+              bottom: 8,
+              left: 8,
+              display: 'flex',
+              gap: 6,
+              alignItems: 'center',
+            }}>
+              {course.duration && (
+                <span style={{
+                  background: 'rgba(255,255,255,0.92)',
+                  color: 'var(--zk-text)',
+                  padding: '1px 7px',
+                  borderRadius: '999px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                }}>
+                  {course.duration}
+                </span>
+              )}
+              {course.ageBadge !== false && (
+                <span style={{
+                  background: 'rgba(15,118,110,0.9)',
+                  color: '#fff',
+                  padding: '1px 7px',
+                  borderRadius: '999px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                }}>
+                  {lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Body */}
       <div style={{
         padding: isHero ? '15px 14px 16px' : isSmall ? '9px 10px' : '13px 13px 14px',
         minWidth: 0,
+        flex: isSmall ? 1 : undefined,
       }}>
+        {!showImage && !isSmall && (tag || hasDiscount) && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 7, marginBottom: 8 }}>
+            {tag ? (
+              <span style={{ background: tag.color, color: '#fff', padding: '3px 9px', borderRadius: 999, fontSize: 10.5, fontWeight: 700 }}>{tag.label}</span>
+            ) : <span />}
+            {hasDiscount && (
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <span style={{ background: '#F59E0B', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
+                  {discountPercent}% {lang === 'en' ? 'off' : 'تخفیف'}
+                </span>
+                {course.discountEnd && <CountdownTimer targetDate={course.discountEnd} lang={lang} onExpire={handleExpire} />}
+              </span>
+            )}
+          </div>
+        )}
+
         <h3 style={{
           fontSize: isHero ? '16.5px' : isSmall ? '12.5px' : '14.5px',
           fontWeight: 800,
@@ -289,6 +304,13 @@ export default function CourseCard({
         }}>
           {lang === 'en' ? (course.titleEn || course.title) : course.title}
         </h3>
+
+        {!showImage && !isSmall && (course.duration || course.ageBadge !== false) && (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
+            {course.duration && <span style={{ background: 'var(--zk-surface-muted)', color: 'var(--zk-text-muted)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{course.duration}</span>}
+            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
+          </div>
+        )}
 
         {isHero && course.desc && (
           <p style={{

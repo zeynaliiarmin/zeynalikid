@@ -9,9 +9,12 @@ interface Course {
   desc?: string;
   descEn?: string;
   image?: string;
+  aspectRatio?: string;
+  objectPosition?: string;
   price?: string;
   priceNum?: number;
   discountedPrice?: number;
+  discountEnd?: string;
   duration?: string;
   features?: string[];
   rating?: number;
@@ -45,6 +48,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const selectedCourseFaqs = ((isFa ? cfg?.faqItems : cfg?.faqItemsEn) || []).filter((item: any) => Array.isArray(item.placements) && item.placements.includes(`course:${course.tabId}`));
   const courseFaqs = [...legacyCourseFaqs, ...selectedCourseFaqs];
   const desc = isFa ? course.desc : (course.descEn || course.desc);
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => { setImageFailed(false); }, [course.image]);
+  const showCourseImage = !!String(course.image || '').trim() && !imageFailed;
+  const discountEndTime = course.discountEnd ? new Date(course.discountEnd).getTime() : 0;
+  const hasActiveDiscount = !!course.discountedPrice && (!discountEndTime || Number.isNaN(discountEndTime) || discountEndTime > Date.now());
 
   // Accordion state for syllabus
   const [openSyllabus, setOpenSyllabus] = useState<number[]>([0]);
@@ -95,52 +103,64 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
   return (
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
-      {/* Hero */}
-      <div style={{ position: 'relative', height: 188, background: 'var(--zk-surface-muted)' }}>
-        <img 
-          src={course.image || '/images/asset13c-topic-growth.webp'} 
-          alt={title} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (course as any).objectPosition || 'center' }} 
-        />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(15,23,42,0.35))' }} />
-
-        {/* Top bar — placed safely on the left away from Hamburger Menu on right */}
-        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
-          {/* Back button */}
-          <button 
-            onClick={onClose} 
+      {/* تصویر قهرمان فقط برای دوره‌ای که عکس اختصاصی دارد. */}
+      {showCourseImage ? (
+        <div style={{ position: 'relative', aspectRatio: course.aspectRatio || '16 / 9', background: 'var(--zk-surface-muted)' }}>
+          <img
+            src={course.image}
+            alt={title}
+            onError={() => setImageFailed(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: course.objectPosition || 'center', display: 'block' }}
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(15,23,42,0.35))' }} />
+          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
+            <button
+              onClick={onClose}
+              aria-label={isFa ? 'بازگشت' : 'Back'}
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                border: 0,
+                borderRadius: 999,
+                width: 38,
+                height: 38,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'none' : 'scaleX(-1)' }}>
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '12px 12px 0', display: 'flex', justifyContent: 'flex-start' }}>
+          <button
+            onClick={onClose}
             aria-label={isFa ? 'بازگشت' : 'Back'}
-            style={{ 
-              background: 'rgba(255,255,255,0.95)', 
-              border: 0, 
-              borderRadius: 999, 
-              width: 38, 
-              height: 38, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
+            style={{
+              background: 'var(--zk-surface)',
+              color: 'var(--zk-text)',
+              border: '1px solid var(--zk-border)',
+              borderRadius: 999,
+              width: 38,
+              height: 38,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              boxShadow: 'var(--zk-shadow-light)',
             }}
           >
-            <svg 
-              width="18" 
-              height="18" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="#111" 
-              strokeWidth="2.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ transform: isFa ? 'none' : 'scaleX(-1)' }}
-            >
-              <path d="M15 18l-6-6 6-6"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'none' : 'scaleX(-1)' }}>
+              <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
-
-          
         </div>
-      </div>
+      )}
 
       {/* Header info */}
       <div style={{ padding: '16px 16px 8px' }}>
@@ -162,9 +182,9 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         {/* Price + CTA row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
           <div>
-            {course.discountedPrice ? (
+            {hasActiveDiscount ? (
               <>
-                <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--zk-primary)' }}>{course.discountedPrice.toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
+                <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--zk-primary)' }}>{(course.discountedPrice || 0).toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
                 <span style={{ marginLeft: 8, textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: 13 }}>{course.price}</span>
               </>
             ) : (

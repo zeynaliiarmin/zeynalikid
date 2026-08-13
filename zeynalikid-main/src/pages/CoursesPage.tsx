@@ -6,13 +6,48 @@ import CourseCard from '../components/CourseCard';
 import CourseDetailView from '../components/CourseDetailView';
 import TrustBoxNew from '../components/TrustBoxNew';
 
+function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [tab?.image]);
+
+  if (!tab?.image || tab.showImage === false || failed) return null;
+
+  return (
+    <section
+      aria-label={lang === 'en' ? `Image for ${tab.titleEn || tab.title}` : `تصویر تب ${tab.title}`}
+      style={{
+        marginBottom: 18,
+        borderRadius: 20,
+        overflow: 'hidden',
+        border: '1px solid var(--zk-border)',
+        boxShadow: 'var(--zk-shadow-light)',
+        background: 'var(--zk-surface)',
+      }}
+    >
+      <img
+        src={tab.image}
+        alt={lang === 'en' ? (tab.titleEn || tab.title) : tab.title}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        style={{
+          display: 'block',
+          width: '100%',
+          aspectRatio: tab.aspectRatio || '16 / 9',
+          objectFit: 'cover',
+          objectPosition: tab.objectPosition || 'center',
+        }}
+      />
+    </section>
+  );
+}
+
 // Simplified CoursesPage with Stage 2 redesign + Stage 11 UX improvements
 export default function CoursesPage({ app }: { app: any }) {
   const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest } = app;
   const location = useLocation();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
-  const [filter, setFilter] = useState<'all' | 'growth' | 'appetite' | 'nutrition' | 'focus' | 'parenting' | 'discount'>('all');
+  const [filter, setFilter] = useState<string>('all');
 
   const activeTab = cfg.courseTabs?.find((t: any) => t.id === courseTab) || cfg.courseTabs?.[0];
   const allCourses = (activeTab?.courses || []).filter((c: any) => c.active !== false).map((c: any) => ({ ...c, tabId: activeTab?.id }));
@@ -53,6 +88,9 @@ export default function CoursesPage({ app }: { app: any }) {
     if (filter === 'discount') return Number(c.discountedPrice) > 0;
     return c.tabId === filter;
   });
+  const bannerTab = filter === 'all' || filter === 'discount'
+    ? null
+    : (cfg.courseTabs || []).find((tab: any) => tab.id === filter);
 
   const goConsult = () => {
     window.location.href = APP_A_URL;
@@ -128,7 +166,10 @@ export default function CoursesPage({ app }: { app: any }) {
           {filters.map(f => (
             <button
               key={f.id}
-              onClick={() => setFilter(f.id as any)}
+              onClick={() => {
+                setFilter(f.id);
+                if (f.id !== 'all' && f.id !== 'discount') setCourseTab(f.id);
+              }}
               style={{
                 minHeight: 46,
                 padding: '0 18px',
@@ -186,6 +227,9 @@ export default function CoursesPage({ app }: { app: any }) {
             </div>
           );
         })()}
+
+        {/* تصویر مستقل تب انتخاب‌شده؛ در حالت «همه» و «تخفیف‌دار» بنر واحدی وجود ندارد. */}
+        {bannerTab && <CourseTabBanner tab={bannerTab} lang={lang} />}
 
         {/* Grid: 1-col mobile, 2 tablet, 3 desktop */}
         <div style={{
