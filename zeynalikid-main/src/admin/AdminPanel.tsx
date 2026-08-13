@@ -1213,16 +1213,26 @@ function ThemeManagerEditor(){
   </Box>}
 
  function ProductsTabEditor(){
-  const productsCfg=editCfg.products||{showSection:false,items:[]};
-  const items:any[]=productsCfg.items||[];
-  const showSection=productsCfg.showSection!==false;
-  const upd=(newItems:any[])=>setEditCfg({...editCfg,products:{...productsCfg,items:newItems}});
-  const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};upd(a)};
-  const chgFeatures=(i:number,featuresStr:string)=>{const feats=featuresStr.split(/[|,\n]/).map((s:string)=>s.trim()).filter(Boolean);chg(i,'features',feats)};
+  // ── محصولات: منبع داده «products.list» (همان ساختاری که صفحهٔ عمومی /products از آن می‌خواند) ──
+  // قبلاً این صفحه از «products.items» می‌خواند که در سایت اثری نداشت؛ با «list» (تنظیمات) ادغام شد.
+  const productsCfg = editCfg.products && typeof editCfg.products === 'object' && !Array.isArray(editCfg.products)
+    ? editCfg.products : { showSection: true, list: Array.isArray(editCfg.products) ? editCfg.products : [] };
+  // ادغام داده‌های قدیمی (items) اگر list خالی باشد — بدون از دست رفتن اطلاعات
+  let items: any[] = Array.isArray(productsCfg.list) ? productsCfg.list : [];
+  const legacyItems: any[] = Array.isArray(productsCfg.items) ? productsCfg.items : [];
+  if (items.length === 0 && legacyItems.length > 0) {
+    items = legacyItems.map((it: any) => ({ ...it, name: it.name || it.title || '', title: it.title || it.name || '', id: it.id || ('p' + uid()) }));
+  }
+  const showSection = (productsCfg.showSection ?? editCfg.showProductsSection ?? editCfg.showProductsPage ?? true) !== false;
+  const upd = (newItems: any[]) => {
+    setEditCfg({ ...editCfg, products: { ...productsCfg, list: newItems, items: [] } });
+  };
+  const chg = (i: number, k: string, v: any) => { const a = [...items]; a[i] = { ...a[i], [k]: v }; upd(a); };
+  const chgFeatures = (i: number, featuresStr: string) => { const feats = featuresStr.split(/[|,\n]/).map((s: string) => s.trim()).filter(Boolean); chg(i, 'features', feats); };
   return <>
    <Box title="مدیریت نمایش بخش محصولات">
     <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',background:showSection?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showSection?T.ok:T.err}`,borderRadius:12}}>
-     <input type="checkbox" checked={showSection} onChange={e=>setEditCfg({...editCfg,products:{...productsCfg,showSection:e.target.checked}})} style={{width:18,height:18}}/>
+     <input type="checkbox" checked={showSection} onChange={e=>{const v=e.target.checked;setEditCfg({...editCfg,products:{...productsCfg,showSection:v},showProductsSection:v,showProductsPage:v})}} style={{width:18,height:18}}/>
      <span>{showSection?<span style={{color:T.ok,display:'inline-flex',alignItems:'center',gap:6}}><ZkCheckCircleIcon size={15}/>بخش محصولات فعال است</span>:<span style={{color:T.err,display:'inline-flex',alignItems:'center',gap:6}}><ZkXCircleIcon size={15}/>بخش محصولات غیرفعال است</span>}</span>
     </label>
    </Box>
@@ -1230,7 +1240,7 @@ function ThemeManagerEditor(){
     {items.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>
       <span>{it.isVisible!==false?<ZkEyeIcon size={14} color={T.ok}/>:<ZkEyeOffIcon size={14} color={T.err}/>}</span>
-      <span style={{flex:1}}>{it.title||'بدون عنوان'}</span>
+      <span style={{flex:1}}>{it.title||it.name||'بدون عنوان'}</span>
      </summary>
      <div style={{marginTop:10}}>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
@@ -1238,29 +1248,39 @@ function ThemeManagerEditor(){
         <input className="zkad-switch" type="checkbox" checked={it.isVisible!==false} onChange={e=>chg(i,'isVisible',e.target.checked)}/> نمایش محصول
        </label>
       </div>
-      <Field label="عنوان محصول" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
+      <Field label="نام محصول" value={it.name||it.title||''} onChange={(v:string)=>chg(i,'name',v)} ph=""/>
+      <Field label="عنوان نمایشی (اختیاری)" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
       <label style={S.lbl}>توضیحات محصول</label>
-      <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||''} onBlur={e=>chg(i,'description',e.target.value)} placeholder="توضیحات کامل محصول..."/>
+      <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||it.desc||''} onBlur={e=>{chg(i,'description',e.target.value);chg(i,'desc',e.target.value)}} placeholder="توضیحات کامل محصول..."/>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+       <div><label style={S.lbl}>قیمت (تومان)</label><input style={S.inp} inputMode="numeric" defaultValue={it.price||''} onBlur={e=>chg(i,'price',p2e(e.target.value).replace(/[^0-9]/g,''))} placeholder="قیمت"/></div>
+       <div><label style={S.lbl}>قیمت تخفیف‌دار (اختیاری)</label><input style={S.inp} inputMode="numeric" defaultValue={it.discountedPrice||''} onBlur={e=>{const n=Number(p2e(e.target.value).replace(/[^0-9]/g,''))||0;chg(i,'discountedPrice',n)}} placeholder="0"/></div>
+      </div>
+      <label style={S.lbl}>دسته‌بندی</label>
+      <input style={S.inp} defaultValue={it.category||''} onBlur={e=>chg(i,'category',e.target.value.trim())} placeholder="مثلاً: مکمل / منبع / برنامه شخصی / باندل"/>
+      <label style={S.lbl}>آیکون (اختیاری)</label>
+      <input style={S.inp} defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value.trim())} placeholder="آیکون"/>
       <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label>
       <textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="ویژگی ۱ | ویژگی ۲ | ..."/>
-      <label style={S.lbl}>عکس محصول (آپلود یا لینک مستقیم)</label>
+      <label style={S.lbl}>عکس محصول (آپلود یا انتخاب از گالری)</label>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
        {it.image&&<img src={it.image} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'products');chg(i,'image',url)}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
-       <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>chg(i,'image',url)} current={it.image} AdminBtn={AdminBtn} />
+       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'products');chg(i,'image',url);chg(i,'imageUrl',url)}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
+       <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>{chg(i,'image',url);chg(i,'imageUrl',url)}} current={it.image||it.imageUrl} AdminBtn={AdminBtn} />
       </div>
-      <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onBlur={e=>chg(i,'image',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
+      <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>{chg(i,'image',e.target.value.trim());chg(i,'imageUrl',e.target.value.trim())}} placeholder="https://... یا لینک مستقیم عکس"/>
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-       <button style={AdminBtn()} disabled={i===0} onClick={()=>{if(i>0){const a=[...items];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a)}}}><ZkArrowUpIcon size={13}/> بالا</button>
-       <button style={AdminBtn()} disabled={i===items.length-1} onClick={()=>{if(i<items.length-1){const a=[...items];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a)}}}><ZkArrowDownIcon size={13}/> پایین</button>
-       <button style={{...AdminBtn(),color:T.err}} onClick={()=>upd(items.filter((_:any,j:number)=>j!==i))}><ZkTrashIcon size={13}/> حذف</button>
+       <button style={AdminBtn()} disabled={i===0} onClick={()=>{if(i>0){const a=[...items];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowUpIcon size={13}/> بالا</button>
+       <button style={AdminBtn()} disabled={i===items.length-1} onClick={()=>{if(i<items.length-1){const a=[...items];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowDownIcon size={13}/> پایین</button>
+       <button style={{...AdminBtn(),color:T.err}} onClick={async ()=>{ if(it.image){try{await deleteStoredImage(it.image)}catch{}} upd(items.filter((_:any,j:number)=>j!==i)); }}><ZkTrashIcon size={13}/> حذف</button>
       </div>
      </div>
     </details>)}
-    <button style={AdminBtn()} onClick={()=>upd([...items,{id:'p'+uid(),title:'محصول جدید',description:'',features:[],image:'',isVisible:true}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
+    <button style={AdminBtn()} onClick={()=>upd([...items,{id:'p'+uid(),name:'محصول جدید',title:'محصول جدید',description:'توضیحات محصول جدید',features:['ویژگی ۱','ویژگی ۲'],image:'',imageUrl:'',icon:'',category:'',price:'',discountedPrice:0,isVisible:true,order:items.length+1}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
    </Box>
    <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره محصولات</button>
-  </>}
+  </>
+ }
 
  function HighlightsTabEditor(){
   // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
