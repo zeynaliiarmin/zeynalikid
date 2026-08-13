@@ -197,6 +197,13 @@ export const defaultSettings = {
       enabled: true,
       storagePath: '',
     },
+    // ─── کتابخانهٔ تصاویر بخش‌ها (گالری مدیریت تصاویر) ───
+    library: {
+      licenses: [],
+      products: [],
+      courses: [],
+      general: [],
+    },
   },
 
   // ─── باکس جملات اعتمادساز جدید (TrustBoxNew) ───
@@ -452,6 +459,14 @@ export function migrateSettings(settings: any): any {
     if (migrated.images.hero && !migrated.images.hero.storagePath) migrated.images.hero.storagePath = '';
     if (migrated.images.trustBox && !migrated.images.trustBox.storagePath) migrated.images.trustBox.storagePath = '';
     if (migrated.images.specialist && !migrated.images.specialist.storagePath) migrated.images.specialist.storagePath = '';
+    // اطمینان از وجود کتابخانهٔ تصاویر بخش‌ها
+    if (!migrated.images.library) {
+      migrated.images.library = { licenses: [], products: [], courses: [], general: [] };
+    } else {
+      for (const k of ['licenses', 'products', 'courses', 'general']) {
+        if (!Array.isArray(migrated.images.library[k])) migrated.images.library[k] = [];
+      }
+    }
   }
 
   // ─── مهاجرت trustBoxes: اطمینان از وجود ۴ دسته جملات اعتمادساز (health/height/appetite/mind) با ۶۳ جمله

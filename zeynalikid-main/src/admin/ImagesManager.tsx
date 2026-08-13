@@ -1,0 +1,424 @@
+// src/admin/ImagesManager.tsx
+// بازطراحی کامل صفحهٔ «تصاویر» در پنل مدیریت.
+//
+// قوانین رعایت‌شده (پنل ادمین React):
+//   - کامپوننت در سطح ماژول تعریف شده (بیرون از AdminPanel) → بدون ریسک Remount / شکستن Hooks.
+//   - State محلی برای تَب فعال و مودال‌ها؛ هیچ state ای روی «هر کلید تایپ» در لیست commit نمی‌شود
+//     (از defaultValue + onBlur برای ویرایش فیلدها استفاده شده تا پرش صفحه/ازدست رفتن فوکوس رخ ندهد).
+//   - برای هر تصویر کتابخانه از key پایدار (id) استفاده می‌شود، نه index.
+//
+// امکانات:
+//   - تب‌های مجزا برای هر بخش: مجوزها / محصولات / دوره‌ها / عمومی
+//   - آپلود مستقیم از حافظهٔ گوشی (file picker + drag & drop)
+//   - تبدیل خودکار هر فرمت به webp با حداکثر کیفیت و حجم بهینه
+//   - تنظیم «کادر» (نسبت ابعاد + موقعیت برش object-position) برای هر تصویر
+//   - ذخیرهٔ فوری در Supabase Storage (پوشهٔ مجزا برای هر بخش) + گزینهٔ «ذخیره در پروژه»
+//   - گالری این صفحه با صفحات مقصد هماهنگ است: عکس‌های هر تب فقط در همان صفحهٔ مقصد دیده می‌شوند.
+
+import React, { useState } from 'react';
+import {
+  ZkUploadIcon, ZkImageIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon,
+  ZkArrowUpIcon, ZkArrowDownIcon, ZkDownloadIcon,
+} from './adminIcons';
+
+// ─── بخش‌ها و پوشهٔ هر بخش ──────────────────────────────────────────
+export const IMAGE_SECTIONS: { id: string; label: string; folder: string; target: string; hint: string }[] = [
+  { id: 'licenses', label: 'مجوزها', folder: 'licenses', target: 'صفحهٔ مجوزها', hint: 'برای مجوزها و گواهی‌ها' },
+  { id: 'products', label: 'محصولات', folder: 'products', target: 'صفحهٔ محصولات', hint: 'برای محصولات فروشگاه' },
+  { id: 'courses', label: 'دوره‌ها', folder: 'courses', target: 'دوره‌ها / تَب‌ها', hint: 'برای تَب‌ها و دوره‌ها' },
+  { id: 'general', label: 'عمومی', folder: 'general', target: 'متفرقه / هیرو / تراست', hint: 'تصاویر عمومی و متفرقه' },
+];
+
+// نسبت‌های ابعاد آماده برای تنظیم کادر
+export const ASPECT_PRESETS: { label: string; value: string }[] = [
+  { label: 'مربع (۱:۱)', value: '1 / 1' },
+  { label: '۴:۳', value: '4 / 3' },
+  { label: '۳:۴', value: '3 / 4' },
+  { label: '۱۶:۹', value: '16 / 9' },
+  { label: '۹:۱۶', value: '9 / 16' },
+  { label: 'هیرو (۱.۰۵:۱)', value: '1.05 / 1' },
+  { label: 'آزاد', value: '' },
+];
+
+// موقعیت‌های برش (object-position)
+const POSITIONS: { label: string; value: string }[] = [
+  { label: 'مرکز', value: 'center' },
+  { label: 'بالا', value: 'top' },
+  { label: 'پایین', value: 'bottom' },
+  { label: 'چپ', value: 'left' },
+  { label: 'راست', value: 'right' },
+];
+
+interface LibraryItem {
+  id: string;
+  url: string;
+  alt: string;
+  aspectRatio: string;
+  objectPosition: string;
+  storagePath: string;
+  enabled: boolean;
+}
+
+type Props = {
+  T: any;
+  S: any;
+  editCfg: any;
+  setEditCfg: (next: any) => void;
+  setSave: (next: any) => void;
+  uid: () => number | string;
+  fileToData: (f: File, oldUrl?: string, folder?: string) => Promise<string>;
+  deleteStoredImage: (url?: string) => Promise<void>;
+  supabase: any;
+  isSupabaseConfigured: boolean;
+  AdminBtn: () => any;
+};
+
+// ─── تبدیل خودکار هر تصویر به webp با حداکثر کیفیت و حجم بهینه ──────
+async function toWebpHighQuality(file: File, maxLongSide = 1920): Promise<Blob> {
+  const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|heic|heif|avif|bmp|gif)$/i.test(file.name);
+  if (!isImage) throw new Error('فایل انتخاب‌شده تصویر نیست.');
+
+  // SVG / GIF بی‌حرکت بدون تغییر نگه داشته می‌شوند (webp برای SVG/گیف‌های متحرک مناسب نیست)
+  if (file.type === 'image/svg+xml' || /\.[sg]v?g$/i.test(file.name)) {
+    return file;
+  }
+  if (file.type === 'image/gif' && !file.type.includes('static')) {
+    // گف متحرک: بدون تبدیل (حفظ انیمیشن)
+    return file;
+  }
+
+  let bmp: ImageBitmap | HTMLImageElement;
+  if (typeof createImageBitmap === 'function') {
+    try { bmp = await createImageBitmap(file); }
+    catch { bmp = await loadImage(file); }
+  } else {
+    bmp = await loadImage(file);
+  }
+
+  const w = bmp.width;
+  const h = bmp.height;
+  let nw = w, nh = h;
+  if (Math.max(w, h) > maxLongSide) {
+    const aspect = w / h;
+    if (w >= h) { nw = maxLongSide; nh = Math.round(maxLongSide / aspect); }
+    else { nh = maxLongSide; nw = Math.round(maxLongSide * aspect); }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = nw;
+  canvas.height = nh;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('پردازش تصویر ممکن نشد.');
+  ctx.drawImage(bmp as any, 0, 0, nw, nh);
+  if ('close' in bmp && typeof (bmp as any).close === 'function') { try { (bmp as any).close(); } catch {} }
+
+  // webp با کیفیت بالا (۰٫۹۲)؛ در صورت پشتیبانی‌نشدن، از JPEG با کیفیت بالا
+  const useWebP = supportsWebP();
+  const type = useWebP ? 'image/webp' : 'image/jpeg';
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), type, 0.92));
+  if (!blob) throw new Error('تبدیل تصویر به webp انجام نشد.');
+  return blob;
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+let _webp: boolean | null = null;
+function supportsWebP(): boolean {
+  if (_webp !== null) return _webp;
+  try {
+    if (typeof document === 'undefined') { _webp = false; return false; }
+    const c = document.createElement('canvas'); c.width = 1; c.height = 1;
+    _webp = c.toDataURL('image/webp').startsWith('data:image/webp');
+  } catch { _webp = false; }
+  return _webp;
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// ─── کامپوننت اصلی ────────────────────────────────────────────────
+export default function ImagesManager(props: Props) {
+  const { T, S, editCfg, setEditCfg, setSave, uid, fileToData, deleteStoredImage, supabase, isSupabaseConfigured, AdminBtn } = props;
+  const [tab, setTab] = useState('licenses');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState('');
+
+  const lib = (editCfg?.images?.library || {});
+  const items: LibraryItem[] = Array.isArray(lib[tab]) ? lib[tab] : [];
+
+  const notify = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2200); };
+
+  const setItems = (next: LibraryItem[]) => {
+    const images = { ...(editCfg?.images || {}), library: { ...lib, [tab]: next } };
+    setEditCfg({ ...editCfg, images });
+  };
+
+  const addItem = (it: LibraryItem) => setItems([...items, it]);
+
+  const updateItem = (id: string, patch: Partial<LibraryItem>) => {
+    setItems(items.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  };
+
+  const removeItem = async (it: LibraryItem) => {
+    if (it.storagePath && supabase && isSupabaseConfigured) {
+      try { await deleteStoredImage(it.url); } catch (e) { console.warn('remove image err', e); }
+    }
+    setItems(items.filter((x) => x.id !== it.id));
+    notify('تصویر حذف شد');
+  };
+
+  const moveItem = (i: number, dir: -1 | 1) => {
+    const a = [...items];
+    const j = i + dir;
+    if (j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]];
+    setItems(a);
+  };
+
+  // آپلود از حافظهٔ گوشی → تبدیل webp → ذخیره در سوپابیس (پوشهٔ بخش) + افزودن به گالری
+  const handleUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy('upload');
+    try {
+      const blob = await toWebpHighQuality(file);
+      const section = IMAGE_SECTIONS.find((s) => s.id === tab);
+      const folder = section?.folder || tab;
+      let url = '';
+      let storagePath = '';
+      if (isSupabaseConfigured && supabase) {
+        const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from('images').upload(path, blob, { contentType: blob.type, upsert: false });
+        if (error) throw new Error(error.message || 'آپلود انجام نشد');
+        const { data } = supabase.storage.from('images').getPublicUrl(path);
+        url = data.publicUrl;
+        storagePath = path;
+      } else {
+        // حالت بدون Supabase: تبدیل به data URL
+        url = await blobToDataUrl(blob);
+      }
+      addItem({
+        id: String(uid()),
+        url,
+        alt: file.name.replace(/\.[^/.]+$/, ''),
+        aspectRatio: '4 / 3',
+        objectPosition: 'center',
+        storagePath,
+        enabled: true,
+      });
+      notify('تصویر آپلود و به webp تبدیل شد');
+    } catch (err: any) {
+      notify(err?.message || 'خطا در آپلود تصویر');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // ذخیرهٔ تصویر در پروژه (public/images) — برای دانلود/ثبت در ریپو
+  const saveToProject = (it: LibraryItem) => {
+    try {
+      const a = document.createElement('a');
+      a.href = it.url;
+      a.download = (it.url.split('/').pop() || 'image.webp');
+      document.body.appendChild(a); a.click(); a.remove();
+      notify('فایل تصویر دانلود شد. آن را در public/images قرار دهید و Deploy کنید.');
+    } catch (e) {
+      notify('دانلود ممکن نشد');
+    }
+  };
+
+  const sectionInfo = IMAGE_SECTIONS.find((s) => s.id === tab)!;
+
+  return (
+    <>
+      <Box title={<><ZkImageIcon size={16} color={T.ttl} /> مرکز مدیریت تصاویر</>}>
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 14px', lineHeight: 1.8 }}>
+          تصویر را در تَب بخشِ خودش آپلود کنید. عکس‌های هر تَب فقط در همان صفحهٔ مقصد دیده می‌شوند
+          و می‌توانید در صفحهٔ مقصد تعیین کنید هر عکس برای کدام مورد نمایش داده شود.
+          پس از آپلود، تصویر به‌صورت خودکار به <b>webp</b> با حداکثر کیفیت و حجم بهینه تبدیل می‌شود.
+        </p>
+
+        {/* تب‌ها */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+          {IMAGE_SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setTab(s.id)}
+              style={{
+                ...AdminBtn(),
+                background: tab === s.id ? T.acc : T.card,
+                color: tab === s.id ? '#fff' : T.acc,
+                boxShadow: 'none',
+                border: tab === s.id ? 'none' : `1px solid ${T.brd}`,
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* منطقهٔ آپلود */}
+        <div
+          className="zkad-drop"
+          style={{ border: `1.5px dashed ${T.brd}`, borderRadius: 14, padding: '18px', textAlign: 'center', cursor: 'pointer', marginBottom: 14, background: T.badge }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={async (e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; await handleUpload(f); }}
+        >
+          <ZkUploadIcon size={26} color={T.acc} />
+          <div style={{ fontSize: 13, fontWeight: 800, color: T.ttl, marginTop: 6 }}>
+            {busy === 'upload' ? 'در حال آپلود و تبدیل به webp…' : `آپلود تصویر برای «${sectionInfo.label}» از حافظهٔ گوشی`}
+          </div>
+          <div style={{ fontSize: 11, color: T.mut, marginTop: 4 }}>
+            کلیک کنید یا فایل را اینجا بکشید — هر فرمتی (jpg, png, webp, heic, avif, gif, bmp) خودکار به webp تبدیل می‌شود
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={async (e) => { const f = e.target.files?.[0]; await handleUpload(f); e.target.value = ''; }}
+          />
+        </div>
+
+        {/* گالری */}
+        {items.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: T.mut, fontSize: 12 }}>
+            هنوز تصویری در این تَب نیست. یک تصویر آپلود کنید.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 12 }}>
+            {items.map((it, i) => (
+              <div key={it.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, overflow: 'hidden', background: T.card, display: 'flex', flexDirection: 'column' }}>
+                {/* پیش‌نمایش با کادر */}
+                <div style={{ width: '100%', height: 120, overflow: 'hidden', background: '#00000010', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src={it.url}
+                    alt={it.alt || ''}
+                    style={{
+                      width: '100%', height: '100%', objectFit: 'cover',
+                      objectPosition: it.objectPosition || 'center',
+                      aspectRatio: it.aspectRatio || undefined,
+                    }}
+                    onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                </div>
+                <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                  <label style={{ fontSize: 11, color: T.ttl, fontWeight: 800 }}>متن جایگزین (Alt)</label>
+                  <input
+                    style={S.inp}
+                    defaultValue={it.alt}
+                    onBlur={(e) => updateItem(it.id, { alt: e.target.value })}
+                    placeholder="Alt"
+                  />
+                  <label style={{ fontSize: 11, color: T.ttl, fontWeight: 800 }}>کادر / نسبت ابعاد</label>
+                  <select
+                    style={S.inp}
+                    defaultValue={it.aspectRatio || ''}
+                    onChange={(e) => updateItem(it.id, { aspectRatio: e.target.value })}
+                  >
+                    {ASPECT_PRESETS.map((p) => <option key={p.label} value={p.value}>{p.label}</option>)}
+                  </select>
+                  <label style={{ fontSize: 11, color: T.ttl, fontWeight: 800 }}>موقعیت برش</label>
+                  <select
+                    style={S.inp}
+                    defaultValue={it.objectPosition || 'center'}
+                    onChange={(e) => updateItem(it.id, { objectPosition: e.target.value })}
+                  >
+                    {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  </select>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 'auto' }}>
+                    <button type="button" style={AdminBtn()} title="بالا" onClick={() => moveItem(i, -1)}><ZkArrowUpIcon size={13} /></button>
+                    <button type="button" style={AdminBtn()} title="پایین" onClick={() => moveItem(i, 1)}><ZkArrowDownIcon size={13} /></button>
+                    <button type="button" style={AdminBtn()} title="ذخیره در پروژه" onClick={() => saveToProject(it)}><ZkDownloadIcon size={13} /></button>
+                    <button type="button" style={{ ...AdminBtn(), color: T.err, marginInlineStart: 'auto' }} title="حذف" onClick={() => removeItem(it)}><ZkTrashIcon size={13} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
+          <button style={S.btn} onClick={() => setSave(editCfg)}><ZkCheckCircleIcon size={14} /> ذخیرهٔ تنظیمات تصاویر</button>
+          <span style={{ fontSize: 11, color: T.mut }}>
+            عکس‌های تَب «{sectionInfo.label}» در {sectionInfo.target} قابل انتخاب‌اند.
+          </span>
+        </div>
+      </Box>
+
+      {toast && <div style={{ position: 'fixed', bottom: 20, left: 20, background: T.pop, border: `1px solid ${T.ok}`, color: T.ok, borderRadius: 12, padding: '10px 14px', zIndex: 3000 }}>{toast}</div>}
+    </>
+  );
+}
+
+// ─── انتخاب‌گر گالری برای صفحات مقصد ────────────────────────────────
+// در صفحهٔ مجوزها/محصولات/دوره‌ها نمایش داده می‌شود تا فقط عکس‌های همان بخش انتخاب شوند.
+export function LibraryPicker({
+  T, S, editCfg, section, onSelect, current, AdminBtn, label = 'انتخاب از گالری',
+}: {
+  T: any; S: any; editCfg: any; section: string; onSelect: (url: string) => void; current?: string; AdminBtn: () => any; label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const list: any[] = Array.isArray(editCfg?.images?.library?.[section]) ? editCfg.images.library[section] : [];
+  const info = IMAGE_SECTIONS.find((s) => s.id === section);
+  return (
+    <>
+      <button type="button" style={AdminBtn()} onClick={() => setOpen(true)}><ZkImageIcon size={14} /> {label}</button>
+      {open && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflow: 'auto', background: T.pop, borderRadius: 20, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 15, color: T.ttl, fontWeight: 800, flex: 1 }}>
+                انتخاب تصویر از گالری «{info?.label || section}»
+              </h3>
+              <button type="button" style={AdminBtn()} onClick={() => setOpen(false)}>بستن</button>
+            </div>
+            {list.length === 0 ? (
+              <p style={{ color: T.mut, fontSize: 12, margin: 0 }}>هنوز تصویری در این گالری نیست. اول از صفحهٔ «تصاویر» آپلود کنید.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 10 }}>
+                {list.map((it: any) => (
+                  <div
+                    key={it.id}
+                    onClick={() => { onSelect(it.url); setOpen(false); }}
+                    style={{ cursor: 'pointer', border: `2px solid ${current === it.url ? T.acc : T.brd}`, borderRadius: 10, overflow: 'hidden', background: '#00000010' }}
+                  >
+                    <img src={it.url} alt={it.alt || ''} style={{ width: '100%', height: 90, objectFit: 'cover', objectPosition: it.objectPosition || 'center', aspectRatio: it.aspectRatio || undefined }} />
+                    <div style={{ fontSize: 10, color: T.mut, padding: 4, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.alt || 'تصویر'}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Box سبک محلی (برای استقلال کامل از AdminPanel)
+function Box({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="zkad-panel-card" style={{ marginBottom: 12 }}>
+      <h3 style={{ fontSize: 13.5, color: 'inherit', margin: '0 0 12px', fontWeight: 800, lineHeight: 1.6, display: 'flex', alignItems: 'center', gap: 7 }}>{title}</h3>
+      {children}
+    </section>
+  );
+}
