@@ -21,8 +21,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
   const go=(link?:string)=>{if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
   const isRtl=lang==='fa';
 
-  // Stage 1: Use new asset + warm subtle shape + mobile-first pill CTAs
-  const heroImageSrc = imageUrl && imageUrl.includes('asset13c-hero') ? imageUrl : '/images/asset13c-hero-mother-child.webp';
+  // تصویر انتخاب‌شده در پنل مدیریت باید بدون وابستگی به نام فایل نمایش داده شود.
+  // asset13c فقط تصویر پیش‌فرض و fallback خطای بارگذاری است.
+  const defaultHeroImage = '/images/asset13c-hero-mother-child.webp';
+  const heroImageSrc = String(imageUrl || '').trim() || defaultHeroImage;
 
   return (
     <section 

@@ -175,10 +175,12 @@ export const defaultSettings = {
   // ─── تصاویر صفحه اصلی و فرم مشاوره ───
   images: {
     hero: {
-      url: '/images/specialist/specialist-hero-master.webp',
-      alt: 'کارشناس رشد و تغذیه زینالیکید',
+      url: '/images/asset13c-hero-mother-child.webp',
+      alt: 'مادر و کودک در بنر اصلی زینالیکید',
       enabled: true,
       storagePath: '',
+      aspectRatio: '1.05 / 1',
+      objectPosition: 'center',
     },
     trustBox: {
       url: '/images/asset13c-trust-parent-care.webp',
@@ -456,7 +458,7 @@ export function migrateSettings(settings: any): any {
     const old = migrated.images;
     if (old.heroImage && !old.hero) {
       migrated.images = {
-        hero: { url: old.heroImage.url || '/images/hero-default.webp', alt: old.heroImage.alt || 'کودک شاد و سالم', enabled: old.heroImage.enabled !== false, storagePath: '' },
+        hero: { url: old.heroImage.url || '/images/asset13c-hero-mother-child.webp', alt: old.heroImage.alt || 'مادر و کودک در بنر اصلی صفحهٔ خانه', enabled: old.heroImage.enabled !== false, storagePath: '' },
         trustBox: { url: (old.trustBoxImage?.url) || '/images/trust-default.webp', alt: (old.trustBoxImage?.alt) || 'مادر و کودک خندان', enabled: (old.trustBoxImage?.enabled) !== false, storagePath: '' },
         courseDefault: { url: (old.courseImages?.defaultImage) || '/images/course-default.webp', alt: 'دوره آموزشی', enabled: (old.courseImages?.enabled) !== false },
         specialist: { url: '/images/specialist-default.webp', alt: 'کارشناس تغذیه', enabled: true, storagePath: '' },

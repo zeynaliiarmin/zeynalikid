@@ -9,7 +9,7 @@
  *  - POST/PUT/DELETE: NEVER intercepted.
  */
 
-const VERSION = 'zkid-admin-v2-2026-08-13-courses';
+const VERSION = 'zkid-admin-v3-2026-08-13-hero-image';
 const STATIC_CACHE = 'admin-static-' + VERSION;
 const NAV_CACHE = 'admin-nav-' + VERSION;
 

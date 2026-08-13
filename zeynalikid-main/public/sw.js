@@ -3,7 +3,7 @@
  * Network-First برای ناوبری/HTML (نسخه تازه پس از هر دیپلوی)،
  * و عدم کش هر درخواست API/Supabase/خارج‌خاستگاه.
  */
-const VERSION = 'zkid-v22-2026-08-07-form-phase4-fix';
+const VERSION = 'zkid-v23-2026-08-13-hero-image';
 const STATIC_CACHE = 'static-' + VERSION;
 const NAV_CACHE = 'nav-' + VERSION;
 

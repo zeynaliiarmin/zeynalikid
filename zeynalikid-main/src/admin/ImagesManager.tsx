@@ -343,7 +343,15 @@ export default function ImagesManager(props: Props) {
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
-              field="hero" title="عکس هیرو صفحهٔ اصلی" note="عکس بزرگ بالای صفحهٔ اصلی (کنار «همراهی والدین»)" defaultAspectRatio="1.05 / 1" imgStyle={{ width: 200, maxHeight: 190, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+              field="hero"
+              title="تصویر اصلی بالای صفحهٔ خانه (Hero)"
+              note="همان تصویر مادر و کودک کنار عنوان و دکمه‌های «ثبت درخواست مشاوره» و «مشاهده دوره‌ها». تصویر جدیدی که اینجا ذخیره کنید مستقیماً جایگزین تصویر فعلی سایت می‌شود."
+              fallbackUrl="/images/asset13c-hero-mother-child.webp"
+              fallbackAlt="مادر و کودک در بنر اصلی صفحهٔ خانه"
+              sourceFile="asset13c-hero-mother-child.webp"
+              highlight
+              defaultAspectRatio="1.05 / 1"
+              imgStyle={{ width: 220, maxHeight: 200, objectFit: 'cover', objectPosition: 'center', borderRadius: 12 }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
@@ -527,11 +535,13 @@ export function LibraryPicker({
 // ─── ویرایشگر یک تصویر تکی (برای عکس‌های عمومی مثل فرم مشاوره / دربارهٔ ما) ───
 function SingleImageEditor({
   T, S, AdminBtn, editCfg, setEditCfg, field, title, note, imgStyle, defaultAspectRatio,
-  circular = false, supabase, isSupabaseConfigured, deleteStoredImage,
+  circular = false, fallbackUrl = '', fallbackAlt = '', sourceFile = '', highlight = false,
+  supabase, isSupabaseConfigured, deleteStoredImage,
 }: {
   T: any; S: any; AdminBtn: () => any; editCfg: any; setEditCfg: (n: any) => void;
   field: string; title: string; note?: string; imgStyle?: React.CSSProperties; defaultAspectRatio?: string;
-  circular?: boolean; supabase?: any; isSupabaseConfigured?: boolean; deleteStoredImage: (url?: string) => Promise<void>;
+  circular?: boolean; fallbackUrl?: string; fallbackAlt?: string; sourceFile?: string; highlight?: boolean;
+  supabase?: any; isSupabaseConfigured?: boolean; deleteStoredImage: (url?: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -540,6 +550,9 @@ function SingleImageEditor({
   const val = editCfg?.images?.[field] || {};
   const upd = (patch: any) => setEditCfg({ ...editCfg, images: { ...(editCfg?.images || {}), [field]: { ...val, ...patch } } });
   const cropAspect = Object.prototype.hasOwnProperty.call(val, 'aspectRatio') ? (val.aspectRatio || '') : (defaultAspectRatio || '');
+  const displayUrl = String(val.url || fallbackUrl || '').trim();
+  const displayAlt = String(val.alt || fallbackAlt || '').trim();
+  const isUsingFallback = !!fallbackUrl && displayUrl === fallbackUrl;
 
   const closeCrop = () => {
     if (cropObjectUrl && cropSrc?.startsWith('blob:')) URL.revokeObjectURL(cropSrc);
@@ -592,18 +605,35 @@ function SingleImageEditor({
 
   const previewAspect = Object.prototype.hasOwnProperty.call(val, 'aspectRatio') ? val.aspectRatio : defaultAspectRatio;
   return (
-    <div className="zkad-media-slot" style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <b style={{ fontSize: 13, color: T.ttl }}><ZkImageIcon size={14} color={T.ttl} /> {title}</b>
-        <label style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+    <div
+      className="zkad-media-slot"
+      data-image-setting={field}
+      style={{
+        marginBottom: 16,
+        ...(highlight ? { border: `2px solid ${T.acc}`, borderRadius: 16, padding: 14, background: T.soft } : {}),
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <b style={{ fontSize: highlight ? 14 : 13, color: T.ttl, flex: 1 }}><ZkImageIcon size={14} color={T.ttl} /> {title}</b>
+        {highlight && (
+          <span style={{ fontSize: 10.5, color: isUsingFallback ? T.mut : T.ok, fontWeight: 800 }}>
+            {isUsingFallback ? 'تصویر پیش‌فرض فعال است' : 'تصویر اختصاصی فعال است'}
+          </span>
+        )}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
           <input type="checkbox" checked={val.enabled !== false} onChange={(e) => upd({ enabled: e.target.checked })} /> نمایش
         </label>
       </div>
-      {note && <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px' }}>{note}</p>}
-      {val.url && (
+      {note && <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px', lineHeight: 1.9 }}>{note}</p>}
+      {sourceFile && (
+        <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 9 }}>
+          فایل پیش‌فرض: <code dir="ltr" style={{ color: T.acc, fontWeight: 700 }}>{sourceFile}</code>
+        </div>
+      )}
+      {displayUrl && (
         <img
-          src={val.url}
-          alt={val.alt || ''}
+          src={displayUrl}
+          alt={displayAlt}
           style={{
             maxWidth: 220,
             maxHeight: 180,
@@ -622,26 +652,43 @@ function SingleImageEditor({
       <FrameControls T={T} S={S} value={{ aspectRatio: previewAspect, objectPosition: val.objectPosition }} onChange={(patch) => upd(patch)} />
       <label
         className="zkad-drop"
-        style={{ marginBottom: 8 }}
+        aria-label={highlight ? 'بارگذاری و جایگزینی تصویر اصلی صفحه خانه' : `بارگذاری ${title}`}
+        style={{ marginBottom: 8, ...(highlight ? { borderColor: T.acc, background: T.card } : {}) }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={async (e) => { e.preventDefault(); await prepareFile(e.dataTransfer.files?.[0]); }}
       >
-        <ZkUploadIcon size={22} />
-        <span>{busy ? 'در حال پردازش…' : 'انتخاب تصویر و تنظیم کادر لمسی'}</span>
-        <input type="file" accept="image/*" onChange={async (e) => { await prepareFile(e.target.files?.[0]); e.target.value = ''; }} />
+        <ZkUploadIcon size={highlight ? 25 : 22} color={highlight ? T.acc : undefined} />
+        <span>{busy ? 'در حال پردازش…' : highlight ? 'بارگذاری و جایگزینی تصویر اصلی صفحهٔ خانه' : 'انتخاب تصویر و تنظیم کادر لمسی'}</span>
+        <input type="file" accept="image/*" disabled={busy} onChange={async (e) => { await prepareFile(e.target.files?.[0]); e.target.value = ''; }} />
       </label>
       <label style={S.lbl}>متن جایگزین (Alt)</label>
-      <input style={S.inp} defaultValue={val.alt || ''} onBlur={(e) => upd({ alt: e.target.value })} placeholder="Alt" />
-      {val.url && (
+      <input style={S.inp} defaultValue={displayAlt} onBlur={(e) => upd({ alt: e.target.value })} placeholder="Alt" />
+      {displayUrl && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
           <button
             type="button"
             style={{ ...AdminBtn(), color: T.acc }}
-            onClick={() => { setReplaceOld(val.url); setCropObjectUrl(false); setCropSrc(val.url); }}
+            onClick={() => { setReplaceOld(val.url); setCropObjectUrl(false); setCropSrc(displayUrl); }}
           >
             <ZkImageIcon size={14} /> تنظیم کادر لمسی
           </button>
-          <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => upd({ url: '', storagePath: '', enabled: false })}>حذف تصویر</button>
+          {fallbackUrl && !isUsingFallback && (
+            <button
+              type="button"
+              style={{ ...AdminBtn(), color: T.acc }}
+              onClick={() => upd({
+                url: fallbackUrl,
+                alt: fallbackAlt || val.alt || '',
+                storagePath: '',
+                enabled: true,
+                aspectRatio: defaultAspectRatio || '',
+                objectPosition: 'center',
+              })}
+            >
+              بازگشت به تصویر پیش‌فرض
+            </button>
+          )}
+          <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => upd({ url: '', storagePath: '', enabled: false })}>عدم نمایش تصویر</button>
         </div>
       )}
       {cropSrc && (
