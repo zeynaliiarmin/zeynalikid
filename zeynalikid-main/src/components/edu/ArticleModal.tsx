@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { type EduItem, durationLabel, typeLabel } from './edu-data';
 import EduCard from './EduCard';
 import EduPlayer from './EduPlayer';
-import { TextIcon, VideoIcon, AudioIcon } from '../Icons';
+import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 
 /**
  * مدال جزئیات محتوا — Stage 8
@@ -21,7 +21,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [onClose]);
 
-  const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : AudioIcon;
+  const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
   const paras = (item.body || '').split('\n\n').filter(Boolean);
 
   return (
@@ -43,7 +43,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {durationLabel(item, lang)}</span>
           </div>
 
-          {item.type !== 'text' && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : 'audio'} lang={lang} />}
+          {item.type !== 'text' && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}
 
           {item.type === 'text' ? (
             <>

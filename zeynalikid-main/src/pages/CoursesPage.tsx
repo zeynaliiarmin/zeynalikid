@@ -5,6 +5,9 @@ import JsonLd from '../components/JsonLd';
 import CourseCard from '../components/CourseCard';
 import CourseDetailView from '../components/CourseDetailView';
 import TrustBoxNew from '../components/TrustBoxNew';
+import MediaCard from '../components/MediaCard';
+import useMediaVpn from '../hooks/useMediaVpn';
+import { getMediaItemsForDestinations, type MediaDestination } from '../utils/mediaPlacement';
 
 function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
   const [failed, setFailed] = useState(false);
@@ -91,6 +94,11 @@ export default function CoursesPage({ app }: { app: any }) {
   const bannerTab = filter === 'all' || filter === 'discount'
     ? null
     : (cfg.courseTabs || []).find((tab: any) => tab.id === filter);
+  const mediaDestinations: MediaDestination[] = filter === 'height' || filter === 'appetite' || filter === 'mind'
+    ? [filter]
+    : ['height', 'appetite', 'mind'];
+  const placedMediaItems = getMediaItemsForDestinations(cfg, mediaDestinations);
+  const mediaVpnOn = useMediaVpn(cfg);
 
   const goConsult = () => {
     window.location.href = APP_A_URL;
@@ -230,6 +238,27 @@ export default function CoursesPage({ app }: { app: any }) {
 
         {/* تصویر مستقل تب انتخاب‌شده؛ در حالت «همه» و «تخفیف‌دار» بنر واحدی وجود ندارد. */}
         {bannerTab && <CourseTabBanner tab={bannerTab} lang={lang} />}
+
+        {/* محتوایی که در پنل «محتوا و صفحات» برای بخش دوره فعال شده است. */}
+        {placedMediaItems.length > 0 && (
+          <section aria-label={lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'} style={{ marginBottom: 22 }}>
+            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
+              {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
+              {placedMediaItems.map((item: any, index: number) => (
+                <MediaCard
+                  key={`${item._mediaSource || 'media'}:${item.id || index}`}
+                  item={{ ...item, description: item.descriptionCourses || item.description }}
+                  T={T}
+                  lang={lang}
+                  vpnOn={mediaVpnOn}
+                  secure
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Grid: 1-col mobile, 2 tablet, 3 desktop */}
         <div style={{

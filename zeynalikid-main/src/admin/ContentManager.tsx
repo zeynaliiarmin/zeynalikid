@@ -14,18 +14,21 @@
 //   - key پایدار (id) برای آیتم‌ها و <details>
 //   - فیلدها با defaultValue + onBlur (بدون re-render هنگام تایپ)
 // ============================================================================
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
+import { getMediaDestinations, MEDIA_DESTINATIONS, migrateMediaItem, type MediaDestination } from '../utils/mediaPlacement';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any; Field: any;
   StableAdminInput: any; StableAdminTextarea: any;
-  cfg: any; setSave: (next: any) => void;
+  cfg: any; setSave: (next: any) => void | Promise<any>;
   fileToData: (f: File, oldUrl?: string, folder?: string) => Promise<string>;
   p2e: (v: string) => string;
   uid: () => number;
 }
 
 const MEDIA_CATEGORIES: [string, string][] = [
+  ['education', 'آموزش‌ها'],
   ['parent-experience', 'تجربه والدین'],
   ['growth', 'رشد قد'],
   ['appetite', 'بی‌اشتهایی'],
@@ -51,19 +54,52 @@ export default function ContentManager(props: Props) {
   const [expTabs, setExpTabs] = useState<any>(() => cfg.experienceTabs || {});
   const [mediaCountryMode, setMediaCountryMode] = useState<string>(() => cfg.mediaCountryMode || 'auto');
 
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const latestDraftRef = useRef<any>(null);
+  latestDraftRef.current = { cfg, customPlatforms, mediaItems, expItems, eduItems, expTabs, mediaCountryMode };
+
   // ── ذخیرهٔ همهٔ بخش‌ها با یک دکمه ──
-  const saveAll = useCallback(() => {
-    const next = {
-      ...cfg,
-      customPlatforms,
-      mediaItems,
-      experience: { ...(cfg.experience || {}), items: expItems },
-      education: { ...(cfg.education || {}), items: eduItems },
-      experienceTabs: expTabs,
-      mediaCountryMode,
-    };
-    setSave(next);
-  }, [cfg, customPlatforms, mediaItems, expItems, eduItems, expTabs, mediaCountryMode, setSave]);
+  // StableAdminInput/StableAdminTextarea intentionally keep drafts in the DOM until commit.
+  // Before taking the snapshot, synchronously flush every mounted draft field and the active
+  // native field. The ref then guarantees that save uses the newest render, not a stale closure.
+  const saveAll = useCallback(async () => {
+    if (saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      const active = typeof document !== 'undefined' ? document.activeElement as HTMLElement | null : null;
+      // Ask every mounted draft field to commit its current DOM value. flushSync makes all
+      // resulting local state updates visible in latestDraftRef before the snapshot is read.
+      flushSync(() => {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('zk-admin-flush-drafts'));
+        if (active && typeof active.blur === 'function') active.blur();
+      });
+      // Let duplicate delayed blur commits finish; they contain the same values.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      const draft = latestDraftRef.current;
+      const next = {
+        ...draft.cfg,
+        customPlatforms: draft.customPlatforms,
+        mediaItems: draft.mediaItems,
+        experience: {
+          ...(draft.cfg.experience || {}),
+          items: draft.expItems.map((item: any) => migrateMediaItem(item, 'experience')),
+        },
+        education: {
+          ...(draft.cfg.education || {}),
+          items: draft.eduItems.map((item: any) => migrateMediaItem(item, 'education')),
+        },
+        experienceTabs: draft.expTabs,
+        mediaCountryMode: draft.mediaCountryMode,
+      };
+      const saved = await setSave(next);
+      if (saved === false) throw new Error('Settings save failed');
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error('Could not save content settings', error);
+      setSaveStatus('error');
+    }
+  }, [saveStatus, setSave]);
 
   const rowBtn = useCallback((color: string, children: React.ReactNode, onClick: () => void, extra?: any) => (
     <button type="button" onClick={onClick} style={{ ...AdminBtn(), ...(extra || {}) }}>{children}</button>
@@ -143,8 +179,18 @@ export default function ContentManager(props: Props) {
       </Box>
 
       {/* ═══════════ ذخیرهٔ همه ═══════════ */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <button type="button" style={{ ...S.btn, flex: '0 1 auto', minWidth: 160 }} onClick={saveAll}>ذخیره تغییرات محتوا</button>
+      <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button
+          type="button"
+          data-testid="content-save"
+          style={{ ...S.btn, flex: '0 1 auto', minWidth: 190, opacity: saveStatus === 'saving' ? .7 : 1 }}
+          onClick={saveAll}
+          disabled={saveStatus === 'saving'}
+        >
+          {saveStatus === 'saving' ? 'در حال ذخیره…' : 'ذخیره تغییرات محتوا'}
+        </button>
+        {saveStatus === 'saved' && <span role="status" style={{ color: T.ok || '#169b62', fontSize: 12, fontWeight: 800 }}>تغییرات محتوا با موفقیت ذخیره شد.</span>}
+        {saveStatus === 'error' && <span role="alert" style={{ color: T.err || '#d33', fontSize: 12, fontWeight: 800 }}>ذخیره انجام نشد؛ اتصال را بررسی و دوباره تلاش کنید.</span>}
       </div>
     </div>
   );
@@ -301,8 +347,24 @@ function MediaLibraryManager(props: any) {
   const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, items, setItems, uid, sectionKey, title, withText, p2e } = props;
   const typeOpts: [string, string][] = [['video', 'ویدیو'], ['audio', 'ویس'], ['image', 'عکس'], ...(withText ? [['text', 'متن'] as [string, string]] : [])];
 
+  const sourceDestination = sectionKey as MediaDestination;
   const chg = useCallback((i: number, k: string, v: any) => setItems((prev: any[]) => prev.map((x, j) => j === i ? { ...x, [k]: v } : x)), [setItems]);
-  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: 'video', youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1 }]), [setItems, uid, sectionKey]);
+  const toggleDestination = useCallback((i: number, destination: MediaDestination) => {
+    setItems((prev: any[]) => prev.map((item, index) => {
+      if (index !== i) return item;
+      const current = getMediaDestinations(item, sourceDestination);
+      const mediaCategories = current.includes(destination)
+        ? current.filter((value) => value !== destination)
+        : [...current, destination];
+      return {
+        ...item,
+        mediaCategories,
+        // Keep a compatible single value for clients that have not received this update yet.
+        ...(mediaCategories[0] ? { mediaCategory: mediaCategories[0] } : {}),
+      };
+    }));
+  }, [setItems, sourceDestination]);
+  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: 'video', youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination]);
   const remove = useCallback((i: number) => setItems((prev: any[]) => prev.filter((_, j) => j !== i)), [setItems]);
   const move = useCallback((i: number, dir: -1 | 1) => setItems((prev: any[]) => {
     const a = [...prev]; const j = i + dir; if (j < 0 || j >= a.length) return prev;
@@ -372,17 +434,30 @@ function MediaLibraryManager(props: any) {
                 <option value="youtube">فقط یوتیوب</option>
                 <option value="auto">هر دو خودکار (بر اساس VPN)</option>
               </select>
-              <label style={{ ...S.lbl, marginTop: 4 }}>دسته‌بندی نمایش</label>
-              <select style={{ ...S.inp, marginBottom: 8 }} value={it.mediaCategory || 'experience'} onChange={(e) => chg(i, 'mediaCategory', e.target.value)}>
-                <option value="experience">تجربه والدین</option>
-                <option value="height">رشد قد</option>
-                <option value="appetite">بی‌اشتهایی</option>
-                <option value="mind">هوش</option>
-              </select>
               <label style={{ ...S.lbl, marginTop: 8 }}>لینک تصویر بندانگشتی (اختیاری)</label>
               <StableAdminInput dir="ltr" type="text" style={{ ...S.inp, marginBottom: 8, fontFamily: 'monospace', fontSize: 12 }} defaultValue={it.thumbnail || ''} onCommit={(v: string) => chg(i, 'thumbnail', v.trim())} placeholder="https://...jpg" />
             </>
           )}
+          <fieldset style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: '8px 10px', margin: '4px 0 8px' }}>
+            <legend style={{ fontSize: 12, fontWeight: 800, color: T.txt, padding: '0 5px' }}>محل‌های نمایش (چندانتخابی)</legend>
+            <p style={{ fontSize: 10.5, color: T.mut, margin: '0 0 7px' }}>این محتوا هم‌زمان در همه بخش‌های انتخاب‌شده نمایش داده می‌شود.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(175px,1fr))', gap: 7 }}>
+              {MEDIA_DESTINATIONS.map((destination) => {
+                const checked = getMediaDestinations(it, sourceDestination).includes(destination.id);
+                return (
+                  <label key={destination.id} style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 30, fontSize: 11.5, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      data-media-destination={destination.id}
+                      checked={checked}
+                      onChange={() => toggleDestination(i, destination.id)}
+                    />
+                    {destination.label}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
           <label style={{ ...S.lbl, marginTop: 8 }}>شماره تماس نمایش‌داده‌شده روی کارت (اختیاری — ماسک‌شده)</label>
           <StableAdminInput dir="ltr" type="text" style={{ ...S.inp, marginBottom: 8, fontFamily: 'monospace', fontSize: 12 }} defaultValue={it.phone || ''} onCommit={(v: string) => chg(i, 'phone', p2e(v).trim())} placeholder="0914xxxxxxx" />
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

@@ -39,6 +39,9 @@ export function pickMediaUrl(item: any, vpnOn: boolean): string {
     || item?.url  
     || '';  
   
+  const mode=String(item?.displayMode||'auto');
+  if(mode==='youtube'||mode==='external')return yt||ap;
+  if(mode==='aparat'||mode==='internal')return ap||yt;
   if (vpnOn) return yt || ap;  
   return ap || yt;  
 }  
@@ -53,6 +56,9 @@ export function pickImageUrl(item: any, vpnOn: boolean): string {
     || item?.imageUrl  
     || item?.url  
     || '';  
+  const mode=String(item?.displayMode||'auto');
+  if(mode==='external')return ext||int;
+  if(mode==='internal')return int||ext;
   if (vpnOn) return ext || int;  
   return int || ext;  
 }  
@@ -67,6 +73,9 @@ export function pickAudioUrl(item: any, vpnOn: boolean): string {
     || item?.audioUrl  
     || item?.url  
     || '';  
+  const mode=String(item?.displayMode||'auto');
+  if(mode==='external')return ext||int;
+  if(mode==='internal')return int||ext;
   if (vpnOn) return ext || int;  
   return int || ext;  
 }
@@ -110,13 +119,13 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:an
 
  if (type === 'video' && ytCode && apCode) {
    hasManual = true;
-   manualCode = vpnOn ? ytCode : apCode;
+   manualCode = pickMediaUrl(item, vpnOn);
  } else if (type === 'image' && extImg && intImg) {
    hasManual = true;
-   manualCode = vpnOn ? extImg : intImg;
+   manualCode = pickImageUrl(item, vpnOn);
  } else if (type === 'audio' && extAud && intAud) {
    hasManual = true;
-   manualCode = vpnOn ? extAud : intAud;
+   manualCode = pickAudioUrl(item, vpnOn);
  }
 
  const url =

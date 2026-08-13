@@ -19,7 +19,7 @@ const fmt = (s: number) => {
  * اگر آیتم url/manualCode واقعی داشته باشد همان محتوای موجود (ManualEmbed) رندر می‌شود؛
  * در غیر این صورت UI پلیر نمایشی با هندلرهای آماده برای اتصال در مراحل بعد.
  */
-export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: 'video' | 'audio'; lang: string }) {
+export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: 'video' | 'audio' | 'image'; lang: string }) {
   const en = lang === 'en';
   const hasReal = !!(item.url || (item as any).manualCode);
   const [playing, setPlaying] = useState(false);
@@ -41,13 +41,15 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
   if (hasReal) {
     return (
       <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
-        <ManualEmbed code={(item as any).manualCode || item.url || ''} type={kind} minHeight={kind === 'video' ? 220 : 90} />
+        <ManualEmbed code={(item as any).manualCode || item.url || ''} type={kind} minHeight={kind === 'audio' ? 90 : 220} />
       </div>
     );
   }
 
   const soon = kind === 'video'
     ? (en ? 'This video will be uploaded soon — the player is ready to connect.' : 'ویدیو به‌زودی بارگذاری می‌شود — چارچوب پخش آمادهٔ اتصال است.')
+    : kind === 'image'
+    ? (en ? 'This image will be uploaded soon.' : 'تصویر این قسمت به‌زودی بارگذاری می‌شود.')
     : (en ? 'The audio file will be uploaded soon — the player is ready to connect.' : 'فایل صوتی این قسمت به‌زودی بارگذاری می‌شود — پلیر برای اتصال آماده است.');
 
   return (

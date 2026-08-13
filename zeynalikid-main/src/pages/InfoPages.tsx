@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { isValidMediaUrl } from '../utils/detectCountry';
-import { detectVpnOn, forceRedetectVpn } from '../utils/vpn';
+import useMediaVpn from '../hooks/useMediaVpn';
 import MediaCard, { mediaThumb } from '../components/MediaCard';
 import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, SearchIcon } from '../components/Icons';
 import EduCard from '../components/edu/EduCard';
@@ -19,6 +19,7 @@ import SecurePage from '../components/SecurePage';
 import { StoryHighlightsBar, LegacyStoryHighlightsBar } from '../components/StoryViewer';
 import type { Highlight } from '../components/StoryViewer';
 import ServicesSection from '../components/ServicesSection';
+import { getMediaItemsForDestination, toEducationMediaItem } from '../utils/mediaPlacement';
 
 // اصلاح ۲۹ (مرحله ۷): پارامتر اختیاری topSlot برای نمایش هایلایت استوری در بالای صفحه (قبل از عنوان اصلی)
 function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title:string,children:any,topSlot?:any,variant?:'default'|'trust'|'education'}){
@@ -27,52 +28,7 @@ function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title
 }
 
 // اصلاح ۷: تشخیص خودکار وضعیت VPN برای انتخاب پلتفرم محتوا (یوتیوب اگر VPN روشن، آپارات اگر خاموش)
-function useVpn(cfg: any) {
-  const [vpnOn, setVpnOn] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    const mode = cfg.mediaCountryMode || 'auto';
-    if (mode === 'iran') {
-      setVpnOn(false);
-      return;
-    }
-    if (mode === 'intl') {
-      setVpnOn(true);
-      return;
-    }
-
-    const check = () => {
-      detectVpnOn()
-        .then((v) => {
-          if (alive) setVpnOn(v);
-        })
-        .catch(() => {
-          if (alive) setVpnOn(false);
-        });
-    };
-    check();
-
-    const onVis = () => {
-      if (document.visibilityState === 'visible') {
-        forceRedetectVpn();
-        check();
-      }
-    };
-    document.addEventListener('visibilitychange', onVis);
-
-    const iv = setInterval(() => {
-      forceRedetectVpn();
-      check();
-    }, 3 * 60 * 1000);
-
-    return () => {
-      alive = false;
-      document.removeEventListener('visibilitychange', onVis);
-      clearInterval(iv);
-    };
-  }, [cfg.mediaCountryMode]);
-  return vpnOn;
-}
+const useVpn = useMediaVpn;
 
 function pickByPlatform(list: any[], type: string, vpnOn: boolean) {  
   const valid = (list || []).filter((x: any) => {  
@@ -161,7 +117,7 @@ export function ExperiencePage({app}:{app:any}){
            <p style={{fontSize:13.5,color:T.mut,lineHeight:1.85,marginTop:4}}>{lang==='en'?'Parents who walked this path share their journey — videos, voice notes and photos of real progress.':'والدینی که این مسیر را طی کرده‌اند، سفرشان را به اشتراک می‌گذارند — ویدیو، ویس و عکس پیشرفت واقعی.'}</p>
          </div>
          {/* اصلاح ۱۶: نمایش افقی محتوای چندرسانه‌ای با دکمه‌های اسکرول در صفحه تجربه والدین */}
-         <MediaTabsGrid items={cfg.experience?.items||[]} cfg={cfg} T={T} lang={lang} withText={withText} tabVisibility={cfg.experienceTabs} horizontal/>
+         <MediaTabsGrid items={getMediaItemsForDestination(cfg,'experience')} cfg={cfg} T={T} lang={lang} withText={withText} tabVisibility={cfg.experienceTabs} horizontal/>
          {/* اصلاح ۵: بخش خدمات قابل فعال‌سازی در تجربه والدین */}
          {cfg.servicesVisibility?.parentExperience!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
          {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}
@@ -180,7 +136,8 @@ export function EducationPage({app}:{app:any}){
  const [typeF,setTypeF]=useState<'all'|'text'|'video'|'audio'|'faq'>('all');
  const [sortUI,setSortUI]=useState('new'); // UI مرتب‌سازی — منطق آن در کد نیست (استاتیک)
  const [openItem,setOpenItem]=useState<EduItem|null>(null);
- const real=(cfg.education?.items||[]).filter((x:any)=>x.active!==false);
+ const mediaVpnOn=useVpn(cfg);
+ const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  const source:any[]=usingSamples?(EDU_SAMPLES as any[]):real;
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);

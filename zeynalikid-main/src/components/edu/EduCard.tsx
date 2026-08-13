@@ -14,7 +14,7 @@ export default function EduCard({ item, lang, onOpen }: { item: EduItem; lang: s
   const en = lang === 'en';
   const badgeCls = item.type === 'text' ? 't-text' : item.type === 'video' ? 't-video' : item.type === 'image' ? 't-image' : 't-audio';
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
-  const cta = item.type === 'text' ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : (en ? 'Listen' : 'شنیدن');
+  const cta = item.type === 'text' ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : item.type === 'image' ? (en ? 'View' : 'مشاهده') : (en ? 'Listen' : 'شنیدن');
   return (
     <article className="zke-card">
       <button type="button" className="zke-cover" onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>

@@ -1,3 +1,5 @@
+import { migrateMediaItem } from '../utils/mediaPlacement';
+
 export const defaultCountries = [
  {id:'ir',name:'ایران',nameEn:'Iran',code:'+98',flag:'🇮🇷',regex:'^(0?9)\\d{9}$',required:true,locked:true},
  {id:'us',name:'آمریکا/کانادا',nameEn:'US/Canada',code:'+1',flag:'🇺🇸',regex:'^[2-9]\\d{9}$',required:true},
@@ -546,6 +548,20 @@ export function migrateSettings(settings: any): any {
       if (migrated.trustBoxes.defaultInterval === undefined) migrated.trustBoxes.defaultInterval = 8;
     }
   }catch{}
+
+  // ─── رسانه‌ها: تبدیل انتخاب تک‌مقداری قدیمی به انتخاب چندصفحه‌ای بدون حذف فیلد قبلی ───
+  if (Array.isArray(migrated.experience?.items)) {
+    migrated.experience = {
+      ...migrated.experience,
+      items: migrated.experience.items.map((item: any) => migrateMediaItem(item, 'experience')),
+    };
+  }
+  if (Array.isArray(migrated.education?.items)) {
+    migrated.education = {
+      ...migrated.education,
+      items: migrated.education.items.map((item: any) => migrateMediaItem(item, 'education')),
+    };
+  }
 
   return migrated;
 }

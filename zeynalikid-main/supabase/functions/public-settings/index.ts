@@ -83,6 +83,14 @@ const PUBLIC_SETTINGS_WHITELIST = [
   // Guest content
   "guestUsage",
   "guestMealPlan",
+  // Public media/content pages. These contain display text and public embed URLs only;
+  // nested values are explicitly sanitized below (phone numbers are masked).
+  "customPlatforms",
+  "mediaItems",
+  "mediaCountryMode",
+  "experience",
+  "education",
+  "experienceTabs",
 ];
 
 // Fields within 'banks' array items that are public (everything else stripped).
@@ -90,6 +98,42 @@ const PUBLIC_BANK_FIELDS = ["id", "name", "label", "logo", "color", "active", "o
 
 // Crypto wallets: only return whether each is visible, never the address.
 const PUBLIC_CRYPTO_FIELDS = ["id", "name", "symbol", "logo", "color", "active", "network"];
+
+const PUBLIC_MEDIA_ITEM_FIELDS = [
+  "id", "type", "title", "titleEn", "description", "descriptionEn", "descriptionCourses",
+  "body", "keywords", "tags", "active", "isVisible", "order", "thumbnail", "displayMode",
+  "mediaCategory", "mediaCategories", "categories", "platform", "platforms", "manualCode",
+  "youtubeCode", "aparatCode", "youtubeUrl", "aparatUrl", "externalCode", "internalCode",
+  "imageUrl", "audioUrl", "url", "phone",
+];
+
+function maskPublicPhone(value: unknown): string {
+  const digits = String(value ?? "").replace(/[^0-9۰-۹٠-٩]/g, "")
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+  if (digits.length < 7) return "";
+  return `${digits.slice(0, 4)}xxxx${digits.slice(-3)}`;
+}
+
+function sanitizeMediaItem(item: any): Record<string, any> {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return {};
+  const clean: Record<string, any> = {};
+  for (const field of PUBLIC_MEDIA_ITEM_FIELDS) {
+    if (!(field in item)) continue;
+    clean[field] = field === "phone" ? maskPublicPhone(item[field]) : item[field];
+  }
+  return clean;
+}
+
+function sanitizeMediaGroup(value: any): any {
+  if (Array.isArray(value)) return value.map(sanitizeMediaItem);
+  if (!value || typeof value !== "object") return {};
+  const clean: Record<string, any> = {};
+  for (const group of ["videos", "audios", "images", "texts"]) {
+    if (Array.isArray(value[group])) clean[group] = value[group].map(sanitizeMediaItem);
+  }
+  return clean;
+}
 
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
@@ -116,6 +160,24 @@ function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
           return clean;
         });
       }
+      if ((key === "education" || key === "experience") && val && typeof val === "object") {
+        val = { items: Array.isArray(val.items) ? val.items.map(sanitizeMediaItem) : [] };
+      }
+      if (key === "mediaItems") val = sanitizeMediaGroup(val);
+      if (key === "customPlatforms") {
+        val = (Array.isArray(val) ? val : Object.values(val || {})).map((platform: any) => ({
+          id: String(platform?.id || ""),
+          name: String(platform?.name || ""),
+          code: String(platform?.code || ""),
+          vpnRequired: platform?.vpnRequired === true,
+        }));
+      }
+      if (key === "experienceTabs" && val && typeof val === "object") {
+        val = Object.fromEntries(["video", "audio", "image", "text"]
+          .filter((tab) => tab in val)
+          .map((tab) => [tab, val[tab] !== false]));
+      }
+      if (key === "mediaCountryMode" && !["auto", "iran", "intl"].includes(val)) val = "auto";
       out[key] = val;
     }
   }

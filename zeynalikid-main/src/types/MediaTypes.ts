@@ -14,7 +14,10 @@ export interface MediaItemBase {
   thumbnail?: string;
   tags?: string[];
   displayMode?: MediaDisplayMode;
+  /** @deprecated Kept for backward compatibility with old single-choice settings. */
   mediaCategory?: MediaCategory;
+  /** All public pages/sections where this item should be displayed. */
+  mediaCategories?: Array<MediaCategory | 'education'>;
 }
 
 export interface VideoItem extends MediaItemBase {

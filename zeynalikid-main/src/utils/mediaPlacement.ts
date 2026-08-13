@@ -1,0 +1,175 @@
+export type MediaDestination = 'education' | 'experience' | 'height' | 'appetite' | 'mind';
+
+export const MEDIA_DESTINATIONS: Array<{ id: MediaDestination; label: string; labelEn: string }> = [
+  { id: 'education', label: 'صفحه آموزش‌ها', labelEn: 'Education page' },
+  { id: 'experience', label: 'صفحه تجربه والدین', labelEn: 'Parent experiences page' },
+  { id: 'height', label: 'بخش دوره‌های رشد قد', labelEn: 'Height-growth courses' },
+  { id: 'appetite', label: 'بخش دوره‌های بی‌اشتهایی', labelEn: 'Appetite courses' },
+  { id: 'mind', label: 'بخش دوره‌های هوش و ذهن', labelEn: 'Mind and focus courses' },
+];
+
+const VALID_DESTINATIONS = new Set<MediaDestination>(MEDIA_DESTINATIONS.map((x) => x.id));
+
+const LEGACY_DESTINATION_MAP: Record<string, MediaDestination> = {
+  education: 'education',
+  experience: 'experience',
+  'parent-experience': 'experience',
+  height: 'height',
+  growth: 'height',
+  appetite: 'appetite',
+  mind: 'mind',
+  intelligence: 'mind',
+};
+
+function asDestination(value: unknown): MediaDestination | null {
+  const mapped = LEGACY_DESTINATION_MAP[String(value ?? '').trim()];
+  return mapped && VALID_DESTINATIONS.has(mapped) ? mapped : null;
+}
+
+function uniqueDestinations(values: unknown[]): MediaDestination[] {
+  const out: MediaDestination[] = [];
+  for (const value of values) {
+    const destination = asDestination(value);
+    if (destination && !out.includes(destination)) out.push(destination);
+  }
+  return out;
+}
+
+/**
+ * Returns the explicit multi-page destinations for a media item.
+ *
+ * Backward compatibility:
+ * - mediaCategories is the new field and, when present, is authoritative (including []).
+ * - mediaCategory is the old single-choice field.
+ * - categories is the older generic media manager field.
+ * - sourceDestination preserves the page where legacy education/experience items already appeared.
+ */
+export function getMediaDestinations(item: any, sourceDestination?: MediaDestination): MediaDestination[] {
+  if (Array.isArray(item?.mediaCategories)) {
+    return uniqueDestinations(item.mediaCategories);
+  }
+
+  const legacy: unknown[] = [];
+  if (sourceDestination) legacy.push(sourceDestination);
+  if (item?.mediaCategory) legacy.push(item.mediaCategory);
+  if (Array.isArray(item?.categories)) legacy.push(...item.categories);
+  return uniqueDestinations(legacy);
+}
+
+export function migrateMediaItem(item: any, sourceDestination: MediaDestination): any {
+  const mediaCategories = getMediaDestinations(item, sourceDestination);
+  const firstLegacyCategory = mediaCategories.find((x) => x !== sourceDestination) || mediaCategories[0];
+  const migrated = { ...item, mediaCategories };
+  // Keep the legacy field so older deployed clients continue to understand the item.
+  // If every destination was explicitly unchecked, remove the stale single-choice value too.
+  if (firstLegacyCategory) migrated.mediaCategory = firstLegacyCategory;
+  else delete migrated.mediaCategory;
+  return migrated;
+}
+
+function flattenGenericMedia(mediaItems: any): any[] {
+  if (Array.isArray(mediaItems)) {
+    return mediaItems.map((item: any) => ({ ...item, type: item?.type || 'video', _mediaSource: 'generic' }));
+  }
+  if (!mediaItems || typeof mediaItems !== 'object') return [];
+  const groups: Array<[string, string]> = [
+    ['videos', 'video'],
+    ['audios', 'audio'],
+    ['images', 'image'],
+    ['texts', 'text'],
+  ];
+  return groups.flatMap(([key, type]) =>
+    (Array.isArray(mediaItems[key]) ? mediaItems[key] : []).map((item: any) => ({
+      ...item,
+      type: item?.type || type,
+      _mediaSource: 'generic',
+    })),
+  );
+}
+
+function destinationMatches(item: any, destination: MediaDestination, source?: MediaDestination): boolean {
+  return getMediaDestinations(item, source).includes(destination);
+}
+
+/** Collects active media assigned to one public destination, across all compatible storage formats. */
+export function getMediaItemsForDestination(cfg: any, destination: MediaDestination): any[] {
+  const education = (Array.isArray(cfg?.education?.items) ? cfg.education.items : [])
+    .filter((item: any) => destinationMatches(item, destination, 'education'))
+    .map((item: any) => ({ ...item, _mediaSource: 'education' }));
+  const experience = (Array.isArray(cfg?.experience?.items) ? cfg.experience.items : [])
+    .filter((item: any) => destinationMatches(item, destination, 'experience'))
+    .map((item: any) => ({ ...item, _mediaSource: 'experience' }));
+  const generic = flattenGenericMedia(cfg?.mediaItems)
+    .filter((item: any) => destinationMatches(item, destination));
+
+  const seen = new Set<string>();
+  return [...education, ...experience, ...generic]
+    .filter((item: any) => item?.active !== false && item?.isVisible !== false)
+    .filter((item: any, index: number) => {
+      const key = `${item?._mediaSource || 'media'}:${String(item?.id || index)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a: any, b: any) => (Number(a?.order) || 0) - (Number(b?.order) || 0));
+}
+
+export function getMediaItemsForDestinations(cfg: any, destinations: MediaDestination[]): any[] {
+  const seen = new Set<string>();
+  return destinations.flatMap((destination) => getMediaItemsForDestination(cfg, destination))
+    .filter((item: any, index: number) => {
+      const key = `${item?._mediaSource || 'media'}:${String(item?.id || index)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+/** Selects the actual embed/link code while honoring both old and new display-mode values. */
+export function pickPlacedMediaCode(item: any, vpnOn: boolean): string {
+  const type = item?.type || 'video';
+  const mode = String(item?.displayMode || 'auto');
+  const manual = String(item?.manualCode || '').trim();
+  if (manual) return manual;
+
+  let external = '';
+  let internal = '';
+  if (type === 'video') {
+    external = item?.youtubeCode || item?.youtubeUrl || item?.platforms?.youtube || '';
+    internal = item?.aparatCode || item?.aparatUrl || item?.platforms?.aparat || item?.url || '';
+  } else if (type === 'image') {
+    external = item?.externalCode || item?.platforms?.externalImage || item?.imageUrl || '';
+    internal = item?.internalCode || item?.platforms?.internalImage || item?.imageUrl || item?.url || '';
+  } else if (type === 'audio') {
+    external = item?.externalCode || item?.platforms?.externalAudio || item?.audioUrl || '';
+    internal = item?.internalCode || item?.platforms?.internalAudio || item?.audioUrl || item?.url || '';
+  }
+
+  if (mode === 'youtube' || mode === 'external') return String(external || internal || '');
+  if (mode === 'aparat' || mode === 'internal') return String(internal || external || '');
+  if (mode === 'custom') {
+    const custom = Array.isArray(item?.platforms?.custom) ? item.platforms.custom : [];
+    const match = custom.find((platform: any) => !!platform?.code && (vpnOn || platform?.vpnRequired !== true))
+      || custom.find((platform: any) => !!platform?.code);
+    if (match?.code) return String(match.code);
+  }
+  return String(vpnOn ? (external || internal || '') : (internal || external || ''));
+}
+
+/** Maps admin media fields to the card/modal field names used by the education page. */
+export function toEducationMediaItem(item: any, vpnOn: boolean): any {
+  const code = pickPlacedMediaCode(item, vpnOn);
+  const directImage = item?.type === 'image' && /^https?:\/\/[^<>]+$/i.test(code) ? code : '';
+  return {
+    ...item,
+    title: item?.title || '',
+    titleEn: item?.titleEn || item?.title || '',
+    desc: item?.desc ?? item?.description ?? '',
+    descEn: item?.descEn ?? item?.descriptionEn ?? item?.description ?? '',
+    minutes: Number(item?.minutes) || 0,
+    date: item?.date || '',
+    dateEn: item?.dateEn || item?.date || '',
+    cover: item?.cover || item?.thumbnail || directImage,
+    ...(code ? { manualCode: code, url: code } : {}),
+  };
+}

@@ -61,6 +61,11 @@ const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommi
       }
     }, 0);
   },[onCommit]);
+  useEffect(()=>{
+    const flush=()=>onCommit?.(ref.current?.value||'');
+    window.addEventListener('zk-admin-flush-drafts',flush);
+    return()=>window.removeEventListener('zk-admin-flush-drafts',flush);
+  },[onCommit]);
   const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
   return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
 });
@@ -79,6 +84,11 @@ const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',o
         });
       }
     },0);
+  },[onCommit]);
+  useEffect(()=>{
+    const flush=()=>onCommit?.(ref.current?.value||'');
+    window.addEventListener('zk-admin-flush-drafts',flush);
+    return()=>window.removeEventListener('zk-admin-flush-drafts',flush);
   },[onCommit]);
   return <textarea ref={ref} defaultValue={defaultValue} onBlur={commit} placeholder={placeholder} style={style} rows={rows}/>;
 });
@@ -176,7 +186,19 @@ export default function AdminPanel({app}:{app:any}){
  // با اسکرول نرم (smooth) به مرکز دید (center) منتقل می‌شود. این افکت روی همه ورودی‌های
  // پنل مدیریت (شامل SubCard، SettingsEditor و سایر ادیتورها) به‌صورت سراسری اعمال می‌شود.
 // Removed focusin scrollIntoView listener — was causing scroll jumps
- const setSave=(next:any)=>{saveCfg(next);setMsg('ذخیره شد');setTimeout(()=>setMsg(''),2200)};
+ const setSave=async(next:any)=>{
+  try{
+   const saved=await saveCfg(next);
+   setEditCfgRawRaw(saved||next);
+   setMsg('ذخیره شد');
+   setTimeout(()=>setMsg(''),2200);
+   return saved||next;
+  }catch{
+   setMsg('ذخیره انجام نشد');
+   setTimeout(()=>setMsg(''),3200);
+   return false;
+  }
+ };
  // اصلاح ۳-الف: یادآور پیگیری فقط وقتی نمایش داده می‌شود که بیش از ۳ روز گذشته، هیچ پیگیری‌ای ثبت نشده، و فرم از قبل در دسته «پیگیری» یا «پیگیری آخر ماه» نباشد (چون آن‌ها خودشان قبلاً وارد چرخه پیگیری شده‌اند)
 
  // FIX: Stabilize component identity with useMemo to prevent remount on every re-render
@@ -211,6 +233,11 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
       }
     }
   },[onChange,local,value,isNumeric]);
+  useEffect(()=>{
+    const flush=()=>commit();
+    window.addEventListener('zk-admin-flush-drafts',flush);
+    return()=>window.removeEventListener('zk-admin-flush-drafts',flush);
+  },[commit]);
   const handleBlur=useCallback((e:any)=>{
     setTimeout(()=>commit(),0);
   },[commit]);

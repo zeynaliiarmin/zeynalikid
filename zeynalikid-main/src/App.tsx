@@ -1131,7 +1131,7 @@ function App(){
  // اصلاح ۱۸: هدایت به پروژه ثانویه (فرم مشاوره)
  const goToSecondaryApp=()=>{clearPublicFormDrafts();navigate('/form')};
  const goToAppA=goToSecondaryApp; // نگهداری نام قدیمی برای سازگاری داخلی
- const saveCfg=(next:any)=>{const merged=mergeSettings(next); setCfg(merged); if(isSupabaseConfigured){saveSettingsRemote(merged).catch(e=>console.warn('Could not save settings to Supabase',e))}};
+ const saveCfg=async(next:any)=>{const merged=mergeSettings(next); setCfg(merged); if(isSupabaseConfigured){try{await saveSettingsRemote(merged)}catch(e){console.warn('Could not save settings to Supabase',e);throw e}} return merged;};
  const resetForm=()=>{clearPublicFormDrafts();setFd(emptyFd());setCourse(emptyCourse());setEditChild(false);setShipModal(null);setCourseResult(null);goToSecondaryApp()};
  const publicText=useCallback((k:string,fb?:string)=>t(cfg,lang,k,fb),[cfg,lang]); const trVal=useCallback((x:any)=>lang==='en'?(cfg.translations?.en?.[String(x)]||String(x)):String(x),[cfg,lang]);
  const showContactOn=(p:string)=>hasCt&&cfg.contactVisibility?.[p];
