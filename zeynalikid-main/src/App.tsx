@@ -501,15 +501,16 @@ const defaultSettings:Any={
  // اصلاح ۴۶-۴۷: ساختار محصول با عکس و مدیریت نمایش
  products:{
   showSection:true,
+  homeFeatured:{enabled:true},
   list:[
-    {id:'p1',name:'داینامین',icon:'',description:'مکمل ایزوتونیک کلسیم و D3 برای جذب سریع‌تر در استخوان.',features:['جذب سریع','مناسب برای رشد قد'],image:'',isVisible:true,order:1},
-    {id:'p2',name:'پروتئین‌بار',icon:'',description:'پروتئین بار ۴۰ گرمی با ۱۲ گرم پروتئین خالص.',features:['۱۲ گرم پروتئین خالص','انرژی بالا'],image:'',isVisible:true,order:2},
-    {id:'p3',name:'خرما',icon:'',description:'منبع طبیعی انرژی و مواد معدنی.',features:['انرژی طبیعی','غنی از مواد معدنی'],image:'',isVisible:true,order:3},
-    {id:'p4',name:'لوکوم',icon:'',description:'میان‌وعده مقوی مناسب کودکان.',features:['میان‌وعده مقوی','مناسب کودکان'],image:'',isVisible:true,order:4},
-    {id:'p5',name:'ماچا',icon:'',description:'نوشیدنی تقویتی تمرکز و انرژی.',features:['تقویت تمرکز','انرژی طبیعی'],image:'',isVisible:true,order:5},
-    {id:'p6',name:'عسل',icon:'',description:'عسل طبیعی برای تقویت ایمنی و انرژی.',features:['تقویت ایمنی','انرژی طبیعی'],image:'',isVisible:true,order:6},
-    {id:'p7',name:'قهوه',icon:'',description:'مطابق دستور کارشناس مصرف شود.',features:['مطابق دستور کارشناس'],image:'',isVisible:true,order:7},
-    {id:'p8',name:'سبوس',icon:'',description:'فیبر طبیعی برای بهبود گوارش.',features:['فیبر طبیعی','بهبود گوارش'],image:'',isVisible:true,order:8}
+    {id:'p1',name:'داینامین',icon:'',description:'مکمل ایزوتونیک کلسیم و D3 برای جذب سریع‌تر در استخوان.',features:['جذب سریع','مناسب برای رشد قد'],image:'',isVisible:true,showOnHome:true,order:1},
+    {id:'p2',name:'پروتئین‌بار',icon:'',description:'پروتئین بار ۴۰ گرمی با ۱۲ گرم پروتئین خالص.',features:['۱۲ گرم پروتئین خالص','انرژی بالا'],image:'',isVisible:true,showOnHome:true,order:2},
+    {id:'p3',name:'خرما',icon:'',description:'منبع طبیعی انرژی و مواد معدنی.',features:['انرژی طبیعی','غنی از مواد معدنی'],image:'',isVisible:true,showOnHome:true,order:3},
+    {id:'p4',name:'لوکوم',icon:'',description:'میان‌وعده مقوی مناسب کودکان.',features:['میان‌وعده مقوی','مناسب کودکان'],image:'',isVisible:true,showOnHome:true,order:4},
+    {id:'p5',name:'ماچا',icon:'',description:'نوشیدنی تقویتی تمرکز و انرژی.',features:['تقویت تمرکز','انرژی طبیعی'],image:'',isVisible:true,showOnHome:false,order:5},
+    {id:'p6',name:'عسل',icon:'',description:'عسل طبیعی برای تقویت ایمنی و انرژی.',features:['تقویت ایمنی','انرژی طبیعی'],image:'',isVisible:true,showOnHome:false,order:6},
+    {id:'p7',name:'قهوه',icon:'',description:'مطابق دستور کارشناس مصرف شود.',features:['مطابق دستور کارشناس'],image:'',isVisible:true,showOnHome:false,order:7},
+    {id:'p8',name:'سبوس',icon:'',description:'فیبر طبیعی برای بهبود گوارش.',features:['فیبر طبیعی','بهبود گوارش'],image:'',isVisible:true,showOnHome:false,order:8}
   ]
  },
  // اصلاح ۴۷: نمایش بخش محصولات (هم برای منو و هم صفحه)
@@ -712,21 +713,40 @@ function mergeSettings(rawParam:any){const raw=migrateSettings(rawParam);const m
  }catch{}
  m.successTrustSentences=Array.isArray(raw?.successTrustSentences)?raw.successTrustSentences:defaultSettings.successTrustSentences;m.consultationSuccessSentences=Array.isArray(raw?.consultationSuccessSentences)?raw.consultationSuccessSentences:defaultSettings.consultationSuccessSentences;
  m.consultationSuccessSentencesEn=Array.isArray(raw?.consultationSuccessSentencesEn)?raw.consultationSuccessSentencesEn:(defaultSettings as any).consultationSuccessSentencesEn||[];m.courseSuccessSentences=Array.isArray(raw?.courseSuccessSentences)?raw.courseSuccessSentences:defaultSettings.courseSuccessSentences;
- m.courseSuccessSentencesEn=Array.isArray(raw?.courseSuccessSentencesEn)?raw.courseSuccessSentencesEn:(defaultSettings as any).courseSuccessSentencesEn||[];m.reels=raw?.reels||defaultSettings.reels;m.mediaItems=Array.isArray(raw?.mediaItems)?raw.mediaItems:[...(Array.isArray(raw?.mediaItems?.videos)?raw.mediaItems.videos:[]),...(Array.isArray(raw?.mediaItems?.audios)?raw.mediaItems.audios:[]),...(Array.isArray(raw?.mediaItems?.images)?raw.mediaItems.images:[])];m.mediaPlatforms={video:{...defaultSettings.mediaPlatforms.video,...(raw?.mediaPlatforms?.video||{})},audio:{...defaultSettings.mediaPlatforms.audio,...(raw?.mediaPlatforms?.audio||{})},image:{...defaultSettings.mediaPlatforms.image,...(raw?.mediaPlatforms?.image||{})}};m.mediaCountryMode=raw?.mediaCountryMode||defaultSettings.mediaCountryMode;m.experience={items:raw?.experience?.items||defaultSettings.experience.items};m.education={items:raw?.education?.items||defaultSettings.education.items};m.products={
+ m.courseSuccessSentencesEn=Array.isArray(raw?.courseSuccessSentencesEn)?raw.courseSuccessSentencesEn:(defaultSettings as any).courseSuccessSentencesEn||[];m.reels=raw?.reels||defaultSettings.reels;m.mediaItems=Array.isArray(raw?.mediaItems)?raw.mediaItems:[...(Array.isArray(raw?.mediaItems?.videos)?raw.mediaItems.videos:[]),...(Array.isArray(raw?.mediaItems?.audios)?raw.mediaItems.audios:[]),...(Array.isArray(raw?.mediaItems?.images)?raw.mediaItems.images:[])];m.mediaPlatforms={video:{...defaultSettings.mediaPlatforms.video,...(raw?.mediaPlatforms?.video||{})},audio:{...defaultSettings.mediaPlatforms.audio,...(raw?.mediaPlatforms?.audio||{})},image:{...defaultSettings.mediaPlatforms.image,...(raw?.mediaPlatforms?.image||{})}};m.mediaCountryMode=raw?.mediaCountryMode||defaultSettings.mediaCountryMode;m.experience={items:raw?.experience?.items||defaultSettings.experience.items};m.education={items:raw?.education?.items||defaultSettings.education.items};
+const incomingProducts=Array.isArray(raw?.products?.list)?raw.products.list:(Array.isArray(raw?.products?.items)?raw.products.items:null);
+m.products={
   showSection: (raw?.products?.showSection ?? raw?.showProductsSection ?? raw?.showProductsPage ?? defaultSettings.products.showSection) !== false,
-  list: Array.isArray(raw?.products?.list) ? raw.products.list.map((p:any,i:number)=>({
+  homeFeatured:{
+    ...(defaultSettings.products.homeFeatured||{enabled:true}),
+    ...(raw?.products?.homeFeatured||{}),
+    enabled:(raw?.products?.homeFeatured?.enabled ?? raw?.showFeaturedProducts ?? raw?.products?.showSection ?? raw?.showProductsSection ?? raw?.showProductsPage ?? defaultSettings.products.homeFeatured?.enabled ?? true)!==false,
+  },
+  list: incomingProducts ? incomingProducts.map((p:any,i:number)=>({
+    ...p,
     id: p.id || `p${i+1}`,
     name: p.name || p.title || '',
     title: p.title || p.name || '',
     icon: p.icon || '',
-    description: p.description || '',
+    description: p.description || p.desc || '',
+    desc: p.desc || p.description || '',
     features: Array.isArray(p.features) ? p.features : [],
     image: p.image || p.imageUrl || '',
     imageUrl: p.imageUrl || p.image || '',
+    aspectRatio: p.aspectRatio || '',
+    objectPosition: p.objectPosition || 'center',
+    homeImage: p.homeImage || p.homeImageUrl || '',
+    homeImageUrl: p.homeImageUrl || p.homeImage || '',
+    homeImageAspectRatio: p.homeImageAspectRatio || '4 / 3',
+    homeImageObjectPosition: p.homeImageObjectPosition || 'center',
+    showOnHome: (p.showOnHome ?? p.featuredOnHome ?? (i<4)) !== false,
     isVisible: (p.isVisible ?? p.active) !== false,
     active: (p.active ?? p.isVisible) !== false,
     order: p.order || i+1,
-    price: p.price || ''
+    category: p.category || '',
+    price: p.price || '',
+    priceNum: Number(p.priceNum)||0,
+    discountedPrice: Number(p.discountedPrice)||0,
   })) : defaultSettings.products.list
 };
 m.showProductsSection = m.products.showSection;

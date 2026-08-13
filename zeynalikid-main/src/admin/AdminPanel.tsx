@@ -34,6 +34,7 @@ import { defaultSettings as configDefaultSettings } from '../config/defaultSetti
 import ContentManager from './ContentManager';
 import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
+import ImageCropper from './ImageCropper';
 import CoursesEditor from './CoursesEditor';
 
 type Any=Record<string,any>;
@@ -141,7 +142,10 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]); const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
+ const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]);
+ const [productHomeCrop,setProductHomeCrop]=useState<any>(null);
+ const [productHomeCropBusy,setProductHomeCropBusy]=useState(false);
+ const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
  // تغییر رمز/شماره ورود (admin-credentials) — state ها در سطح بالای کامپوننت (قانون hooks)
  const [credBusy,setCredBusy]=useState(false); const [credMsg,setCredMsg]=useState(''); const [credErr,setCredErr]=useState(''); const [credPhoneMasked,setCredPhoneMasked]=useState('');
  const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
@@ -505,7 +509,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false}:an
  // متن صفحه درباره ما (دوزبانه) و ویرایش تمام کلیدهای ترجمه fa/en موجود در cfg.translations
 
  // اصلاح ۳۲ (مرحله ۹): ادیتور کامل سوالات متداول — دو ستون فارسی/انگلیسی، افزودن/ویرایش/حذف/تغییر ترتیب + تنظیمات نمایش در هوم
- 
+
 
 
 function FAQEditor(){
@@ -1213,72 +1217,135 @@ function ThemeManagerEditor(){
   </Box>}
 
  function ProductsTabEditor(){
-  // ── محصولات: منبع داده «products.list» (همان ساختاری که صفحهٔ عمومی /products از آن می‌خواند) ──
-  // قبلاً این صفحه از «products.items» می‌خواند که در سایت اثری نداشت؛ با «list» (تنظیمات) ادغام شد.
-  const productsCfg = editCfg.products && typeof editCfg.products === 'object' && !Array.isArray(editCfg.products)
-    ? editCfg.products : { showSection: true, list: Array.isArray(editCfg.products) ? editCfg.products : [] };
-  // ادغام داده‌های قدیمی (items) اگر list خالی باشد — بدون از دست رفتن اطلاعات
-  let items: any[] = Array.isArray(productsCfg.list) ? productsCfg.list : [];
-  const legacyItems: any[] = Array.isArray(productsCfg.items) ? productsCfg.items : [];
-  if (items.length === 0 && legacyItems.length > 0) {
-    items = legacyItems.map((it: any) => ({ ...it, name: it.name || it.title || '', title: it.title || it.name || '', id: it.id || ('p' + uid()) }));
+  // منبع واحد مدیریت محصولات و بخش «محصولات و برنامه‌های منتخب» صفحهٔ خانه.
+  const productsCfg=editCfg.products&&typeof editCfg.products==='object'&&!Array.isArray(editCfg.products)
+   ?editCfg.products:{showSection:true,list:Array.isArray(editCfg.products)?editCfg.products:[]};
+  let items:any[]=Array.isArray(productsCfg.list)?productsCfg.list:[];
+  const legacyItems:any[]=Array.isArray(productsCfg.items)?productsCfg.items:[];
+  if(items.length===0&&legacyItems.length>0){
+   items=legacyItems.map((it:any,i:number)=>({...it,name:it.name||it.title||'',title:it.title||it.name||'',id:it.id||('p'+uid()),showOnHome:(it.showOnHome??i<4)!==false}));
   }
-  const showSection = (productsCfg.showSection ?? editCfg.showProductsSection ?? editCfg.showProductsPage ?? true) !== false;
-  const upd = (newItems: any[]) => {
-    setEditCfg({ ...editCfg, products: { ...productsCfg, list: newItems, items: [] } });
+  const showProductsPage=(productsCfg.showSection??editCfg.showProductsSection??editCfg.showProductsPage??true)!==false;
+  const homeFeatured=productsCfg.homeFeatured&&typeof productsCfg.homeFeatured==='object'?productsCfg.homeFeatured:{};
+  const showHomeFeatured=(homeFeatured.enabled??productsCfg.showSection??true)!==false;
+  const selectedHomeCount=items.filter((it:any)=>it.isVisible!==false&&it.active!==false&&it.showOnHome!==false).length;
+  const upd=(newItems:any[])=>setEditCfg({...editCfg,products:{...productsCfg,list:newItems,items:[]}});
+  const patchItem=(i:number,patch:any)=>{const a=[...items];if(!a[i])return;a[i]={...a[i],...patch};upd(a)};
+  const chg=(i:number,k:string,v:any)=>patchItem(i,{[k]:v});
+  const chgFeatures=(i:number,value:string)=>patchItem(i,{features:value.split(/[|,\n]/).map((s:string)=>s.trim()).filter(Boolean)});
+  const closeProductHomeCrop=()=>{
+   if(productHomeCrop?.objectUrl&&String(productHomeCrop.src||'').startsWith('blob:'))URL.revokeObjectURL(productHomeCrop.src);
+   setProductHomeCrop(null);
   };
-  const chg = (i: number, k: string, v: any) => { const a = [...items]; a[i] = { ...a[i], [k]: v }; upd(a); };
-  const chgFeatures = (i: number, featuresStr: string) => { const feats = featuresStr.split(/[|,\n]/).map((s: string) => s.trim()).filter(Boolean); chg(i, 'features', feats); };
+  const startProductHomeCrop=(it:any,i:number,file?:File)=>{
+   if(file&&!(file.type.startsWith('image/')||/\.(jpe?g|png|webp|avif|heic|heif)$/i.test(file.name))){alert('فایل انتخاب‌شده تصویر نیست.');return;}
+   const src=file?URL.createObjectURL(file):String(it.homeImage||it.homeImageUrl||'');
+   if(!src)return;
+   setProductHomeCrop({productId:it.id,index:i,src,objectUrl:!!file,aspectRatio:it.homeImageAspectRatio||'4 / 3',oldUrl:it.homeImage||it.homeImageUrl||'',name:it.name||it.title||'product'});
+  };
+  const saveProductHomeCrop=async(file:File)=>{
+   if(!productHomeCrop)return;
+   setProductHomeCropBusy(true);
+   try{
+    const i=items.findIndex((it:any,index:number)=>String(it.id||index)===String(productHomeCrop.productId??productHomeCrop.index));
+    const targetIndex=i>=0?i:productHomeCrop.index;
+    if(!items[targetIndex])throw new Error('محصول پیدا نشد.');
+    const url=await fileToData(file,productHomeCrop.oldUrl,'products/home-featured');
+    patchItem(targetIndex,{homeImage:url,homeImageUrl:url,homeImageAspectRatio:productHomeCrop.aspectRatio||'',homeImageObjectPosition:'center'});
+    closeProductHomeCrop();
+   }catch(err:any){alert(err?.message==='STORAGE_FULL'?'فضای ذخیره‌سازی تکمیل شده است.':(err?.message||'آپلود عکس منتخب خانه انجام نشد.'));}
+   finally{setProductHomeCropBusy(false);}
+  };
   return <>
-   <Box title="مدیریت نمایش بخش محصولات">
-    <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',background:showSection?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showSection?T.ok:T.err}`,borderRadius:12}}>
-     <input type="checkbox" checked={showSection} onChange={e=>{const v=e.target.checked;setEditCfg({...editCfg,products:{...productsCfg,showSection:v},showProductsSection:v,showProductsPage:v})}} style={{width:18,height:18}}/>
-     <span>{showSection?<span style={{color:T.ok,display:'inline-flex',alignItems:'center',gap:6}}><ZkCheckCircleIcon size={15}/>بخش محصولات فعال است</span>:<span style={{color:T.err,display:'inline-flex',alignItems:'center',gap:6}}><ZkXCircleIcon size={15}/>بخش محصولات غیرفعال است</span>}</span>
+   <Box title="نمایش صفحه محصولات در سایت">
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>این گزینه فقط صفحهٔ کامل محصولات، لینک منو و دکمهٔ «مشاهده همه» را کنترل می‌کند. تنظیم بخش منتخب صفحهٔ خانه در کارت بعدی مستقل است.</p>
+    <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',background:showProductsPage?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showProductsPage?T.ok:T.err}`,borderRadius:12}}>
+     <input data-product-setting="products-page-enabled" type="checkbox" checked={showProductsPage} onChange={e=>{const v=e.target.checked;setEditCfg({...editCfg,products:{...productsCfg,showSection:v,list:items,items:[]},showProductsSection:v,showProductsPage:v})}} style={{width:18,height:18}}/>
+     <span>{showProductsPage?<span style={{color:T.ok,display:'inline-flex',alignItems:'center',gap:6}}><ZkCheckCircleIcon size={15}/>صفحه محصولات فعال است</span>:<span style={{color:T.err,display:'inline-flex',alignItems:'center',gap:6}}><ZkXCircleIcon size={15}/>صفحه محصولات غیرفعال است</span>}</span>
     </label>
    </Box>
-   <Box title={`لیست محصولات (${items.length})`}>
-    {items.map((it:any,i:number)=><details key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
+
+   <Box title="محصولات و برنامه‌های منتخب در صفحه خانه">
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.9,margin:'0 0 10px'}}>نمایش یا لغو نمایش کل این بخش را مستقل از صفحهٔ محصولات تعیین کنید و سپس محصولاتی را که باید داخل آن دیده شوند انتخاب کنید. ترتیب نمایش همان ترتیب لیست محصولات است.</p>
+    <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',marginBottom:12,background:showHomeFeatured?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showHomeFeatured?T.ok:T.err}`,borderRadius:12}}>
+     <input data-product-setting="home-featured-enabled" type="checkbox" checked={showHomeFeatured} onChange={e=>setEditCfg({...editCfg,products:{...productsCfg,list:items,items:[],homeFeatured:{...homeFeatured,enabled:e.target.checked}}})} style={{width:18,height:18}}/>
+     <span style={{color:showHomeFeatured?T.ok:T.err}}>{showHomeFeatured?'نمایش بخش در صفحه خانه':'عدم نمایش بخش در صفحه خانه'}</span>
+    </label>
+    <div data-home-product-selection style={{display:'grid',gap:7}}>
+     {items.map((it:any,i:number)=>{const globallyVisible=it.isVisible!==false&&it.active!==false;return <label key={it.id||i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',border:`1px solid ${T.brd}`,borderRadius:10,background:T.soft,opacity:globallyVisible?1:.58,cursor:globallyVisible?'pointer':'not-allowed'}}>
+      <input type="checkbox" data-home-product-id={it.id||i} checked={globallyVisible&&it.showOnHome!==false} disabled={!globallyVisible} onChange={e=>patchItem(i,{showOnHome:e.target.checked})}/>
+      <span style={{flex:1,fontSize:12,fontWeight:750,color:T.ttl}}>{it.title||it.name||'بدون عنوان'}</span>
+      {!globallyVisible&&<small style={{color:T.err}}>محصول مخفی است</small>}
+     </label>})}
+    </div>
+    <div style={{fontSize:11,color:T.mut,marginTop:9}}>تعداد موارد منتخب و قابل نمایش: <b style={{color:T.acc}}>{selectedHomeCount}</b></div>
+   </Box>
+
+   <Box title={`لیست و تنظیمات محصولات (${items.length})`}>
+    {items.map((it:any,i:number)=><details key={it.id||i} data-product-editor={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:10,background:T.badge}}>
      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>
       <span>{it.isVisible!==false?<ZkEyeIcon size={14} color={T.ok}/>:<ZkEyeOffIcon size={14} color={T.err}/>}</span>
       <span style={{flex:1}}>{it.title||it.name||'بدون عنوان'}</span>
+      {it.showOnHome!==false&&it.isVisible!==false&&<span style={{fontSize:10,color:T.acc}}>منتخب خانه</span>}
      </summary>
      <div style={{marginTop:10}}>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-       <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}>
-        <input className="zkad-switch" type="checkbox" checked={it.isVisible!==false} onChange={e=>chg(i,'isVisible',e.target.checked)}/> نمایش محصول
-       </label>
+      <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:8,flexWrap:'wrap'}}>
+       <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}><input className="zkad-switch" type="checkbox" checked={it.isVisible!==false} onChange={e=>patchItem(i,{isVisible:e.target.checked,active:e.target.checked})}/> نمایش محصول در سایت</label>
+       <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}><input type="checkbox" checked={it.showOnHome!==false} onChange={e=>patchItem(i,{showOnHome:e.target.checked})}/> انتخاب برای بخش صفحه خانه</label>
       </div>
       <Field label="نام محصول" value={it.name||it.title||''} onChange={(v:string)=>chg(i,'name',v)} ph=""/>
       <Field label="عنوان نمایشی (اختیاری)" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
       <label style={S.lbl}>توضیحات محصول</label>
-      <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||it.desc||''} onBlur={e=>{chg(i,'description',e.target.value);chg(i,'desc',e.target.value)}} placeholder="توضیحات کامل محصول..."/>
+      <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||it.desc||''} onBlur={e=>patchItem(i,{description:e.target.value,desc:e.target.value})} placeholder="توضیحات کامل محصول..."/>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
        <div><label style={S.lbl}>قیمت (تومان)</label><input style={S.inp} inputMode="numeric" defaultValue={it.price||''} onBlur={e=>chg(i,'price',p2e(e.target.value).replace(/[^0-9]/g,''))} placeholder="قیمت"/></div>
-       <div><label style={S.lbl}>قیمت تخفیف‌دار (اختیاری)</label><input style={S.inp} inputMode="numeric" defaultValue={it.discountedPrice||''} onBlur={e=>{const n=Number(p2e(e.target.value).replace(/[^0-9]/g,''))||0;chg(i,'discountedPrice',n)}} placeholder="0"/></div>
+       <div><label style={S.lbl}>قیمت تخفیف‌دار (اختیاری)</label><input style={S.inp} inputMode="numeric" defaultValue={it.discountedPrice||''} onBlur={e=>chg(i,'discountedPrice',Number(p2e(e.target.value).replace(/[^0-9]/g,''))||0)} placeholder="0"/></div>
       </div>
-      <label style={S.lbl}>دسته‌بندی</label>
-      <input style={S.inp} defaultValue={it.category||''} onBlur={e=>chg(i,'category',e.target.value.trim())} placeholder="مثلاً: مکمل / منبع / برنامه شخصی / باندل"/>
-      <label style={S.lbl}>آیکون (اختیاری)</label>
-      <input style={S.inp} defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value.trim())} placeholder="آیکون"/>
-      <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label>
-      <textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="ویژگی ۱ | ویژگی ۲ | ..."/>
-      <label style={S.lbl}>عکس محصول (آپلود یا انتخاب از گالری)</label>
-      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
-       {it.image&&<img src={it.image} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'products');chg(i,'image',url);chg(i,'imageUrl',url)}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
-       <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>{chg(i,'image',url);chg(i,'imageUrl',url)}} current={it.image||it.imageUrl} AdminBtn={AdminBtn} />
+      <label style={S.lbl}>دسته‌بندی</label><input style={S.inp} defaultValue={it.category||''} onBlur={e=>chg(i,'category',e.target.value.trim())} placeholder="مثلاً: مکمل / منبع / برنامه شخصی / باندل"/>
+      <label style={S.lbl}>آیکون (اختیاری)</label><input style={S.inp} defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value.trim())} placeholder="آیکون"/>
+      <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label><textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="ویژگی ۱ | ویژگی ۲ | ..."/>
+
+      <div style={{padding:'11px',border:`1px solid ${T.brd}`,borderRadius:12,background:T.card,marginTop:10}}>
+       <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس اصلی محصول</b>
+       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.7,margin:'0 0 8px'}}>این عکس در صفحهٔ کامل محصولات استفاده می‌شود.</p>
+       <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
+        {(it.image||it.imageUrl)&&<img src={it.image||it.imageUrl} alt="" style={{width:74,height:74,objectFit:'cover',objectPosition:it.objectPosition||'center',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
+        <input type="file" aria-label={`بارگذاری عکس اصلی ${it.name||it.title||''}`} accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(f){try{const url=await fileToData(f,it.image||it.imageUrl,'products');patchItem(i,{image:url,imageUrl:url})}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
+        <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>patchItem(i,{image:url,imageUrl:url})} current={it.image||it.imageUrl} AdminBtn={AdminBtn}/>
+       </div>
+       <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>patchItem(i,{image:e.target.value.trim(),imageUrl:e.target.value.trim()})} placeholder="https://... یا لینک مستقیم عکس"/>
+       <FrameControls T={T} S={S} value={{aspectRatio:it.aspectRatio,objectPosition:it.objectPosition}} onChange={(p:any)=>patchItem(i,p)}/>
       </div>
-      <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>{chg(i,'image',e.target.value.trim());chg(i,'imageUrl',e.target.value.trim())}} placeholder="https://... یا لینک مستقیم عکس"/>
-      <FrameControls T={T} S={S} value={{ aspectRatio: it.aspectRatio, objectPosition: it.objectPosition }} onChange={(p:any)=>chg(i, Object.keys(p)[0], Object.values(p)[0])} />
-      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-       <button style={AdminBtn()} disabled={i===0} onClick={()=>{if(i>0){const a=[...items];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowUpIcon size={13}/> بالا</button>
-       <button style={AdminBtn()} disabled={i===items.length-1} onClick={()=>{if(i<items.length-1){const a=[...items];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowDownIcon size={13}/> پایین</button>
-       <button style={{...AdminBtn(),color:T.err}} onClick={async ()=>{ if(it.image){try{await deleteStoredImage(it.image)}catch{}} upd(items.filter((_:any,j:number)=>j!==i)); }}><ZkTrashIcon size={13}/> حذف</button>
+
+      <div data-home-image-editor={it.id||i} style={{padding:'11px',border:`2px solid ${T.acc}`,borderRadius:12,background:T.soft,marginTop:10}}>
+       <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس جداگانه برای بخش «محصولات و برنامه‌های منتخب» صفحه خانه</b>
+       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.8,margin:'0 0 9px'}}>برای این محصول می‌توانید عکسی متفاوت از صفحهٔ محصولات بارگذاری کنید و کادر آن را با لمس، زوم و جابه‌جایی تنظیم کنید. اگر خالی باشد، عکس اصلی محصول استفاده می‌شود.</p>
+       <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:9}}>
+        {(it.homeImage||it.homeImageUrl||it.image||it.imageUrl)&&<img data-home-image-preview src={it.homeImage||it.homeImageUrl||it.image||it.imageUrl} alt={it.name||it.title||''} style={{width:138,aspectRatio:it.homeImageAspectRatio||'4 / 3',objectFit:'cover',objectPosition:it.homeImageObjectPosition||'center',borderRadius:10,border:`1px solid ${T.brd}`}}/>}
+        <span style={{fontSize:10.5,color:(it.homeImage||it.homeImageUrl)?T.ok:T.mut,fontWeight:800}}>{(it.homeImage||it.homeImageUrl)?'عکس اختصاصی خانه فعال است':'فعلاً عکس اصلی محصول استفاده می‌شود'}</span>
+       </div>
+       <label aria-label={`بارگذاری عکس منتخب خانه ${it.name||it.title||''}`} style={{...AdminBtn(),display:'flex',alignItems:'center',justifyContent:'center',gap:7,cursor:'pointer',color:T.acc,marginBottom:8}}>
+        <ZkUploadIcon size={15}/> انتخاب عکس دیگر و تنظیم کادر لمسی
+        <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)startProductHomeCrop(it,i,f)}}/>
+       </label>
+       <input aria-label={`لینک عکس منتخب خانه ${it.name||it.title||''}`} style={{...S.inp,marginBottom:8}} defaultValue={it.homeImage||it.homeImageUrl||''} onBlur={e=>patchItem(i,{homeImage:e.target.value.trim(),homeImageUrl:e.target.value.trim()})} placeholder="لینک مستقیم عکس مخصوص صفحه خانه (اختیاری)"/>
+       <FrameControls key={`home-frame-${it.homeImageAspectRatio||'4 / 3'}-${it.homeImageObjectPosition||'center'}`} T={T} S={S} value={{aspectRatio:it.homeImageAspectRatio||'4 / 3',objectPosition:it.homeImageObjectPosition||'center'}} onChange={(p:any)=>patchItem(i,p.aspectRatio!==undefined?{homeImageAspectRatio:p.aspectRatio}:{homeImageObjectPosition:p.objectPosition})}/>
+       <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.acc}} onClick={()=>startProductHomeCrop(it,i)}><ZkImageIcon size={14}/> تنظیم مجدد کادر لمسی</button>}
+        {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.err}} onClick={async()=>{try{await deleteStoredImage(it.homeImage||it.homeImageUrl)}catch{}patchItem(i,{homeImage:'',homeImageUrl:'',homeImageAspectRatio:'4 / 3',homeImageObjectPosition:'center'})}}>حذف عکس اختصاصی و استفاده از عکس اصلی</button>}
+       </div>
+      </div>
+
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:10}}>
+       <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>{if(i>0){const a=[...items];[a[i-1],a[i]]=[a[i],a[i-1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowUpIcon size={13}/> بالا</button>
+       <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>{if(i<items.length-1){const a=[...items];[a[i+1],a[i]]=[a[i],a[i+1]];upd(a.map((x:any,idx:number)=>({...x,order:idx+1})))}}}><ZkArrowDownIcon size={13}/> پایین</button>
+       <button type="button" style={{...AdminBtn(),color:T.err}} onClick={async()=>{const urls=Array.from(new Set([it.image||it.imageUrl,it.homeImage||it.homeImageUrl].filter(Boolean)));for(const url of urls){try{await deleteStoredImage(String(url))}catch{}}upd(items.filter((_:any,j:number)=>j!==i))}}><ZkTrashIcon size={13}/> حذف محصول</button>
       </div>
      </div>
     </details>)}
-    <button style={AdminBtn()} onClick={()=>upd([...items,{id:'p'+uid(),name:'محصول جدید',title:'محصول جدید',description:'توضیحات محصول جدید',features:['ویژگی ۱','ویژگی ۲'],image:'',imageUrl:'',icon:'',category:'',price:'',discountedPrice:0,isVisible:true,order:items.length+1}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
+    <button type="button" style={AdminBtn()} onClick={()=>upd([...items,{id:'p'+uid(),name:'محصول جدید',title:'محصول جدید',description:'توضیحات محصول جدید',desc:'توضیحات محصول جدید',features:['ویژگی ۱','ویژگی ۲'],image:'',imageUrl:'',aspectRatio:'',objectPosition:'center',homeImage:'',homeImageUrl:'',homeImageAspectRatio:'4 / 3',homeImageObjectPosition:'center',showOnHome:false,icon:'',category:'',price:'',discountedPrice:0,isVisible:true,active:true,order:items.length+1}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
    </Box>
+   {productHomeCrop&&<ImageCropper src={productHomeCrop.src} T={T} title={`تنظیم کادر عکس منتخب خانه — ${productHomeCrop.name}`} aspectRatio={productHomeCrop.aspectRatio} allowAspectChange onAspectRatioChange={(value:string)=>setProductHomeCrop((current:any)=>current?{...current,aspectRatio:value}:current)} fileName={`home-${productHomeCrop.productId||'product'}.webp`} outputLongSide={1600} onCancel={productHomeCropBusy?()=>{}:closeProductHomeCrop} onDone={saveProductHomeCrop}/>}
    <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره محصولات</button>
   </>
  }

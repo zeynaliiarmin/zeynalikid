@@ -33,6 +33,12 @@ export default function HomePage({app}:{app:any}){
  const allCourses:any[]=[];(cfg.courseTabs||[]).forEach((tab:any)=>(tab.courses||[]).forEach((c:any)=>{if(c.active!==false)allCourses.push({...c,tabId:tab.id})}));
  const fc=cfg.featuredCourses||{}; const featuredCourseIds=Array.isArray(fc.courseIds)?fc.courseIds:[];
  const selectedCourses=featuredCourseIds.length>0?allCourses.filter(c=>featuredCourseIds.includes(c.id)):allCourses.slice(0,3); const heroId=fc.heroCourseId||selectedCourses[0]?.id;
+ const productsCfg=cfg.products||{};
+ const showProductsPage=(productsCfg.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true)!==false;
+ const showFeaturedProducts=(productsCfg.homeFeatured?.enabled ?? productsCfg.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true)!==false;
+ const featuredProducts=(productsCfg.list||productsCfg.items||[])
+  .filter((product:any)=>product.isVisible!==false&&product.active!==false&&product.showOnHome!==false)
+  .sort((a:any,b:any)=>(a.order||0)-(b.order||0));
  return <main className="zk-home-page" dir={isRtl?'rtl':'ltr'} style={{...app.S?.page,paddingBottom:92,flexDirection:'column',alignItems:'center',background:T.bg,color:T.txt,overflowX:'hidden'}}>
   <Helmet><title>افرادیکید | مشاوره رشد قد و تغذیه کودک و نوجوان</title><meta name="description" content="مشاوره و آموزش والدین درباره رشد، تغذیه، اشتها، قد، وزن و تمرکز کودک و نوجوان."/><meta name="keywords" content="رشد قد کودک, تغذیه کودک, بی‌اشتهایی کودک, بدغذایی, مشاوره رشد کودک"/><meta property="og:title" content="افرادیکید | رشد و تغذیه کودک و نوجوان"/><meta property="og:description" content="مسیر آرام‌تر و آگاهانه‌تر برای همراهی با رشد و تغذیه فرزند شما"/></Helmet>
   <style>{css}{` .zk-home-page{width:100%;}.zk-home-container{width:100%;max-width:680px;margin-inline:auto;padding-inline:16px}.zk-home-section{width:100%;margin-top:26px}.zk-home-section-title{font-size:20px;color:var(--zk-text-primary);margin:0 0 12px;font-weight:800}.zk-home-section-heading{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:12px}.zk-home-section-link{color:var(--zk-action-primary);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}@media(min-width:481px){.zk-home-container{padding-inline:20px}}`}</style>
@@ -52,28 +58,27 @@ export default function HomePage({app}:{app:any}){
 
    {fc.enabled!==false&&selectedCourses.length>0&&<section className="zk-home-section"><div className="zk-home-section-heading"><h2 className="zk-home-section-title">{lang==='en'?(fc.titleEn||'Featured courses'):(fc.title||'دوره‌های منتخب')}</h2><Link className="zk-home-section-link" to="/courses">{lang==='en'?'View all':'مشاهده همه'}</Link></div><FeaturedCourses courses={selectedCourses} heroCourseId={heroId} title="" T={T} lang={lang} showStock={fc.showStock!==false} showDiscount={fc.showDiscount!==false}/></section>}
 
-   {/* Stage 3: Featured Products — mobile horizontal swipe (exact pattern as FeaturedCourses) */}
-   {/* Phase 8: شرط نمایش هماهنگ با toggle محصولات در پنل (showProductsPage/showSection) */}
-   {(cfg.products?.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true) !== false && ((cfg.products?.list || cfg.products?.items)?.length > 0) && (
-     <section className="zk-home-section">
+   {/* محصولات منتخب خانه: نمایش کل بخش، انتخاب موارد و عکس مستقل هر مورد از پنل محصولات کنترل می‌شود. */}
+   {showFeaturedProducts && featuredProducts.length>0 && (
+     <section className="zk-home-section" data-home-section="featured-products">
        <div className="zk-home-section-heading">
          <h2 className="zk-home-section-title">{lang==='en' ? 'Featured Products & Plans' : 'محصولات و برنامه‌های منتخب'}</h2>
-         <Link className="zk-home-section-link" to="/products">{lang==='en'?'View all':'مشاهده همه'}</Link>
+         {showProductsPage&&<Link className="zk-home-section-link" to="/products">{lang==='en'?'View all':'مشاهده همه'}</Link>}
        </div>
 
        {/* Desktop grid */}
        <div className="featured-products-desktop" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-         {(cfg.products?.list || cfg.products?.items || []).slice(0, 3).map((p: any) => (
-           <ProductCard key={p.id} product={p} size="normal" T={T} lang={lang} onProductClick={() => window.location.href = '/products'} />
+         {featuredProducts.map((p:any)=>(
+           <ProductCard key={p.id} product={p} size="normal" imageVariant="home" T={T} lang={lang} onProductClick={()=>{window.location.href=showProductsPage?'/products':'/form'}} />
          ))}
        </div>
 
-       {/* Mobile horizontal swipe — full FeaturedCourses-style (82% width + snap) */}
+       {/* Mobile horizontal swipe — تمام مواردی که ادمین برای خانه انتخاب کرده است */}
        <div className="featured-products-mobile" style={{ display: 'none' }}>
          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-           {(cfg.products?.list || cfg.products?.items || []).slice(0, 4).map((p: any) => (
+           {featuredProducts.map((p:any)=>(
              <div key={p.id} style={{ flex: '0 0 82%', scrollSnapAlign: 'start', minWidth: 260 }}>
-               <ProductCard product={p} size="normal" T={T} lang={lang} onProductClick={() => window.location.href = '/products'} />
+               <ProductCard product={p} size="normal" imageVariant="home" T={T} lang={lang} onProductClick={()=>{window.location.href=showProductsPage?'/products':'/form'}} />
              </div>
            ))}
          </div>

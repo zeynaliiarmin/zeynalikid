@@ -17,11 +17,19 @@ interface ProductType {
   isVisible?: boolean;
   active?: boolean;
   stock?: number;
+  aspectRatio?: string;
+  objectPosition?: string;
+  showOnHome?: boolean;
+  homeImage?: string;
+  homeImageUrl?: string;
+  homeImageAspectRatio?: string;
+  homeImageObjectPosition?: string;
 }
 
 interface ProductCardProps {
   product: ProductType;
   size?: 'normal' | 'small' | 'hero';
+  imageVariant?: 'default' | 'home';
   onProductClick?: (product: ProductType) => void;
   T?: any;
   lang?: 'fa' | 'en';
@@ -41,6 +49,7 @@ const getCategoryBadge = (cat: string | undefined, lang: 'fa' | 'en') => {
 export default function ProductCard({
   product,
   size = 'normal',
+  imageVariant = 'default',
   onProductClick,
   T,
   lang = 'fa'
@@ -55,12 +64,18 @@ export default function ProductCard({
 
   const badge = getCategoryBadge(product.category, lang);
 
-  const imgSrc = product.image || product.imageUrl || FALLBACK_PRODUCT;
+  const isHomeImage = imageVariant === 'home';
+  const imgSrc = (isHomeImage ? (product.homeImage || product.homeImageUrl) : '') || product.image || product.imageUrl || FALLBACK_PRODUCT;
+  const imageAspect = (isHomeImage ? product.homeImageAspectRatio : product.aspectRatio) || '';
+  const imagePosition = (isHomeImage ? product.homeImageObjectPosition : product.objectPosition) || 'center';
+  const hasDisplayFrame = !!imageAspect;
 
   const handleClick = () => onProductClick?.(product);  const isSmall = size === 'small';
 
   return (
     <article
+      data-product-card={product.id}
+      data-image-variant={imageVariant}
       onClick={handleClick}
       style={{
         background: 'var(--zk-surface)',
@@ -82,16 +97,18 @@ export default function ProductCard({
         (e.currentTarget as HTMLElement).style.boxShadow = 'var(--zk-shadow-light)';
       }}
     >
-      {/* Image area - 1:1 or 4:5, object-contain on soft bg */}
+      {/* عکس صفحهٔ محصولات و عکس مستقل بخش منتخب خانه، هرکدام با کادر جداگانه */}
       <div
+        data-product-image-frame
         style={{
           position: 'relative',
-          height: isSmall ? '92px' : '168px',
+          height: isSmall ? '92px' : (hasDisplayFrame ? undefined : '168px'),
+          aspectRatio: !isSmall && hasDisplayFrame ? imageAspect : undefined,
           background: 'linear-gradient(145deg, #F8F4EF, #FDF8F3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '14px',
+          padding: hasDisplayFrame ? 0 : '14px',
           overflow: 'hidden',
         }}
       >
@@ -100,17 +117,19 @@ export default function ProductCard({
           alt={name}
           loading="lazy"
           style={{
-            maxWidth: '82%',
-            maxHeight: isSmall ? '68px' : '124px',
-            width: 'auto',
-            height: 'auto',
-            objectFit: 'contain',
-            objectPosition: (product as any).objectPosition || 'center',
+            maxWidth: hasDisplayFrame ? '100%' : '82%',
+            maxHeight: hasDisplayFrame ? '100%' : (isSmall ? '68px' : '124px'),
+            width: hasDisplayFrame ? '100%' : 'auto',
+            height: hasDisplayFrame ? '100%' : 'auto',
+            objectFit: hasDisplayFrame ? 'cover' : 'contain',
+            objectPosition: imagePosition,
             display: 'block',
           }}
           onError={(e: any) => {
-            if (e.currentTarget.src !== FALLBACK_PRODUCT) {
-              e.currentTarget.src = FALLBACK_PRODUCT;
+            const target = e.currentTarget as HTMLImageElement;
+            if (target.dataset.fallbackApplied !== 'true') {
+              target.dataset.fallbackApplied = 'true';
+              target.src = FALLBACK_PRODUCT;
             }
           }}
         />

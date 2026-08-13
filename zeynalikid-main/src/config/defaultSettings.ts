@@ -77,8 +77,11 @@ export const defaultSettings = {
   // ─── محصولات با عکس ───
   products: {
     showSection: false,
+    homeFeatured: {
+      enabled: true,
+    },
     items: [
-      // { id: string, title: string, description: string, features: string[], image: string, isVisible: boolean }
+      // { id, title, image, homeImage, showOnHome, homeImageAspectRatio, homeImageObjectPosition, ... }
     ] as Array<Record<string, unknown>>,
   },
 

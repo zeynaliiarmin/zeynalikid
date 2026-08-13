@@ -13,7 +13,7 @@
 // ============================================================================
 import React, { useState, useCallback } from 'react';
 import { getCountryFlag } from '../utils/phone';
-import { ZkCloseIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon, ZkXCircleIcon, ZkBellIcon, ZkUploadIcon } from './adminIcons';
+import { ZkCloseIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkPlusIcon, ZkTrashIcon, ZkBellIcon, ZkUploadIcon } from './adminIcons';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any;
@@ -152,12 +152,7 @@ export default function SettingsManager(props: Props) {
   );
 
   // ── تب ۲: پروژه اصلی (دوره‌ها + پنل) ──
-  const products = draft.products && typeof draft.products === 'object' && !Array.isArray(draft.products)
-    ? draft.products : { showSection: true, list: Array.isArray(draft.products) ? draft.products : [] };
-  const prodList: any[] = Array.isArray(products.list) ? products.list : [];
-  const showSection = (products.showSection ?? draft.showProductsSection ?? draft.showProductsPage ?? true) !== false;
-  const setProducts = (patch: any) => setDraft((prev: any) => ({ ...prev, products: { ...products, ...patch } }));
-
+  // تمام تنظیمات محصولات و بخش «محصولات و برنامه‌های منتخب» فقط در صفحهٔ مستقل «محصولات» مدیریت می‌شوند.
   const cleanupReceipts = async () => {
     if (!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.')) return;
     try {
@@ -210,47 +205,7 @@ export default function SettingsManager(props: Props) {
         <StableAdminTextarea style={{ ...S.ta, minHeight: 60 }} defaultValue={draft.courseInstructor?.desc || 'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onCommit={(v: string) => upNested(['courseInstructor', 'desc'], v)} placeholder="متن سمت و تخصص کارشناس..." rows={3} />
       </Box>
 
-      <Box title="مدیریت نمایش بخش محصولات">
-        <Checklist label={showSection ? 'بخش محصولات فعال است (در منو و صفحه نمایش داده می‌شود)' : 'بخش محصولات غیرفعال است (در منو و صفحه پنهان است)'} value={showSection} onChange={(v) => { setProducts({ showSection: v }); up('showProductsSection', v); up('showProductsPage', v); }} />
-        <p style={{ fontSize: 11, color: T.mut, marginTop: 8, lineHeight: 1.8 }}>این گزینه هم آیتم «محصولات» در منوی همبرگری و هم صفحه /products را کنترل می‌کند.</p>
-      </Box>
-      <Box title={`لیست محصولات (${prodList.length})`}>
-        {prodList.map((it: any, i: number) => (
-          <details key={it.id || i} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginBottom: 10, background: T.badge }}>
-            <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ flex: 1 }}>{it.name || 'بدون نام'} {it.isVisible === false && '(مخفی)'}</span>
-              <span style={{ fontSize: 10, color: it.isVisible !== false ? T.ok : T.err }}>{it.isVisible !== false ? <ZkCheckCircleIcon size={14} color={T.ok} /> : <ZkXCircleIcon size={14} color={T.err} />}</span>
-            </summary>
-            <div style={{ marginTop: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Checklist label="نمایش محصول" value={it.isVisible !== false} onChange={(v) => { const a = [...prodList]; a[i] = { ...a[i], isVisible: v }; setProducts({ list: a }); }} />
-                <span style={{ fontSize: 11, color: T.mut }}>ترتیب: {it.order || i + 1}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 8, marginBottom: 8 }}>
-                <StableAdminInput style={S.inp} defaultValue={it.icon || ''} onCommit={(v: string) => { const a = [...prodList]; a[i] = { ...a[i], icon: v }; setProducts({ list: a }); }} placeholder="آیکون" />
-                <StableAdminInput style={S.inp} defaultValue={it.name || ''} onCommit={(v: string) => { const a = [...prodList]; a[i] = { ...a[i], name: v }; setProducts({ list: a }); }} placeholder="نام محصول" />
-              </div>
-              <label style={S.lbl}>توضیحات محصول</label>
-              <StableAdminTextarea style={{ ...S.ta, marginBottom: 8, minHeight: 60 }} defaultValue={it.description || ''} onCommit={(v: string) => { const a = [...prodList]; a[i] = { ...a[i], description: v }; setProducts({ list: a }); }} placeholder="توضیحات کامل محصول..." rows={3} />
-              <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label>
-              <textarea style={{ ...S.ta, marginBottom: 8, minHeight: 50 }} defaultValue={(it.features || []).join(' | ')} onBlur={(e) => { const feats = e.target.value.split(/[|,\n]/).map((s: string) => s.trim()).filter(Boolean); const a = [...prodList]; a[i] = { ...a[i], features: feats }; setProducts({ list: a }); }} placeholder="جذب سریع | مناسب برای رشد | ..." />
-              <label style={S.lbl}>عکس محصول (آپلود یا لینک مستقیم)</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                {it.image && <img src={it.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: `1px solid ${T.brd}` }} />}
-                <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { const url = await fileToData(f, it.image, 'products'); const a = [...prodList]; a[i] = { ...a[i], image: url }; setProducts({ list: a }); } catch (err: any) { alert(err?.message || 'آپلود انجام نشد'); } } }} />
-              </div>
-              <StableAdminInput style={{ ...S.inp, marginBottom: 8 }} defaultValue={it.image || ''} onCommit={(v: string) => { const a = [...prodList]; a[i] = { ...a[i], image: v.trim() }; setProducts({ list: a }); }} placeholder="https://... یا لینک مستقیم عکس" />
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                <button type="button" style={AdminBtn()} disabled={i === 0} onClick={() => { const a = [...prodList]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; setProducts({ list: a.map((x, idx) => ({ ...x, order: idx + 1 })) }); }}><ZkArrowUpIcon size={13} /> بالا</button>
-                <button type="button" style={AdminBtn()} disabled={i === prodList.length - 1} onClick={() => { const a = [...prodList]; [a[i + 1], a[i]] = [a[i], a[i + 1]]; setProducts({ list: a.map((x, idx) => ({ ...x, order: idx + 1 })) }); }}><ZkArrowDownIcon size={13} /> پایین</button>
-                <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => setProducts({ list: prodList.filter((_: any, j: number) => j !== i) })}><ZkTrashIcon size={13} /> حذف</button>
-                <button type="button" style={AdminBtn()} onClick={async () => { if (it.image) { try { await deleteStoredImage(it.image); } catch { } const a = [...prodList]; a[i] = { ...a[i], image: '' }; setProducts({ list: a }); } }}>حذف عکس</button>
-              </div>
-            </div>
-          </details>
-        ))}
-        <button type="button" style={AdminBtn()} onClick={() => setProducts({ list: [...prodList, { id: 'p' + uid(), name: 'محصول جدید', title: 'محصول جدید', icon: '', description: 'توضیحات محصول جدید', features: ['ویژگی ۱', 'ویژگی ۲'], image: '', isVisible: true, order: prodList.length + 1, price: '' }] })}><ZkPlusIcon size={13} /> افزودن محصول جدید</button>
-      </Box>
+      {/* تنظیمات محصولات به‌طور کامل به صفحهٔ «محصولات» پنل منتقل شده است. */}
 
       <Box title="مدیریت کدهای کشور">
         {(draft.countryCodes || []).map((c: any, i: number) => (
