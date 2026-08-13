@@ -196,6 +196,7 @@ export default function CourseCard({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            objectPosition: (course as any).objectPosition || 'center',
             display: 'block',
           }}
           onError={(e: any) => {

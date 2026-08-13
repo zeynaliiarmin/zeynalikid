@@ -23,10 +23,7 @@ import {
 
 // ─── بخش‌ها و پوشهٔ هر بخش ──────────────────────────────────────────
 export const IMAGE_SECTIONS: { id: string; label: string; folder: string; target: string; hint: string }[] = [
-  { id: 'licenses', label: 'مجوزها', folder: 'licenses', target: 'صفحهٔ مجوزها', hint: 'برای مجوزها و گواهی‌ها' },
-  { id: 'products', label: 'محصولات', folder: 'products', target: 'صفحهٔ محصولات', hint: 'برای محصولات فروشگاه' },
-  { id: 'courses', label: 'دوره‌ها', folder: 'courses', target: 'دوره‌ها / تَب‌ها', hint: 'برای تَب‌ها و دوره‌ها' },
-  { id: 'general', label: 'عمومی', folder: 'general', target: 'متفرقه / هیرو / تراست', hint: 'تصاویر عمومی و متفرقه' },
+  { id: 'general', label: 'عمومی', folder: 'general', target: 'تصاویر عمومی سایت', hint: 'تصاویر عمومی، هیرو، تراست و فرم مشاوره' },
 ];
 
 // نسبت‌های ابعاد آماده برای تنظیم کادر
@@ -41,13 +38,45 @@ export const ASPECT_PRESETS: { label: string; value: string }[] = [
 ];
 
 // موقعیت‌های برش (object-position)
-const POSITIONS: { label: string; value: string }[] = [
+export const POSITIONS: { label: string; value: string }[] = [
   { label: 'مرکز', value: 'center' },
   { label: 'بالا', value: 'top' },
   { label: 'پایین', value: 'bottom' },
   { label: 'چپ', value: 'left' },
   { label: 'راست', value: 'right' },
 ];
+
+// ─── تنظیم کادر تصویر (نسبت ابعاد + موقعیت برش) — قابل استفاده در هر ویرایشگری ───
+// value: { aspectRatio?: string; objectPosition?: string }  /  onChange: (patch) => void
+export function FrameControls({ T, S, value, onChange }: {
+  T: any; S: any; value?: { aspectRatio?: string; objectPosition?: string }; onChange: (patch: { aspectRatio?: string; objectPosition?: string }) => void;
+}) {
+  const v = value || {};
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6, marginBottom: 8 }}>
+      <div>
+        <label style={{ ...S.lbl, fontSize: 11, color: T.ttl, fontWeight: 700 }}>کادر / نسبت ابعاد</label>
+        <select
+          style={S.inp}
+          defaultValue={v.aspectRatio || ''}
+          onChange={(e) => onChange({ aspectRatio: e.target.value })}
+        >
+          {ASPECT_PRESETS.map((p) => <option key={p.label} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label style={{ ...S.lbl, fontSize: 11, color: T.ttl, fontWeight: 700 }}>موقعیت برش</label>
+        <select
+          style={S.inp}
+          defaultValue={v.objectPosition || 'center'}
+          onChange={(e) => onChange({ objectPosition: e.target.value })}
+        >
+          {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
+    </div>
+  );
+}
 
 interface LibraryItem {
   id: string;
@@ -153,7 +182,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 // ─── کامپوننت اصلی ────────────────────────────────────────────────
 export default function ImagesManager(props: Props) {
   const { T, S, editCfg, setEditCfg, setSave, uid, fileToData, deleteStoredImage, supabase, isSupabaseConfigured, AdminBtn } = props;
-  const [tab, setTab] = useState('licenses');
+  const [tab, setTab] = useState('general');
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState('');
 
@@ -247,30 +276,10 @@ export default function ImagesManager(props: Props) {
     <>
       <Box title={<><ZkImageIcon size={16} color={T.ttl} /> مرکز مدیریت تصاویر</>}>
         <p style={{ fontSize: 11, color: T.mut, margin: '0 0 14px', lineHeight: 1.8 }}>
-          تصویر را در تَب بخشِ خودش آپلود کنید. عکس‌های هر تَب فقط در همان صفحهٔ مقصد دیده می‌شوند
-          و می‌توانید در صفحهٔ مقصد تعیین کنید هر عکس برای کدام مورد نمایش داده شود.
+          این صفحه فقط برای تصاویر <b>عمومی</b> سایت است (هیرو، تراست، فرم مشاوره، دربارهٔ ما).
+          عکس‌های محصولات، دوره‌ها و مجوزها از همان صفحهٔ خودشان آپلود و تنظیم می‌شوند.
           پس از آپلود، تصویر به‌صورت خودکار به <b>webp</b> با حداکثر کیفیت و حجم بهینه تبدیل می‌شود.
         </p>
-
-        {/* تب‌ها */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-          {IMAGE_SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setTab(s.id)}
-              style={{
-                ...AdminBtn(),
-                background: tab === s.id ? T.acc : T.card,
-                color: tab === s.id ? '#fff' : T.acc,
-                boxShadow: 'none',
-                border: tab === s.id ? 'none' : `1px solid ${T.brd}`,
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
 
         {/* عکس‌های تکی عمومی (فرم مشاوره + دربارهٔ ما) + کادر هیرو — فقط در تَب عمومی */}
         {tab === 'general' && (
@@ -476,6 +485,7 @@ function SingleImageEditor({
           onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
         />
       )}
+      <FrameControls T={T} S={S} value={{ aspectRatio: val.aspectRatio, objectPosition: val.objectPosition }} onChange={(p) => upd(p)} />
       <div className="zkad-drop" style={{ marginBottom: 8 }} onDragOver={(e) => e.preventDefault()} onDrop={async (e) => { e.preventDefault(); await upload(e.dataTransfer.files?.[0]); }}>
         <ZkUploadIcon size={22} />
         <span>{busy ? 'در حال آپلود و تبدیل به webp…' : 'آپلود از حافظهٔ گوشی (به webp تبدیل می‌شود)'}</span>

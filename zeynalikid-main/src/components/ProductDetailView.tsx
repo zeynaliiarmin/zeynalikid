@@ -76,7 +76,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         <img
           src={imgSrc}
           alt={name}
-          style={{ maxWidth: '78%', maxHeight: '158px', width: 'auto', height: 'auto', objectFit: 'contain' }}
+          style={{ maxWidth: '78%', maxHeight: '158px', width: 'auto', height: 'auto', objectFit: 'contain', objectPosition: (product as any).objectPosition || 'center' }}
           onError={(e: any) => { e.currentTarget.src = '/images/product-personalized-plan.webp'; }}
         />
 

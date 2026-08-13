@@ -105,6 +105,7 @@ export default function ProductCard({
             width: 'auto',
             height: 'auto',
             objectFit: 'contain',
+            objectPosition: (product as any).objectPosition || 'center',
             display: 'block',
           }}
           onError={(e: any) => {
