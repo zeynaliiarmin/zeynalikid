@@ -28,6 +28,8 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "showProductsPage",
   "showLicensesPage",
   "adminLoginText",
+  // Licenses (public display — image, title, description)
+  "licenses",
   "designSystem",
   "sections",
   // Theme

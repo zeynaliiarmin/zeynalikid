@@ -276,6 +276,28 @@ export function LicensesPage({app}:{app:any}){
      <SecurePage pageTitle={title} T={T}>
        <PageShell app={app} title={title} variant="trust">
          <p style={{fontSize:13,color:T.mut,lineHeight:2,whiteSpace:'pre-wrap'}}>{cfg.licensesText||(lang==='en'?'Licenses and certificates will be published here soon.':'مجوزها و گواهینامه‌ها به‌زودی در این بخش منتشر می‌شوند.')}</p>
+         {/* لیست مجوزها — از تنظیمات پنل (cfg.licenses) */}
+         {(()=>{
+           const licRaw = cfg.licenses;
+           const licList: any[] = Array.isArray(licRaw) ? licRaw : (licRaw && typeof licRaw==='object' ? Object.values(licRaw) : []);
+           const visible = licList.filter((x:any)=>x.isVisible!==false);
+           if(!visible.length) return null;
+           return (
+             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:18}}>
+               {visible.map((it:any,i:number)=>(
+                 <div key={it.id||i} style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:16,overflow:'hidden',boxShadow:T.shadowMedium||'0 6px 20px rgba(0,0,0,.06)'}}>
+                   <div style={{width:'100%',height:170,overflow:'hidden',background:'#00000010'}}>
+                     <img src={it.image} alt={it.title||''} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:it.objectPosition||'center',aspectRatio:it.aspectRatio||undefined}} onError={(e:any)=>{e.currentTarget.style.display='none'}}/>
+                   </div>
+                   <div style={{padding:'12px 14px'}}>
+                     <div style={{fontSize:13,fontWeight:800,color:T.ttl,lineHeight:1.6}}>{it.title||''}</div>
+                     {it.description&&<div style={{fontSize:12,color:T.mut,lineHeight:1.7,marginTop:4}}>{it.description}</div>}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           );
+         })()}
          {/* اصلاح ۴-۴ (مرحله ۴): افزودن ContactPanel به این صفحه (طبق تنظیمات نمایش) */}
          {/* اصلاح ۵: بخش خدمات قابل فعال‌سازی در مجوزها */}
          {cfg.servicesVisibility?.licenses!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}

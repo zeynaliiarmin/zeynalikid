@@ -9,7 +9,7 @@ export default function ProductsPage({ app }: { app: any }) {
   const { cfg, T, lang, APP_A_URL, Footer, showContactOn, ContactPanel } = app;
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [filter, setFilter] = useState<'all' | 'personalized' | 'supplement' | 'education' | 'bundle' | 'discount'>('all');
+  const [filter, setFilter] = useState<'all' | 'personalized' | 'supplement' | 'education' | 'bundle'>('all');
 
   const showSection = cfg.products?.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true;
   const rawProducts: any[] = (cfg.products?.list || cfg.products?.items || []).filter((p: any) => p.isVisible !== false && p.active !== false);
@@ -21,12 +21,10 @@ export default function ProductsPage({ app }: { app: any }) {
     { id: 'supplement', label: lang === 'en' ? 'Supplements' : 'مکمل‌های تخصصی' },
     { id: 'education', label: lang === 'en' ? 'Education' : 'منابع آموزشی' },
     { id: 'bundle', label: lang === 'en' ? 'Bundles' : 'باندل‌های همراهی' },
-    { id: 'discount', label: lang === 'en' ? 'Discounted' : 'تخفیف‌دار' },
   ];
 
   const filteredProducts = rawProducts.filter((p: any) => {
     if (filter === 'all') return true;
-    if (filter === 'discount') return !!p.discountedPrice;
     const cat = (p.category || p.name || p.title || '').toLowerCase();
     if (filter === 'personalized') return cat.includes('personal') || cat.includes('برنامه');
     if (filter === 'supplement') return cat.includes('supplement') || cat.includes('مکمل');
