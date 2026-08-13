@@ -937,7 +937,11 @@ function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)
     </footer>
   );
 }
-function ContactPanel({cfg,T,lang}:{cfg:any,T:any,lang:Lang}){const c=cfg.contacts||{};const icons=cfg.contactIcons||{};const custom=(c.custom||[]).filter((x:any)=>x.title&&x.url).sort((a:any,b:any)=>(a.order||0)-(b.order||0));const items=[c.phone&&{key:'phone',title:lang==='en'?'Phone':'شماره تماس',url:`tel:${c.phone}`,value:c.phone},c.whatsapp&&{key:'whatsapp',title:'WhatsApp',url:`https://wa.me/${digits(c.whatsapp)}`,value:c.whatsapp},c.telegram&&{key:'telegram',title:'Telegram',url:`https://t.me/${String(c.telegram).replace('@','')}`,value:c.telegram},c.instagram&&{key:'instagram',title:'Instagram',url:`https://instagram.com/${String(c.instagram).replace('@','')}`,value:c.instagram},c.rubika&&{key:'rubika',title:'Rubika',url:`https://rubika.ir/${String(c.rubika).replace('@','')}`,value:c.rubika},c.bale&&{key:'bale',title:'Bale',url:`https://ble.ir/${String(c.bale).replace('@','')}`,value:c.bale},...custom.map((x:any)=>({...x,key:x.key||x.title||'custom'}))].filter(Boolean); if(!items.length)return null;
+function ContactPanel({cfg,T,lang}:{cfg:any,T:any,lang:Lang}){const c=cfg.contacts||{};const icons=cfg.contactIcons||{};const custom=(c.custom||[]).filter((x:any)=>x.title&&x.url).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
+// نرمال‌سازی لینک: اگر کاربر آدرس کامل داده باشد (شامل http یا دامنه)، همان را استفاده کن؛
+// در غیر این صورت دامنه را اضافه کن (فقط نام کاربری وارد کرده).
+const socialUrl=(domain:string,base:string,val:string)=>{const v=String(val||'').trim();if(!v)return '';if(/^https?:\/\//i.test(v))return v;if(v.includes(domain)||v.includes(base)){return v.startsWith('http')?v:('https://'+v.replace(/^https?:\/\//i,''));}return base+encodeURIComponent(v.replace(/^@+/,''));};
+const items=[c.phone&&{key:'phone',title:lang==='en'?'Phone':'شماره تماس',url:`tel:${c.phone}`,value:c.phone},c.whatsapp&&{key:'whatsapp',title:'WhatsApp',url:`https://wa.me/${digits(c.whatsapp)}`,value:c.whatsapp},c.telegram&&{key:'telegram',title:'Telegram',url:socialUrl('t.me','https://t.me/',c.telegram),value:c.telegram},c.instagram&&{key:'instagram',title:'Instagram',url:socialUrl('instagram.com','https://instagram.com/',c.instagram),value:c.instagram},c.rubika&&{key:'rubika',title:'Rubika',url:socialUrl('rubika.ir','https://rubika.ir/',c.rubika),value:c.rubika},c.bale&&{key:'bale',title:'Bale',url:socialUrl('ble.ir','https://ble.ir/',c.bale),value:c.bale},...custom.map((x:any)=>({...x,key:x.key||x.title||'custom'}))].filter(Boolean); if(!items.length)return null;
 const knownKeys=['phone','whatsapp','telegram','instagram','rubika','bale'];
 return <div style={{marginTop:12,padding:14,background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16}}><div style={{fontWeight:700,color:T.ttl,marginBottom:10,fontSize:13,display:'flex',gap:7,alignItems:'center'}}><PlatformIcon type="phone" color={T.acc} size={16}/>{t(cfg,lang,'contactUs','ارتباط با ما')}</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:8}}>{items.map((it:any,i:number)=>{
   const color=it.color||icons[it.key]?.color||T.acc;
@@ -949,7 +953,6 @@ return <div style={{marginTop:12,padding:14,background:T.soft,border:`1px solid 
    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{it.title}</span>
   </a>})}</div></div>}
 
-// بازطراحی — سبک ممفیس: اشکال هندسی ساده (دایره/نقطه/خط منحنی) با رنگ‌های پاستلی تم، فقط تزئینی و بدون تداخل با کلیک‌ها
 function MemphisBg({T,variant='page'}:{T:any,variant?:'page'|'card'}){
  const c=T.memphis||[T.soft,T.soft,T.soft];
  if(variant==='card')return <svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',overflow:'hidden',borderRadius:'inherit',pointerEvents:'none',zIndex:0}} preserveAspectRatio="xMidYMid slice"><circle cx="92%" cy="6%" r="46" fill={c[0]} opacity=".35"/><circle cx="4%" cy="96%" r="30" fill={c[1]} opacity=".3"/></svg>;
