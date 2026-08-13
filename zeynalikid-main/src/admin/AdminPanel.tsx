@@ -1094,7 +1094,20 @@ function ThemeManagerEditor(){
   const [prompt,setPrompt]=useState<any>(null); const [done,setDone]=useState(false);
   useEffect(()=>{const h=(e:any)=>{e.preventDefault();setPrompt(e)};const installed=()=>setDone(true);window.addEventListener('beforeinstallprompt',h);window.addEventListener('appinstalled',installed);return()=>{window.removeEventListener('beforeinstallprompt',h);window.removeEventListener('appinstalled',installed)}},[]);
   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
-  return <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}><b style={{display:'block',color:T.ttl,marginBottom:5}}>نصب پنل مدیریت روی گوشی</b><p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دسترسی سریع به پنل مثل یک اپلیکیشن مستقل، بدون نوار آدرس مرورگر.</p>{done?<span style={{fontSize:12,color:T.ok,fontWeight:800}}>✓ پنل روی این دستگاه نصب شده است.</span>:prompt?<button type="button" style={AdminBtn()} onClick={async()=>{await prompt.prompt();setPrompt(null)}}>نصب اپلیکیشن پنل</button>:ios?<span style={{fontSize:12,color:T.mut}}>در Safari: Share → Add to Home Screen را بزنید.</span>:<span style={{fontSize:12,color:T.mut}}>از منوی مرورگر گزینه Install app / نصب برنامه را انتخاب کنید.</span>}</div>
+  const gotoLogin=()=>{ try{ window.location.href='/admin/login'; }catch(e){} };
+  return <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}><b style={{display:'block',color:T.ttl,marginBottom:5}}>نصب پنل مدیریت روی گوشی</b><p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دسترسی سریع به پنل مثل یک اپلیکیشن مستقل، بدون نوار آدرس مرورگر.</p>
+    {done
+      ? <span style={{fontSize:12,color:T.ok,fontWeight:800}}>✓ پنل روی این دستگاه نصب شده است.</span>
+      : prompt
+        ? <button type="button" style={AdminBtn()} onClick={async()=>{await prompt.prompt();setPrompt(null)}}>نصب اپلیکیشن پنل</button>
+        : ios
+          ? <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <span style={{fontSize:12,color:T.mut}}>در Safari: Share (دکمهٔ اشتراک‌گذاری) ← <b>Add to Home Screen / افزودن به صفحهٔ اصلی</b> را بزنید.</span>
+              <span style={{fontSize:12,color:T.mut}}>⚠️ برای اینکه بعد از نصب مستقیم به <b>صفحهٔ ورود پنل</b> بروید، اول روی دکمهٔ زیر بزنید تا به صفحهٔ ورود بروید، <b>سپس</b> از آن صفحه «Add to Home Screen» کنید.</span>
+              <button type="button" style={{...AdminBtn(),color:T.acc}} onClick={gotoLogin}>رفتن به صفحهٔ ورود پنل (برای نصب صحیح)</button>
+            </div>
+          : <span style={{fontSize:12,color:T.mut}}>از منوی مرورگر گزینه Install app / نصب برنامه را انتخاب کنید.</span>}
+  </div>
  }
 
  function SecurityEditor(){

@@ -51,6 +51,23 @@ function applyAdminPwaMeta() {
   }
   meta.content = 'مدیریت زینالیکید';
 
+  // iOS: اطمینان از باز شدن به‌صورت اپ مستقل (بدون نوار مرورگر) و full-screen
+  let capable = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-capable"]');
+  if (!capable) {
+    capable = document.createElement('meta');
+    capable.name = 'apple-mobile-web-app-capable';
+    document.head.appendChild(capable);
+  }
+  capable.content = 'yes';
+
+  let statusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (!statusBar) {
+    statusBar = document.createElement('meta');
+    statusBar.name = 'apple-mobile-web-app-status-bar-style';
+    document.head.appendChild(statusBar);
+  }
+  statusBar.content = 'black-translucent';
+
   // theme-color (keep teal, but darker for admin if desired)
   let themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (!themeColor) {
