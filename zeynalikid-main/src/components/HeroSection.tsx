@@ -6,6 +6,8 @@ interface HeroSectionProps {
   subtitle: string;
   imageUrl: string;
   imageAlt: string;
+  imageAspect?: string;
+  imagePosition?: string;
   ctaText?: string;
   ctaLink?: string;
   secondaryCtaText?: string;
@@ -14,7 +16,7 @@ interface HeroSectionProps {
   lang: 'fa' | 'en';
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,ctaText,ctaLink,secondaryCtaText,secondaryCtaLink,T,lang}) => {
+const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,secondaryCtaText,secondaryCtaLink,T,lang}) => {
   const navigate = useNavigate();
   const go=(link?:string)=>{if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
   const isRtl=lang==='fa';
@@ -119,7 +121,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
           style={{
             display:'block', width:'100%', height:'auto', 
             borderRadius:'20px', objectFit:'cover', 
-            aspectRatio:'1.05 / 1', boxShadow: 'var(--zk-shadow-medium)'
+            aspectRatio: imageAspect || '1.05 / 1', objectPosition: imagePosition || 'center',
+            boxShadow: 'var(--zk-shadow-medium)'
           }} 
           onError={(e) => {
             const target = e.currentTarget;

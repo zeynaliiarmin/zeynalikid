@@ -287,6 +287,11 @@ export default function ImagesManager(props: Props) {
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
+              field="hero" title="عکس هیرو صفحهٔ اصلی" note="عکس بزرگ بالای صفحهٔ اصلی (کنار «همراهی والدین»)" imgStyle={{ width: 200, maxHeight: 130, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+            />
+            <SingleImageEditor
+              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
               field="consultationPhoto" title="عکس کارشناس فرم مشاوره" note="در بالای فرم مشاوره نمایش داده می‌شود" imgStyle={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 18%' }}
             />
             <SingleImageEditor

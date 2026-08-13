@@ -5,6 +5,8 @@ interface TrustBoxWithImageProps {
   imageUrl: string;
   imageAlt: string;
   imagePosition?: 'left' | 'right' | 'top' | 'bottom';
+  imageAspect?: string;
+  imageObjectPosition?: string;
   T: any;
 }
 
@@ -13,6 +15,8 @@ const TrustBoxWithImage: React.FC<TrustBoxWithImageProps> = ({
   imageUrl,
   imageAlt,
   imagePosition = 'left',
+  imageAspect,
+  imageObjectPosition,
   T,
 }) => {
   const isHorizontal = imagePosition === 'left' || imagePosition === 'right';
@@ -44,7 +48,8 @@ const TrustBoxWithImage: React.FC<TrustBoxWithImageProps> = ({
             height: 'auto',
             borderRadius: '18px',
             objectFit: 'cover',
-            aspectRatio: isHorizontal ? '4 / 3' : '16 / 9',
+            aspectRatio: imageAspect || (isHorizontal ? '4 / 3' : '16 / 9'),
+            objectPosition: imageObjectPosition || 'center',
             boxShadow: 'var(--zk-shadow-medium)',
           }}
           onError={(e) => {
