@@ -4,7 +4,9 @@ import {
   getMediaItemsForDestinations,
   migrateMediaItem,
   pickPlacedMediaCode,
+  prioritizeRotatingExperienceVideo,
   toEducationMediaItem,
+  EXPERIENCE_VIDEO_ROTATION_KEY,
 } from '../src/utils/mediaPlacement';
 
 let passed = 0;
@@ -56,5 +58,19 @@ assert(pickPlacedMediaCode(dualVideo, false) === 'AP', 'VPN-off education playba
 assert(pickPlacedMediaCode({ ...dualVideo, displayMode: 'youtube' }, false) === 'YT', 'explicit YouTube display mode is honored');
 const educationMapped = toEducationMediaItem({ ...dualVideo, title: 'T', description: 'D', thumbnail: 'thumb' }, false);
 assert(educationMapped.manualCode === 'AP' && educationMapped.desc === 'D' && educationMapped.cover === 'thumb', 'admin media fields map to education player/card fields');
+
+const memory = new Map<string, string>();
+const storage = { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => { memory.set(key, value); } };
+const rotationItems = [
+  { id: 'v1', _mediaSource: 'experience', type: 'video' },
+  { id: 'v2', _mediaSource: 'generic', type: 'video' },
+  { id: 'v3', _mediaSource: 'education', type: 'video' },
+  { id: 'a1', _mediaSource: 'experience', type: 'audio' },
+];
+const firstVideo = (items: any[]) => items.filter((item) => item.type === 'video').sort((a, b) => a._experienceRandomRank - b._experienceRandomRank)[0].id;
+const firsts = Array.from({ length: 4 }, () => firstVideo(prioritizeRotatingExperienceVideo(rotationItems, storage, () => 0)));
+assert(new Set(firsts.slice(0, 3)).size === 3, 'experience rotation shows every video once before repeating');
+assert(firsts[2] !== firsts[3], 'experience rotation avoids a repeat at the shuffle-cycle boundary');
+assert(memory.has(EXPERIENCE_VIDEO_ROTATION_KEY), 'experience rotation persists its shuffle bag for repeated visits');
 
 console.log(`media-placement: ${passed} assertions passed`);

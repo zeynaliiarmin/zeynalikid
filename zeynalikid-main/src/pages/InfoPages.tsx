@@ -19,7 +19,7 @@ import SecurePage from '../components/SecurePage';
 import { StoryHighlightsBar, LegacyStoryHighlightsBar } from '../components/StoryViewer';
 import type { Highlight } from '../components/StoryViewer';
 import ServicesSection from '../components/ServicesSection';
-import { getMediaItemsForDestination, toEducationMediaItem } from '../utils/mediaPlacement';
+import { getMediaItemsForDestination, prioritizeRotatingExperienceVideo, toEducationMediaItem } from '../utils/mediaPlacement';
 
 // اصلاح ۲۹ (مرحله ۷): پارامتر اختیاری topSlot برای نمایش هایلایت استوری در بالای صفحه (قبل از عنوان اصلی)
 function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title:string,children:any,topSlot?:any,variant?:'default'|'trust'|'education'}){
@@ -45,7 +45,11 @@ function pickByPlatform(list: any[], type: string, vpnOn: boolean) {
     const hasIntAud = !!(x.internalCode || x.platforms?.internalAudio);  
   
     return hasManual || hasYt || hasAp || hasExtImg || hasIntImg || hasExtAud || hasIntAud;  
-  }).sort((a: any, b: any) => (a.order || 0) - (b.order || 0));  
+  }).sort((a: any, b: any) => {
+    const ar=Number(a?._experienceRandomRank); const br=Number(b?._experienceRandomRank);
+    if(Number.isFinite(ar)||Number.isFinite(br))return (Number.isFinite(ar)?ar:Number.MAX_SAFE_INTEGER)-(Number.isFinite(br)?br:Number.MAX_SAFE_INTEGER);
+    return (a.order || 0) - (b.order || 0);
+  });
   
   return valid;  
 }
@@ -104,6 +108,12 @@ export function ExperiencePage({app}:{app:any}){
  const contactFirst=cfg.pageContentOrder?.experience?.order==='contactFirst';
  const IntroBlock=showIntro?<div style={{marginTop:16,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.mut,lineHeight:1.9}}>{introText}</div>:null;
  const ContactBlock=showContactOn('experience')?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
+ const experienceItems=getMediaItemsForDestination(cfg,'experience');
+ const experienceRotationSignature=JSON.stringify(experienceItems);
+ const randomizedExperienceItems=useMemo(
+  ()=>prioritizeRotatingExperienceVideo(experienceItems,typeof window!=='undefined'?window.localStorage:null),
+  [experienceRotationSignature],
+ );
  return (
    <>
    <Helmet><title>تجربه والدین | زینالیکید</title><meta name="description" content="تجربه واقعی والدین از دوره‌های رشد و تغذیه زینالیکید — نتایج را ببینید و بشنوید" /></Helmet>
@@ -117,7 +127,7 @@ export function ExperiencePage({app}:{app:any}){
            <p style={{fontSize:13.5,color:T.mut,lineHeight:1.85,marginTop:4}}>{lang==='en'?'Parents who walked this path share their journey — videos, voice notes and photos of real progress.':'والدینی که این مسیر را طی کرده‌اند، سفرشان را به اشتراک می‌گذارند — ویدیو، ویس و عکس پیشرفت واقعی.'}</p>
          </div>
          {/* اصلاح ۱۶: نمایش افقی محتوای چندرسانه‌ای با دکمه‌های اسکرول در صفحه تجربه والدین */}
-         <MediaTabsGrid items={getMediaItemsForDestination(cfg,'experience')} cfg={cfg} T={T} lang={lang} withText={withText} tabVisibility={cfg.experienceTabs} horizontal/>
+         <MediaTabsGrid items={randomizedExperienceItems} cfg={cfg} T={T} lang={lang} withText={withText} tabVisibility={cfg.experienceTabs} horizontal/>
          {/* اصلاح ۵: بخش خدمات قابل فعال‌سازی در تجربه والدین */}
          {cfg.servicesVisibility?.parentExperience!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
          {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}

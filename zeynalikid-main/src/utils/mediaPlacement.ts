@@ -173,3 +173,60 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
     ...(code ? { manualCode: code, url: code } : {}),
   };
 }
+
+export const EXPERIENCE_VIDEO_ROTATION_KEY = 'zk_experience_video_rotation_v1';
+
+type RotationStorage = Pick<Storage, 'getItem' | 'setItem'>;
+type RotationState = { signature: string; remaining: string[]; lastId: string };
+
+const rotationId = (item:any,index:number) => `${String(item?._mediaSource || 'media')}:${String(item?.id || index)}`;
+function shuffled<T>(values:T[],random:()=>number):T[]{
+  const out=[...values];
+  for(let i=out.length-1;i>0;i--){
+    const j=Math.max(0,Math.min(i,Math.floor(random()*(i+1))));
+    [out[i],out[j]]=[out[j],out[i]];
+  }
+  return out;
+}
+
+/**
+ * Places a different video first on every Experience-page mount.
+ * A persisted shuffle bag prevents repeats until all available videos have been first once;
+ * at cycle boundaries the previous first video is never selected again when alternatives exist.
+ */
+export function prioritizeRotatingExperienceVideo(
+  items:any[],
+  storage?:RotationStorage|null,
+  random:()=>number=Math.random,
+):any[]{
+  const videos=(items||[]).map((item,index)=>({item,id:rotationId(item,index)})).filter(({item})=>(item?.type||'video')==='video');
+  if(videos.length<1)return items||[];
+  const validIds=videos.map(({id})=>id);
+  const signature=[...validIds].sort().join('|');
+  let state:RotationState={signature:'',remaining:[],lastId:''};
+  try{
+    const raw=storage?.getItem(EXPERIENCE_VIDEO_ROTATION_KEY);
+    if(raw)state={...state,...JSON.parse(raw)};
+  }catch{}
+
+  let remaining=state.signature===signature&&Array.isArray(state.remaining)
+    ? state.remaining.filter((id)=>validIds.includes(id))
+    : [];
+  const lastId=validIds.includes(state.lastId)?state.lastId:'';
+  if(!remaining.length){
+    remaining=shuffled(validIds,random);
+    if(remaining.length>1&&remaining[0]===lastId){
+      const swapIndex=remaining.findIndex((id)=>id!==lastId);
+      if(swapIndex>0)[remaining[0],remaining[swapIndex]]=[remaining[swapIndex],remaining[0]];
+    }
+  }
+  const selectedId=remaining.shift()||validIds[0];
+  try{storage?.setItem(EXPERIENCE_VIDEO_ROTATION_KEY,JSON.stringify({signature,remaining,lastId:selectedId} satisfies RotationState));}catch{}
+
+  const rest=shuffled(validIds.filter((id)=>id!==selectedId),random);
+  const rank=new Map([selectedId,...rest].map((id,index)=>[id,index]));
+  return (items||[]).map((item,index)=>{
+    const id=rotationId(item,index);
+    return rank.has(id)?{...item,_experienceRandomRank:rank.get(id)}:item;
+  });
+}

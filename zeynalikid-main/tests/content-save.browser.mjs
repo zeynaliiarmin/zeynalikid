@@ -5,6 +5,7 @@ const freshCode = 'https://www.youtube.com/embed/immediate-save-value';
 const freshAudio = 'https://cdn.test/immediate-audio.mp3';
 const freshImage = 'https://cdn.test/immediate-image.jpg';
 const freshText = 'متن جدیدی که درست قبل از ذخیره وارد شد';
+const aparatEmbed = '<style>.h_iframe-aparat_embed_frame{position:relative}.h_iframe-aparat_embed_frame iframe{position:absolute;inset:0;width:100%;height:100%}</style><div class="h_iframe-aparat_embed_frame"><span style="display:block;padding-top:57%"></span><iframe src="https://www.aparat.com/video/video/embed/videohash/browsertest/vt/frame" allowFullScreen="true"></iframe></div>';
 let currentSettings = {
   version: 2,
   education: {
@@ -26,9 +27,9 @@ let currentSettings = {
       id: 'edu-text-test', title: 'آیتم تست متن فوری', type: 'text', body: 'متن قدیمی', active: true, order: 4,
     }],
   },
-  experience: { items: [] },
+  experience: { items: [{ id: 'experience-aparat-test', title: 'ویدیوی مستقیم تجربه', type: 'video', aparatCode: aparatEmbed, mediaCategories: ['experience'], active: true, order: 2 }] },
   experienceTabs: { video: true, audio: true, image: true, text: true },
-  mediaItems: [],
+  mediaItems: [{ id: 'generic-aparat-test', title: 'ویدیوی آپارات چندرسانه‌ای', type: 'video', platforms: { aparat: aparatEmbed }, categories: ['parent-experience', 'growth'], isVisible: true, order: 1 }],
   customPlatforms: [],
   mediaCountryMode: 'iran',
 };
@@ -82,6 +83,7 @@ page.on('request', async (request) => {
       return request.respond({ status: 204, body: '' });
     }
     if (url.startsWith('https://www.youtube.com/')) return request.abort();
+    if (url.includes('www.aparat.com/video/video/embed/')) return request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>mock aparat player</title>' });
     return request.continue();
   } catch (error) {
     console.error('interception error', error);
@@ -171,22 +173,25 @@ try {
     if (details) details.open = true;
   });
 
-  const legacySelections = await page.evaluate(() => ({
-    education: document.querySelector('input[data-media-destination="education"]')?.checked,
-    experience: document.querySelector('input[data-media-destination="experience"]')?.checked,
-  }));
+  const legacySelections = await page.evaluate(() => {
+    const details = [...document.querySelectorAll('details')].find((element) => element.textContent?.includes('آیتم تست ذخیره فوری'));
+    return {
+      education: details?.querySelector('input[data-media-destination="education"]')?.checked,
+      experience: details?.querySelector('input[data-media-destination="experience"]')?.checked,
+    };
+  });
   assert(legacySelections.education === true && legacySelections.experience === true, 'legacy single choice was not shown as compatible multi-selection');
 
   // Deliberately call button.click() while the textarea is still focused. Programmatic click does
   // not blur it; saveAll itself must flush the active draft before building the request payload.
   await page.evaluate((value) => {
-    const labels = [...document.querySelectorAll('label')];
-    const label = labels.find((element) => element.textContent?.includes('کد دستی یوتیوب'));
+    const details = [...document.querySelectorAll('details')].find((element) => element.textContent?.includes('آیتم تست ذخیره فوری'));
+    const label = [...(details?.querySelectorAll('label') || [])].find((element) => element.textContent?.includes('کد دستی یوتیوب'));
     const textarea = label?.nextElementSibling;
     if (!(textarea instanceof HTMLTextAreaElement)) throw new Error('YouTube textarea not found');
     textarea.focus();
     textarea.value = value;
-    const height = document.querySelector('input[data-media-destination="height"]');
+    const height = details?.querySelector('input[data-media-destination="height"]');
     if (height instanceof HTMLInputElement && !height.checked) height.click();
     const save = document.querySelector('[data-testid="content-save"]');
     if (!(save instanceof HTMLButtonElement)) throw new Error('save button not found');
@@ -220,7 +225,8 @@ try {
     if (details) details.open = true;
   });
   const persisted = await page.evaluate(() => {
-    const label = [...document.querySelectorAll('label')].find((element) => element.textContent?.includes('کد دستی یوتیوب'));
+    const details = [...document.querySelectorAll('details')].find((element) => element.textContent?.includes('آیتم تست ذخیره فوری'));
+    const label = [...(details?.querySelectorAll('label') || [])].find((element) => element.textContent?.includes('کد دستی یوتیوب'));
     const textarea = label?.nextElementSibling;
     return textarea instanceof HTMLTextAreaElement ? textarea.value : '';
   });
@@ -257,8 +263,28 @@ try {
 
   await page.goto(`${baseUrl}/experience`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('آیتم تست ذخیره فوری'), { timeout: 20_000 });
+  const firstExperienceVisit = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('[data-media-card="true"][data-media-type="video"]')];
+    const inspect = (id) => {
+      const card = document.querySelector(`[data-media-id="${id}"]`);
+      return { html: !!card?.querySelector('[data-manual-embed="html"]'), src: card?.querySelector('iframe')?.getAttribute('src') || '' };
+    };
+    return { firstId: cards[0]?.getAttribute('data-media-id') || '', generic: inspect('generic-aparat-test'), direct: inspect('experience-aparat-test') };
+  });
+  assert(firstExperienceVisit.generic.html && firstExperienceVisit.direct.html, 'single-platform Aparat HTML was not recognized as an embed on Experience page');
+  assert(firstExperienceVisit.generic.src.includes('/videohash/browsertest/') && !firstExperienceVisit.generic.src.startsWith('<'), 'Aparat HTML was incorrectly assigned to iframe src');
+  assert(firstExperienceVisit.direct.src.includes('/videohash/browsertest/') && !firstExperienceVisit.direct.src.startsWith('<'), 'direct Experience Aparat code was incorrectly assigned to iframe src');
+
+  await page.goto(`${baseUrl}/education?between=1`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.goto(`${baseUrl}/experience?visit=2`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForSelector('[data-media-card="true"][data-media-type="video"]', { timeout: 20_000 });
+  const secondFirstId = await page.$eval('[data-media-card="true"][data-media-type="video"]', (element) => element.getAttribute('data-media-id') || '');
+  assert(firstExperienceVisit.firstId && secondFirstId && firstExperienceVisit.firstId !== secondFirstId, 'first Experience video repeated on consecutive visits');
+
   await page.goto(`${baseUrl}/courses`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('محتوای آموزشی مرتبط') && document.body.innerText.includes('آیتم تست ذخیره فوری'), { timeout: 20_000 });
+  const courseAparat = await page.$eval('[data-media-id="generic-aparat-test"] iframe', (element) => element.getAttribute('src') || '');
+  assert(courseAparat.includes('/videohash/browsertest/') && !courseAparat.startsWith('<'), 'Aparat embed did not connect on the course-introduction section');
 
   assert(runtimeErrors.length === 0, `runtime errors: ${runtimeErrors.join(' | ')}`);
 

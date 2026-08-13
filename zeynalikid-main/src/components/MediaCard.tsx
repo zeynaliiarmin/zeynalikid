@@ -80,15 +80,39 @@ export function pickAudioUrl(item: any, vpnOn: boolean): string {
   return int || ext;  
 }
 
-// رندر محتوای دستی: اگر رشته با تگ HTML شروع شود (iframe/script/div/...و غیره) با dangerouslySetInnerHTML رندر می‌شود،
-// در غیر این صورت (فقط یک URL ساده) بر اساس نوع آیتم (video/audio/image) به تگ مناسب تبدیل می‌شود.
+// کدهای iframe گاهی از پیام‌رسان/ویرایشگر به‌صورت &lt;iframe ...&gt; یا داخل پرانتز ذخیره می‌شوند.
+// قبل از تشخیص HTML آن‌ها را به فرم واقعی برمی‌گردانیم تا هیچ‌وقت کل کد به‌عنوان src یک iframe استفاده نشود.
+function decodeHtmlEntities(value:string):string{
+  const decodeOnce=(input:string)=>input.replace(/&(#x[0-9a-f]+|#\d+|lt|gt|quot|apos|#39|amp|nbsp);/gi,(_,entity:string)=>{
+    const key=String(entity).toLowerCase();
+    if(key==='lt')return '<'; if(key==='gt')return '>'; if(key==='quot')return '"';
+    if(key==='apos'||key==='#39')return "'"; if(key==='amp')return '&'; if(key==='nbsp')return ' ';
+    if(key.startsWith('#x'))return String.fromCodePoint(parseInt(key.slice(2),16));
+    if(key.startsWith('#'))return String.fromCodePoint(parseInt(key.slice(1),10));
+    return _;
+  });
+  let out=String(value||'');
+  for(let i=0;i<3;i++){const next=decodeOnce(out);if(next===out)break;out=next;}
+  return out;
+}
+export function normalizeEmbedCode(code:any):string{
+  let normalized=decodeHtmlEntities(String(code||'')).replace(/^\uFEFF/,'').trim();
+  if(normalized.startsWith('(')&&normalized.endsWith(')')){
+    const inner=normalized.slice(1,-1).trim();
+    if(/^<\s*[a-zA-Z!]/.test(inner))normalized=inner;
+  }
+  return normalized;
+}
+export const isHtmlEmbedCode=(code:any)=>/^<\s*[a-zA-Z!]/.test(normalizeEmbedCode(code));
+
+// رندر محتوای دستی: اگر رشته با تگ HTML شروع شود (iframe/style/div/script و...) با innerHTML رندر می‌شود؛
+// در غیر این صورت (فقط یک URL ساده) بر اساس نوع آیتم به تگ مناسب تبدیل می‌شود.
 export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'video'|'audio'|'image',minHeight?:number}){
-  const trimmed=String(code||'').trim();
-  const looksLikeHtml=/^<\s*[a-zA-Z]/.test(trimmed);
-  if(looksLikeHtml)return <div style={{width:'100%',minHeight:minHeight||(type==='audio'?64:210),overflow:'hidden'}} dangerouslySetInnerHTML={{__html:trimmed}}/>;
-  if(type==='audio')return <audio controls preload="none" src={trimmed} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/>;
-  if(type==='image')return <img src={trimmed} alt="" style={{width:'100%',height:minHeight||210,objectFit:'cover',display:'block'}} draggable={false}/>;
-  return <div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={trimmed} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
+  const normalized=normalizeEmbedCode(code);
+  if(isHtmlEmbedCode(normalized))return <div data-manual-embed="html" style={{width:'100%',minHeight:minHeight||(type==='audio'?64:210),overflow:'hidden'}} dangerouslySetInnerHTML={{__html:normalized}}/>;
+  if(type==='audio')return <audio controls preload="none" src={normalized} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/>;
+  if(type==='image')return <img src={normalized} alt="" style={{width:'100%',height:minHeight||210,objectFit:'cover',display:'block'}} draggable={false}/>;
+  return <div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={normalized} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
 // اصلاح ۱۶: بهبود نمایش عنوان/توضیحات — فونت بزرگ‌تر، سه‌نقطه، دکمه «بیشتر» رنگی
@@ -114,30 +138,31 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:an
  const extAud = item?.externalCode || item?.platforms?.externalAudio || '';
  const intAud = item?.internalCode || item?.platforms?.internalAudio || '';
 
- let hasManual = !!String(item?.manualCode || '').trim();
- let manualCode = item?.manualCode || '';
+ const selectedCode = type === 'image'
+   ? pickImageUrl(item, vpnOn)
+   : type === 'audio'
+   ? pickAudioUrl(item, vpnOn)
+   : pickMediaUrl(item, vpnOn);
+ const normalizedManual = normalizeEmbedCode(item?.manualCode || '');
+ const normalizedSelected = normalizeEmbedCode(selectedCode);
+ let hasManual = !!normalizedManual;
+ let manualCode = normalizedManual;
 
- if (type === 'video' && ytCode && apCode) {
-   hasManual = true;
-   manualCode = pickMediaUrl(item, vpnOn);
- } else if (type === 'image' && extImg && intImg) {
-   hasManual = true;
-   manualCode = pickImageUrl(item, vpnOn);
- } else if (type === 'audio' && extAud && intAud) {
-   hasManual = true;
-   manualCode = pickAudioUrl(item, vpnOn);
+ // کد HTML باید حتی وقتی فقط «آپارات» یا فقط یک پلتفرم پر شده است مستقیماً رندر شود.
+ // قبلاً شرطِ اشتباهِ «هر دو پلتفرم پر باشند» باعث می‌شد کل <style>…<iframe> به src تبدیل و ویدیو خراب شود.
+ const hasDualPlatform = (type === 'video' && !!ytCode && !!apCode)
+   || (type === 'image' && !!extImg && !!intImg)
+   || (type === 'audio' && !!extAud && !!intAud);
+ if(!hasManual && (isHtmlEmbedCode(normalizedSelected) || hasDualPlatform)){
+   hasManual=true;
+   manualCode=normalizedSelected;
  }
 
- const url =
-   type === 'image'
-     ? pickImageUrl(item, vpnOn)
-     : type === 'audio'
-     ? pickAudioUrl(item, vpnOn)
-     : pickMediaUrl(item, vpnOn);
+ const url = normalizedSelected;
 
  const masked=maskPhone(item.phone);
  const imgRestrict = secure ? { draggable: false, onContextMenu: (e: React.MouseEvent) => e.preventDefault() } : {};
- return <div style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+ return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column'}}>
   {type==='video'&&(hasManual
    ?<ManualEmbed code={manualCode} type="video"/>
    :(playing
