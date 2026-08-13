@@ -286,8 +286,8 @@ export function LicensesPage({app}:{app:any}){
              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:14,marginTop:18}}>
                {visible.map((it:any,i:number)=>(
                  <div key={it.id||i} style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:16,overflow:'hidden',boxShadow:T.shadowMedium||'0 6px 20px rgba(0,0,0,.06)'}}>
-                   <div style={{width:'100%',height:170,overflow:'hidden',background:'#00000010'}}>
-                     <img src={it.image} alt={it.title||''} loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:it.objectPosition||'center',aspectRatio:it.aspectRatio||undefined}} onError={(e:any)=>{e.currentTarget.style.display='none'}}/>
+                   <div style={{width:'100%',background:'#00000008',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                     <img src={it.image} alt={it.title||''} loading="lazy" style={{width:'100%',height:'auto',display:'block',objectFit:'contain'}} onError={(e:any)=>{e.currentTarget.style.display='none'}}/>
                    </div>
                    <div style={{padding:'12px 14px'}}>
                      <div style={{fontSize:13,fontWeight:800,color:T.ttl,lineHeight:1.6}}>{it.title||''}</div>
