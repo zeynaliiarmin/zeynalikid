@@ -294,11 +294,16 @@ export default function ImagesManager(props: Props) {
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
               field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" imgStyle={{ width: 200, maxHeight: 120, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
             />
+            <SingleImageEditor
+              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
+              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured}
+              field="trustBox" title="عکس باکس اعتماد (فرمولاسیون / مجوزها)" note="عکس کنار متن اعتمادساز در صفحهٔ اصلی (مثل «فرمولاسیون آلمان»)" imgStyle={{ width: 200, maxHeight: 130, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
+            />
           </>
         )}
 
         {/* منطقهٔ آپلود */}
-        <div
+        <label
           className="zkad-drop"
           style={{ border: `1.5px dashed ${T.brd}`, borderRadius: 14, padding: '18px', textAlign: 'center', cursor: 'pointer', marginBottom: 14, background: T.badge }}
           onDragOver={(e) => e.preventDefault()}
@@ -317,7 +322,7 @@ export default function ImagesManager(props: Props) {
             style={{ display: 'none' }}
             onChange={async (e) => { const f = e.target.files?.[0]; await handleUpload(f); e.target.value = ''; }}
           />
-        </div>
+        </label>
 
         {/* گالری */}
         {items.length === 0 ? (
@@ -486,11 +491,11 @@ function SingleImageEditor({
         />
       )}
       <FrameControls T={T} S={S} value={{ aspectRatio: val.aspectRatio, objectPosition: val.objectPosition }} onChange={(p) => upd(p)} />
-      <div className="zkad-drop" style={{ marginBottom: 8 }} onDragOver={(e) => e.preventDefault()} onDrop={async (e) => { e.preventDefault(); await upload(e.dataTransfer.files?.[0]); }}>
+      <label className="zkad-drop" style={{ marginBottom: 8 }} onDragOver={(e) => e.preventDefault()} onDrop={async (e) => { e.preventDefault(); await upload(e.dataTransfer.files?.[0]); }}>
         <ZkUploadIcon size={22} />
         <span>{busy ? 'در حال آپلود و تبدیل به webp…' : 'آپلود از حافظهٔ گوشی (به webp تبدیل می‌شود)'}</span>
         <input type="file" accept="image/*" onChange={async (e) => { await upload(e.target.files?.[0]); e.target.value = ''; }} />
-      </div>
+      </label>
       <label style={S.lbl}>متن جایگزین (Alt)</label>
       <input style={S.inp} defaultValue={val.alt || ''} onBlur={(e) => upd({ alt: e.target.value })} placeholder="Alt" />
       {val.url && (
