@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReviewSection from './ReviewSection';
+import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 
 interface Course {
@@ -33,7 +34,6 @@ interface Props {
 }
 
 export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries }: Props) {
-  const [activeTab, setActiveTab] = useState<'intro' | 'syllabus' | 'reviews' | 'faq'>('intro');
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -58,10 +58,6 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   // Accordion state for syllabus
   const [openSyllabus, setOpenSyllabus] = useState<number[]>([0]);
 
-  // Tab bar refs for swipe + auto-scroll
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
   const toggleSyllabus = (index: number) => {
     setOpenSyllabus(prev =>
       prev.includes(index)
@@ -70,17 +66,13 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     );
   };
 
-  // Auto-scroll active tab into view (smooth) on change — mobile swipe friendly
-  useEffect(() => {
-    const activeBtn = tabRefs.current[activeTab];
-    const container = tabBarRef.current;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
-      const scrollLeft = activeBtn.offsetLeft - (containerRect.width / 2) + (btnRect.width / 2);
-      container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
-    }
-  }, [activeTab]);
+  const navTopOffset = Number(T?.topbarHeight) || 64;
+  const anchorItems = [
+    { id: 'course-detail-intro', label: isFa ? 'معرفی' : 'Intro' },
+    { id: 'course-detail-syllabus', label: isFa ? 'جزئیات دوره' : 'Course details' },
+    { id: 'course-detail-reviews', label: isFa ? 'نظرات' : 'Reviews' },
+    { id: 'course-detail-faq', label: isFa ? 'پرسش‌های متداول' : 'FAQ' },
+  ];
 
   // Enhanced syllabus with short content for accordion (4 items)
   const syllabusItems = (course.features && course.features.length > 0)
@@ -199,53 +191,18 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>
       </div>
 
-      {/* Tabs — swipeable on mobile (scroll-snap + touch) */}
-      <div 
-        ref={tabBarRef}
-        style={{ 
-          display: 'flex', 
-          borderBottom: '1px solid var(--zk-border)', 
-          paddingInline: 6, 
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
-          gap: 6
-        }}
-      >
-        {(['intro', 'syllabus', 'reviews', 'faq'] as const).map(tab => (
-          <button
-            key={tab}
-            ref={el => { tabRefs.current[tab] = el; }}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '10px 12px',
-              fontWeight: activeTab === tab ? 800 : 500,
-              color: activeTab === tab ? 'var(--zk-primary)' : 'var(--zk-text-muted)',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              borderBottom: activeTab === tab ? '3px solid var(--zk-primary)' : '3px solid transparent',
-              background: 'transparent',
-              whiteSpace: 'nowrap',
-              fontSize: 13.5,
-              minHeight: 46,
-              scrollSnapAlign: 'center',
-              flexShrink: 0,
-              transition: 'all .2s ease',
-            }}
-          >
-            {tab === 'intro' && (isFa ? 'معرفی' : 'Intro')}
-            {tab === 'syllabus' && (isFa ? 'جزئیات دوره' : 'Course Details')}
-            {tab === 'reviews' && (isFa ? 'نظرات' : 'Reviews')}
-            {tab === 'faq' && (isFa ? 'سوالات متداول دوره' : 'FAQ')}
-          </button>
-        ))}
-      </div>
+      <StickyAnchorNav
+        items={anchorItems}
+        topOffset={navTopOffset}
+        maxWidth={960}
+        lang={lang}
+        ariaLabel={isFa ? 'بخش‌های صفحه جزئیات دوره' : 'Course detail sections'}
+      />
 
-      {/* Tab content */}
-      <div style={{ padding: '16px 16px 20px' }}>
-        {activeTab === 'intro' && (
-          <>
+      {/* همهٔ محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
+      <div style={{ padding: '0 16px 24px' }}>
+        <section id="course-detail-intro" data-detail-section style={{ ...detailSectionStyle(navTopOffset), borderTop: 0 }}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'معرفی دوره' : 'Course introduction'}</h2>
             <p style={{ fontSize: 13.5, lineHeight: 1.75, color: 'var(--zk-text)' }}>{desc}</p>
             <div style={{ marginTop: 14 }}>
               <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 13.5 }}>{isFa ? 'ویژگی‌ها' : 'Features'}</div>
@@ -296,10 +253,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 </div>
               </div>
             )}
-          </>
-        )}
+        </section>
 
-        {activeTab === 'syllabus' && (
+        <section id="course-detail-syllabus" data-detail-section style={detailSectionStyle(navTopOffset)}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'جزئیات دوره' : 'Course details'}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {syllabusItems.map((item, i) => {
               const isOpen = openSyllabus.includes(i);
@@ -378,22 +335,23 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               );
             })}
           </div>
-        )}
+        </section>
 
-                {activeTab === 'reviews' && (
+        <section id="course-detail-reviews" data-detail-section style={detailSectionStyle(navTopOffset)}>
           <ReviewSection
             T={{acc:'#0F766E',card:'#fff',brd:'#E5E0D8',mut:'#4B5563',txt:'#1F2937',ttl:'#0F766E',inp:'#fff',soft:'#CCFBF1',btnRadius:14,cardRadius:18,inputRadius:12,neuOut:'0 4px 15px rgba(15,23,42,.06)',neuIn:'inset 2px 2px 5px rgba(15,23,42,.05)',ok:'#14B8A6',err:'#DC2626',warn:'#F59E0B',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)'}}
             lang={isFa ? 'fa' : 'en'}
             courseId={course?.id || ''}
             countries={countries}
           />
-        )}
+        </section>
 
-        {activeTab === 'faq' && (
+        <section id="course-detail-faq" data-detail-section style={detailSectionStyle(navTopOffset)}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</h2>
           <div style={{ display: 'grid', gap: 8 }}>
-            {courseFaqs.length ? courseFaqs.map((item: any) => <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}><summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary><p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p></details>) : <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز سوال متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>}
+            {courseFaqs.length ? courseFaqs.map((item: any) => <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}><summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary><p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p></details>) : <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز پرسش متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>}
           </div>
-        )}
+        </section>
       </div>
 
       {/* Sticky CTA on mobile — safe-area aware */}

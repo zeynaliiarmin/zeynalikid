@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import ReviewSection from './ReviewSection';
+import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 
 interface Product {
   id: string;
@@ -29,7 +30,6 @@ interface Props {
 }
 
 export default function ProductDetailView({ product, T, lang, onClose, onAddToCart, onConsult, countries }: Props) {
-  const [activeTab, setActiveTab] = useState<'intro' | 'specs' | 'reviews' | 'faq'>('intro');
   const isFa = lang === 'fa';
 
   const name = isFa ? (product.name || product.title || '') : (product.title || product.name || '');
@@ -39,19 +39,15 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
   const discounted = product.discountedPrice || 0;
   const hasDiscount = discounted > 0 && priceNum > discounted;
 
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    const activeBtn = tabRefs.current[activeTab];
-    const container = tabBarRef.current;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
-      const scrollLeft = activeBtn.offsetLeft - (containerRect.width / 2) + (btnRect.width / 2);
-      container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
-    }
-  }, [activeTab]);
+  // Product details are shown in a full-screen scrolling modal. The shared
+  // navigation automatically discovers that scroll container.
+  const navTopOffset = 0;
+  const anchorItems = [
+    { id: 'product-detail-intro', label: isFa ? 'معرفی' : 'Intro' },
+    { id: 'product-detail-specs', label: isFa ? 'مشخصات' : 'Specifications' },
+    { id: 'product-detail-reviews', label: isFa ? 'نظرات' : 'Reviews' },
+    { id: 'product-detail-faq', label: isFa ? 'پرسش‌های متداول' : 'FAQ' },
+  ];
 
   const features = product.features?.length
     ? product.features
@@ -136,44 +132,19 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         </div>
       </div>
 
-      {/* Swipeable Tabs */}
-      <div
-        ref={tabBarRef}
-        style={{ display: 'flex', borderBottom: '1px solid var(--zk-border)', paddingInline: 4, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
-      >
-        {(['intro', 'specs', 'reviews', 'faq'] as const).map(tab => (
-          <button
-            key={tab}
-            ref={el => { tabRefs.current[tab] = el; }}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '12px 18px',
-              fontWeight: activeTab === tab ? 800 : 500,
-              color: activeTab === tab ? 'var(--zk-primary)' : 'var(--zk-text-muted)',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              borderBottom: activeTab === tab ? '3px solid var(--zk-primary)' : '3px solid transparent',
-              background: 'transparent',
-              whiteSpace: 'nowrap',
-              fontSize: 13.5,
-              minHeight: 46,
-              scrollSnapAlign: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {tab === 'intro' && (isFa ? 'معرفی' : 'Intro')}
-            {tab === 'specs' && (isFa ? 'مشخصات' : 'Specs')}
-            {tab === 'reviews' && (isFa ? 'نظرات' : 'Reviews')}
-            {tab === 'faq' && (isFa ? 'سوالات متداول' : 'FAQ')}
-          </button>
-        ))}
-      </div>
+      <StickyAnchorNav
+        items={anchorItems}
+        topOffset={navTopOffset}
+        maxWidth="100%"
+        zIndex={10020}
+        lang={lang}
+        ariaLabel={isFa ? 'بخش‌های صفحه جزئیات محصول' : 'Product detail sections'}
+      />
 
-      {/* Tab content */}
-      <div style={{ padding: '16px 16px 20px' }}>
-        {activeTab === 'intro' && (
-          <>
+      {/* همهٔ محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
+      <div style={{ padding: '0 16px 24px' }}>
+        <section id="product-detail-intro" data-detail-section style={{ ...detailSectionStyle(navTopOffset), borderTop: 0 }}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'معرفی محصول' : 'Product introduction'}</h2>
             <p style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--zk-text)' }}>{desc || (isFa ? 'این محصول همراهی تخصصی برای والدین است تا برنامه‌های تغذیه و رشد را به شکلی ساده و علمی دنبال کنند.' : 'This product provides calm, expert support for parents following personalized nutrition and growth plans.')}</p>
 
             {/* Features */}
@@ -198,10 +169,10 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
             <div style={{ marginTop: 14, padding: '12px 15px', background: '#FEF3C7', border: '1px solid #F59E0B33', borderRadius: 14, fontSize: 12.5, lineHeight: 1.55, color: '#713F12' }}>
               {isFa ? 'نکته مهم: معرفی این محصول جایگزین مشاوره نمی‌باشد و تهیه این محصول جایگزین دوره مربوطه نیست. این محصول صرفاً یکی از محصولات ما برای معرفی می‌باشد، لطفاً برای اطلاعات بیشتر در مورد دوره‌ها با ضربه زدن روی گزینه «مشاوره رایگان» درخواست مشاوره ثبت کنید.' : 'Important: This product presentation is not a substitute for consultation, and obtaining it does not replace the corresponding course. This is simply one of our products showcased for informational purposes. For more details about our courses, please tap "Free consult" to request a consultation.'}
             </div>
-          </>
-        )}
+        </section>
 
-        {activeTab === 'specs' && (
+        <section id="product-detail-specs" data-detail-section style={detailSectionStyle(navTopOffset)}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'مشخصات' : 'Specifications'}</h2>
           <div style={{ display: 'grid', gap: 10, fontSize: 13.5 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid var(--zk-border)' }}>
               <span>{isFa ? 'نوع محصول' : 'Type'}</span><span>{product.category || (isFa ? 'دوره شخصی‌سازی‌شده' : 'Personalized Plan')}</span>
@@ -209,9 +180,9 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
             {product.weight && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{isFa ? 'وزن / حجم' : 'Weight / Size'}</span><span>{product.weight}</span></div>}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{isFa ? 'پشتیبانی' : 'Support'}</span><span>{isFa ? '۷ روزه' : '7 days'}</span></div>
           </div>
-        )}
+        </section>
 
-        {activeTab === 'reviews' && (
+        <section id="product-detail-reviews" data-detail-section style={detailSectionStyle(navTopOffset)}>
           <ReviewSection
             T={{
               acc: '#0F766E',
@@ -237,13 +208,14 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
             placement="product_detail"
             countries={countries}
           />
-        )}
+        </section>
 
-        {activeTab === 'faq' && (
+        <section id="product-detail-faq" data-detail-section style={detailSectionStyle(navTopOffset)}>
+          <h2 style={detailSectionTitleStyle}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</h2>
           <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>
-            {isFa ? 'سوالات متداول این محصول در بخش پرسش‌های متداول سایت موجود است.' : 'Product FAQs are available on the main FAQ page.'}
+            {isFa ? 'پرسش‌های متداول این محصول در بخش پرسش‌های متداول سایت موجود است.' : 'Product FAQs are available on the main FAQ page.'}
           </div>
-        )}
+        </section>
       </div>
 
       {/* Sticky CTA — safe-area */}
