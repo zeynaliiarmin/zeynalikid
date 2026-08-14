@@ -996,12 +996,12 @@ export default function ReviewsEditor({ app }: { app: any }) {
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>شماره کامل کاربر / شماره ماسک‌شده دستی:</label>
-                      <input dir="ltr" style={{ ...S.inp, textAlign: 'left' }} value={currentEdit.phone} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, phone: e.target.value } })} placeholder="09193123469 یا 09193xxxx69" />
+                      <input key={`review-phone-${r.id}-${r.phone || ''}`} dir="ltr" style={{ ...S.inp, textAlign: 'left' }} defaultValue={currentEdit.phone} onBlur={(e) => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], phone: e.target.value } }))} placeholder="09193123469 یا 09193xxxx69" />
                     </div>
                   </div>
                   <div style={{ marginBottom: 10 }}>
                     <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>تاریخ ثبت هجری شمسی:</label>
-                    <input dir="ltr" inputMode="numeric" style={{ ...S.inp, textAlign: 'left' }} value={currentEdit.createdAt} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, createdAt: e.target.value } })} placeholder="1404/05/23" />
+                    <input key={`review-date-${r.id}-${r.created_at || ''}`} dir="ltr" inputMode="numeric" style={{ ...S.inp, textAlign: 'left' }} defaultValue={currentEdit.createdAt} onBlur={(e) => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], createdAt: e.target.value } }))} placeholder="1404/05/23" />
                   </div>
 
                   {/* Editable Comment Textarea */}
