@@ -223,6 +223,11 @@ export async function adminFetchReviews(opts: {
   };
 }
 
+export async function adminCreateReview(review: Partial<ReviewItem>): Promise<ReviewItem> {
+  const body = await callAdminApi('create_review', review);
+  return body.review as ReviewItem;
+}
+
 export async function adminApproveReview(id: number): Promise<void> {
   await callAdminApi('update_review', { id, status: 'approved' });
 }

@@ -25,9 +25,10 @@ interface Props {
   onClose?: () => void;
   onAddToCart?: () => void;
   onConsult?: () => void;
+  countries?: any[];
 }
 
-export default function ProductDetailView({ product, T, lang, onClose, onAddToCart, onConsult }: Props) {
+export default function ProductDetailView({ product, T, lang, onClose, onAddToCart, onConsult, countries }: Props) {
   const [activeTab, setActiveTab] = useState<'intro' | 'specs' | 'reviews' | 'faq'>('intro');
   const isFa = lang === 'fa';
 
@@ -233,7 +234,8 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
             }}
             lang={isFa ? 'fa' : 'en'}
             courseId={product?.id || ''}
-            placement="course_detail"
+            placement="product_detail"
+            countries={countries}
           />
         )}
 

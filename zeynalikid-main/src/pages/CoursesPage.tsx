@@ -125,6 +125,7 @@ export default function CoursesPage({ app }: { app: any }) {
             course={selectedCourse}
             T={T}
             lang={lang}
+            countries={cfg.countryCodes}
             onClose={closeDetail}
             onRegister={() => {
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)

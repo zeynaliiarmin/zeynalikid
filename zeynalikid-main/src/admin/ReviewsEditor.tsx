@@ -6,7 +6,6 @@ import {
   rejectReview,
   deleteReview,
   updateReview,
-  submitReview,
   bulkApproveReviews,
   bulkRejectReviews,
   bulkDeleteReviews,
@@ -25,6 +24,15 @@ import {
   ZkResetIcon,
   ZkEyeIcon,
 } from './adminIcons';
+import {
+  formatPersianReviewDate,
+  manualMaskedPhoneTemplate,
+  persianReviewDateToIso,
+  reviewCountryFlag,
+  sanitizeManualMaskedPhone,
+  todayPersianReviewDate,
+} from '../utils/reviewPresentation';
+import { adminCreateReview } from '../lib/adminApi';
 
 export default function ReviewsEditor({ app }: { app: any }) {
   const { T, S, AdminBtn, Box, cfg } = app;
@@ -52,6 +60,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
         comment: string;
         placements: string[];
         courseIds: string[];
+        phone: string;
+        phoneCountry: string;
+        createdAt: string;
       }
     >
   >({});
@@ -64,13 +75,16 @@ export default function ReviewsEditor({ app }: { app: any }) {
     rating: 5,
     comment: '',
     status: 'approved' as 'approved' | 'pending',
-    placements: ['home', 'courses', 'course_detail'],
+    placements: ['course_detail'] as string[],
     courseIds: [] as string[],
+    phoneCountry: '+98',
+    phone: manualMaskedPhoneTemplate('+98'),
+    createdAt: todayPersianReviewDate(),
   });
 
   // مودال تغییر دسته‌جمعی محل‌های نمایش (Bulk Placements Modal)
   const [bulkPlacementModalOpen, setBulkPlacementModalOpen] = useState(false);
-  const [bulkTargetPlacements, setBulkTargetPlacements] = useState<string[]>(['home', 'courses', 'course_detail']);
+  const [bulkTargetPlacements, setBulkTargetPlacements] = useState<string[]>(['course_detail']);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -89,7 +103,13 @@ export default function ReviewsEditor({ app }: { app: any }) {
           courseId: r.course_id || 'عمومی',
           rating: r.rating || 5,
           comment: r.comment || '',
-          placements: r.placements && r.placements.length > 0 ? r.placements : ['home', 'courses', 'course_detail'],
+          placements: (r.placements || []).filter((place) => place === 'course_detail' || place === 'product_detail').length
+            ? (r.placements || []).filter((place) => place === 'course_detail' || place === 'product_detail')
+            : ['course_detail'],
+          courseIds: Array.isArray(r.course_ids) ? r.course_ids : [],
+          phone: r.phone || '',
+          phoneCountry: r.phone_country || '+98',
+          createdAt: formatPersianReviewDate(r.created_at, false),
         };
       });
       setEditMap(map);
@@ -104,31 +124,35 @@ export default function ReviewsEditor({ app }: { app: any }) {
     load();
   }, []);
 
-  // گزینه‌های دوره با شناسهٔ واقعی (id) — نه عنوان — تا نظر دقیقاً به همان دوره در سایت وصل شود
-  const coursesOptions = useMemo(() => {
-    const list: { id: string; title: string }[] = [{ id: 'عمومی', title: 'عمومی' }];
+  const countries = useMemo(() => Array.isArray(cfg?.countryCodes) ? cfg.countryCodes : [], [cfg?.countryCodes]);
+  // دوره‌ها و محصولات تنها مقصدهای واقعی ReviewSection هستند.
+  const targetOptions = useMemo(() => {
+    const list: { id: string; title: string; type: 'course' | 'product' | 'general' }[] = [{ id: 'عمومی', title: 'عمومی', type: 'general' }];
     const seen = new Set<string>(['عمومی']);
-    (cfg?.courseTabs || []).forEach((t: any) => {
-      (t.courses || []).forEach((c: any) => {
-        const id = c.id ? String(c.id) : '';
-        if (id && c.title && !seen.has(id)) {
+    (cfg?.courseTabs || []).forEach((tab: any) => {
+      (tab.courses || []).forEach((course: any) => {
+        const id = course.id ? String(course.id) : '';
+        if (id && course.title && !seen.has(id)) {
           seen.add(id);
-          list.push({ id, title: c.title });
+          list.push({ id, title: course.title, type: 'course' });
         }
       });
     });
+    const products = cfg?.products?.list || cfg?.products?.items || [];
+    products.forEach((product: any) => {
+      const id = product.id ? String(product.id) : '';
+      const title = product.name || product.title;
+      if (id && title && !seen.has(id)) {
+        seen.add(id);
+        list.push({ id, title, type: 'product' });
+      }
+    });
     return list;
   }, [cfg]);
-  const courseTitle = (id?: string) => {
+  const targetTitle = (id?: string) => {
     if (!id) return 'عمومی';
-    const found = coursesOptions.find((c) => c.id === id);
+    const found = targetOptions.find((option) => option.id === id);
     return found ? found.title : id;
-  };
-  const maskPhone = (p?: string) => {
-    const d = String(p || '').replace(/[۰-۹]/g, (c) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c).toString()).replace(/[٠-٩]/g, (c) => '٠١٢٣٤٥٦٧٨٩'.indexOf(c).toString()).replace(/\D/g, '');
-    if (d.length < 7) return p || '';
-    const tail = d.slice(-3);
-    return d.startsWith('98') ? `+98(xxxxxx)${tail}` : `09(xxxxxx)${tail}`;
   };
 
   const pendingCount = reviews.filter((r) => r.status === 'pending').length;
@@ -141,21 +165,16 @@ export default function ReviewsEditor({ app }: { app: any }) {
         if (statusFilter !== 'all' && r.status !== statusFilter) return false;
         if (courseFilter !== 'all' && (r.course_id || 'عمومی') !== courseFilter) return false;
         if (placementFilter !== 'all') {
-          const currentPlaces =
-            editMap[r.id]?.placements || r.placements || ['home', 'courses', 'course_detail'];
-          if (
-            !currentPlaces.includes(placementFilter) &&
-            !currentPlaces.includes('all_places')
-          ) {
-            return false;
-          }
+          const currentPlaces = editMap[r.id]?.placements || r.placements || ['course_detail'];
+          if (!currentPlaces.includes(placementFilter as any)) return false;
         }
         if (search.trim()) {
           const kw = search.trim().toLowerCase();
           return (
             (r.reviewer_name || '').toLowerCase().includes(kw) ||
             (r.comment || '').toLowerCase().includes(kw) ||
-            courseTitle(r.course_id).toLowerCase().includes(kw)
+            (r.phone || '').toLowerCase().includes(kw) ||
+            targetTitle(r.course_id).toLowerCase().includes(kw)
           );
         }
         return true;
@@ -215,50 +234,22 @@ export default function ReviewsEditor({ app }: { app: any }) {
   };
 
   const handleTogglePlacement = (reviewId: number, placementId: string) => {
-    const current = editMap[reviewId] || {
-      name: '',
-      courseId: 'عمومی',
-      rating: 5,
-      comment: '',
-      placements: ['home', 'courses', 'course_detail'],
-      courseIds: [],
-    };
-
-    let updatedPlaces = [...(current.placements || [])];
-
-    if (placementId === 'all_places') {
-      if (updatedPlaces.includes('all_places')) {
-        updatedPlaces = ['home', 'courses', 'course_detail'];
-      } else {
-        updatedPlaces = ['all_places', ...REVIEW_PLACEMENT_OPTIONS.map((p) => p.id)];
-      }
-    } else {
-      if (updatedPlaces.includes(placementId)) {
-        updatedPlaces = updatedPlaces.filter((p) => p !== placementId && p !== 'all_places');
-      } else {
-        updatedPlaces.push(placementId);
-      }
-    }
-
-    setEditMap({
-      ...editMap,
-      [reviewId]: {
-        ...current,
-        placements: updatedPlaces,
-      },
-    });
+    const current = editMap[reviewId];
+    if (!current) return;
+    const places = current.placements || [];
+    const updatedPlaces = places.includes(placementId)
+      ? places.filter((place) => place !== placementId)
+      : [...places, placementId];
+    setEditMap((previous) => ({
+      ...previous,
+      [reviewId]: { ...current, placements: updatedPlaces },
+    }));
   };
 
   // انتخاب چنددوره‌ای برای نمایش نظر در دوره‌های خاص
   const handleToggleCourse = (reviewId: number, courseId: string) => {
-    const current = editMap[reviewId] || {
-      name: '',
-      courseId: 'عمومی',
-      rating: 5,
-      comment: '',
-      placements: ['home', 'courses', 'course_detail'],
-      courseIds: [],
-    };
+    const current = editMap[reviewId];
+    if (!current) return;
     const cur = Array.isArray(current.courseIds) ? current.courseIds : [];
     const updated = cur.includes(courseId)
       ? cur.filter((c: string) => c !== courseId)
@@ -277,14 +268,27 @@ export default function ReviewsEditor({ app }: { app: any }) {
       return;
     }
 
+    const createdAt = persianReviewDateToIso(edit.createdAt);
+    if (!createdAt) {
+      alert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
+      return;
+    }
+    if (!edit.placements.length) {
+      alert('حداقل یکی از دو محل «جزئیات دوره» یا «جزئیات محصول» را انتخاب کنید.');
+      return;
+    }
+
     try {
       await updateReview(r.id, {
         reviewer_name: edit.name.trim(),
         course_id: edit.courseId,
         rating: edit.rating,
         comment: edit.comment.trim(),
-        placements: edit.placements && edit.placements.length > 0 ? edit.placements : ['home', 'courses', 'course_detail'],
+        placements: edit.placements as any,
         course_ids: Array.isArray(edit.courseIds) ? edit.courseIds : [],
+        phone: edit.phone.trim(),
+        phone_country: edit.phoneCountry,
+        created_at: createdAt,
       });
       await load();
       showToast('تغییرات نظر و محل‌های نمایش با موفقیت ذخیره شد.');
@@ -346,6 +350,10 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
   const handleApplyBulkPlacements = async () => {
     if (!selectedIds.length) return;
+    if (!bulkTargetPlacements.length) {
+      alert('حداقل یکی از دو محل نمایش را انتخاب کنید.');
+      return;
+    }
     setLoading(true);
     try {
       await bulkUpdateReviewPlacements(selectedIds, bulkTargetPlacements);
@@ -386,20 +394,33 @@ export default function ReviewsEditor({ app }: { app: any }) {
       alert('لطفاً متن نظر را وارد نمایید.');
       return;
     }
+    if (!/^\d{5}x{4}\d{2}$/.test(newReview.phone)) {
+      alert('شماره دستی باید شامل پنج رقم اول، چهار x و دو رقم آخر باشد.');
+      return;
+    }
+    const createdAt = persianReviewDateToIso(newReview.createdAt);
+    if (!createdAt) {
+      alert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
+      return;
+    }
+    if (!newReview.placements.length) {
+      alert('حداقل یک محل نمایش را انتخاب کنید.');
+      return;
+    }
 
     try {
-      const created = await submitReview(
-        newReview.courseId,
-        newReview.name.trim(),
-        newReview.rating,
-        newReview.comment.trim(),
-        newReview.placements,
-        undefined,
-        newReview.courseIds
-      );
-      if (newReview.status === 'approved' && created?.id) {
-        await approveReview(created.id);
-      }
+      await adminCreateReview({
+        course_id: newReview.courseId,
+        reviewer_name: newReview.name.trim(),
+        rating: newReview.rating,
+        comment: newReview.comment.trim(),
+        status: newReview.status,
+        placements: newReview.placements,
+        phone: newReview.phone,
+        phone_country: newReview.phoneCountry,
+        course_ids: newReview.courseIds,
+        created_at: createdAt,
+      });
       await load();
       setAddModalOpen(false);
       setNewReview({
@@ -408,8 +429,11 @@ export default function ReviewsEditor({ app }: { app: any }) {
         rating: 5,
         comment: '',
         status: 'approved',
-        placements: ['home', 'courses', 'course_detail'],
+        placements: ['course_detail'],
         courseIds: [],
+        phoneCountry: '+98',
+        phone: manualMaskedPhoneTemplate('+98'),
+        createdAt: todayPersianReviewDate(),
       });
       showToast('نظر جدید با موفقیت ثبت و در بخش‌های تعیین‌شده منتشر گردید.');
     } catch (err) {
@@ -424,14 +448,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
     return { background: '#FEF3C7', color: '#92400E', label: '⏳ در انتظار بررسی' };
   };
 
-  const fmtDate = (dString?: string) => {
-    if (!dString) return '—';
-    try {
-      return new Date(dString).toLocaleDateString('fa-IR');
-    } catch {
-      return dString;
-    }
-  };
+  const fmtDate = (dString?: string) => formatPersianReviewDate(dString, true);
 
   return (
     <div>
@@ -580,10 +597,10 @@ export default function ReviewsEditor({ app }: { app: any }) {
             }}
             style={S.inp}
           >
-            <option value="all">همه دوره‌ها</option>
-            {coursesOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                دوره: {c.title}
+            <option value="all">همه دوره‌ها و محصولات</option>
+            {targetOptions.map((target) => (
+              <option key={target.id} value={target.id}>
+                {target.type === 'product' ? 'محصول' : target.type === 'course' ? 'دوره' : 'عمومی'}: {target.title}
               </option>
             ))}
           </select>
@@ -810,8 +827,11 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 courseId: r.course_id || 'عمومی',
                 rating: r.rating || 5,
                 comment: r.comment || '',
-                placements: r.placements && r.placements.length > 0 ? r.placements : ['home', 'courses', 'course_detail'],
-                courseIds: Array.isArray((r as any).course_ids) ? (r as any).course_ids : [],
+                placements: r.placements && r.placements.length > 0 ? r.placements : ['course_detail'],
+                courseIds: Array.isArray(r.course_ids) ? r.course_ids : [],
+                phone: r.phone || '',
+                phoneCountry: r.phone_country || '+98',
+                createdAt: formatPersianReviewDate(r.created_at, false),
               };
 
               return (
@@ -876,7 +896,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       </span>
                       <span style={{ fontSize: 11.5, color: T.mut }}>تاریخ: {fmtDate(r.created_at)}</span>
                       <span style={{ fontSize: 11.5, color: T.mut, fontFamily: 'monospace' }}>#{r.id}</span>
-                      {r.phone && <span style={{ fontSize: 11.5, color: T.mut }} title="فقط برای پنل ادمین — در سایت نمایش داده نمی‌شود">📞 {maskPhone(r.phone)}</span>}
+                      {r.phone && <span dir="ltr" style={{ fontSize: 11.5, color: T.mut, fontFamily: 'monospace' }} title="شماره کامل فقط در پنل مدیریت قابل مشاهده است">{reviewCountryFlag(r.phone_country, countries)} 📞 {r.phone}</span>}
                     </div>
 
                     {/* Interactive Star Rating Selector & Single Download */}
@@ -916,7 +936,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
                   {/* بخش‌های ویرایشی — در تب باز/بسته (کم‌استفاده‌تر) تا کارت کوتاه بماند */}
                   <details className="zkad-rev-collapse">
-                    <summary>✏️ ویرایش نام، دوره و متن نظر</summary>
+                    <summary>✏️ ویرایش نام، مقصد، شماره، تاریخ و متن نظر</summary>
                     <div>
                   {/* Inline Editable Fields: Name & Course */}
                   <div
@@ -943,7 +963,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
                     <div>
                       <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>
-                        دوره یا بخش مربوطه:
+                        دوره یا محصول مربوطه:
                       </label>
                       <select
                         style={S.inp}
@@ -955,17 +975,33 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           });
                         }}
                       >
-                        {coursesOptions.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.title}
+                        {targetOptions.map((target) => (
+                          <option key={target.id} value={target.id}>
+                            {target.type === 'product' ? 'محصول' : target.type === 'course' ? 'دوره' : 'عمومی'} — {target.title}
                           </option>
                         ))}
-                        {/* اگر مقدار قدیمی (مثلاً عنوان) در گزینه‌ها نبود، همان را نگه دار تا قابل مشاهده باشد */}
-                        {!coursesOptions.some((c) => c.id === currentEdit.courseId) && currentEdit.courseId && (
-                          <option value={currentEdit.courseId}>{courseTitle(currentEdit.courseId)}</option>
+                        {!targetOptions.some((target) => target.id === currentEdit.courseId) && currentEdit.courseId && (
+                          <option value={currentEdit.courseId}>{targetTitle(currentEdit.courseId)}</option>
                         )}
                       </select>
                     </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, .7fr) minmax(0, 1.3fr)', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>کشور شماره:</label>
+                      <select style={S.inp} value={currentEdit.phoneCountry} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, phoneCountry: e.target.value } })}>
+                        {countries.map((country: any) => <option key={country.id || country.code} value={country.code}>{reviewCountryFlag(country.code, countries)} {country.name} ({country.code})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>شماره کامل کاربر / شماره ماسک‌شده دستی:</label>
+                      <input dir="ltr" style={{ ...S.inp, textAlign: 'left' }} value={currentEdit.phone} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, phone: e.target.value } })} placeholder="09193123469 یا 09193xxxx69" />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>تاریخ ثبت هجری شمسی:</label>
+                    <input dir="ltr" inputMode="numeric" style={{ ...S.inp, textAlign: 'left' }} value={currentEdit.createdAt} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, createdAt: e.target.value } })} placeholder="1404/05/23" />
                   </div>
 
                   {/* Editable Comment Textarea */}
@@ -1025,11 +1061,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
 
                     <div className="zkad-rev-place-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {REVIEW_PLACEMENT_OPTIONS.map((opt) => {
-                        const isAll = opt.id === 'all_places';
-                        const isPlaced =
-                          (currentEdit.placements || []).includes(opt.id) ||
-                          (!isAll && (currentEdit.placements || []).includes('all_places'));
-
+                        const isPlaced = (currentEdit.placements || []).includes(opt.id);
                         return (
                           <button
                             key={opt.id}
@@ -1059,14 +1091,14 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       })}
                     </div>
 
-                    {/* انتخاب چنددوره‌ای: نمایش این نظر در دوره‌های خاص */}
+                    {/* انتخاب چندمقصدی: دوره‌ها و محصولات واقعی */}
                     <div style={{ marginTop: 10, borderTop: `1px dashed ${T.brd || '#E5E0D8'}`, paddingTop: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                        <label style={{ fontSize: 12, color: T.ttl || '#0F766E', fontWeight: 800, margin: 0 }}>🎯 نمایش این نظر در دوره‌های خاص:</label>
-                        <span style={{ fontSize: 10.5, color: T.mut }}>(چند انتخابی — اگر هیچ دوره‌ای انتخاب نشود، فقط «دوره یا بخش مربوطه» اعمال می‌شود)</span>
+                        <label style={{ fontSize: 12, color: T.ttl || '#0F766E', fontWeight: 800, margin: 0 }}>🎯 نمایش در دوره‌ها یا محصولات خاص:</label>
+                        <span style={{ fontSize: 10.5, color: T.mut }}>(چند انتخابی — فقط جزئیات موارد انتخاب‌شده)</span>
                       </div>
                       <div className="zkad-rev-course-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {coursesOptions.filter((c) => c.id !== 'عمومی').map((c) => {
+                        {targetOptions.filter((target) => target.id !== 'عمومی').map((c) => {
                           const on = Array.isArray(currentEdit.courseIds) && currentEdit.courseIds.includes(c.id);
                           return (
                             <button
@@ -1271,6 +1303,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 <input
                   type="text"
                   required
+                  data-testid="manual-review-name"
                   style={S.inp}
                   value={newReview.name}
                   onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
@@ -1278,18 +1311,60 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 />
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, .75fr) minmax(0, 1.25fr)', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>کشور شماره تماس</label>
+                  <select
+                    style={S.inp}
+                    value={newReview.phoneCountry}
+                    onChange={(e) => {
+                      const phoneCountry = e.target.value;
+                      setNewReview({ ...newReview, phoneCountry, phone: manualMaskedPhoneTemplate(phoneCountry) });
+                    }}
+                  >
+                    {countries.map((country: any) => <option key={country.id || country.code} value={country.code}>{reviewCountryFlag(country.code, countries)} {country.name} ({country.code})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>شماره نمایشی دستی</label>
+                  <input
+                    dir="ltr"
+                    inputMode="numeric"
+                    data-testid="manual-review-phone"
+                    style={{ ...S.inp, textAlign: 'left', fontFamily: 'monospace' }}
+                    value={newReview.phone}
+                    onChange={(e) => setNewReview({ ...newReview, phone: sanitizeManualMaskedPhone(e.target.value) })}
+                    placeholder={manualMaskedPhoneTemplate(newReview.phoneCountry)}
+                  />
+                  <small style={{ display: 'block', color: T.mut, fontSize: 10.5, marginTop: 4 }}>در یک فیلد: پنج رقم اول و دو رقم آخر را ویرایش کنید؛ چهار x میانی ثابت می‌ماند.</small>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>تاریخ ثبت نظر (هجری شمسی)</label>
+                <input
+                  dir="ltr"
+                  inputMode="numeric"
+                  data-testid="manual-review-date"
+                  style={{ ...S.inp, textAlign: 'left' }}
+                  value={newReview.createdAt}
+                  onChange={(e) => setNewReview({ ...newReview, createdAt: e.target.value })}
+                  placeholder="1404/05/23"
+                />
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>
-                  دوره مربوطه
+                  دوره یا محصول مربوطه
                 </label>
                 <select
                   style={S.inp}
                   value={newReview.courseId}
                   onChange={(e) => setNewReview({ ...newReview, courseId: e.target.value })}
                 >
-                  {coursesOptions.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
+                  {targetOptions.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.type === 'product' ? 'محصول' : target.type === 'course' ? 'دوره' : 'عمومی'} — {target.title}
                     </option>
                   ))}
                 </select>
@@ -1307,24 +1382,12 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => {
-                          if (opt.id === 'all_places') {
-                            if (isSelected) {
-                              setNewReview({ ...newReview, placements: ['home', 'courses', 'course_detail'] });
-                            } else {
-                              setNewReview({ ...newReview, placements: ['all_places', ...REVIEW_PLACEMENT_OPTIONS.map((p) => p.id)] });
-                            }
-                          } else {
-                            if (isSelected) {
-                              setNewReview({
-                                ...newReview,
-                                placements: newReview.placements.filter((p) => p !== opt.id && p !== 'all_places'),
-                              });
-                            } else {
-                              setNewReview({ ...newReview, placements: [...newReview.placements, opt.id] });
-                            }
-                          }
-                        }}
+                        onClick={() => setNewReview({
+                          ...newReview,
+                          placements: isSelected
+                            ? newReview.placements.filter((place) => place !== opt.id)
+                            : [...newReview.placements, opt.id],
+                        })}
                         style={{
                           padding: '5px 12px',
                           borderRadius: 20,
@@ -1347,13 +1410,13 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 </div>
               </div>
 
-              {/* انتخاب چنددوره‌ای: نمایش نظر در دوره‌های خاص (در هنگام افزودن) */}
+              {/* انتخاب مقصدهای واقعی جزئیات */}
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.ttl || '#0F766E', marginBottom: 6 }}>
-                  🎯 نمایش در دوره‌های خاص (چند انتخابی):
+                  🎯 نمایش در دوره‌ها یا محصولات خاص (چند انتخابی):
                 </label>
                 <div className="zkad-rev-course-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {coursesOptions.filter((c) => c.id !== 'عمومی').map((c) => {
+                  {targetOptions.filter((target) => target.id !== 'عمومی').map((c) => {
                     const on = newReview.courseIds.includes(c.id);
                     return (
                       <button
@@ -1388,7 +1451,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                   })}
                 </div>
                 <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 4 }}>
-                  اگر هیچ دوره‌ای انتخاب نشود، فقط «دوره مربوطه» بالایی اعمال می‌شود.
+                  اگر موردی انتخاب نشود، فقط «دوره یا محصول مربوطه» بالایی اعمال می‌شود.
                 </small>
               </div>
 
@@ -1428,6 +1491,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 <textarea
                   required
                   rows={4}
+                  data-testid="manual-review-comment"
                   style={{ ...S.ta, minHeight: 85 }}
                   value={newReview.comment}
                   onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
@@ -1464,6 +1528,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
               <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                 <button
                   type="submit"
+                  data-testid="manual-review-submit"
                   style={{
                     flex: 1,
                     minHeight: 46,
@@ -1597,21 +1662,10 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {
-                            if (opt.id === 'all_places') {
-                              if (isChecked) {
-                                setBulkTargetPlacements(['home', 'courses', 'course_detail']);
-                              } else {
-                                setBulkTargetPlacements(['all_places', ...REVIEW_PLACEMENT_OPTIONS.map((p) => p.id)]);
-                              }
-                            } else {
-                              if (isChecked) {
-                                setBulkTargetPlacements(bulkTargetPlacements.filter((p) => p !== opt.id && p !== 'all_places'));
-                              } else {
-                                setBulkTargetPlacements([...bulkTargetPlacements, opt.id]);
-                              }
-                            }
-                          }}
+                          onChange={() => setBulkTargetPlacements(isChecked
+                            ? bulkTargetPlacements.filter((place) => place !== opt.id)
+                            : [...bulkTargetPlacements, opt.id]
+                          )}
                           style={{ width: 16, height: 16, cursor: 'pointer' }}
                         />
                         <span style={{ fontSize: 13, fontWeight: isChecked ? 800 : 600, color: isChecked ? opt.color : T.txt }}>

@@ -29,9 +29,10 @@ interface Props {
   onClose?: () => void;
   onRegister?: () => void;
   onConsult?: () => void;
+  countries?: any[];
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries }: Props) {
   const [activeTab, setActiveTab] = useState<'intro' | 'syllabus' | 'reviews' | 'faq'>('intro');
   const isFa = lang === 'fa';
   const cfg: any = (() => {
@@ -384,6 +385,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             T={{acc:'#0F766E',card:'#fff',brd:'#E5E0D8',mut:'#4B5563',txt:'#1F2937',ttl:'#0F766E',inp:'#fff',soft:'#CCFBF1',btnRadius:14,cardRadius:18,inputRadius:12,neuOut:'0 4px 15px rgba(15,23,42,.06)',neuIn:'inset 2px 2px 5px rgba(15,23,42,.05)',ok:'#14B8A6',err:'#DC2626',warn:'#F59E0B',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)'}}
             lang={isFa ? 'fa' : 'en'}
             courseId={course?.id || ''}
+            countries={countries}
           />
         )}
 

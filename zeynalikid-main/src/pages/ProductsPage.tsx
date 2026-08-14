@@ -161,6 +161,7 @@ export default function ProductsPage({ app }: { app: any }) {
               product={selectedProduct}
               T={T}
               lang={lang}
+              countries={cfg.countryCodes}
               onClose={closeDetail}
               onAddToCart={() => {
                 closeDetail();

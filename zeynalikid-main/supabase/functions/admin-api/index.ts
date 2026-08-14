@@ -473,19 +473,58 @@ async function listReviews(body: any, origin: string): Promise<Response> {
   return ok({ reviews: data ?? [], total: count ?? 0, page, limit }, origin);
 }
 
+async function createReview(body: any, origin: string): Promise<Response> {
+  const placements = Array.isArray(body.placements)
+    ? body.placements.filter((place: unknown) => place === "course_detail" || place === "product_detail")
+    : [];
+  if (typeof body.reviewer_name !== "string" || !body.reviewer_name.trim()) return err("نام نظر‌دهنده الزامی است", origin, 400);
+  if (typeof body.comment !== "string" || !body.comment.trim()) return err("متن نظر الزامی است", origin, 400);
+  if (!placements.length) return err("محل نمایش معتبر الزامی است", origin, 400);
+  const rating = Number(body.rating);
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) return err("امتیاز نامعتبر است", origin, 400);
+  const createdAt = typeof body.created_at === "string" && !Number.isNaN(Date.parse(body.created_at))
+    ? new Date(body.created_at).toISOString()
+    : new Date().toISOString();
+  const row = {
+    course_id: typeof body.course_id === "string" ? body.course_id.slice(0, 200) : "عمومی",
+    reviewer_name: body.reviewer_name.trim().slice(0, 100),
+    rating,
+    comment: body.comment.trim().slice(0, 2000),
+    status: ["approved", "pending"].includes(body.status) ? body.status : "pending",
+    placements,
+    course_ids: Array.isArray(body.course_ids) ? body.course_ids.filter((id: unknown) => typeof id === "string" && id.trim()).slice(0, 50) : [],
+    phone: typeof body.phone === "string" ? body.phone.slice(0, 40) : "",
+    phone_country: typeof body.phone_country === "string" ? body.phone_country.slice(0, 8) : "",
+    created_at: createdAt,
+  };
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("reviews").insert(row).select("*").single();
+  if (error) {
+    console.error("create_review error:", error);
+    return err("خطا در ثبت نظر", origin, 500);
+  }
+  return ok({ review: data }, origin);
+}
+
 async function updateReview(body: any, origin: string): Promise<Response> {
   if (!body.id) return err("id الزامی است", origin, 400);
   const allowed: Record<string, any> = {};
   if (["approved", "rejected", "pending"].includes(body.status)) allowed.status = body.status;
-  if (Array.isArray(body.placements)) allowed.placements = body.placements;
+  if (Array.isArray(body.placements)) {
+    allowed.placements = body.placements.filter((place: unknown) => place === "course_detail" || place === "product_detail");
+  }
   if (Array.isArray(body.course_ids)) {
     allowed.course_ids = body.course_ids
       .filter((c: any) => typeof c === "string" && c.trim())
       .slice(0, 50)
       .map((c: string) => c.trim());
   }
+  if (typeof body.course_id === "string") allowed.course_id = body.course_id.slice(0, 200);
   if (typeof body.reviewer_name === "string") allowed.reviewer_name = body.reviewer_name.slice(0, 100);
   if (typeof body.comment === "string") allowed.comment = body.comment.slice(0, 2000);
+  if (typeof body.phone === "string") allowed.phone = body.phone.slice(0, 40);
+  if (typeof body.phone_country === "string") allowed.phone_country = body.phone_country.slice(0, 8);
+  if (typeof body.created_at === "string" && !Number.isNaN(Date.parse(body.created_at))) allowed.created_at = new Date(body.created_at).toISOString();
   if (typeof body.rating === "number" && body.rating >= 1 && body.rating <= 5) {
     allowed.rating = body.rating;
   }
@@ -668,6 +707,7 @@ const ACTION_HANDLERS: Record<string, (body: any, origin: string, session: any) 
   update_question: updateQuestion,
   delete_question: deleteQuestion,
   list_reviews: listReviews,
+  create_review: createReview,
   update_review: updateReview,
   delete_review: deleteReview,
   list_page_view_stats: listPageViewStats,
