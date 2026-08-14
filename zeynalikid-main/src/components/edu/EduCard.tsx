@@ -1,5 +1,6 @@
 import { typeLabel, durationLabel, type EduItem } from './edu-data';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
+import CollapsibleCardText from '../CollapsibleCardText';
 
 const PlayGlyph = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" /></svg>
@@ -25,7 +26,14 @@ export default function EduCard({ item, lang, onOpen }: { item: EduItem; lang: s
       </button>
       <div className="zke-body">
         <h3 className="zke-card-title">{en ? item.titleEn : item.title}</h3>
-        <p className="zke-card-desc">{en ? item.descEn : item.desc}</p>
+        <CollapsibleCardText
+          text={en ? item.descEn : item.desc}
+          className="zke-card-desc"
+          background="var(--zk-surface, #fff)"
+          moreLabel={en ? 'More…' : 'بیشتر…'}
+          lessLabel={en ? 'Less' : 'کمتر'}
+          direction={en ? 'ltr' : 'rtl'}
+        />
         <div className="zke-meta">
           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></svg>{en ? item.dateEn : item.date}</span>
           <span>{durationLabel(item, lang)}</span>

@@ -1,6 +1,8 @@
 // کارت نمایش یک آیتم رسانه‌ای (ویدیو / ویس / عکس / متن) — استفاده در تجربه والدین و آموزش‌ها
 import { useState } from 'react';
 import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, PhoneIcon } from './Icons';
+import CollapsibleCardText from './CollapsibleCardText';
+import { extractDirectMediaUrl, normalizeMediaInput } from '../utils/mediaInput';
 
 export function mediaThumb(type:string){
   // بازگشت SVG به‌جای ایموجی — برای سازگاری قدیمی یک رشته خالی برمی‌گردانیم و در رندر آیکون SVG استفاده می‌کنیم
@@ -82,21 +84,8 @@ export function pickAudioUrl(item: any, vpnOn: boolean): string {
 
 // کدهای iframe گاهی از پیام‌رسان/ویرایشگر به‌صورت &lt;iframe ...&gt; یا داخل پرانتز ذخیره می‌شوند.
 // قبل از تشخیص HTML آن‌ها را به فرم واقعی برمی‌گردانیم تا هیچ‌وقت کل کد به‌عنوان src یک iframe استفاده نشود.
-function decodeHtmlEntities(value:string):string{
-  const decodeOnce=(input:string)=>input.replace(/&(#x[0-9a-f]+|#\d+|lt|gt|quot|apos|#39|amp|nbsp);/gi,(_,entity:string)=>{
-    const key=String(entity).toLowerCase();
-    if(key==='lt')return '<'; if(key==='gt')return '>'; if(key==='quot')return '"';
-    if(key==='apos'||key==='#39')return "'"; if(key==='amp')return '&'; if(key==='nbsp')return ' ';
-    if(key.startsWith('#x'))return String.fromCodePoint(parseInt(key.slice(2),16));
-    if(key.startsWith('#'))return String.fromCodePoint(parseInt(key.slice(1),10));
-    return _;
-  });
-  let out=String(value||'');
-  for(let i=0;i<3;i++){const next=decodeOnce(out);if(next===out)break;out=next;}
-  return out;
-}
 export function normalizeEmbedCode(code:any):string{
-  let normalized=decodeHtmlEntities(String(code||'')).replace(/^\uFEFF/,'').trim();
+  let normalized=normalizeMediaInput(code);
   if(normalized.startsWith('(')&&normalized.endsWith(')')){
     const inner=normalized.slice(1,-1).trim();
     if(/^<\s*[a-zA-Z!]/.test(inner))normalized=inner;
@@ -105,26 +94,44 @@ export function normalizeEmbedCode(code:any):string{
 }
 export const isHtmlEmbedCode=(code:any)=>/^<\s*[a-zA-Z!]/.test(normalizeEmbedCode(code));
 
-// رندر محتوای دستی: اگر رشته با تگ HTML شروع شود (iframe/style/div/script و...) با innerHTML رندر می‌شود؛
-// در غیر این صورت (فقط یک URL ساده) بر اساس نوع آیتم به تگ مناسب تبدیل می‌شود.
+// هیچ HTML یا اسکریپت ورودی مستقیماً اجرا نمی‌شود. از کدهای iframe/video فقط src امن
+// http(s) استخراج و در عنصر محدود خودمان رندر می‌شود؛ بنابراین کد آپارات/یوتیوب قدیمی
+// همچنان پخش می‌شود ولی style/script/handlerهای همراه آن وارد DOM نمی‌شوند.
 export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'video'|'audio'|'image',minHeight?:number}){
   const normalized=normalizeEmbedCode(code);
-  if(isHtmlEmbedCode(normalized))return <div data-manual-embed="html" style={{width:'100%',minHeight:minHeight||(type==='audio'?64:210),overflow:'hidden'}} dangerouslySetInnerHTML={{__html:normalized}}/>;
-  if(type==='audio')return <audio controls preload="none" src={normalized} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/>;
-  if(type==='image')return <img src={normalized} alt="" style={{width:'100%',height:minHeight||210,objectFit:'cover',display:'block'}} draggable={false}/>;
-  return <div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={normalized} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
+  if(type==='image'){
+    const safeSrc=extractDirectMediaUrl(normalized,'image');
+    return safeSrc?<img data-manual-embed="image" src={safeSrc} alt="" style={{width:'100%',aspectRatio:'16 / 9',objectFit:'cover',display:'block',background:'#000'}} draggable={false}/>:null;
+  }
+  if(type==='audio'){
+    const safeSrc=extractDirectMediaUrl(normalized,'audio');
+    return safeSrc?<audio data-manual-embed="audio" controls preload="none" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/>:null;
+  }
+  const safeSrc=extractDirectMediaUrl(normalized,'video');
+  if(!safeSrc)return null;
+  const isDirectVideo=/<\s*(?:video|source)\b/i.test(normalized)||/\.(?:mp4|webm|ogv|mov)(?:[?#].*)?$/i.test(safeSrc);
+  if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000'}}/>;
+  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox="allow-scripts allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
-// اصلاح ۱۶: بهبود نمایش عنوان/توضیحات — فونت بزرگ‌تر، سه‌نقطه، دکمه «بیشتر» رنگی
-function MediaCardInfo({item,type,masked,T,secure=true}:{item:any,type:string,masked:string,T:any,secure?:boolean}){
- const [expanded,setExpanded]=useState(false);
- const desc=String(item.description||'');
- const isLong=desc.length>80&&type!=='text';
- return <div style={{padding:'10px 12px',userSelect:secure?'none':undefined}}>
-  {item.title&&<b style={{display:'block',fontSize:14,color:T.ttl,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title}</b>}
-  {desc&&type!=='text'&&<div style={{fontSize:12,color:T.mut,lineHeight:1.8,...(!expanded&&isLong?{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any,overflow:'hidden',textOverflow:'ellipsis'}:{})}}>{desc}</div>}
-  {isLong&&<button onClick={()=>setExpanded(v=>!v)} style={{border:0,background:'transparent',color:T.acc,cursor:'pointer',fontFamily:'inherit',fontSize:11,fontWeight:700,padding:'2px 0',marginTop:2,display:'flex',alignItems:'center',gap:4}}>{expanded?'کمتر':'بیشتر...'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transition:'transform .3s ease',transform:expanded?'rotate(180deg)':'rotate(0deg)'}}><polyline points="6 9 12 15 18 9"/></svg></button>}
-  {masked&&<div dir="ltr" style={{marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"'}}><PhoneIcon size={12} color={T.acc}/> {masked}</div>}
+// همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
+function MediaCardInfo({item,type,masked,T,secure=true,lang}:{item:any,type:string,masked:string,T:any,secure?:boolean,lang:string}){
+ const desc=String(type==='text'?(item.body||item.description||''):(item.description||''));
+ return <div style={{padding:'10px 12px 12px',userSelect:secure?'none':undefined,display:'flex',flexDirection:'column',flex:1}}>
+  <b style={{display:'block',height:25.2,fontSize:14,lineHeight:1.8,color:T.ttl,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title||'\u00a0'}</b>
+  <CollapsibleCardText
+    text={desc}
+    color={T.mut}
+    accentColor={T.acc}
+    background={T.badge||T.card||'var(--zk-surface)'}
+    fontSize={12}
+    lineHeight={1.8}
+    lines={2}
+    moreLabel={lang==='en'?'More…':'بیشتر…'}
+    lessLabel={lang==='en'?'Less':'کمتر'}
+    direction={lang==='en'?'ltr':'rtl'}
+  />
+  <div dir="ltr" aria-hidden={!masked} style={{height:20,marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"',visibility:masked?'visible':'hidden'}}><PhoneIcon size={12} color={T.acc}/> {masked||'0000xxxx000'}</div>
  </div>
 }
 
@@ -162,17 +169,16 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:an
 
  const masked=maskPhone(item.phone);
  const imgRestrict = secure ? { draggable: false, onContextMenu: (e: React.MouseEvent) => e.preventDefault() } : {};
- return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+ return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column',height:'100%',minWidth:0}}>
   {type==='video'&&(hasManual
    ?<ManualEmbed code={manualCode} type="video"/>
    :(playing
     ?<div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={url} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" title={item.title||'video'} style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>
     :<button onClick={()=>setPlaying(true)} style={{position:'relative',width:'100%',paddingTop:'56.25%',background:T.soft,border:0,cursor:'pointer'}}>{item.thumbnail?<img src={item.thumbnail} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} draggable={false}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc} /></span>}<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{width:52,height:52,borderRadius:'50%',background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,paddingInlineStart:4}}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></span></span></button>))}
-  {type==='audio'&&<div style={{padding:'14px 12px 4px',display:'flex',flexDirection:'column',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
-  {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image" minHeight={210}/>:<img src={url} alt={item.title||''} loading="lazy" style={{width:'100%',height:210,objectFit:'cover',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
-  {type==='text'&&<div style={{padding:'14px 12px 0',fontSize:12.5,color:T.txt,lineHeight:2,whiteSpace:'pre-wrap',userSelect:secure?'none':undefined}}> {item.body||item.description||''}</div>}
-  {/* اصلاح ۱۶: فونت عنوان/توضیحات بزرگ‌تر + سه‌نقطه + دکمه «بیشتر» */}
-  <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} />
+  {type==='audio'&&<div style={{aspectRatio:'16 / 9',padding:'14px 12px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
+  {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" style={{width:'100%',aspectRatio:'16 / 9',objectFit:'cover',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
+  {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.acc}}><TextIcon size={44} color={T.acc}/></div>}
+  <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} />
  </div>
 }
 

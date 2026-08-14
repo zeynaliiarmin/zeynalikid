@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UserQuestion,
   fetchUserQuestions,
@@ -6,6 +6,7 @@ import {
   archiveUserQuestion,
   deleteUserQuestion,
 } from '../lib/supabase';
+import FAQManagementEditor from './FAQManagementEditor';
 
 // فیلد پاسخ — کامپوننت جدا با state محلی تا تایپ باعث re-render کل لیست نشود (رفع fg)
 const AnswerField = React.memo(function AnswerField({ initial, onCommit, T, S }: { initial: string; onCommit: (v: string) => void; T: any; S: any }) {
@@ -334,25 +335,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     }
   };
 
-  const FAQManagement = () => {
-    const fa:any[] = Array.isArray((cfg as any)?.faqItems) ? (cfg as any).faqItems : [];
-    const en:any[] = Array.isArray((cfg as any)?.faqItemsEn) ? (cfg as any).faqItemsEn : [];
-    const tabs:any[] = ((cfg as any)?.courseTabs || []).filter((t:any) => t.active !== false);
-    const destinations = [{id:'home',label:'home'}, {id:'faq',label:'FAQ'}, ...tabs.map((t:any)=>({id:`course:${t.id}`,label:t.title||t.id}))];
-    const save = (patch:any, msg='تغییرات FAQ ذخیره شد.') => { const next={...(cfg as any),...patch}; setEditCfg?.(next); saveCfg?.(next); showToast(msg); };
-    const update = (key:string,list:any[],i:number,patch:any) => {const next=[...list];next[i]={...next[i],...patch};setEditCfg?.({...cfg,[key]:next});};
-    const toggleDestination=(key:string,list:any[],i:number,id:string,checked:boolean)=>{const current=Array.isArray(list[i]?.placements)?list[i].placements:['home','faq'];update(key,list,i,{placements:checked?[...new Set([...current,id])]:current.filter((x:string)=>x!==id)});};
-    const card=(item:any,i:number,key:string,list:any[],isEn=false)=><div style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:12,padding:9,background:T.badge||T.card,minWidth:0}}>
-      <input dir={isEn?'ltr':undefined} value={item?.question||''} onChange={e=>item&&update(key,list,i,{question:e.target.value})} placeholder={isEn?'Question':'سوال'} disabled={!item} style={{...S.inp,marginBottom:6,fontSize:13}}/>
-      <textarea dir={isEn?'ltr':undefined} value={item?.answer||''} onChange={e=>item&&update(key,list,i,{answer:e.target.value})} placeholder={isEn?'Answer':'پاسخ'} disabled={!item} style={{...S.ta,minHeight:68,fontSize:12}}/>
-      {item&&<div style={{display:'flex',gap:7,flexWrap:'wrap',marginTop:7,fontSize:10.5,lineHeight:1.4}}>{destinations.map(x=><label key={x.id} style={{display:'inline-flex',gap:3,alignItems:'center',cursor:'pointer',whiteSpace:'nowrap'}}><input type="checkbox" checked={!Array.isArray(item.placements)||item.placements.includes(x.id)} onChange={e=>toggleDestination(key,list,i,x.id,e.target.checked)} style={{width:13,height:13,margin:0}}/>{x.label}</label>)}</div>}
-    </div>;
-    const pairCount=Math.max(fa.length,en.length);
-    const addPair=()=>{const id=`faq_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;save({faqItems:[{id,question:'',answer:'',placements:['home','faq']},...fa],faqItemsEn:[{id:`${id}_en`,question:'',answer:'',placements:['home','faq']},...en]},'یک جفت سوال فارسی و انگلیسی افزوده شد (در ابتدای لیست).');};
-    const movePair=(i:number,d:-1|1)=>{const j=i+d;if(j<0||j>=pairCount)return;const a=[...fa],b=[...en];[a[i],a[j]]=[a[j],a[i]];[b[i],b[j]]=[b[j],b[i]];save({faqItems:a,faqItemsEn:b},'ترتیب جفت سوال تغییر کرد.');};
-    const deletePair=(i:number)=>save({faqItems:fa.filter((_:any,j:number)=>j!==i),faqItemsEn:en.filter((_:any,j:number)=>j!==i)},'جفت سوال حذف شد.');
-    return <Box title="مدیریت سوالات متداول (FAQ)"><div className="zkad-qu-faq-head"><h4 style={{color:T.ttl,margin:0,textAlign:'right'}}>فارسی ({fa.length})</h4><h4 style={{color:T.ttl,margin:0,textAlign:'left'}}>English ({en.length})</h4></div><div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:12}}><button type="button" style={{...AdminBtn(),background:T.acc||'#0f766e',color:'#fff',border:0,fontWeight:800}} onClick={addPair}>+ افزودن سوال جدید</button><button type="button" style={{...AdminBtn()}} onClick={()=>save({},'همه سوالات متداول ذخیره و منتشر شد.')}>ذخیره همه</button></div><div style={{display:'flex',flexDirection:'column',gap:10}}>{Array.from({length:pairCount},(_,i)=><div key={fa[i]?.id || en[i]?.id || ('pair-'+i)} style={{border:`1px solid ${T.brd||'#d7e1e7'}`,borderRadius:14,padding:8,background:T.soft||'#f5fbfb'}}><div className="zkad-qu-faq-pair">{card(fa[i],i,'faqItems',fa)}{card(en[i],i,'faqItemsEn',en,true)}</div><div style={{display:'flex',justifyContent:'center',gap:6,marginTop:7}}><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===0} onClick={()=>movePair(i,-1)}>↑</button><button type="button" style={{...AdminBtn(),padding:'4px 9px'}} disabled={i===pairCount-1} onClick={()=>movePair(i,1)}>↓</button><button type="button" style={{...AdminBtn(),padding:'4px 9px',color:T.err||'#dc2626'}} onClick={()=>deletePair(i)}>حذف</button></div></div>)}</div></Box>;
-  };
+
 
   return (
     <div>
@@ -660,7 +643,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
         )}
       </Box>
 
-      <FAQManagement />
+      <FAQManagementEditor cfg={cfg} T={T} S={S} AdminBtn={AdminBtn} Box={Box} setEditCfg={setEditCfg} saveCfg={saveCfg} showToast={showToast} />
 
       {/* مودال جامع افزودن به سوالات متداول با تمام جزئیات */}
       {faqModalItem && (

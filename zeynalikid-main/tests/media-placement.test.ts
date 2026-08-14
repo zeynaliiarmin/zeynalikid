@@ -56,8 +56,10 @@ const dualVideo = { type: 'video', youtubeCode: 'YT', aparatCode: 'AP', displayM
 assert(pickPlacedMediaCode(dualVideo, true) === 'YT', 'VPN-on education playback picks YouTube');
 assert(pickPlacedMediaCode(dualVideo, false) === 'AP', 'VPN-off education playback picks Aparat');
 assert(pickPlacedMediaCode({ ...dualVideo, displayMode: 'youtube' }, false) === 'YT', 'explicit YouTube display mode is honored');
-const educationMapped = toEducationMediaItem({ ...dualVideo, title: 'T', description: 'D', thumbnail: 'thumb' }, false);
-assert(educationMapped.manualCode === 'AP' && educationMapped.desc === 'D' && educationMapped.cover === 'thumb', 'admin media fields map to education player/card fields');
+const educationMapped = toEducationMediaItem({ ...dualVideo, title: 'T', description: 'D', thumbnail: 'https://cdn.example.com/thumb.webp' }, false);
+assert(educationMapped.manualCode === 'AP' && educationMapped.desc === 'D' && educationMapped.cover === 'https://cdn.example.com/thumb.webp', 'admin media fields map to education player/card fields');
+const safeImageMapped = toEducationMediaItem({ type: 'image', externalCode: '<img src="https://cdn.imgurl.ir/uploads/photo.webp" onerror="alert(1)">', cover: '<script>alert(1)</script>' }, true);
+assert(safeImageMapped.manualCode === 'https://cdn.imgurl.ir/uploads/photo.webp' && safeImageMapped.cover === 'https://cdn.imgurl.ir/uploads/photo.webp', 'education image mapping extracts only the safe URL and never forwards raw HTML');
 
 const memory = new Map<string, string>();
 const storage = { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => { memory.set(key, value); } };

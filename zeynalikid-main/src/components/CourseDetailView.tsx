@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
+import AskQuestionForm from './AskQuestionForm';
+import { submitUserQuestion } from '../lib/supabase';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 
 interface Course {
@@ -50,6 +52,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const courseFaqs = [...legacyCourseFaqs, ...selectedCourseFaqs];
   const desc = isFa ? course.desc : (course.descEn || course.desc);
   const [imageFailed, setImageFailed] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
   useEffect(() => { setImageFailed(false); }, [course.image]);
   const showCourseImage = !!String(course.image || '').trim() && !imageFailed;
   const discountEndTime = course.discountEnd ? new Date(course.discountEnd).getTime() : 0;
@@ -348,9 +351,19 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
         <section id="course-detail-faq" data-detail-section style={detailSectionStyle(navTopOffset)}>
           <h2 style={detailSectionTitleStyle}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</h2>
+          <div style={{ marginBottom: 14, padding: '13px 14px', border: '1px solid var(--zk-border)', borderRadius: 16, background: 'var(--zk-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 190px' }}>
+              <b style={{ display: 'block', color: 'var(--zk-text)', fontSize: 13.5, marginBottom: 3 }}>{isFa ? 'پاسخ پرسش خود را پیدا نکردید؟' : 'Could not find your answer?'}</b>
+              <span style={{ color: 'var(--zk-text-muted)', fontSize: 12, lineHeight: 1.7 }}>{isFa ? 'سؤال متنی یا صوتی خود را همراه شماره تماس برای کارشناس ارسال کنید.' : 'Send your text or voice question and phone number to our specialist.'}</span>
+            </div>
+            <button type="button" onClick={() => setAskOpen(true)} style={{ minHeight: 44, padding: '9px 18px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'var(--zk-surface)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {isFa ? 'سؤال دارم' : 'Ask a question'}
+            </button>
+          </div>
           <div style={{ display: 'grid', gap: 8 }}>
             {courseFaqs.length ? courseFaqs.map((item: any) => <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}><summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary><p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p></details>) : <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز پرسش متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>}
           </div>
+          {askOpen && <AskQuestionForm T={T} lang={lang} pageSource={`course:${course.id}`} countries={countries} onClose={() => setAskOpen(false)} onSubmit={async (question, voiceNoteUrl, phone) => { await submitUserQuestion(question, voiceNoteUrl, `course:${course.id}`, phone); }} />}
         </section>
       </div>
 

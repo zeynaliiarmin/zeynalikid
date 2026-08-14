@@ -17,6 +17,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { getMediaDestinations, MEDIA_DESTINATIONS, migrateMediaItem, type MediaDestination } from '../utils/mediaPlacement';
+import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any; Field: any;
@@ -279,9 +280,10 @@ function MediaManager(props: any) {
                   {type === 'image' && (
                     <>
                       <label style={{ ...S.lbl, marginTop: 4 }}>لینک تصویر خارجی (VPN روشن)</label>
-                      <StableAdminInput dir="ltr" style={{ ...S.inp, marginBottom: 6 }} defaultValue={it.platforms?.externalImage || ''} onCommit={(v: string) => chgPlatform(gi, 'externalImage', v.trim())} placeholder="https://..." />
+                      <StableAdminInput dir="ltr" style={{ ...S.inp, marginBottom: 6 }} defaultValue={it.platforms?.externalImage || ''} onCommit={(v: string) => chgPlatform(gi, 'externalImage', canonicalizeMediaInput(v, 'image'))} placeholder="لینک دانلود مستقیم؛ مثال: https://cdn.imgurl.ir/uploads/photo.webp" />
                       <label style={S.lbl}>لینک تصویر داخلی (VPN خاموش)</label>
-                      <StableAdminInput dir="ltr" style={{ ...S.inp, marginBottom: 6 }} defaultValue={it.platforms?.internalImage || ''} onCommit={(v: string) => chgPlatform(gi, 'internalImage', v.trim())} placeholder="https://..." />
+                      <StableAdminInput dir="ltr" style={{ ...S.inp, marginBottom: 6 }} defaultValue={it.platforms?.internalImage || ''} onCommit={(v: string) => chgPlatform(gi, 'internalImage', canonicalizeMediaInput(v, 'image'))} placeholder="لینک دانلود مستقیم؛ نیازی به تگ img نیست" />
+                      {(() => { const preview = extractDirectMediaUrl(it.platforms?.externalImage || it.platforms?.internalImage, 'image'); return preview ? <img data-admin-image-preview src={preview} alt="پیش‌نمایش تصویر" style={{ width: '100%', maxHeight: 180, objectFit: 'contain', borderRadius: 10, border: `1px solid ${T.brd}`, marginBottom: 7, background: T.card }} /> : null; })()}
                     </>
                   )}
                   {type === 'audio' && (
@@ -414,10 +416,14 @@ function MediaLibraryManager(props: any) {
               )}
               {(it.type || 'video') === 'image' && (
                 <>
-                  <label style={S.lbl}>کد دستی تصویر خارجی (VPN روشن)</label>
-                  <textarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.externalCode || it.manualCode || ''} onBlur={(e) => chg(i, 'externalCode', e.target.value.trim())} placeholder='<img src="https://..." /> یا لینک مستقیم' />
-                  <label style={S.lbl}>کد دستی تصویر داخلی (VPN خاموش)</label>
-                  <textarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.internalCode || ''} onBlur={(e) => chg(i, 'internalCode', e.target.value.trim())} placeholder='<img src="https://..." /> یا لینک مستقیم' />
+                  <div style={{ marginBottom: 8, padding: '8px 10px', borderRadius: 9, background: T.soft, color: T.mut, fontSize: 11.5, lineHeight: 1.8 }}>
+                    برای ImgURL فقط «لینک دانلود» مثل <span dir="ltr">https://cdn.imgurl.ir/uploads/photo.webp</span> را وارد کنید؛ نیازی به تگ <span dir="ltr">&lt;img&gt;</span> نیست. اگر تگ را هم بچسبانید، لینک آن خودکار استخراج می‌شود.
+                  </div>
+                  <label style={S.lbl}>تصویر خارجی (VPN روشن)</label>
+                  <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.externalCode || it.manualCode || ''} onCommit={(v: string) => chg(i, 'externalCode', canonicalizeMediaInput(v, 'image'))} placeholder="https://cdn.imgurl.ir/uploads/photo.webp" rows={3} />
+                  <label style={S.lbl}>تصویر داخلی (VPN خاموش)</label>
+                  <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.internalCode || ''} onCommit={(v: string) => chg(i, 'internalCode', canonicalizeMediaInput(v, 'image'))} placeholder="همان لینک مستقیم را می‌توانید اینجا نیز قرار دهید" rows={3} />
+                  {(() => { const preview = extractDirectMediaUrl(it.externalCode || it.manualCode || it.internalCode, 'image'); return preview ? <img data-admin-image-preview src={preview} alt="پیش‌نمایش تصویر محتوا" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', borderRadius: 10, border: `1px solid ${T.brd}`, marginBottom: 8, background: T.card }} /> : null; })()}
                 </>
               )}
               {(it.type || 'video') === 'audio' && (

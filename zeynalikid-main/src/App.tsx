@@ -1035,14 +1035,16 @@ function App(){
  const location=useLocation(); const navigate=useNavigate();
  // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
  // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
- const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return sessionStorage.getItem('zk_admin_authed')==='true' && !!getAdminSessionToken(); } catch { return false; } }); const [adminTab,setAdminTab]=useState('dashboard');
+ const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return sessionStorage.getItem('zk_admin_authed')==='true' && !!getAdminSessionToken(); } catch { return false; } });
+ const [adminSettingsLoading,setAdminSettingsLoading]=useState(()=>adminAuthed&&isSupabaseConfigured);
+ const [adminTab,setAdminTab]=useState('dashboard');
  // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
  useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&!adminAuthed){ navigate('/admin/login',{replace:true}); } },[location.pathname,adminAuthed,navigate]);
  // Phase 3: هنگام ورود به /admin/app، validate_session را با Edge Function بررسی کن.
  // فقط وجود token در sessionStorage کافی نیست — session ممکن است منقضی یا revoke شده باشد.
  useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&getAdminSessionToken()){ let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
- const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin')setAdminAuthed(true); if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
+ const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(isSupabaseConfigured);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
  useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/admin-login',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
  const [lang,setLang]=useState<Lang>(()=>getLS('zkid_lang','fa'));
@@ -1118,7 +1120,10 @@ function App(){
  useEffect(()=>{const onStorage=(e:StorageEvent)=>{if(e.key==='zkid_lang'&&e.newValue){try{const v=JSON.parse(e.newValue);if(v==='fa'||v==='en')setLang(v)}catch{if(e.newValue==='fa'||e.newValue==='en')setLang(e.newValue as Lang)}}};window.addEventListener('storage',onStorage);return()=>window.removeEventListener('storage',onStorage)},[]);
  // اصلاح ۳۱: ثبت بازدید صفحه — بسیار سبک و بی‌صدا؛ در صورت خطا هیچ تأثیری روی تجربه کاربری ندارد و صفحهٔ پنل مدیریت (admin/admin-login) ثبت نمی‌شود.
  useEffect(()=>{ if(view==='admin'||view==='admin-login')return; try{trackPageView(location.pathname)}catch{} },[location.pathname]);
- useEffect(()=>{let alive=true; if(isSupabaseConfigured){fetchSettings().then(s=>{if(alive&&s)setCfg(mergeSettings(s))}).catch(e=>console.warn('Could not load settings from Supabase',e))} return()=>{alive=false}},[]);
+ useEffect(()=>{let alive=true; if(isSupabaseConfigured){fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(e=>console.warn('Could not load settings from Supabase',e))} return()=>{alive=false}},[]);
+ // پس از ورود مدیر، تنظیمات کامل و احرازهویت‌شده دوباره بارگذاری می‌شود. تا پایان این مرحله
+ // پنل قابل ویرایش نیست تا پاسخ عمومیِ فیلترشده هرگز محصولات یا تصاویر را با پیش‌فرض بازنویسی نکند.
+ useEffect(()=>{if(!adminAuthed||!isSupabaseConfigured)return;let alive=true;setAdminSettingsLoading(true);fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products}))}).catch(e=>console.warn('Could not load full admin settings',e)).finally(()=>{if(alive)setAdminSettingsLoading(false)});return()=>{alive=false}},[adminAuthed]);
  // مهاجرت localStorage: یک‌بار داده‌های قدیمی را به ساختار جدید تبدیل کن
  useEffect(()=>{const MIGRATION_KEY='zkid_settings_migrated_v2';if(!localStorage.getItem(MIGRATION_KEY)){try{const raw=localStorage.getItem('zkid_settings_v2');if(raw){const parsed=JSON.parse(raw);const migrated=migrateSettings(parsed);if(migrated.version===2){localStorage.setItem('zkid_settings_v2',JSON.stringify(migrated));localStorage.setItem(MIGRATION_KEY,'1')}}}catch{}}},[]);
  // ذخیره خودکار داده‌های مهاجرت‌شده در Supabase
@@ -1191,12 +1196,12 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   <Route path="/consultation" element={<ConsultationPage app={app}/>}/>
   <Route path="/admin-login" element={<AdminLoginPage app={app}/>}/>
   <Route path="/admin/login" element={<AdminLoginPage app={app}/>}/>
-  <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
-  <Route path="/admin/app" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
+  <Route path="/admin" element={adminAuthed?(adminSettingsLoading?<div style={{display:'flex',minHeight:'70vh',alignItems:'center',justifyContent:'center',color:T.mut}}>در حال دریافت امن تنظیمات…</div>:<AdminPanel app={app}/>):<Navigate to="/admin/login" replace/>}/>
+  <Route path="/admin/app" element={adminAuthed?(adminSettingsLoading?<div style={{display:'flex',minHeight:'70vh',alignItems:'center',justifyContent:'center',color:T.mut}}>در حال دریافت امن تنظیمات…</div>:<AdminPanel app={app}/>):<Navigate to="/admin/login" replace/>}/>
   <Route path="*" element={<Navigate to="/" replace/>}/>
  </Routes></Suspense>;
- // اصلاح ۲۱: حذف هدر (لوگو، منو، تغییر زبان) در صفحات انتخاب دوره، ارسال، پرداخت، تأیید و موفقیت
- const courseFlowViews=['courses','course-shipping','course-payment','payment-verify','course-confirm','course-done'];
+ // هدر اصلی در فهرست و جزئیات دوره نمایش داده می‌شود؛ فقط مراحل حساس ثبت/پرداخت هدر ندارند.
+ const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
  const showLangSwitcher=view!=='admin'&&!courseFlowViews.includes(view);
  // اصلاح ۵: نمایش منوی همبرگری اکنون از تنظیمات پنل مدیریت (cfg.menuVisibility) خوانده می‌شود؛
  // در صورت نبود مقدار برای یک view (تنظیمات قدیمی/نامعتبر)، به رفتار پیش‌فرض قبلی (noMenuViews) بازمی‌گردیم.

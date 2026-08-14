@@ -1,3 +1,5 @@
+import { extractDirectMediaUrl } from './mediaInput';
+
 export type MediaDestination = 'education' | 'experience' | 'height' | 'appetite' | 'mind';
 
 export const MEDIA_DESTINATIONS: Array<{ id: MediaDestination; label: string; labelEn: string }> = [
@@ -159,7 +161,10 @@ export function pickPlacedMediaCode(item: any, vpnOn: boolean): string {
 /** Maps admin media fields to the card/modal field names used by the education page. */
 export function toEducationMediaItem(item: any, vpnOn: boolean): any {
   const code = pickPlacedMediaCode(item, vpnOn);
-  const directImage = item?.type === 'image' && /^https?:\/\/[^<>]+$/i.test(code) ? code : '';
+  // پیش‌نمایش کارت باید هم برای لینک مستقیم ImgURL و هم برای <img src="…"> ساخته شود.
+  const directImage = item?.type === 'image' ? extractDirectMediaUrl(code, 'image') : '';
+  const directCover = extractDirectMediaUrl(item?.cover || item?.thumbnail, 'image');
+  const safeCode = item?.type === 'image' ? directImage : code;
   return {
     ...item,
     title: item?.title || '',
@@ -169,8 +174,8 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
     minutes: Number(item?.minutes) || 0,
     date: item?.date || '',
     dateEn: item?.dateEn || item?.date || '',
-    cover: item?.cover || item?.thumbnail || directImage,
-    ...(code ? { manualCode: code, url: code } : {}),
+    cover: directCover || directImage,
+    ...(safeCode ? { manualCode: safeCode, url: safeCode } : {}),
   };
 }
 

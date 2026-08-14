@@ -91,6 +91,18 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "experience",
   "education",
   "experienceTabs",
+  // Product catalog must be public; omitting it made the client fall back to defaults.
+  "products",
+  "showProductsSection",
+  "showFeaturedProducts",
+  // Public highlights and course FAQ/instructor content.
+  "storyHighlights",
+  "faqItems",
+  "faqItemsEn",
+  "courseTabFaqs",
+  "courseTabFaqsEn",
+  "faqDisplay",
+  "courseInstructor",
 ];
 
 // Fields within 'banks' array items that are public (everything else stripped).
@@ -135,6 +147,52 @@ function sanitizeMediaGroup(value: any): any {
   return clean;
 }
 
+const PUBLIC_PRODUCT_FIELDS = [
+  "id", "name", "title", "titleEn", "description", "descriptionEn", "desc", "descEn",
+  "price", "priceNum", "discountedPrice", "category", "icon", "tags", "features", "stock", "weight",
+  "image", "imageUrl", "aspectRatio", "objectPosition", "homeImage", "homeImageUrl",
+  "homeImageAspectRatio", "homeImageObjectPosition", "showOnHome", "isVisible", "active", "order",
+];
+function sanitizeProduct(item: any): Record<string, any> {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return {};
+  return Object.fromEntries(PUBLIC_PRODUCT_FIELDS.filter((field) => field in item).map((field) => [field, item[field]]));
+}
+function sanitizeProducts(value: any): Record<string, any> {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : { list: Array.isArray(value) ? value : [] };
+  const list = Array.isArray(source.list) ? source.list : Array.isArray(source.items) ? source.items : [];
+  return {
+    showSection: source.showSection !== false,
+    homeFeatured: { enabled: source.homeFeatured?.enabled !== false },
+    list: list.map(sanitizeProduct),
+  };
+}
+function sanitizeStoryHighlights(value: any): Record<string, any> {
+  const source = value && typeof value === "object" ? value : {};
+  const highlights = (Array.isArray(source.highlights) ? source.highlights : []).map((highlight: any) => ({
+    id: String(highlight?.id || ""), title: String(highlight?.title || ""), coverUrl: String(highlight?.coverUrl || ""),
+    active: highlight?.active !== false, order: Number(highlight?.order) || 0,
+    stories: (Array.isArray(highlight?.stories) ? highlight.stories : []).map((story: any) => ({
+      id: String(story?.id || ""), title: String(story?.title || ""),
+      imageCodeExternal: String(story?.imageCodeExternal || ""), imageCodeInternal: String(story?.imageCodeInternal || ""),
+      active: story?.active !== false, order: Number(story?.order) || 0,
+    })),
+  }));
+  const items = (Array.isArray(source.items) ? source.items : []).map((item: any) => ({
+    id: String(item?.id || ""), title: String(item?.title || ""), type: item?.type === "video" ? "video" : "image",
+    embedCode: String(item?.embedCode || ""), active: item?.active !== false, order: Number(item?.order) || 0,
+  }));
+  return { highlights, items };
+}
+function sanitizeFaqList(value: any): any[] {
+  return (Array.isArray(value) ? value : []).map((item: any) => ({
+    id: String(item?.id || ""), question: String(item?.question || ""), answer: String(item?.answer || ""),
+    answerTitle: String(item?.answerTitle || ""), category: String(item?.category || ""),
+    categories: Array.isArray(item?.categories) ? item.categories.map(String) : [],
+    placements: Array.isArray(item?.placements) ? item.placements.map(String) : [],
+    ...(item?.tab ? { tab: String(item.tab) } : {}),
+  }));
+}
+
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
   for (const key of PUBLIC_SETTINGS_WHITELIST) {
@@ -177,6 +235,11 @@ function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
           .filter((tab) => tab in val)
           .map((tab) => [tab, val[tab] !== false]));
       }
+      if (key === "products") val = sanitizeProducts(val);
+      if (key === "storyHighlights") val = sanitizeStoryHighlights(val);
+      if (["faqItems", "faqItemsEn", "courseTabFaqs", "courseTabFaqsEn"].includes(key)) val = sanitizeFaqList(val);
+      if (key === "faqDisplay") val = { home: { show: val?.home?.show !== false, maxItems: Math.max(0, Number(val?.home?.maxItems) || 0), viewAllLink: val?.home?.viewAllLink !== false }, faqPage: { show: val?.faqPage?.show !== false } };
+      if (key === "courseInstructor") val = Object.fromEntries(["show", "name", "nameEn", "desc", "descEn", "photoUrl"].filter((field) => field in (val || {})).map((field) => [field, val[field]]));
       if (key === "mediaCountryMode" && !["auto", "iran", "intl"].includes(val)) val = "auto";
       out[key] = val;
     }

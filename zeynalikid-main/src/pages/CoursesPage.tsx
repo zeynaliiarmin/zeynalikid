@@ -98,6 +98,8 @@ export default function CoursesPage({ app }: { app: any }) {
     ? [filter]
     : ['height', 'appetite', 'mind'];
   const placedMediaItems = getMediaItemsForDestinations(cfg, mediaDestinations);
+  const parentExperienceMedia = placedMediaItems.filter((item: any) => item._mediaSource === 'experience' || (item.categories || []).some((category: string) => category === 'experience' || category === 'parent-experience'));
+  const educationalMedia = placedMediaItems.filter((item: any) => !parentExperienceMedia.includes(item));
   const mediaVpnOn = useMediaVpn(cfg);
 
   const goConsult = () => {
@@ -240,27 +242,6 @@ export default function CoursesPage({ app }: { app: any }) {
         {/* تصویر مستقل تب انتخاب‌شده؛ در حالت «همه» و «تخفیف‌دار» بنر واحدی وجود ندارد. */}
         {bannerTab && <CourseTabBanner tab={bannerTab} lang={lang} />}
 
-        {/* محتوایی که در پنل «محتوا و صفحات» برای بخش دوره فعال شده است. */}
-        {placedMediaItems.length > 0 && (
-          <section aria-label={lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'} style={{ marginBottom: 22 }}>
-            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
-              {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>
-              {placedMediaItems.map((item: any, index: number) => (
-                <MediaCard
-                  key={`${item._mediaSource || 'media'}:${item.id || index}`}
-                  item={{ ...item, description: item.descriptionCourses || item.description }}
-                  T={T}
-                  lang={lang}
-                  vpnOn={mediaVpnOn}
-                  secure
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Grid: 1-col mobile, 2 tablet, 3 desktop */}
         <div style={{
           display: 'grid',
@@ -289,6 +270,32 @@ export default function CoursesPage({ app }: { app: any }) {
             </div>
           )}
         </div>
+
+        {/* محتوای متصل به دوره‌ها، بعد از فهرست دوره و قبل از «دوره‌های مشابه»؛ تجربه والدین و آموزش‌ها عمداً جدا هستند. */}
+        {parentExperienceMedia.length > 0 && (
+          <section data-course-media-group="experience" aria-label={lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'} style={{ marginTop: 28, marginBottom: 22 }}>
+            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
+              {lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'stretch' }}>
+              {parentExperienceMedia.map((item: any, index: number) => (
+                <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+              ))}
+            </div>
+          </section>
+        )}
+        {educationalMedia.length > 0 && (
+          <section data-course-media-group="education" aria-label={lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'} style={{ marginTop: parentExperienceMedia.length ? 0 : 28, marginBottom: 22 }}>
+            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
+              {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'stretch' }}>
+              {educationalMedia.map((item: any, index: number) => (
+                <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Featured / Related horizontal on mobile */}
         {filteredCourses.length > 0 && (

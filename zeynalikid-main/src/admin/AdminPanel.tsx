@@ -36,6 +36,7 @@ import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
 import ImageCropper from './ImageCropper';
 import CoursesEditor from './CoursesEditor';
+import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -1405,7 +1406,9 @@ function ThemeManagerEditor(){
        <label style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,cursor:'pointer'}}><input className="zkad-switch" type="checkbox" checked={it.active!==false} onChange={e=>chg(i,'active',e.target.checked)}/> فعال</label>
       </div>
       <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
-      <Field label="آدرس کاور (اختیاری)" value={it.coverUrl||''} onChange={(v:string)=>chg(i,'coverUrl',v)} ph="https://..."/>
+      <label style={S.lbl}>آدرس کاور (اختیاری)</label>
+      <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.coverUrl||''} onCommit={(v:string)=>chg(i,'coverUrl',canonicalizeMediaInput(v,'image'))} placeholder="لینک دانلود مستقیم ImgURL"/>
+      {extractDirectMediaUrl(it.coverUrl,'image')&&<img data-admin-highlight-cover-preview src={extractDirectMediaUrl(it.coverUrl,'image')} alt="پیش‌نمایش کاور" style={{width:72,height:72,objectFit:'cover',borderRadius:'50%',border:`1px solid ${T.brd}`,marginBottom:7}}/>}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
        <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
        <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
@@ -1413,16 +1416,18 @@ function ThemeManagerEditor(){
       </div>
       <div style={{marginTop:10,padding:10,background:T.soft,borderRadius:10}}>
        <b style={{fontSize:12,color:T.ttl,display:'block',marginBottom:8}}>استوری‌ها</b>
+       <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 8px'}}>از ImgURL فقط لینک دانلود مستقیم را وارد کنید. تگ <span dir="ltr">&lt;img src="…" /&gt;</span> نیز پذیرفته و به لینک امن تبدیل می‌شود.</p>
        {(it.stories||[]).map((st:any,si:number)=><div key={st.id||si} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:8,marginTop:8,background:T.card}}>
         <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
          <label style={{fontSize:12,whiteSpace:'nowrap'}}><input type="checkbox" checked={st.active!==false} onChange={e=>chgStory(i,si,'active',e.target.checked)}/> فعال</label>
          <span style={{fontSize:12,color:T.mut}}>اسلاید {si+1}</span>
         </div>
         <Field label="عنوان اسلاید" value={st.title||''} onChange={(v:string)=>chgStory(i,si,'title',v)} ph=""/>
-        <label style={S.lbl}>کد تصویر خارجی (VPN روشن)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeExternal||''} onBlur={e=>chgStory(i,si,'imageCodeExternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
-        <label style={S.lbl}>کد تصویر داخلی (VPN خاموش)</label>
-        <textarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeInternal||''} onBlur={e=>chgStory(i,si,'imageCodeInternal',e.target.value.trim())} placeholder='<img src="https://..." />'/>
+        <label style={S.lbl}>تصویر خارجی (VPN روشن)</label>
+        <StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeExternal||''} onCommit={(v:string)=>chgStory(i,si,'imageCodeExternal',canonicalizeMediaInput(v,'image'))} placeholder="https://cdn.imgurl.ir/uploads/photo.webp" rows={3}/>
+        <label style={S.lbl}>تصویر داخلی (VPN خاموش)</label>
+        <StableAdminTextarea dir="ltr" style={{...S.ta,marginBottom:6,fontFamily:'monospace',fontSize:11.5,minHeight:54}} defaultValue={st.imageCodeInternal||''} onCommit={(v:string)=>chgStory(i,si,'imageCodeInternal',canonicalizeMediaInput(v,'image'))} placeholder="همان لینک دانلود مستقیم را می‌توانید اینجا نیز وارد کنید" rows={3}/>
+        {extractDirectMediaUrl(st.imageCodeExternal||st.imageCodeInternal,'image')&&<img data-admin-story-preview src={extractDirectMediaUrl(st.imageCodeExternal||st.imageCodeInternal,'image')} alt="پیش‌نمایش استوری" style={{width:'100%',maxHeight:210,objectFit:'contain',borderRadius:9,border:`1px solid ${T.brd}`,marginBottom:6}}/>}
         <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:6}}>
          <button type="button" style={AdminBtn()} disabled={si===0} onClick={()=>moveStory(i,si,-1)}>بالا</button>
          <button type="button" style={AdminBtn()} disabled={si===(it.stories||[]).length-1} onClick={()=>moveStory(i,si,1)}>پایین</button>

@@ -2,6 +2,7 @@
 // دو کد دستی (خارجی/داخلی) با قانون VPN + توقف تایمر + جابجایی بین هایلایت‌ها + swipe روان
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { detectVpnOn } from '../utils/vpn';
+import { extractDirectMediaUrl } from '../utils/mediaInput';
 
 export type StorySlide = { id: string; imageCodeExternal?: string; imageCodeInternal?: string; title?: string; order?: number; active?: boolean };
 export type Highlight = { id: string; title: string; coverUrl?: string; stories: StorySlide[]; active?: boolean; order?: number };
@@ -9,15 +10,13 @@ export type Highlight = { id: string; title: string; coverUrl?: string; stories:
 const DURATION_MS = 8000;
 
 function resolveImage(slide: StorySlide, vpnOn: boolean): string {
-  const ext = (slide.imageCodeExternal || '').trim();
-  const int = (slide.imageCodeInternal || '').trim();
+  const ext = extractDirectMediaUrl(slide.imageCodeExternal, 'image');
+  const int = extractDirectMediaUrl(slide.imageCodeInternal, 'image');
   if (vpnOn) return ext || int;
   return int || ext;
 }
 
 function SlideMedia({ src, onReady }: { src: string; onReady?: () => void }) {
-  const looksLikeHtml = /^<\s*[a-zA-Z]/.test(src);
-  if (looksLikeHtml) return <div style={{ width: '100%', height: '100%', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: src }} />;
   return <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} draggable={false} onLoad={() => onReady?.()} />;
 }
 
@@ -100,6 +99,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 
   if (!slide) return null;
   const imgSrc = resolveImage(slide, vpnOn);
+  const highlightCover = extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn);
 
   // اصلاح ۲۰: کلیک چپ/راست — با جداسازی منطقه‌ها و feedback بصری
   const handleClick = (e: React.MouseEvent) => {
@@ -123,7 +123,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       {/* هدر */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
-          {hl?.coverUrl && <img src={hl.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+          {highlightCover && <img src={highlightCover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
         </div>
         <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1 }}>{hl?.title || ''}</span>
         {paused && <span style={{ color: 'rgba(255,255,255,.8)', fontSize: 12, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,255,255,.15)' }}>متوقف</span>}
@@ -150,16 +150,20 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
   return (
     <>
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '8px 0 12px', WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}>
-        {active.map((hl, i) => (
+        {active.map((hl, i) => {
+          const firstStory = (hl.stories || []).filter((story) => story.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+          const previewUrl = extractDirectMediaUrl(hl.coverUrl, 'image') || (firstStory ? resolveImage(firstStory, vpnOn) : '');
+          return (
           <button key={hl.id} onClick={() => setOpenIdx(i)} style={{ scrollSnapAlign: 'start', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, border: 0, background: 'transparent', cursor: 'pointer', padding: 0, flexShrink: 0, fontFamily: 'inherit' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', padding: 2, background: T.grad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: T.card, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {hl.coverUrl ? <img src={hl.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} /> : <span style={{ fontSize: 20 }}></span>}
+                {previewUrl ? <img src={previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} /> : <span style={{ fontSize: 20 }}></span>}
               </div>
             </div>
             <span style={{ fontSize: 10, color: T.mut, fontWeight: 600, maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hl.title}</span>
           </button>
-        ))}
+          );
+        })}
       </div>
       {openIdx !== null && <StoryViewer highlights={active} startHighlight={openIdx} T={T} onClose={() => setOpenIdx(null)} vpnOn={vpnOn} />}
     </>
