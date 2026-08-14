@@ -6,7 +6,7 @@
 //   - Only whitelisted keys are returned.
 //   - Sensitive keys (adminPassword, adminPhone, emergencyToken, merchantId, clientSecret,
 //     apiKey, gatewaySecret, cryptoWallets addresses, etc.) are NEVER returned.
-//   - CORS: same as other functions (zeynalikid.vercel.app + *.vercel.app).
+//   - CORS: Zeynalikid production, Zeynalikid-owned Vercel previews, and local development only.
 //
 // Deploy: supabase functions deploy public-settings --no-verify-jwt
 
