@@ -1,5 +1,5 @@
 // supabase/functions/admin-session/index.ts
-// Admin session management for the Afradikid admin panel.
+// Admin session management for the Zeynalikid admin panel.
 //
 // IMPORTANT: This function MUST be deployed with `--no-verify-jwt` so the
 // `login` action can be reached WITHOUT a prior JWT. It performs its OWN

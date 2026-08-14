@@ -1,0 +1,28 @@
+project_id = "kkdrvexwzuuumjezipnd"
+
+[functions.admin-session]
+verify_jwt = false
+
+[functions.admin-api]
+verify_jwt = false
+
+[functions.admin-credentials]
+verify_jwt = false
+
+[functions.cleanup-receipts]
+verify_jwt = false
+
+[functions.public-questions]
+verify_jwt = false
+
+[functions.public-settings]
+verify_jwt = false
+
+[functions.track-submission]
+verify_jwt = false
+
+[functions.update-corrective]
+verify_jwt = false
+
+[functions.update-submission-public]
+verify_jwt = false

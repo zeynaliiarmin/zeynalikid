@@ -22,7 +22,14 @@ export const validPhone = (local: string, country: { code?: string; regex?: stri
   const clean = p2e(local).replace(/[\s\-()]/g, '');
   if (!clean || /^(\d)\1+$/.test(clean)) return false;
   // ایران: هر دو فرمت 09XXXXXXXXX و 9XXXXXXXXX معتبر است
-  if (country?.code === '+98') return /^(0?9)\d{9}$/.test(clean);
+  if (country?.code === '+98') {
+    const m = clean.match(/^(0?9)(\d{9})$/);
+    if (!m) return false;
+    const tail = m[2];
+    // شماره‌های جعلی که ۹ رقم انتهایی آن‌ها تکراری/یکسان است (مثل 09111111111، 09000000000) رد شوند
+    if (/^(\d)\1{8}$/.test(tail)) return false;
+    return true;
+  }
   try {
     return new RegExp(country?.regex || '^\\d{7,}$').test(clean);
   } catch {
