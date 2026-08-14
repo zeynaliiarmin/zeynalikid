@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReviewSection from './ReviewSection';
+import MediaCard from './MediaCard';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import AskQuestionForm from './AskQuestionForm';
 import { submitUserQuestion } from '../lib/supabase';
@@ -33,9 +34,13 @@ interface Props {
   onRegister?: () => void;
   onConsult?: () => void;
   countries?: any[];
+  // محتوای آموزشی مرتبط و تجربه والدین مرتبط (بین جزئیات دوره و نظرات)
+  educationalMedia?: any[];
+  parentExperienceMedia?: any[];
+  mediaVpnOn?: boolean;
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false }: Props) {
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -340,7 +345,30 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </div>
         </section>
 
+        {/* محتوای آموزشی مرتبط — بعد از جزئیات دوره و قبل از نظرات */}
+        {educationalMedia.length > 0 && (
+          <section id="course-detail-education" data-detail-section style={detailSectionStyle(navTopOffset)}>
+            <h2 style={detailSectionTitleStyle}>{isFa ? 'محتوای آموزشی مرتبط' : 'Related educational content'}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
+              {educationalMedia.map((item: any, index: number) => (
+                <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section id="course-detail-reviews" data-detail-section style={detailSectionStyle(navTopOffset)}>
+          {/* تجربه و رضایت والدین مرتبط — در ابتدای تب نظرات */}
+          {parentExperienceMedia.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={detailSectionTitleStyle}>{isFa ? 'تجربه و رضایت والدین مرتبط' : 'Related parent experiences'}</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
+                {parentExperienceMedia.map((item: any, index: number) => (
+                  <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                ))}
+              </div>
+            </div>
+          )}
           <ReviewSection
             T={{acc:'#0F766E',card:'#fff',brd:'#E5E0D8',mut:'#4B5563',txt:'#1F2937',ttl:'#0F766E',inp:'#fff',soft:'#CCFBF1',btnRadius:14,cardRadius:18,inputRadius:12,neuOut:'0 4px 15px rgba(15,23,42,.06)',neuIn:'inset 2px 2px 5px rgba(15,23,42,.05)',ok:'#14B8A6',err:'#DC2626',warn:'#F59E0B',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)'}}
             lang={isFa ? 'fa' : 'en'}

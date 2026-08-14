@@ -1123,22 +1123,31 @@ function ThemeManagerEditor(){
 
  // --- نصب پنل مدیریت به شکل اپلیکیشن ---
  function AdminInstallControl(){
-  const [prompt,setPrompt]=useState<any>(null); const [done,setDone]=useState(false);
+  const [prompt,setPrompt]=useState<any>(null); const [done,setDone]=useState(false); const [installing,setInstalling]=useState(false); const [showIosGuide,setShowIosGuide]=useState(false);
   useEffect(()=>{const h=(e:any)=>{e.preventDefault();setPrompt(e)};const installed=()=>setDone(true);window.addEventListener('beforeinstallprompt',h);window.addEventListener('appinstalled',installed);return()=>{window.removeEventListener('beforeinstallprompt',h);window.removeEventListener('appinstalled',installed)}},[]);
   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const gotoLogin=()=>{ try{ window.location.href='/admin/login'; }catch(e){} };
-  return <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}><b style={{display:'block',color:T.ttl,marginBottom:5}}>نصب پنل مدیریت روی گوشی</b><p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>دسترسی سریع به پنل مثل یک اپلیکیشن مستقل، بدون نوار آدرس مرورگر.</p>
-    {done
-      ? <span style={{fontSize:12,color:T.ok,fontWeight:800}}>✓ پنل روی این دستگاه نصب شده است.</span>
-      : prompt
-        ? <button type="button" style={AdminBtn()} onClick={async()=>{await prompt.prompt();setPrompt(null)}}>نصب اپلیکیشن پنل</button>
-        : ios
-          ? <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <span style={{fontSize:12,color:T.mut}}>در Safari: Share (دکمهٔ اشتراک‌گذاری) ← <b>Add to Home Screen / افزودن به صفحهٔ اصلی</b> را بزنید.</span>
-              <span style={{fontSize:12,color:T.mut}}>⚠️ برای اینکه بعد از نصب مستقیم به <b>صفحهٔ ورود پنل</b> بروید، اول روی دکمهٔ زیر بزنید تا به صفحهٔ ورود بروید، <b>سپس</b> از آن صفحه «Add to Home Screen» کنید.</span>
-              <button type="button" style={{...AdminBtn(),color:T.acc}} onClick={gotoLogin}>رفتن به صفحهٔ ورود پنل (برای نصب صحیح)</button>
-            </div>
-          : <span style={{fontSize:12,color:T.mut}}>از منوی مرورگر گزینه Install app / نصب برنامه را انتخاب کنید.</span>}
+  // در iOS، قبل از افزودن به صفحهٔ اصلی باید مستقیم روی صفحهٔ ورود پنل باشیم تا بعد از نصب
+  // همان صفحهٔ ورود باز شود (نه صفحهٔ هوم). دکمهٔ نصب این کار را خودکار انجام می‌دهد.
+  const onInstallClick=async()=>{
+   if(done)return;
+   if(ios){ setShowIosGuide(true); try{ window.location.href='/admin/login'; }catch(e){} return; }
+   if(prompt){ setInstalling(true); try{ await prompt.prompt(); const c=await prompt.userChoice; if(c&&c.outcome==='accepted')setDone(true); }catch(e){} setInstalling(false); setPrompt(null); return; }
+   setShowIosGuide(true);
+  };
+  const btnLabel=done?'✓ نصب شده':installing?'در حال نصب…':(prompt||ios)?'نصب اپلیکیشن پنل':'نصب اپلیکیشن پنل';
+  return <div style={{marginTop:22,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
+   <b style={{display:'block',color:T.ttl,marginBottom:5}}>نصب پنل مدیریت روی گوشی</b>
+   <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 12px'}}>دسترسی سریع به پنل مثل یک اپلیکیشن مستقل، بدون نوار آدرس مرورگر.</p>
+   <button type="button" disabled={done||installing} style={{...AdminBtn(),width:'100%',justifyContent:'center',display:'flex',alignItems:'center',gap:8,minHeight:46,fontSize:13.5,opacity:(done||installing)?.8:1}} onClick={onInstallClick}>
+    {!done&&<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>}
+    {btnLabel}
+   </button>
+   {showIosGuide&&(
+    <div style={{marginTop:12,padding:'11px 12px',borderRadius:12,border:`1px solid ${T.brd}`,background:T.card,fontSize:12,color:T.mut,lineHeight:1.9}}>
+     برای نصب روی گوشی: در مرورگر <b>Safari</b> دکمهٔ <b>Share / اشتراک‌گذاری</b> را بزنید ← <b>Add to Home Screen / افزودن به صفحهٔ اصلی</b> را انتخاب کنید.
+     <span style={{display:'block',marginTop:6}}>⚠️ <b>برای اینکه بعد از نصب مستقیم به صفحهٔ ورود پنل بروید</b>، ابتدا به صفحهٔ ورود پنل رفته‌اید (خودکار انجام شد)؛ <b>همین‌جا</b> گزینهٔ «Add to Home Screen» را بزنید.</span>
+    </div>
+   )}
   </div>
  }
 

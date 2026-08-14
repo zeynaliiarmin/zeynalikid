@@ -81,7 +81,7 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  const shown=(pools as any)[mtab]||[];
  const scroll=(dir:number)=>{const el=scrollRef.current;if(!el)return;const cardWidth=mtab==='image'?312:292;el.scrollBy({left:dir*cardWidth,behavior:'smooth'})};
  const ArrowBtn=({dir}:{dir:number})=>{const label=lang==='en'?(dir<0?'Previous':'Next'):(dir<0?'بعدی':'قبلی');return <button type="button" aria-label={label} title={label} onClick={()=>scroll(dir)} style={{width:38,height:38,borderRadius:'50%',border:`1px solid ${T.brd}`,background:T.card,color:T.acc,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:T.neuOut,fontSize:18,flexShrink:0}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transform:dir<0?'scaleX(-1)':'none'}}><polyline points="9 18 15 12 9 6"/></svg></button>};
- const gridStyle:React.CSSProperties=horizontal?{display:'flex',gap:12,overflowX:'auto',paddingBottom:8,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',alignItems:'stretch'}:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12,alignItems:'stretch'};
+ const gridStyle:React.CSSProperties=horizontal?{display:'flex',gap:12,overflowX:'auto',paddingBottom:8,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',alignItems:'flex-start'}:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12,alignItems:'flex-start'};
  const cardStyle=horizontal?{flex:'0 0 auto',scrollSnapAlign:'start' as any,width:mtab==='video'?280:mtab==='image'?300:260,display:'flex'}:{width:'100%',display:'flex'};
  return <>
   {tabs.length>1&&<div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>{tabs.map((tab)=><button key={tab.id} onClick={()=>setMtab(tab.id)} style={{padding:'7px 13px',borderRadius:18,border:`1px solid ${mtab===tab.id?T.acc:T.brd}`,background:mtab===tab.id?T.soft:'transparent',color:mtab===tab.id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,transition:'all .65s',display:'flex',alignItems:'center',gap:5}}><span style={{display:'flex',alignItems:'center'}}>{tab.icon}</span><span>{tab.label}</span></button>)}</div>}
@@ -146,6 +146,15 @@ export function EducationPage({app}:{app:any}){
  const [typeF,setTypeF]=useState<'all'|'text'|'video'|'audio'|'faq'>('all');
  const [sortUI,setSortUI]=useState('new'); // UI مرتب‌سازی — منطق آن در کد نیست (استاتیک)
  const [openItem,setOpenItem]=useState<EduItem|null>(null);
+ // رفع باگ دکمه برگشت گوشی: بستن مودال محتوای آموزشی با دکمه back
+ const eduDetailRef=useRef(false);
+ useEffect(()=>{
+  const onPop=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; setOpenItem(null); } };
+  window.addEventListener('popstate',onPop);
+  return ()=>window.removeEventListener('popstate',onPop);
+ },[]);
+ const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ try{window.history.pushState({zkEduDetail:true},'')}catch{} eduDetailRef.current=true; } setOpenItem(it); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
+ const closeEduItem=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; try{window.history.back()}catch{} } setOpenItem(null); };
  const mediaVpnOn=useVpn(cfg);
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
@@ -208,7 +217,7 @@ export function EducationPage({app}:{app:any}){
       <>
        {q&&<p style={{fontSize:11.5,color:'var(--zk-text-muted)',margin:'0 0 12px'}}>{en?`${filtered.length} result(s) for "${q}"`:`${filtered.length.toLocaleString('fa-IR')} نتیجه برای «${q}»`}</p>}
        {filtered.length?(
-        <div className="zke-grid">{filtered.map((it:any)=><EduCard key={it.id} item={it as EduItem} lang={lang} onOpen={(x)=>setOpenItem(x as EduItem)}/>)}</div>
+        <div className="zke-grid">{filtered.map((it:any)=><EduCard key={it.id} item={it as EduItem} lang={lang} onOpen={(x)=>openEduItem(x as EduItem)}/>)}</div>
        ):(
         <div className="zke-empty">
          <SearchIcon size={26}/>
@@ -224,7 +233,7 @@ export function EducationPage({app}:{app:any}){
      {cfg.servicesVisibility?.trainings!==false&&<div style={{marginTop:26}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{en?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>en?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
      {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}
     </div>
-    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} onClose={()=>setOpenItem(null)} onOpen={(x)=>setOpenItem(x as EduItem)} onConsult={consult}/>}
+    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} onClose={closeEduItem} onOpen={(x)=>openEduItem(x as EduItem)} onConsult={consult}/>}
    </main>
   </>
  );
@@ -340,6 +349,28 @@ export function AboutPage({app}:{app:any}){
      <div style={{background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16,padding:"16px 18px",marginBottom:18,fontSize:13.5,lineHeight:1.8,color:T.mut}}>
        {lang==="en"?"Over 10,000 families. No shortcuts. Just care, science, and results that speak for themselves." : "بیش از ۱۰٬۰۰۰ خانواده. بدون میان‌بر. فقط مراقبت، علم و نتایج واقعی."}
      </div>
+
+     {/* لیست مشاورین — قابل مدیریت از پنل مدیریت (تنظیمات ← درباره ما) */}
+     {(cfg.consultants||[]).length>0&&(
+       <div style={{margin:"0 0 24px"}}>
+         <div style={{fontWeight:800,fontSize:15.5,marginBottom:12,color:T.ttl}}>{lang==="en"?"Our Team of Specialists":"تیم مشاورین ما"}</div>
+         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12}}>
+           {(cfg.consultants||[]).map((c:any)=>{
+             const name=lang==="en"?(c.nameEn||c.name):(c.name||"");
+             const role=lang==="en"?(c.titleEn||c.title):(c.title||"");
+             const desc=lang==="en"?(c.descEn||c.desc):(c.desc||"");
+             return (
+               <div key={c.id} style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:18,padding:"16px 14px",textAlign:"center",boxShadow:"var(--zk-shadow-light,0 3px 12px rgba(15,38,60,.05))"}}>
+                 {c.photoUrl?<img src={c.photoUrl} alt={name} loading="lazy" style={{width:92,height:92,borderRadius:"50%",objectFit:"cover",border:`2px solid ${T.acc}`,margin:"0 auto 10px",display:"block"}}/>:null}
+                 <div style={{fontWeight:800,fontSize:14,color:T.ttl,lineHeight:1.4}}>{name}</div>
+                 {role&&<div style={{fontSize:12,color:T.acc,fontWeight:700,marginTop:2}}>{role}</div>}
+                 {desc&&<div style={{fontSize:12,color:T.mut,lineHeight:1.75,marginTop:6,whiteSpace:"pre-wrap"}}>{desc}</div>}
+               </div>
+             );
+           })}
+         </div>
+       </div>
+     )}
 
      {cfg.servicesVisibility?.about!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:"0 0 10px",fontWeight:800}}>{lang==="en"?"Our Services":"خدمات ما"}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==="en"?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==="carousel"?"carousel":"list"} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
      {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}

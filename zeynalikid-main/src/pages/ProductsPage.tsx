@@ -37,11 +37,36 @@ export default function ProductsPage({ app }: { app: any }) {
     window.location.href = APP_A_URL;
   };
 
+  // رفع باگ دکمه برگشت گوشی/مرورگر: جزئیات محصول inline نمایش داده می‌شود؛ با push یک entry در
+  // history، دکمه back گوشی جزئیات را می‌بندد و به فهرست برمی‌گردد (به‌جای پریدن به هوم).
+  const detailPushedRef = React.useRef(false);
+  React.useEffect(() => {
+    const onPop = () => {
+      if (detailPushedRef.current) {
+        detailPushedRef.current = false;
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const openDetail = (product: any) => {
+    if (!detailPushedRef.current) {
+      try { window.history.pushState({ zkProductDetail: true, from: window.location.pathname }, ''); } catch {}
+      detailPushedRef.current = true;
+    }
     setSelectedProduct(product);
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
   };
 
-  const closeDetail = () => setSelectedProduct(null);
+  const closeDetail = () => {
+    if (detailPushedRef.current) {
+      detailPushedRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    setSelectedProduct(null);
+  };
   if (!showSection) {
     // Phase 8: به‌جای نمایش پیام «غیرفعال است»، مستقیماً به صفحهٔ اصلی هدایت می‌شود
     return <Navigate to="/" replace />;

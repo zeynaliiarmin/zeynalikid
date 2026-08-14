@@ -6,3 +6,5 @@ tmp/
 test-output/
 .vercel
 .env*
+
+node_modules

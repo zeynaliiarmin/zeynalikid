@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Zeynalikid Education — Stage 8
+   Afradikid Education — Stage 8
    Scoped to .zke-root — بدون نشت به سایر صفحات. توکن‌های --zk (Stage 1/6)
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -79,7 +79,7 @@ html[data-theme="dark"] .zke-chip.on { color: #0F1722; }
 .zke-kw button:hover { border-color: var(--zk-primary); color: var(--zk-primary); }
 
 /* ── گرید محتوا ── */
-.zke-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.zke-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: flex-start; }
 @media (min-width: 640px) { .zke-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .zke-grid { grid-template-columns: repeat(3, 1fr); } }
 

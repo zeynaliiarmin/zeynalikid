@@ -43,7 +43,7 @@ export default function SettingsManager(props: Props) {
   const [draft, setDraft] = useState<any>(() => {
     try { return JSON.parse(JSON.stringify(editCfg || {})); } catch { return { ...(editCfg || {}) }; }
   });
-  const [subTab, setSubTab] = useState<'secondary' | 'primary' | 'layout' | 'translations'>('secondary');
+  const [subTab, setSubTab] = useState<'secondary' | 'primary' | 'layout' | 'translations' | 'about'>('secondary');
 
   const up = useCallback((k: string, v: any) => setDraft((prev: any) => ({ ...prev, [k]: v })), []);
   const upNested = useCallback((path: string[], v: any) => setDraft((prev: any) => {
@@ -59,7 +59,7 @@ export default function SettingsManager(props: Props) {
 
   const ff = draft.formFields || {};
   const arrKeys: [string, string][] = [['consultTopics', 'موضوعات مشاوره'], ['digestiveOptions', 'گزینه‌های گوارش'], ['appetiteOptions', 'گزینه‌های اشتها'], ['specialConditions', 'شرایط خاص'], ['timeSlots', 'بازه‌های تماس'], ['categories', 'دسته‌بندی‌ها']];
-  const thTab = (id: 'secondary' | 'primary' | 'layout' | 'translations', label: string) => (
+  const thTab = (id: 'secondary' | 'primary' | 'layout' | 'translations' | 'about', label: string) => (
     <button type="button" onClick={() => setSubTab(id)} style={{ ...AdminBtn(), background: subTab === id ? T.soft : T.card, color: subTab === id ? T.acc : T.mut, boxShadow: subTab === id ? T.neuIn : T.neuOut }}>
       {label}
     </button>
@@ -342,13 +342,99 @@ export default function SettingsManager(props: Props) {
         {thTab('primary', 'تنظیمات پروژه اصلی (دوره‌ها + پنل)')}
         {thTab('layout', 'چیدمان صفحه اصلی و منوی همبرگری')}
         {thTab('translations', 'مدیریت متن‌ها و ترجمه‌ها')}
+        {thTab('about', 'درباره ما')}
       </div>
       {subTab === 'secondary' && SecondaryTab}
       {subTab === 'primary' && PrimaryTab}
       {subTab === 'layout' && LayoutTab}
       {subTab === 'translations' && TranslationsTab}
+      {subTab === 'about' && (
+        <AboutSettings
+          T={T} S={S} AdminBtn={AdminBtn} Box={Box}
+          StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
+          draft={draft} up={up} upNested={upNested}
+          fileToData={fileToData} deleteStoredImage={deleteStoredImage} uid={uid}
+        />
+      )}
       <button type="button" style={S.btn} onClick={() => setSave(draft)}>ذخیره تغییرات</button>
     </div>
+  );
+}
+
+// ── تب «درباره ما» — همهٔ محتوای صفحه درباره ما + لیست مشاورین ──
+function AboutSettings(props: any) {
+  const { T, S, AdminBtn, Box, StableAdminInput, StableAdminTextarea, draft, up, upNested, fileToData, deleteStoredImage, uid } = props;
+  const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} /> {label}
+    </label>
+  );
+  const consultants: any[] = draft.consultants || [];
+  const setConsultants = (arr: any[]) => up('consultants', arr);
+  const chgConsultant = (i: number, k: string, v: any) => { const a = [...consultants]; a[i] = { ...a[i], [k]: v }; setConsultants(a); };
+  const moveConsultant = (i: number, dir: -1 | 1) => { const a = [...consultants]; const j = i + dir; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; setConsultants(a); };
+  const addConsultant = () => setConsultants([...consultants, { id: 'cons' + uid(), name: 'مشاور جدید', nameEn: 'New Consultant', title: '', titleEn: '', desc: '', descEn: '', photoUrl: '' }]);
+  const removeConsultant = (i: number) => { const a = [...consultants]; const removed = a[i]; if (removed?.photoUrl) { try { deleteStoredImage(removed.photoUrl); } catch {} } setConsultants(a.filter((_: any, j: number) => j !== i)); };
+
+  return (
+    <>
+      <Box title="عناوین و هیرو صفحه درباره ما">
+        <label style={S.lbl}>نام / برند (specialistName)</label>
+        <StableAdminInput style={S.inp} defaultValue={draft.specialistName || ''} onCommit={(v: string) => up('specialistName', v)} />
+        <label style={{ ...S.lbl, marginTop: 8 }}>زیرعنوان کارشناس</label>
+        <StableAdminInput style={S.inp} defaultValue={draft.specialistTitle || ''} onCommit={(v: string) => up('specialistTitle', v)} />
+        <StableAdminInput style={S.inp} defaultValue={draft.specialistTitleEn || ''} onCommit={(v: string) => up('specialistTitleEn', v)} placeholder="English title" />
+        <label style={{ ...S.lbl, marginTop: 8 }}>تصویر هیرو صفحه درباره ما</label>
+        <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, draft.images?.aboutHero?.url, 'about'); upNested(['images', 'aboutHero'], { ...(draft.images?.aboutHero || {}), url: u }); } }} />
+        {draft.images?.aboutHero?.url && <img src={draft.images.aboutHero.url} alt="about hero" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} />}
+        <Checklist label="نمایش تصویر هیرو" value={draft.images?.aboutHero?.enabled !== false} onChange={(v) => upNested(['images', 'aboutHero'], { ...(draft.images?.aboutHero || {}), enabled: v })} />
+      </Box>
+
+      <Box title="متن‌های صفحه درباره ما (دوزبانه)">
+        <label style={S.lbl}>متن اصلی (فارسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutText || ''} onCommit={(v: string) => up('aboutText', v)} rows={4} placeholder="متن صفحه درباره ما به فارسی..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن اصلی (انگلیسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutTextEn || ''} onCommit={(v: string) => up('aboutTextEn', v)} rows={4} placeholder="About us content in English..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن سئو (فارسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutIntroText || ''} onCommit={(v: string) => up('aboutIntroText', v)} rows={3} placeholder="متن سئوی صفحه درباره ما..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن سئو (انگلیسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutIntroTextEn || ''} onCommit={(v: string) => up('aboutIntroTextEn', v)} rows={3} placeholder="About page SEO text..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن داستان ما (فارسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutStoryText || ''} onCommit={(v: string) => up('aboutStoryText', v)} rows={3} placeholder="متن داستان ما..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن داستان ما (انگلیسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.aboutStoryTextEn || ''} onCommit={(v: string) => up('aboutStoryTextEn', v)} rows={3} placeholder="Our story in English..." />
+      </Box>
+
+      <Box title="لیست مشاورین (نمایش در صفحه درباره ما)">
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>عکس مشاور را آپلود کنید، اسم به‌عنوان عنوان و توضیحات هر مشاور را بنویسید. مشاورین به‌صورت کارت در بخش مناسب صفحه درباره ما نمایش داده می‌شوند.</p>
+        {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>مشاوری ثبت نشده است.</p>}
+        {consultants.map((c: any, i: number) => (
+          <div key={c.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 12, marginBottom: 10, background: T.badge }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <label style={{ ...S.lbl, marginBottom: 0, flexShrink: 0 }}>عکس مشاور</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp, flex: 1 }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, c.photoUrl, 'consultants'); chgConsultant(i, 'photoUrl', u); } }} />
+            </div>
+            {c.photoUrl && <img src={c.photoUrl} alt="consultant" style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${T.brd}`, margin: '0 0 8px' }} />}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div><label style={S.lbl}>نام (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.name || ''} onCommit={(v: string) => chgConsultant(i, 'name', v)} /></div>
+              <div><label style={S.lbl}>Name (English)</label><StableAdminInput style={S.inp} defaultValue={c.nameEn || ''} onCommit={(v: string) => chgConsultant(i, 'nameEn', v)} /></div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div><label style={S.lbl}>سمت (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.title || ''} onCommit={(v: string) => chgConsultant(i, 'title', v)} /></div>
+              <div><label style={S.lbl}>Role (English)</label><StableAdminInput style={S.inp} defaultValue={c.titleEn || ''} onCommit={(v: string) => chgConsultant(i, 'titleEn', v)} /></div>
+            </div>
+            <div><label style={S.lbl}>توضیحات (فارسی)</label><StableAdminTextarea style={S.ta} defaultValue={c.desc || ''} onCommit={(v: string) => chgConsultant(i, 'desc', v)} rows={2} /></div>
+            <div><label style={S.lbl}>Description (English)</label><StableAdminTextarea style={S.ta} defaultValue={c.descEn || ''} onCommit={(v: string) => chgConsultant(i, 'descEn', v)} rows={2} /></div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === 0} onClick={() => moveConsultant(i, -1)}><ZkArrowUpIcon size={13} /></button>
+              <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === consultants.length - 1} onClick={() => moveConsultant(i, 1)}><ZkArrowDownIcon size={13} /></button>
+              <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => removeConsultant(i)}>حذف</button>
+            </div>
+          </div>
+        ))}
+        <button type="button" style={AdminBtn()} onClick={addConsultant}><ZkPlusIcon size={13} /> افزودن مشاور</button>
+      </Box>
+    </>
   );
 }
 

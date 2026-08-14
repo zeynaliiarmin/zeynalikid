@@ -51,15 +51,22 @@ export default function CoursesPage({ app }: { app: any }) {
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [filter, setFilter] = useState<string>('all');
+  // ردیابی ورود به جزئیات دوره برای دکمه back گوشی (در پایین هم استفاده می‌شود)
+  const detailPushedRef = React.useRef(false);
 
   const activeTab = cfg.courseTabs?.find((t: any) => t.id === courseTab) || cfg.courseTabs?.[0];
   const allCourses = (activeTab?.courses || []).filter((c: any) => c.active !== false).map((c: any) => ({ ...c, tabId: activeTab?.id }));
 
   // پشتیبانی از باز شدن مستقیم دوره هنگام انتخاب از صفحه اصلی (HomePage)
+  // با push کردن یک entry در history، دکمه back گوشی جزئیات را می‌بندد و به فهرست برمی‌گردد.
   useEffect(() => {
     if (location.state?.courseId) {
       const found = allCourses.find((c: any) => c.id === location.state.courseId);
       if (found) {
+        if (!detailPushedRef.current) {
+          try { window.history.pushState({ zkCourseDetail: true, from: '/courses' }, ''); } catch {}
+          detailPushedRef.current = true;
+        }
         setSelectedCourse(found);
       }
     }
@@ -106,12 +113,37 @@ export default function CoursesPage({ app }: { app: any }) {
     window.location.href = APP_A_URL;
   };
 
+  // رفع باگ دکمه برگشت گوشی/مرورگر: جزئیات دوره به‌صورت inline (بدون تغییر URL) نمایش داده می‌شود.
+  // با push کردن یک entry در history، دکمه back خود گوشی/مرورگر به‌درستی جزئیات را می‌بندد و به
+  // فهرست دوره‌ها برمی‌گردد (به‌جای پریدن به صفحه هوم).
   const openDetail = (course: any) => {
+    if (!detailPushedRef.current) {
+      try { window.history.pushState({ zkCourseDetail: true, from: window.location.pathname }, ''); } catch {}
+      detailPushedRef.current = true;
+    }
     setSelectedCourse(course);
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
   };
 
-  const closeDetail = () => setSelectedCourse(null);
+  const closeDetail = () => {
+    if (detailPushedRef.current) {
+      detailPushedRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    setSelectedCourse(null);
+  };
+
+  // وقتی کاربر دکمه back گوشی/مرورگر را می‌زند، history.pop باعث می‌شود جزئیات بسته شود.
+  React.useEffect(() => {
+    const onPop = () => {
+      if (detailPushedRef.current) {
+        detailPushedRef.current = false;
+        setSelectedCourse(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // ════════════════════════════════════════════════════════════════════════
   // نمایش دوره به صورت «یک صفحه جداگانه» (Separate Page) به جای پاپ‌آپ
@@ -129,6 +161,9 @@ export default function CoursesPage({ app }: { app: any }) {
             lang={lang}
             countries={cfg.countryCodes}
             onClose={closeDetail}
+            educationalMedia={educationalMedia}
+            parentExperienceMedia={parentExperienceMedia}
+            mediaVpnOn={mediaVpnOn}
             onRegister={() => {
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)
               if (app.setShipModal) {
@@ -277,7 +312,7 @@ export default function CoursesPage({ app }: { app: any }) {
             <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
               {lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
               {parentExperienceMedia.map((item: any, index: number) => (
                 <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
               ))}
@@ -289,7 +324,7 @@ export default function CoursesPage({ app }: { app: any }) {
             <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
               {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
               {educationalMedia.map((item: any, index: number) => (
                 <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
               ))}
