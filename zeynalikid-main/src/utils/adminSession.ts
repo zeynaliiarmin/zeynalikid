@@ -23,6 +23,8 @@ export async function loginAdminSession(phone: string, password: string) {
   STORE.setItem(TOKEN_KEY, data.sessionToken);
   STORE.setItem(DEVICE_KEY, data.deviceId);
   STORE.setItem(AUTHED_KEY, 'true');
+  // زمان لاگین برای رد شدن از validate مجدد بلافاصله پس از ورود (کاهش تأخیر ورود به پنل)
+  try { (typeof localStorage!=='undefined'?localStorage:STORE).setItem('zk_admin_login_at', String(Date.now())); } catch {}
   return data;
 }
 export const getAdminSessionToken = () => STORE.getItem(TOKEN_KEY) || '';

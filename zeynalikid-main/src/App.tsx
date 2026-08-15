@@ -1042,9 +1042,12 @@ function App(){
  useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&!adminAuthed){ navigate('/admin/login',{replace:true}); } },[location.pathname,adminAuthed,navigate]);
  // Phase 3: هنگام ورود به /admin/app، validate_session را با Edge Function بررسی کن.
  // فقط وجود token در sessionStorage کافی نیست — session ممکن است منقضی یا revoke شده باشد.
- useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&getAdminSessionToken()){ let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
+ useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&getAdminSessionToken()){
+   let justLoggedIn=false; try{ const t=Number(localStorage.getItem('zk_admin_login_at')||0); justLoggedIn = (Date.now()-t)<8000; }catch{}
+   if(justLoggedIn)return;
+   let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
- const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(isSupabaseConfigured);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
+ const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
  useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/admin-login',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
  const [lang,setLang]=useState<Lang>(()=>getLS('zkid_lang','fa'));
@@ -1126,7 +1129,7 @@ function App(){
  useEffect(()=>{if(!isSupabaseConfigured||view==='admin'||view==='admin-login')return;let alive=true;const refresh=()=>{fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(()=>{})};const iv=setInterval(refresh,60000);return()=>{alive=false;clearInterval(iv)}},[view,isSupabaseConfigured]);
  // پس از ورود مدیر، تنظیمات کامل و احرازهویت‌شده دوباره بارگذاری می‌شود. تا پایان این مرحله
  // پنل قابل ویرایش نیست تا پاسخ عمومیِ فیلترشده هرگز محصولات یا تصاویر را با پیش‌فرض بازنویسی نکند.
- useEffect(()=>{if(!adminAuthed||!isSupabaseConfigured)return;let alive=true;setAdminSettingsLoading(true);fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products}))}).catch(e=>console.warn('Could not load full admin settings',e)).finally(()=>{if(alive)setAdminSettingsLoading(false)});return()=>{alive=false}},[adminAuthed]);
+ useEffect(()=>{if(!adminAuthed||!isSupabaseConfigured)return;let alive=true;fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products}))}).catch(e=>console.warn('Could not load full admin settings',e)).finally(()=>{if(alive)setAdminSettingsLoading(false)});return()=>{alive=false}},[adminAuthed]);
  // مهاجرت localStorage: یک‌بار داده‌های قدیمی را به ساختار جدید تبدیل کن
  useEffect(()=>{const MIGRATION_KEY='zkid_settings_migrated_v2';if(!localStorage.getItem(MIGRATION_KEY)){try{const raw=localStorage.getItem('zkid_settings_v2');if(raw){const parsed=JSON.parse(raw);const migrated=migrateSettings(parsed);if(migrated.version===2){localStorage.setItem('zkid_settings_v2',JSON.stringify(migrated));localStorage.setItem(MIGRATION_KEY,'1')}}}catch{}}},[]);
  // ذخیره خودکار داده‌های مهاجرت‌شده در Supabase
@@ -1199,8 +1202,8 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   <Route path="/consultation" element={<ConsultationPage app={app}/>}/>
   <Route path="/admin-login" element={<AdminLoginPage app={app}/>}/>
   <Route path="/admin/login" element={<AdminLoginPage app={app}/>}/>
-  <Route path="/admin" element={adminAuthed?(adminSettingsLoading?<div style={{display:'flex',minHeight:'70vh',alignItems:'center',justifyContent:'center',color:T.mut}}>در حال دریافت امن تنظیمات…</div>:<AdminPanel app={app}/>):<Navigate to="/admin/login" replace/>}/>
-  <Route path="/admin/app" element={adminAuthed?(adminSettingsLoading?<div style={{display:'flex',minHeight:'70vh',alignItems:'center',justifyContent:'center',color:T.mut}}>در حال دریافت امن تنظیمات…</div>:<AdminPanel app={app}/>):<Navigate to="/admin/login" replace/>}/>
+  <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
+  <Route path="/admin/app" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
   <Route path="*" element={<Navigate to="/" replace/>}/>
  </Routes></Suspense>;
  // هدر اصلی در فهرست و جزئیات دوره نمایش داده می‌شود؛ فقط مراحل حساس ثبت/پرداخت هدر ندارند.
