@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ReviewItem, fetchReviews, submitReview } from '../lib/supabase';
 import { defaultCountries } from '../config/defaultSettings';
 import {
@@ -25,6 +26,24 @@ const StarSvg = ({ filled, color = 'var(--zk-primary)', size = 16 }: { filled: b
   </svg>
 );
 
+// برش متن به حداکثر ۴ خط: اگر بیش از ۴ خط بود، با سه‌نقطه و دکمه «بیشتر»
+function CommentBody({ comment, expandable, expanded, onMore, inSheet }: { comment?: string; expandable: boolean; expanded: boolean; onMore?: () => void; inSheet?: boolean }) {
+  if (!comment) return null;
+  if (expanded || inSheet) {
+    return <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{comment}</div>;
+  }
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{comment}</div>
+      {expandable && onMore && (
+        <button type="button" onClick={onMore} style={{ border: 0, background: 'transparent', color: 'var(--zk-primary, #0F766E)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, padding: '3px 0 0' }}>
+          {comment.length > 0 ? 'بیشتر' : ''}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ReviewSection({ T, lang, courseId, placement = 'course_detail', countries: suppliedCountries }: ReviewSectionProps) {
   const isFa = lang === 'fa';
   const countries = suppliedCountries?.length ? suppliedCountries : defaultCountries as any[];
@@ -37,8 +56,19 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [sheetReview, setSheetReview] = useState<ReviewItem | null>(null);
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const scrollToForm = () => { formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   // ۵ نظر رندوم برای نمایش در تب نظرات (هر بار تغییر می‌کند)
   const previewReviews = useMemo(() => {
     const arr = [...reviews];
@@ -126,6 +156,45 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   // وقتی «مشاهده همه» فعال شد، کل نظرات مرتب‌شده نمایش داده می‌شود؛ در غیر این صورت ۵ نظر رندوم.
   const displayed = showAll ? sortedReviews : previewReviews;
 
+  // بررسی اینکه نظر از ۴ خط بیشتر است (تقریبی: بیش از ~۲۴۰ کاراکتر)
+  const isLong = (c?: string) => (c || '').length > 240;
+
+  const reviewCardContent = (review: ReviewItem, opts: { inSheet?: boolean; inPage?: boolean } = {}) => {
+    const maskedPhone = maskReviewPhone(review.phone || review.public_phone, review.phone_country);
+    const long = isLong(review.comment);
+    const expanded = expandedIds.has(String(review.id));
+    const showMore = long && !expanded && !opts.inSheet;
+    return (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.txt, minWidth: 0 }}>{review.reviewer_name}</span>
+          {maskedPhone && (
+            <span data-public-review-phone dir="ltr" style={{ fontSize: 12, color: T.mut, whiteSpace: 'nowrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+              {reviewCountryFlag(review.phone_country, countries)} ({maskedPhone})
+            </span>
+          )}
+        </div>
+        <div aria-label={`${review.rating} / 5`} style={{ display: 'flex', gap: 2, direction: 'ltr', justifyContent: 'flex-end', marginBottom: review.comment ? 8 : 4 }}>
+          {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color="#F59E0B" size={14} />)}
+        </div>
+        <CommentBody comment={review.comment} expandable={long} expanded={expanded} inSheet={opts.inSheet} onMore={() => opts.inPage ? toggleExpand(String(review.id)) : setSheetReview(review)} />
+        {showMore && (
+          <button type="button" onClick={() => opts.inPage ? toggleExpand(String(review.id)) : setSheetReview(review)} style={{ border: 0, background: 'transparent', color: 'var(--zk-primary, #0F766E)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, padding: '3px 0 0' }}>
+            بیشتر
+          </button>
+        )}
+        <time dateTime={review.created_at} style={{ display: 'block', borderTop: `1px solid ${T.brd}`, marginTop: 10, paddingTop: 8, fontSize: 10.5, color: T.mut }}>
+          {isFa ? 'تاریخ ثبت: ' : 'Submitted: '}{formatPersianReviewDate(review.created_at, isFa)}
+        </time>
+      </>
+    );
+  };
+
+  // جهت اسکرول افقی: در فارسی برعکس حالت فعلی (به سمت چپ شروع می‌شود)، در انگلیسی ltr
+  const horizDir: any = isFa ? 'rtl' : 'ltr';
+  // جهت فلش دکمه مشاهده همه: در فارسی به سمت چپ (جایی که اسکرول ادامه می‌یابد)
+  const arrowDir = isFa ? 'left' : 'right';
+
   return (
     <div style={{ marginTop: 24 }}>
       {/* هدر بخش نظرات: عنوان + میانگین امتیاز درشت و بولد + تعداد + دکمه ثبت نظر */}
@@ -134,9 +203,9 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
           <h3 style={{ fontSize: 17, fontWeight: 900, color: T.ttl, margin: 0 }}>{isFa ? 'نظرات والدین و کاربران' : 'Parent & User Reviews'}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 17, fontWeight: 900, color: T.acc }}>
-              {reviews.length > 0 ? `★ ${avgRating}` : (isFa ? '★ —' : '★ —')}
+              {reviews.length > 0 ? `★ ${avgRating}` : '★ —'}
             </span>
-            <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{isFa ? `از ۵` : `/ 5`}</span>
+            <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{isFa ? 'از ۵' : '/ 5'}</span>
             <span style={{ fontSize: 12, color: T.mut }}>{isFa ? `(${reviews.length} نظر ثبت‌شده)` : `(${reviews.length} reviews)`}</span>
           </div>
         </div>
@@ -160,61 +229,39 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         <div style={{ marginBottom: 20 }}>
           {showAll ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {displayed.map((review) => {
-            const maskedPhone = maskReviewPhone(review.phone || review.public_phone, review.phone_country);
-            return (
-              <article key={review.id} data-review-id={review.id} style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, direction: 'rtl', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: T.txt, minWidth: 0 }}>{review.reviewer_name}</span>
-                  {maskedPhone && (
-                    <span data-public-review-phone dir="ltr" style={{ fontSize: 12, color: T.mut, whiteSpace: 'nowrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                      {reviewCountryFlag(review.phone_country, countries)} ({maskedPhone})
-                    </span>
-                  )}
-                </div>
-                <div aria-label={`${review.rating} / 5`} style={{ display: 'flex', gap: 2, direction: 'ltr', justifyContent: 'flex-end', marginBottom: review.comment ? 8 : 4 }}>
-                  {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color="#F59E0B" size={14} />)}
-                </div>
-                {review.comment && <div style={{ fontSize: 13, color: T.mut, lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{review.comment}</div>}
-                <time dateTime={review.created_at} style={{ display: 'block', borderTop: `1px solid ${T.brd}`, marginTop: 10, paddingTop: 8, fontSize: 10.5, color: T.mut }}>
-                  {isFa ? 'تاریخ ثبت: ' : 'Submitted: '}{formatPersianReviewDate(review.created_at, isFa)}
-                </time>
-              </article>
-            );
-              })}
+              {displayed.map((review) => (
+                <article key={review.id} data-review-id={review.id} style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut }}>
+                  {reviewCardContent(review, { inPage: true })}
+                </article>
+              ))}
             </div>
           ) : (
             <>
-              {/* حالت پیش‌فرض: اسکرول افقیِ ۵ نظر + دکمه مشاهده همه */}
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: 'ltr' }}>
-                {displayed.map((review) => {
-                  const maskedPhone = maskReviewPhone(review.phone || review.public_phone, review.phone_country);
-                  return (
-                    <article key={review.id} data-review-id={review.id} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut, direction: 'rtl' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: T.txt, minWidth: 0 }}>{review.reviewer_name}</span>
-                        {maskedPhone && (
-                          <span data-public-review-phone dir="ltr" style={{ fontSize: 12, color: T.mut, whiteSpace: 'nowrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                            {reviewCountryFlag(review.phone_country, countries)} ({maskedPhone})
-                          </span>
-                        )}
-                      </div>
-                      <div aria-label={`${review.rating} / 5`} style={{ display: 'flex', gap: 2, direction: 'ltr', justifyContent: 'flex-end', marginBottom: review.comment ? 8 : 4 }}>
-                        {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color="#F59E0B" size={14} />)}
-                      </div>
-                      {review.comment && <div style={{ fontSize: 13, color: T.mut, lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{review.comment}</div>}
-                      <time dateTime={review.created_at} style={{ display: 'block', borderTop: `1px solid ${T.brd}`, marginTop: 10, paddingTop: 8, fontSize: 10.5, color: T.mut }}>
-                        {isFa ? 'تاریخ ثبت: ' : 'Submitted: '}{formatPersianReviewDate(review.created_at, isFa)}
-                      </time>
-                    </article>
-                  );
-                })}
+              {/* حالت پیش‌فرض: اسکرول افقیِ ۵ نظر + دکمه مشاهده همه (به‌عنوان کارت ششم) */}
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: horizDir }}>
+                {displayed.map((review) => (
+                  <article key={review.id} data-review-id={review.id} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut, direction: 'rtl' }}>
+                    {reviewCardContent(review, {})}
+                  </article>
+                ))}
+                {/* دکمه مشاهده همه — به‌عنوان کارت ششم، کنار آخرین نظر */}
+                {reviews.length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    aria-label={isFa ? 'مشاهده همه' : 'View all'}
+                    style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 }}
+                  >
+                    <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
+                        <path d="M5 12h14" />
+                        <path d="m13 6 6 6-6 6" />
+                      </svg>
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: T.acc }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                  </button>
+                )}
               </div>
-              {reviews.length > 5 && (
-                <button type="button" onClick={() => setShowAll(true)} style={{ minHeight: 42, padding: '0 18px', borderRadius: 999, border: `1px solid ${T.acc}`, background: 'transparent', color: T.acc, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>
-                  {isFa ? `مشاهده همه نظرات (${reviews.length})` : `View all reviews (${reviews.length})`}
-                </button>
-              )}
             </>
           )}
         </div>
@@ -222,6 +269,22 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         <div style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 18, textAlign: 'center', color: T.mut, fontSize: 13, marginBottom: 20 }}>
           {isFa ? 'هنوز نظری برای این مورد ثبت نشده است. شما اولین نفر باشید!' : 'No reviews yet. Be the first to leave a review!'}
         </div>
+      )}
+
+      {/* Bottom-sheet: نمایش کامل نظر از پایین (فقط در تب نظرات وقتی «بیشتر» زده می‌شود) */}
+      {sheetReview && createPortal(
+        <div onClick={() => setSheetReview(null)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxHeight: '75vh', overflowY: 'auto', background: T.card || '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 18px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(15,23,42,0.3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <b style={{ fontSize: 15, color: T.ttl }}>{isFa ? 'نظر کامل' : 'Full review'}</b>
+              <button type="button" onClick={() => setSheetReview(null)} style={{ border: 0, background: T.soft, width: 34, height: 34, borderRadius: '50%', color: T.txt, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ background: T.soft, borderRadius: 14, border: `1px solid ${T.brd}`, padding: 14 }}>
+              {reviewCardContent(sheetReview, { inSheet: true })}
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
 
       <form ref={formRef} onSubmit={handleSubmit} style={{ background: T.soft, borderRadius: T.cardRadius || 16, border: `1px solid ${T.brd}`, padding: 16, boxShadow: T.neuIn }}>
