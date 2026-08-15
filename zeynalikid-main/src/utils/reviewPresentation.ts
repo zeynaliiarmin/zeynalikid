@@ -26,6 +26,31 @@ const localExamples: Record<string, string> = {
   '+93': '0701234567',
 };
 
+// پیش‌شماره‌های واقعی و معتبر هر کشور + طول کل شمارهٔ محلی (بدون کد کشور)
+// این‌ها فقط برای ساخت شمارهٔ ماسک‌شدهٔ رندوم استفاده می‌شوند.
+const localPhoneSpecs: Record<string, { prefixes: string[]; length: number }> = {
+  '+98': { prefixes: ['0910','0911','0912','0913','0914','0915','0916','0917','0918','0919','0920','0921','0922','0930','0931','0932','0933','0934','0935','0936','0937','0938','0939','0900','0901','0902','0903','0905','0990','0991','0992','0993'], length: 11 },
+  '+1': { prefixes: ['212','310','415','646','650','718','732','818','929'], length: 10 },
+  '+44': { prefixes: ['7700','7400','7500','7701'], length: 11 },
+  '+49': { prefixes: ['0151','0160','0170','0171','0157'], length: 11 },
+  '+46': { prefixes: ['070','073','076'], length: 10 },
+  '+41': { prefixes: ['076','077','078','079'], length: 10 },
+  '+47': { prefixes: ['400','410','450','900','920','950','970','980','990'], length: 8 },
+  '+33': { prefixes: ['06','07'], length: 10 },
+  '+61': { prefixes: ['0400','0401','0402','0403','0404','0405','0406','0407','0408','0409','0410','0411'], length: 10 },
+  '+971': { prefixes: ['050','052','054','055','056','058'], length: 10 },
+  '+90': { prefixes: ['0500','0501','0502','0503','0504','0505','0530','0531','0532','0533','0534','0535','0536','0537','0538','0539','0541','0542'], length: 11 },
+  '+31': { prefixes: ['06'], length: 10 },
+  '+91': { prefixes: ['98','99','96','70','80','81','82','83','84','85','86','87','88','89'], length: 10 },
+  '+93': { prefixes: ['070','079','078','077'], length: 10 },
+};
+
+// طول کل شمارهٔ نمایشی (با احتساب کد کشور در صورت وجود) برای ساخت ماسک
+function localLength(countryCode: string, localLengthVal: number): number {
+  const dial = reviewDigits(countryCode);
+  return countryCode === '+98' ? localLengthVal : dial.length + localLengthVal;
+}
+
 export const reviewDigits = (value: unknown) => p2e(value).replace(/[^0-9]/g, '');
 
 export function reviewCountryByCode(countries: ReviewCountry[] = [], code?: string): ReviewCountry | undefined {
@@ -97,12 +122,22 @@ export function reviewCountryFlag(countryCode: string | undefined, countries: Re
 }
 
 export function manualMaskedPhoneTemplate(countryCode: string): string {
+  const spec = localPhoneSpecs[countryCode];
+  if (spec) {
+    const prefix = spec.prefixes[Math.floor(Math.random() * spec.prefixes.length)];
+    const total = localLength(countryCode, spec.length);
+    // رقم‌های بعد از پیش‌شماره تا طول کل را رندوم می‌سازیم
+    const fill = Array.from({ length: total - prefix.length }, () => String(Math.floor(Math.random() * 10))).join('');
+    const digits = `${prefix}${fill}`;
+    return `${digits.slice(0, 5)}xxxx${digits.slice(-2)}`;
+  }
+  // fallback: الگوی قدیمی با حفظ پیش‌شمارهٔ مثال
   const local = localExamples[countryCode] || '12345678901';
   let digits = reviewDigits(local);
-  // شمارهٔ رندوم از همان الگوی کشور: ارقام میانی را تصادفی می‌سازیم (همان طولِ الگو)
-  const len = digits.length;
-  const rnd = Array.from({ length: len }, () => String(Math.floor(Math.random() * 10))).join('');
-  digits = rnd;
+  const prefixLen = Math.min(4, digits.length);
+  const prefix = digits.slice(0, prefixLen);
+  const fill = Array.from({ length: digits.length - prefixLen }, () => String(Math.floor(Math.random() * 10))).join('');
+  digits = `${prefix}${fill}`;
   if (countryCode !== '+98') {
     const dial = reviewDigits(countryCode);
     digits = `${dial}${digits.replace(/^0/, '')}`;

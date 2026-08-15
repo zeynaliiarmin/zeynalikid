@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import AskQuestionForm from './AskQuestionForm';
@@ -58,6 +59,16 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const desc = isFa ? course.desc : (course.descEn || course.desc);
   const [imageFailed, setImageFailed] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  const [showAllEdu, setShowAllEdu] = useState(false);
+  // ۵ محتوای آموزشی افقیِ رندوم برای نمایش (هر بار تغییر می‌کند)
+  const eduPreview = React.useMemo(() => {
+    const arr = [...educationalMedia];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 5);
+  }, [educationalMedia]);
   useEffect(() => { setImageFailed(false); }, [course.image]);
   const showCourseImage = !!String(course.image || '').trim() && !imageFailed;
   const discountEndTime = course.discountEnd ? new Date(course.discountEnd).getTime() : 0;
@@ -345,16 +356,50 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </div>
         </section>
 
-        {/* محتوای آموزشی مرتبط — بعد از جزئیات دوره و قبل از نظرات */}
+        {/* محتوای آموزشی مرتبط — بعد از جزئیات دوره و قبل از نظرات (افقی + مشاهده همه + صفحه جدا) */}
         {educationalMedia.length > 0 && (
           <section id="course-detail-education" data-detail-section style={detailSectionStyle(navTopOffset)}>
             <h2 style={detailSectionTitleStyle}>{isFa ? 'محتوای آموزشی مرتبط' : 'Related educational content'}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
-              {educationalMedia.map((item: any, index: number) => (
-                <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
+              {eduPreview.map((item: any, index: number) => (
+                <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: isFa ? 'rtl' : 'ltr' }}>
+                  <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                </div>
               ))}
+              {educationalMedia.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllEdu(true)}
+                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 160 }}
+                >
+                  <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                </button>
+              )}
             </div>
           </section>
+        )}
+
+        {/* صفحهٔ جداگانهٔ «مشاهده همه» محتوای آموزشی — تمام‌صفحه */}
+        {showAllEdu && createPortal(
+          <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
+              <button type="button" onClick={() => setShowAllEdu(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
+              </button>
+              <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start', maxWidth: 1080, margin: '0 auto' }}>
+                {educationalMedia.map((item: any, index: number) => (
+                  <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body,
         )}
 
         <section id="course-detail-reviews" data-detail-section style={detailSectionStyle(navTopOffset)}>
