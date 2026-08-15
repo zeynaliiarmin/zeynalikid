@@ -30,11 +30,11 @@ const StarSvg = ({ filled, color = 'var(--zk-primary)', size = 16 }: { filled: b
 function CommentBody({ comment, expandable, expanded, onMore, inSheet }: { comment?: string; expandable: boolean; expanded: boolean; onMore?: () => void; inSheet?: boolean }) {
   if (!comment) return null;
   if (expanded || inSheet) {
-    return <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{comment}</div>;
+    return <div className={expanded ? 'zk-expand' : ''} style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{comment}</div>;
   }
   return (
     <div>
-      <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{comment}</div>
+      <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.9, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{comment}</div>
       {expandable && onMore && (
         <button type="button" onClick={onMore} style={{ border: 0, background: 'transparent', color: 'var(--zk-primary, #0F766E)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, padding: '3px 0 0' }}>
           {comment.length > 0 ? 'بیشتر' : ''}
@@ -58,8 +58,48 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   const [showAll, setShowAll] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [sheetReview, setSheetReview] = useState<ReviewItem | null>(null);
+  const showAllPushedRef = React.useRef(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const scrollToForm = () => { formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+
+  // باز کردن صفحهٔ «مشاهده همه» با push یک state در history تا دکمهٔ back/مرورگر فقط همین صفحه را ببندد
+  const openShowAll = () => {
+    if (!showAllPushedRef.current) {
+      try { window.history.pushState({ zkReviewsPage: true }, ''); } catch {}
+      showAllPushedRef.current = true;
+    }
+    try { (window as any).__zkReviewsOverlayOpen = true; } catch {}
+    setShowAll(true);
+  };
+
+  // بستن صفحهٔ «مشاهده همه» و برگشت به بخش نظراتِ همان دوره (نه فهرست دوره‌ها)
+  const closeShowAll = () => {
+    showAllPushedRef.current = false;
+    try { (window as any).__zkReviewsOverlayOpen = false; } catch {}
+    setShowAll(false);
+    // برگشت به بخش نظراتِ دورهٔ انتخاب‌شده
+    window.setTimeout(() => {
+      const sec = document.getElementById('course-detail-reviews') || document.getElementById('product-detail-reviews');
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
+
+  // وقتی کاربر دکمهٔ back گوشی/مرورگر را روی صفحهٔ «مشاهده همه» بزند، فقط آن صفحه بسته شود
+  React.useEffect(() => {
+    const onPop = () => {
+      if (showAllPushedRef.current) {
+        showAllPushedRef.current = false;
+        try { (window as any).__zkReviewsOverlayOpen = false; } catch {}
+        setShowAll(false);
+        window.setTimeout(() => {
+          const sec = document.getElementById('course-detail-reviews') || document.getElementById('product-detail-reviews');
+          if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 60);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -153,8 +193,8 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
     }
   };
 
-  // بررسی اینکه نظر از ۴ خط بیشتر است (تقریبی: بیش از ~۲۴۰ کاراکتر)
-  const isLong = (c?: string) => (c || '').length > 240;
+  // بررسی اینکه نظر از ۳ خط بیشتر است (تقریبی: بیش از ~۱۸۰ کاراکتر)
+  const isLong = (c?: string) => (c || '').length > 180;
 
   const reviewCardContent = (review: ReviewItem, opts: { inSheet?: boolean; inPage?: boolean } = {}) => {
     const maskedPhone = maskReviewPhone(review.phone || review.public_phone, review.phone_country);
@@ -188,6 +228,14 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
 
   return (
     <div style={{ marginTop: 24 }}>
+      <style>{`
+        @keyframes zk-sheet-up { from { transform: translateY(100%); opacity: 0.4; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes zk-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zk-expand { from { opacity: 0.3; } to { opacity: 1; } }
+        .zk-sheet-up { animation: zk-sheet-up 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+        .zk-overlay-fade { animation: zk-fade-in 0.25s ease both; }
+        .zk-expand { animation: zk-expand 0.35s ease both; }
+      `}</style>
       {/* هدر بخش نظرات: عنوان + میانگین امتیاز درشت و بولد + تعداد + دکمه ثبت نظر */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <div>
@@ -229,7 +277,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
             {reviews.length > 5 && (
               <button
                 type="button"
-                onClick={() => setShowAll(true)}
+                onClick={openShowAll}
                 aria-label={isFa ? 'مشاهده همه' : 'View all'}
                 style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 }}
               >
@@ -252,10 +300,10 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
 
       {/* صفحهٔ جداگانهٔ «مشاهده همه نظرات» — تمام‌صفحه، با هدر و دکمه برگشت، نظرات به‌صورت عمودی */}
       {showAll && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: T.card || '#fff', display: 'flex', flexDirection: 'column' }}>
+        <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: T.card || '#fff', display: 'flex', flexDirection: 'column' }}>
           {/* هدر صفحهٔ نظرات */}
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: T.card || '#fff', borderBottom: `1px solid ${T.brd}` }}>
-            <button type="button" onClick={() => setShowAll(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${T.brd}`, background: T.soft, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <button type="button" onClick={closeShowAll} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${T.brd}`, background: T.soft, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
             </button>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -286,8 +334,8 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
 
       {/* Bottom-sheet: نمایش کامل نظر از پایین (فقط در تب نظرات وقتی «بیشتر» زده می‌شود) */}
       {sheetReview && createPortal(
-        <div onClick={() => setSheetReview(null)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'flex-end' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxHeight: '75vh', overflowY: 'auto', background: T.card || '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 18px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(15,23,42,0.3)' }}>
+        <div onClick={() => setSheetReview(null)} className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={(e) => e.stopPropagation()} className="zk-sheet-up" style={{ width: '100%', maxHeight: '75vh', overflowY: 'auto', background: T.card || '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 18px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(15,23,42,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <b style={{ fontSize: 15, color: T.ttl }}>{isFa ? 'نظر کامل' : 'Full review'}</b>
               <button type="button" onClick={() => setSheetReview(null)} style={{ border: 0, background: T.soft, width: 34, height: 34, borderRadius: '50%', color: T.txt, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>

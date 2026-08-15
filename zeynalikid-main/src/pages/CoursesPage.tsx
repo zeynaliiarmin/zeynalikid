@@ -134,8 +134,12 @@ export default function CoursesPage({ app }: { app: any }) {
   };
 
   // وقتی کاربر دکمه back گوشی/مرورگر را می‌زند، history.pop باعث می‌شود جزئیات بسته شود.
+  // اگر صفحهٔ «مشاهده همه نظرات» باز باشد، آن را به عهدهٔ ReviewSection می‌گذاریم تا فقط آن بسته شود.
   React.useEffect(() => {
     const onPop = () => {
+      let reviewsOverlayOpen = false;
+      try { reviewsOverlayOpen = !!(window as any).__zkReviewsOverlayOpen; } catch {}
+      if (reviewsOverlayOpen) return;
       if (detailPushedRef.current) {
         detailPushedRef.current = false;
         setSelectedCourse(null);

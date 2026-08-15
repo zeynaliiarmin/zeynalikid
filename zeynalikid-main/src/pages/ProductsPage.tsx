@@ -43,6 +43,9 @@ export default function ProductsPage({ app }: { app: any }) {
   const detailPushedRef = React.useRef(false);
   React.useEffect(() => {
     const onPop = () => {
+      let reviewsOverlayOpen = false;
+      try { reviewsOverlayOpen = !!(window as any).__zkReviewsOverlayOpen; } catch {}
+      if (reviewsOverlayOpen) return;
       if (detailPushedRef.current) {
         detailPushedRef.current = false;
         setSelectedProduct(null);
