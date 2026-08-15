@@ -153,9 +153,6 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
     }
   };
 
-  // وقتی «مشاهده همه» فعال شد، کل نظرات مرتب‌شده نمایش داده می‌شود؛ در غیر این صورت ۵ نظر رندوم.
-  const displayed = showAll ? sortedReviews : previewReviews;
-
   // بررسی اینکه نظر از ۴ خط بیشتر است (تقریبی: بیش از ~۲۴۰ کاراکتر)
   const isLong = (c?: string) => (c || '').length > 240;
 
@@ -163,7 +160,6 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
     const maskedPhone = maskReviewPhone(review.phone || review.public_phone, review.phone_country);
     const long = isLong(review.comment);
     const expanded = expandedIds.has(String(review.id));
-    const showMore = long && !expanded && !opts.inSheet;
     return (
       <>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
@@ -178,11 +174,6 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
           {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color="#F59E0B" size={14} />)}
         </div>
         <CommentBody comment={review.comment} expandable={long} expanded={expanded} inSheet={opts.inSheet} onMore={() => opts.inPage ? toggleExpand(String(review.id)) : setSheetReview(review)} />
-        {showMore && (
-          <button type="button" onClick={() => opts.inPage ? toggleExpand(String(review.id)) : setSheetReview(review)} style={{ border: 0, background: 'transparent', color: 'var(--zk-primary, #0F766E)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, padding: '3px 0 0' }}>
-            بیشتر
-          </button>
-        )}
         <time dateTime={review.created_at} style={{ display: 'block', borderTop: `1px solid ${T.brd}`, marginTop: 10, paddingTop: 8, fontSize: 10.5, color: T.mut }}>
           {isFa ? 'تاریخ ثبت: ' : 'Submitted: '}{formatPersianReviewDate(review.created_at, isFa)}
         </time>
@@ -227,48 +218,70 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
 
       {reviews.length > 0 ? (
         <div style={{ marginBottom: 20 }}>
-          {showAll ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {displayed.map((review) => (
-                <article key={review.id} data-review-id={review.id} style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut }}>
-                  {reviewCardContent(review, { inPage: true })}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <>
-              {/* حالت پیش‌فرض: اسکرول افقیِ ۵ نظر + دکمه مشاهده همه (به‌عنوان کارت ششم) */}
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: horizDir }}>
-                {displayed.map((review) => (
-                  <article key={review.id} data-review-id={review.id} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut, direction: 'rtl' }}>
-                    {reviewCardContent(review, {})}
-                  </article>
-                ))}
-                {/* دکمه مشاهده همه — به‌عنوان کارت ششم، کنار آخرین نظر */}
-                {reviews.length > 5 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(true)}
-                    aria-label={isFa ? 'مشاهده همه' : 'View all'}
-                    style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 }}
-                  >
-                    <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
-                        <path d="M5 12h14" />
-                        <path d="m13 6 6 6-6 6" />
-                      </svg>
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: T.acc }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+          {/* حالت پیش‌فرض: اسکرول افقیِ ۵ نظر + دکمه مشاهده همه (به‌عنوان کارت ششم) */}
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: horizDir }}>
+            {previewReviews.map((review) => (
+              <article key={review.id} data-review-id={review.id} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut, direction: 'rtl' }}>
+                {reviewCardContent(review, {})}
+              </article>
+            ))}
+            {/* دکمه مشاهده همه — به‌عنوان کارت ششم، کنار آخرین نظر */}
+            {reviews.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                aria-label={isFa ? 'مشاهده همه' : 'View all'}
+                style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 }}
+              >
+                <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: T.acc }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 18, textAlign: 'center', color: T.mut, fontSize: 13, marginBottom: 20 }}>
           {isFa ? 'هنوز نظری برای این مورد ثبت نشده است. شما اولین نفر باشید!' : 'No reviews yet. Be the first to leave a review!'}
         </div>
+      )}
+
+      {/* صفحهٔ جداگانهٔ «مشاهده همه نظرات» — تمام‌صفحه، با هدر و دکمه برگشت، نظرات به‌صورت عمودی */}
+      {showAll && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: T.card || '#fff', display: 'flex', flexDirection: 'column' }}>
+          {/* هدر صفحهٔ نظرات */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: T.card || '#fff', borderBottom: `1px solid ${T.brd}` }}>
+            <button type="button" onClick={() => setShowAll(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${T.brd}`, background: T.soft, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <b style={{ display: 'block', fontSize: 16, fontWeight: 900, color: T.ttl }}>{isFa ? 'نظرات' : 'Reviews'}</b>
+              <span style={{ fontSize: 12, color: T.acc, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.mut }}>
+              <span>{isFa ? 'مرتب‌سازی:' : 'Sort:'}</span>
+              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as 'newest' | 'oldest')} style={{ minHeight: 36, borderRadius: 9, border: `1px solid ${T.brd}`, background: T.inp || T.card, color: T.txt, padding: '0 9px', fontFamily: 'inherit' }}>
+                <option value="newest">{isFa ? 'جدیدترین' : 'Newest'}</option>
+                <option value="oldest">{isFa ? 'قدیمی‌ترین' : 'Oldest'}</option>
+              </select>
+            </label>
+          </div>
+          {/* فهرست عمودی همه نظرات */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 760, margin: '0 auto' }}>
+              {sortedReviews.map((review) => (
+                <article key={review.id} data-review-id={review.id} style={{ background: T.card, borderRadius: T.cardRadius || 14, border: `1px solid ${T.brd}`, padding: 14, boxShadow: T.neuOut }}>
+                  {reviewCardContent(review, { inPage: true })}
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
 
       {/* Bottom-sheet: نمایش کامل نظر از پایین (فقط در تب نظرات وقتی «بیشتر» زده می‌شود) */}
