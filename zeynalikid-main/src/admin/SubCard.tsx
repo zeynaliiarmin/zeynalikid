@@ -402,6 +402,19 @@ function SubCardBase({
               {trackCopied ? <ZkCheckIcon size={12} /> : <ZkCopyIcon size={12} />}
             </button>
           )}
+          {sub.advisor?.name && (
+            <span
+              title="مشاوره شده توسط"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: '#DC2626', color: '#fff', borderRadius: 999,
+                padding: '2px 10px', fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',
+              }}
+            >
+              <ZkCheckIcon size={12} />
+              {`مشاوره شده توسط ${sub.advisor.name}`}
+            </span>
+          )}
         </div>
 
         {/* وضعیت، تاریخ و عملیات فرم کنار هم می‌مانند تا سربرگ ارتفاع اضافه نگیرد. */}

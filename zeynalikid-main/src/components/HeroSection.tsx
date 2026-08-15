@@ -14,9 +14,10 @@ interface HeroSectionProps {
   secondaryCtaLink?: string;
   T: any;
   lang: 'fa' | 'en';
+  animateCoursesCta?: boolean;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,secondaryCtaText,secondaryCtaLink,T,lang}) => {
+const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,secondaryCtaText,secondaryCtaLink,T,lang,animateCoursesCta}) => {
   const navigate = useNavigate();
   const go=(link?:string)=>{if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
   const isRtl=lang==='fa';
@@ -85,7 +86,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
               type="button" 
               onClick={()=>go(ctaLink)} 
               className="zk-btn zk-btn-primary"
-              style={{minHeight:48, padding:'13px 26px', fontSize:15}}
+              style={animateCoursesCta ? {minHeight:40, padding:'9px 16px', fontSize:12.5} : {minHeight:48, padding:'13px 26px', fontSize:15}}
             >
               {ctaText}
             </button>
@@ -95,7 +96,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
               type="button" 
               onClick={()=>go(secondaryCtaLink)} 
               className="zk-btn zk-btn-secondary"
-              style={{minHeight:48, padding:'13px 22px', fontSize:14}}
+              style={animateCoursesCta ? {
+                minHeight:54, padding:'14px 26px', fontSize:15, fontWeight:800,
+                border:'2px solid var(--zk-primary)',
+                animation:'zk-hero-pulse 1.6s ease-in-out infinite',
+                transform:'scale(1.05)',
+              } : {minHeight:48, padding:'13px 22px', fontSize:14}}
             >
               {secondaryCtaText}
             </button>
@@ -136,6 +142,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
       </div>
 
       <style>{`
+        @keyframes zk-hero-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(15,118,110,0.45); }
+          50% { box-shadow: 0 0 0 10px rgba(15,118,110,0); }
+        }
         @media (max-width: 480px) {
           .zk-home-hero { 
             flex-direction: column !important; 

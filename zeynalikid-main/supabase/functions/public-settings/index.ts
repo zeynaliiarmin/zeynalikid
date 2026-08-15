@@ -103,6 +103,8 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "courseTabFaqsEn",
   "faqDisplay",
   "courseInstructor",
+  "consultants",
+  "referral",
 ];
 
 // Fields within 'banks' array items that are public (everything else stripped).
@@ -193,6 +195,26 @@ function sanitizeFaqList(value: any): any[] {
   }));
 }
 
+function sanitizeConsultants(value: any): any[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((c: any) => c?.active !== false)
+    .map((c: any) => {
+      const out: Record<string, any> = {};
+      (["id", "name", "nameEn", "title", "titleEn", "desc", "descEn", "photoUrl", "aboutPhotoUrl", "useAboutPhoto", "showPhoto", "referralCode"] as const).forEach((field) => {
+        if (field in (c || {})) out[field] = c[field];
+      });
+      // اطلاعات بانکی/کیف پول مشاور برای نمایش در روند پرداخت (فقط فیلدهای لازم)
+      if (c?.bank) out.bank = { name: c.bank.name, card: c.bank.card, iban: c.bank.iban };
+      if (c?.wallet) out.wallet = { id: c.wallet.id, name: c.wallet.name, symbol: c.wallet.symbol, address: c.wallet.address, network: c.wallet.network, color: c.wallet.color };
+      return out;
+    });
+}
+
+function sanitizeReferral(value: any): any {
+  return { showConsultantSelection: value?.showConsultantSelection === true, home: { showCta: value?.home?.showCta !== false } };
+}
+
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
   for (const key of PUBLIC_SETTINGS_WHITELIST) {
@@ -240,6 +262,8 @@ function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
       if (["faqItems", "faqItemsEn", "courseTabFaqs", "courseTabFaqsEn"].includes(key)) val = sanitizeFaqList(val);
       if (key === "faqDisplay") val = { home: { show: val?.home?.show !== false, maxItems: Math.max(0, Number(val?.home?.maxItems) || 0), viewAllLink: val?.home?.viewAllLink !== false }, faqPage: { show: val?.faqPage?.show !== false } };
       if (key === "courseInstructor") val = Object.fromEntries(["show", "name", "nameEn", "desc", "descEn", "photoUrl"].filter((field) => field in (val || {})).map((field) => [field, val[field]]));
+      if (key === "consultants") val = sanitizeConsultants(val);
+      if (key === "referral") val = sanitizeReferral(val);
       if (key === "mediaCountryMode" && !["auto", "iran", "intl"].includes(val)) val = "auto";
       out[key] = val;
     }

@@ -13,6 +13,7 @@
 // ============================================================================
 import React, { useState, useCallback } from 'react';
 import { getCountryFlag } from '../utils/phone';
+import { makeReferralCode } from '../utils/referral';
 import { ZkCloseIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkPlusIcon, ZkTrashIcon, ZkBellIcon, ZkUploadIcon } from './adminIcons';
 
 interface Props {
@@ -422,8 +423,14 @@ function AboutSettings(props: any) {
         <FrameRow T={T} S={S} value={draft.images?.tcMethodGraphic || {}} onChange={(patch) => upNested(['images', 'tcMethodGraphic'], { ...(draft.images?.tcMethodGraphic || {}), ...patch })} />
       </Box>
 
+      <Box title="تنظیمات مشاورین و لینک‌های ارجاع">
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px', lineHeight: 1.8 }}>با فعال‌کردن «نمایش انتخاب مشاور»، گزینهٔ انتخاب مشاور در روند ثبت‌نام دوره نمایش داده می‌شود؛ در غیر این صورت فقط از طریق لینک اختصاصی هر مشاور کار می‌کند.</p>
+        <Checklist label="نمایش انتخاب مشاور در روند ثبت‌نام" value={(draft.referral || {}).showConsultantSelection === true} onChange={(v: boolean) => upNested(['referral', 'showConsultantSelection'], v)} />
+        <Checklist label="نمایش دکمه‌های CTA صفحهٔ اصلی (ثبت مشاوره / مشاهده دوره)" value={(draft.referral || {}).home?.showCta !== false} onChange={(v: boolean) => upNested(['referral', 'home', 'showCta'], v)} />
+      </Box>
+
       <Box title="لیست مشاورین (نمایش در صفحه درباره ما)">
-        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>عکس مشاور را آپلود کنید، اسم به‌عنوان عنوان و توضیحات هر مشاور را بنویسید. مشاورین به‌صورت کارت در بخش مناسب صفحه درباره ما نمایش داده می‌شوند.</p>
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>عکس مشاور را آپلود کنید، اسم به‌عنوان عنوان و توضیحات هر مشاور را بنویسید. مشاورین به‌صورت کارت در بخش مناسب صفحه درباره ما نمایش داده می‌شوند. نام انگلیسی مشاور برای ساخت لینک ارجاع الزامی است.</p>
         {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>مشاوری ثبت نشده است.</p>}
         {consultants.map((c: any, i: number) => (
           <div key={c.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 12, marginBottom: 10, background: T.badge }}>
@@ -442,6 +449,22 @@ function AboutSettings(props: any) {
             </div>
             <div><label style={S.lbl}>توضیحات (فارسی)</label><StableAdminTextarea style={S.ta} defaultValue={c.desc || ''} onCommit={(v: string) => chgConsultant(i, 'desc', v)} rows={2} /></div>
             <div><label style={S.lbl}>Description (English)</label><StableAdminTextarea style={S.ta} defaultValue={c.descEn || ''} onCommit={(v: string) => chgConsultant(i, 'descEn', v)} rows={2} /></div>
+            <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}` }}>
+              <div style={{ fontWeight: 800, fontSize: 12.5, color: T.ttl, marginBottom: 8 }}>لینک ارجاع اختصاصی (referral)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 8, alignItems: 'end' }}>
+                <div>
+                  <label style={S.lbl}>کد لینک (کوتاه، یکتا)</label>
+                  <StableAdminInput dir="ltr" style={{ ...S.inp, fontFamily: 'monospace' }} defaultValue={c.referralCode || ''} onCommit={(v: string) => { const code = v.trim().toLowerCase(); const a = [...consultants]; a[i] = { ...a[i], referralCode: code }; setConsultants(a); }} placeholder="مثلاً ali" />
+                </div>
+                <button type="button" style={{ ...AdminBtn(), padding: '8px 12px' }} onClick={() => { const a = [...consultants]; a[i] = { ...a[i], referralCode: makeReferralCode(c.nameEn) }; setConsultants(a); }}>ساخت خودکار</button>
+              </div>
+              {c.referralCode && <div style={{ fontSize: 10.5, color: T.mut, marginTop: 5 }} dir="ltr">لینک: {`${window.location.origin}/?ad=${c.referralCode}`}</div>}
+              {!c.referralCode && <div style={{ fontSize: 10.5, color: T.warn || '#B45309', marginTop: 5 }}>کد ارجاع تعیین نشده است. نام انگلیسی مشاور را پر کنید و «ساخت خودکار» بزنید.</div>}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+              <Checklist label="نمایش عکس در اطلاعات مشاور" value={c.showPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'showPhoto', v)} />
+              <Checklist label="نمایش عکس دربارهٔ ما (بدون آپلود دوباره)" value={c.useAboutPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'useAboutPhoto', v)} />
+            </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === 0} onClick={() => moveConsultant(i, -1)}><ZkArrowUpIcon size={13} /></button>
               <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === consultants.length - 1} onClick={() => moveConsultant(i, 1)}><ZkArrowDownIcon size={13} /></button>

@@ -17,8 +17,12 @@ export function CryptoLogo({id,color,size=22}:{id:string,color?:string,size?:num
 }
 
 export default function CoursePaymentPage({app}:{app:any}){
- const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress}=app;
- const banks=(cfg.banks||[]).filter((b:any)=>b.active&&b.card&&b.iban).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const chosen=banks.find((b:any)=>b.id===course.payment.bankId)||banks[0]; const [copied,setCopied]=useState<any>({}); const [toast,setToast]=useState('');
+ const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress,referralConsultant}=app;
+ // اگر مخاطب با لینک اختصاصی مشاور آمده و آن مشاور اطلاعات بانکی ثبت کرده باشد، فقط همان حساب نمایش داده می‌شود (حقِ مشاور حفظ می‌شود)
+ const advisorBanks: any[] = (referralConsultant?.bank && (referralConsultant.bank.card || referralConsultant.bank.iban))
+   ? [{ id: 'advisor', name: referralConsultant.name || 'مشاور', card: referralConsultant.bank.card, iban: referralConsultant.bank.iban, order: 0, active: true }]
+   : [];
+ const banks=(advisorBanks.length?advisorBanks:(cfg.banks||[])).filter((b:any)=>b.active&&b.card&&b.iban).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const chosen=banks.find((b:any)=>b.id===course.payment.bankId)||banks[0]; const [copied,setCopied]=useState<any>({}); const [toast,setToast]=useState('');
  const isDirty = Boolean(course.payment.receipt || course.payment.receiptText);
  useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?'); const receiptTextRef=useRef<HTMLTextAreaElement|null>(null);
  // اصلاح ۳۰ (مرحله ۷): نوار پیشرفت واقعی هنگام آپلود فیش واریزی

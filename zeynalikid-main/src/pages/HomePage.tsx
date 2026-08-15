@@ -15,8 +15,11 @@ import TrustBoxNew from '../components/TrustBoxNew';
 import ProductCard from '../components/ProductCard';
 
 export default function HomePage({app}:{app:any}){
- const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel}=app;
+ const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,view}=app;
  const isRtl=lang==='fa';
+ // انیمیشن دکمه «مشاهده دوره‌ها» تا وقتی کاربر وارد روند ثبت‌نام دوره نشده فعال می‌ماند.
+ const inCourseFlow = ['child-info','course-shipping','course-payment','course-confirm','course-done'].includes(view);
+ const animateCta = !!referralConsultant && !inCourseFlow;
  const servicesMode=(cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list') as 'list'|'carousel';
  const shortcutsBase:Record<string,{icon:React.ReactNode;title:string;desc:string;to?:string;fn?:()=>void}>={
   consult:{icon:<ConsultIcon size={24} color={T.acc}/>,title:lang==='en'?'Request consultation':'ثبت درخواست مشاوره',desc:lang==='en'?'A clear first step for your child':'قدم اول برای شناخت بهتر شرایط فرزند',to:'/form'},
@@ -44,11 +47,26 @@ export default function HomePage({app}:{app:any}){
   <style>{css}{` .zk-home-page{width:100%;}.zk-home-container{width:100%;max-width:680px;margin-inline:auto;padding-inline:16px}.zk-home-section{width:100%;margin-top:26px}.zk-home-section-title{font-size:20px;color:var(--zk-text-primary);margin:0 0 12px;font-weight:800}.zk-home-section-heading{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:12px}.zk-home-section-link{color:var(--zk-action-primary);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}@media(min-width:481px){.zk-home-container{padding-inline:20px}}`}</style>
   <div className="zk-home-container" style={{paddingTop:8}}>
    <section className="zk-home-specialist-note" style={{display:'flex',flexDirection:isRtl?'row-reverse':'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'var(--zk-surface)',border:'1px solid var(--zk-border)',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)'}}>
-    {cfg.showSpecialistPhoto!==false&&cfg.images?.homeAvatar?.enabled!==false&&<img src={(()=>{const raw=String(cfg.images?.homeAvatar?.url||'/images/specialist/specialist-about.webp').trim(); const ok=raw.startsWith('/images/')||/^https:\/\//i.test(raw); return ok?raw:'/images/specialist/specialist-about.webp';})()} alt={cfg.specialistName||'امیر افرادی'} style={{width:62,height:62,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid var(--zk-primary-light)',flexShrink:0}}/>}
+    {cfg.showSpecialistPhoto!==false&&cfg.images?.homeAvatar?.enabled!==false&&<img src={(()=>{const raw=String(cfg.images?.homeAvatar?.url||'/images/specialist/specialist-about.webp').trim(); const ok=raw.startsWith('/images/')||/^https:\/\//i.test(raw); return ok?raw:'/images/specialist/specialist-about.webp';})()} alt={cfg.specialistName||'آرمین زینالی'} style={{width:62,height:62,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid var(--zk-primary-light)',flexShrink:0}}/>}
     <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}><strong style={{display:'block',fontSize:14.5,color:'var(--zk-text)',fontWeight:700,lineHeight:1.5}}>{(cfg.siteTitle||'زینالیکید')+' — '+(lang==='en'?(cfg.specialistTitleEn||'Child Growth & Nutrition Specialist'):(cfg.specialistTitle||'کارشناس رشد و تغذیه کودک و نوجوان'))}</strong><span style={{fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.6}}>{lang==='en'?'A calmer, evidence-based path for your child’s growth' : 'مسیر آرام و مبتنی بر شواهد برای رشد فرزند شما'}</span></div>
    </section>
 
-   {heroImage.enabled!==false&&<HeroSection title={lang==='en'?(cfg.heroTitleEn||cfg.heroTitle||'A clearer path for your child’s growth'):(cfg.heroTitle||'مسیر روشن‌تری برای رشد فرزند شما')} subtitle={lang==='en'?(cfg.heroSubtitleEn||cfg.heroSubtitle||'Understand growth, nutrition and daily needs with calm, expert guidance.'):(cfg.heroSubtitle||'با شناخت بهتر رشد، تغذیه و نیازهای روزانه، آگاهانه‌تر کنار فرزندتان باشید.')} imageUrl={heroImage.url||'/images/asset13c-hero-mother-child.webp'} imageAlt={heroImage.alt||'کودک شاد و سالم'} imageAspect={heroImage.aspectRatio} imagePosition={heroImage.objectPosition} ctaText={lang==='en'?'Request consultation':'ثبت درخواست مشاوره'} ctaLink="/form" secondaryCtaText={lang==='en'?'View courses':'مشاهده دوره‌ها'} secondaryCtaLink="/courses" T={T} lang={lang}/>}
+   {/* کارت مشاور ارجاع‌دهنده (وقتی مخاطب با لینک اختصاصی مشاور وارد شده) */}
+   {referralConsultant && (
+     <section className="zk-home-referral" style={{display:'flex',flexDirection:isRtl?'row-reverse':'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both'}}>
+       {referralConsultant.showPhoto!==false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
+         <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isRtl?referralConsultant.name:referralConsultant.nameEn||referralConsultant.name} style={{width:64,height:64,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid #FB923C',flexShrink:0}} />
+       ) : null}
+       <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}>
+         <span style={{display:'inline-block',fontSize:10.5,fontWeight:800,color:'#C2410C',marginBottom:3}}>{lang==='en'?'You are advised by':'شما توسط این مشاور مشاوره شده‌اید'}</span>
+         <strong style={{display:'block',fontSize:15,color:'var(--zk-text)',fontWeight:800,lineHeight:1.4}}>{isRtl?referralConsultant.name:(referralConsultant.nameEn||referralConsultant.name)}</strong>
+         {(isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title))?<span style={{display:'block',fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.5,marginTop:2}}>{isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title)}</span>:null}
+         {(isRtl?referralConsultant.desc:(referralConsultant.descEn||referralConsultant.desc))?<span style={{display:'block',fontSize:11.5,color:'var(--zk-text-muted)',lineHeight:1.6,marginTop:4}}>{(isRtl?referralConsultant.desc:(referralConsultant.descEn||referralConsultant.desc))}</span>:null}
+       </div>
+     </section>
+   )}
+
+   {heroImage.enabled!==false&&<HeroSection title={lang==='en'?(cfg.heroTitleEn||cfg.heroTitle||'A clearer path for your child’s growth'):(cfg.heroTitle||'مسیر روشن‌تری برای رشد فرزند شما')} subtitle={lang==='en'?(cfg.heroSubtitleEn||cfg.heroSubtitle||'Understand growth, nutrition and daily needs with calm, expert guidance.'):(cfg.heroSubtitle||'با شناخت بهتر رشد، تغذیه و نیازهای روزانه، آگاهانه‌تر کنار فرزندتان باشید.')} imageUrl={heroImage.url||'/images/asset13c-hero-mother-child.webp'} imageAlt={heroImage.alt||'کودک شاد و سالم'} imageAspect={heroImage.aspectRatio} imagePosition={heroImage.objectPosition} ctaText={lang==='en'?'Request consultation':'ثبت درخواست مشاوره'} ctaLink="/form" secondaryCtaText={lang==='en'?'View courses':'مشاهده دوره‌ها'} secondaryCtaLink="/courses" T={T} lang={lang} animateCoursesCta={animateCta}/>}
 
    {trustBoxImage.enabled!==false&&(cfg.trustBoxes?.sentences?.health?.length>0 || cfg.trustMessages?.health?.length>0)&&<section className="zk-home-section" style={{marginTop:0}}><TrustBoxWithImage text={lang==='en' ? (cfg.trustBoxes?.sentences?.health?.[0]?.titleEn || cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '') : (cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '')} imageUrl={trustBoxImage.url || '/images/asset13c-trust-parent-care.webp'} imageAlt={trustBoxImage.alt||'مادر و کودک'} imagePosition={isRtl?'right':'left'} imageAspect={trustBoxImage.aspectRatio} imageObjectPosition={trustBoxImage.objectPosition} T={T}/></section>}
 

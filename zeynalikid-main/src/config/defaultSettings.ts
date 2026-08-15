@@ -32,7 +32,33 @@ const DEFAULT_SERVICES = [
 
 export const defaultSettings = {
 
-    dailyTips: [
+  // ─── مشاورین و لینک‌های ارجاع ───
+  consultants: [] as Array<{
+    id: string;
+    name: string;         // نام فارسی (الزامی)
+    nameEn: string;       // نام انگلیسی (الزامی — برای ساخت کد ارجاع)
+    title?: string;
+    titleEn?: string;
+    desc?: string;
+    descEn?: string;
+    photoUrl?: string;    // عکس (در صورت انتخاب/آپلود)
+    useAboutPhoto?: boolean; // استفاده از عکس «درباره ما» (جلوگیری از آپلود دوباره)
+    aboutPhotoUrl?: string;  // عکسِ منبع «درباره ما»
+    showPhoto?: boolean;     // نمایش عکس در اطلاعات مشاور
+    referralCode?: string;   // کد ارجاع یکتا و کوتاه
+    bank?: Record<string, any>;   // اطلاعات بانکی اختصاصی
+    wallet?: Record<string, any>; // اطلاعات کیف پول رمزارز
+    active?: boolean;
+    order?: number;
+  }>,
+  referral: {
+    showConsultantSelection: false, // نمایش انتخاب مشاور در روند ثبت (پیش‌فرض مخفی)
+    home: {
+      showCta: true,               // نمایش دکمه‌های CTA هوم (ثبت مشاوره/مشاهده دوره)
+    },
+  },
+
+  dailyTips: [
     { id:'t1', fa:'سفره آرام یعنی بدون فشار؛ وعده‌های منظم و تنوع کوچک کافیه.', en:"A calm table means no pressure; regular meals and tiny variety are enough." },
     { id:'t2', fa:'خواب کافی کودک، تمرکز فردای اوست.', en:"Your child's sleep tonight is their focus tomorrow." },
     { id:'t3', fa:'مکمل بدون مشورت، مسیر ناشناخته است.', en:"Supplements without consultation are an unknown path." },
@@ -204,19 +230,28 @@ export const defaultSettings = {
       enabled: true,
       storagePath: '',
     },
+    homeAvatar: {
+      url: '/images/specialist/specialist-about.webp',
+      alt: 'کارشناس رشد و تغذیه',
+      enabled: true,
+      storagePath: '',
+    },
     // ─── کتابخانهٔ تصاویر بخش‌ها (گالری مدیریت تصاویر) ───
+    // هر بخش تب و پوشهٔ مجزای خودش را دارد؛ عکس‌های هر بخش فقط در همان بخش دیده می‌شوند.
     library: {
-      licenses: [],
+      licenses: [],   // { id, url, alt, aspectRatio, objectPosition, storagePath, enabled }
       products: [],
       courses: [],
       general: [],
     },
+    // عکس کارشناس/متخصص فرم مشاوره (پیش‌فرض: photoUrl موجود)
     consultationPhoto: {
       url: '/specialist-photo.webp',
       alt: 'کارشناس فرم مشاوره',
       enabled: true,
       storagePath: '',
     },
+    // عکس هیرو صفحهٔ درباره ما
     aboutHero: {
       url: '/images/specialist/specialist-hero-master.webp',
       alt: 'کارشناس ارشد زینالیکید',
@@ -289,7 +324,7 @@ export const defaultSettings = {
         { id: 'ap12', title: 'اگه سر سفره جنگ جهانی سوم راه میفته، مشکل از غذا نیست، از سیستم گوارش و طبعشه.', description: 'قبل از دعوا، تیغه‌های زبانش رو بررسی کن.', titleEn: 'If World War III breaks out at the table, the problem is not food, it’s the digestive system and temperament.', descriptionEn: 'Before fighting, check the tongue’s coating.', priority: 4, tabs: ['appetite'], active: true },
         { id: 'ap13', title: 'به جای این‌که توپ رو به گردن بچه بندازی، ببین بدنش چه ریزمغذی‌ای رو جذب نکرده.', description: 'کمبود زینک و آهن، اولین مظنون بی‌اشتهایی بچه‌هاست.', titleEn: 'Instead of blaming the child, see which micronutrient their body hasn’t absorbed.', descriptionEn: 'Zinc and iron deficiency are the first suspects for child appetite loss.', priority: 3, tabs: ['appetite'], active: true },
         { id: 'ap14', title: 'بی‌اشتهایی یعنی متابولیسم بدن قفل کرده. ما کلیدش رو داریم.', description: 'کلیدش یه نسخه گیاهی پیچیده شده با طعم مورد علاقه بچه‌اته.', titleEn: 'Loss of appetite means body metabolism is locked. We have the key.', descriptionEn: 'The key is an herbal prescription crafted with your child’s favorite taste.', priority: 4, tabs: ['appetite'], active: true },
-        { id: 'ap15', title: 'فرزند من بدغذاست؟ نه! بدنش هوشمندانه از چیزی که بلد نیست هضم کنه، فرار می‌کنه.', description: 'به بدنش گوش بده، داره راه نجات رو نشون میده.', titleEn: 'Is my child picky? No! Their body intelligently escapes what it doesn’t know how to digest.', descriptionEn: 'Listen to their body, it’s showing the way to rescue.', priority: 5, tabs: ['appetite'], active: true },
+        { id: 'ap15', title: 'زینالیکید بدغذاست؟ نه! بدنش هوشمندانه از چیزی که بلد نیست هضم کنه، فرار می‌کنه.', description: 'به بدنش گوش بده، داره راه نجات رو نشون میده.', titleEn: 'Is my child picky? No! Their body intelligently escapes what it doesn’t know how to digest.', descriptionEn: 'Listen to their body, it’s showing the way to rescue.', priority: 5, tabs: ['appetite'], active: true },
         { id: 'ap16', title: 'با اصلاح طبع، بچه‌ای که از قاشق فرار می‌کرد، خودش دنبال بشقاب میاد.', description: 'این یه شعار نیست، نتیجه‌ای هست که ۱۰,۰۰۰ مادر دیدش.', titleEn: 'By correcting temperament, the child who ran from the spoon will chase the plate themselves.', descriptionEn: 'This is not a slogan, it’s what 10,000 mothers saw.', priority: 4, tabs: ['appetite'], active: true },
         { id: 'ap17', title: 'همراهی ریشه‌ای، نه مسکن موقت.', description: 'ما با تحلیل زبان‌شناسی و اصلاح طبع، بی‌اشتهایی رو ریشه‌ای دنبال می‌کنیم؛ به‌جای راه‌حل‌های موقت.', titleEn: 'Root accompaniment, not temporary relief.', descriptionEn: 'With tongue analysis and temperament correction, we pursue appetite loss at its root, instead of temporary solutions.', priority: 5, tabs: ['appetite'], active: true },
         { id: 'ap18', title: 'یه مادر آگاه، دنبال شربت اشتها نیست؛ دنبال ریشه‌یابیه.', description: 'شربت فقط یه مُسکنه، روش TC جراحی تغذیه‌ایه برای بی‌اشتهایی.', titleEn: 'An aware mother doesn’t seek appetite syrup; she seeks root cause.', descriptionEn: 'Syrup is just a painkiller, the TC method is nutritional surgery for appetite loss.', priority: 3, tabs: ['appetite'], active: true },
@@ -486,6 +521,18 @@ export function migrateSettings(settings: any): any {
     if (migrated.images.hero && !migrated.images.hero.storagePath) migrated.images.hero.storagePath = '';
     if (migrated.images.trustBox && !migrated.images.trustBox.storagePath) migrated.images.trustBox.storagePath = '';
     if (migrated.images.specialist && !migrated.images.specialist.storagePath) migrated.images.specialist.storagePath = '';
+    if (!migrated.images.homeAvatar) {
+      const oldPick = Array.isArray(migrated.images.specialistHome?.options)
+        ? migrated.images.specialistHome.options.find((o: any) => String(o?.id) === String(migrated.images.specialistHome?.selectedId))?.url
+        : '';
+      migrated.images.homeAvatar = {
+        url: oldPick || '/images/specialist/specialist-about.webp',
+        alt: 'کارشناس رشد و تغذیه',
+        enabled: true,
+        storagePath: '',
+      };
+    }
+    delete migrated.images.specialistHome;
     // اطمینان از وجود کتابخانهٔ تصاویر بخش‌ها
     if (!migrated.images.library) {
       migrated.images.library = { licenses: [], products: [], courses: [], general: [] };

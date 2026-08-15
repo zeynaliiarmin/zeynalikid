@@ -89,6 +89,7 @@ export default function ConsultationPage({ app }: { app: any }) {
     showContactOn, ContactPanel, Footer,
     CountrySelect, MiniIcon, MemphisBg,
     setFd: _setFd, fd: _fd,
+    referralConsultant,
   } = app;
 
   const navigate = useNavigate();
@@ -378,7 +379,8 @@ export default function ConsultationPage({ app }: { app: any }) {
           priority: autoPriority, unread: true, isNew: true, followReminder: true,
           similarTo, followUps: [null, null, null, null, null],
           adminNotes: voiceUploadFailed ? '(یادداشت صوتی در ارسال اولیه با خطا مواجه شد)' : '',
-          usageInstructions: '', timeSlot: '', course: null, shipping: null, payment: null, editHistory: []
+          usageInstructions: '', timeSlot: '', course: null, shipping: null, payment: null, editHistory: [],
+          advisor: referralConsultant ? { id: referralConsultant.id, name: referralConsultant.name, nameEn: referralConsultant.nameEn, referralCode: referralConsultant.referralCode } : null
         };
 
         // نسخهٔ محلیِ کامل را پیش از ارسال شبکه ذخیره می‌کنیم؛ هیچ فرم تکمیل‌شده‌ای با خطای اتصال از دست نمی‌رود.
