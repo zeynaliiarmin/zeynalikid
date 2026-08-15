@@ -126,9 +126,9 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
               <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--zk-primary)' }}>{discounted.toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
               <span style={{ textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: 13 }}>{priceNum.toLocaleString()}</span>
             </>
-          ) : (
-            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--zk-primary)' }}>{product.price || '—'}</span>
-          )}
+          ) : product.price ? (
+            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--zk-primary)' }}>{product.price} {isFa ? 'تومان' : 'T'}</span>
+          ) : null}
         </div>
       </div>
 
@@ -218,14 +218,22 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         </section>
       </div>
 
-      {/* Sticky CTA — safe-area */}
+      {/* Sticky CTA — safe-area (اگر محصول قیمت ندارد، به‌جای فروش فقط «مشاوره رایگان» نمایش داده می‌شود) */}
       <div style={{ position: 'sticky', bottom: 0, background: 'rgba(253,248,243,0.96)', borderTop: '1px solid var(--zk-border)', padding: '10px 16px calc(10px + env(safe-area-inset-bottom, 0px))', display: 'flex', gap: 10, zIndex: 10 }}>
-        <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
-          {isFa ? 'مشاوره رایگان' : 'Free consult'}
-        </button>
-        <button onClick={onAddToCart} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5 }}>
-          {isFa ? 'معرفی دوره‌ها' : 'View courses'}
-        </button>
+        {hasDiscount || product.price ? (
+          <>
+            <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
+              {isFa ? 'مشاوره رایگان' : 'Free consult'}
+            </button>
+            <button onClick={onAddToCart} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5 }}>
+              {isFa ? 'معرفی دوره‌ها' : 'View courses'}
+            </button>
+          </>
+        ) : (
+          <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
+            {isFa ? 'برای اطلاعات بیشتر، مشاوره رایگان' : 'Free consult for more info'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -386,8 +386,9 @@ function AboutSettings(props: any) {
         <StableAdminInput style={S.inp} defaultValue={draft.specialistTitleEn || ''} onCommit={(v: string) => up('specialistTitleEn', v)} placeholder="English title" />
         <label style={{ ...S.lbl, marginTop: 8 }}>تصویر هیرو صفحه درباره ما</label>
         <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, draft.images?.aboutHero?.url, 'about'); upNested(['images', 'aboutHero'], { ...(draft.images?.aboutHero || {}), url: u }); } }} />
-        {draft.images?.aboutHero?.url && <img src={draft.images.aboutHero.url} alt="about hero" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} />}
+        {draft.images?.aboutHero?.url && <img src={draft.images.aboutHero.url} alt="about hero" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', objectPosition: draft.images?.aboutHero?.objectPosition || 'center', aspectRatio: draft.images?.aboutHero?.aspectRatio || undefined, borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} />}
         <Checklist label="نمایش تصویر هیرو" value={draft.images?.aboutHero?.enabled !== false} onChange={(v) => upNested(['images', 'aboutHero'], { ...(draft.images?.aboutHero || {}), enabled: v })} />
+        <FrameRow T={T} S={S} value={draft.images?.aboutHero || {}} onChange={(patch) => upNested(['images', 'aboutHero'], { ...(draft.images?.aboutHero || {}), ...patch })} />
       </Box>
 
       <Box title="متن‌های صفحه درباره ما (دوزبانه)">
@@ -403,6 +404,22 @@ function AboutSettings(props: any) {
         <StableAdminTextarea style={S.ta} defaultValue={draft.aboutStoryText || ''} onCommit={(v: string) => up('aboutStoryText', v)} rows={3} placeholder="متن داستان ما..." />
         <label style={{ ...S.lbl, marginTop: 8 }}>متن داستان ما (انگلیسی)</label>
         <StableAdminTextarea style={S.ta} defaultValue={draft.aboutStoryTextEn || ''} onCommit={(v: string) => up('aboutStoryTextEn', v)} rows={3} placeholder="Our story in English..." />
+      </Box>
+
+      <Box title="متن روش TC (صفحه درباره ما)">
+        <label style={S.lbl}>عنوان (فارسی)</label>
+        <StableAdminInput style={S.inp} defaultValue={draft.tcMethodTitle || 'روش TC'} onCommit={(v: string) => up('tcMethodTitle', v)} />
+        <label style={{ ...S.lbl, marginTop: 8 }}>عنوان (انگلیسی)</label>
+        <StableAdminInput style={S.inp} defaultValue={draft.tcMethodTitleEn || 'The TC Method'} onCommit={(v: string) => up('tcMethodTitleEn', v)} />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن روش TC (فارسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.tcMethodText || ''} onCommit={(v: string) => up('tcMethodText', v)} rows={4} placeholder="متن روش TC به فارسی..." />
+        <label style={{ ...S.lbl, marginTop: 8 }}>متن روش TC (انگلیسی)</label>
+        <StableAdminTextarea style={S.ta} defaultValue={draft.tcMethodTextEn || ''} onCommit={(v: string) => up('tcMethodTextEn', v)} rows={4} placeholder="TC method text in English..." />
+        <Checklist label="نمایش تصویر روش TC" value={draft.images?.tcMethodGraphic?.enabled !== false} onChange={(v) => upNested(['images', 'tcMethodGraphic'], { ...(draft.images?.tcMethodGraphic || {}), enabled: v })} />
+        <label style={{ ...S.lbl, marginTop: 8 }}>تصویر روش TC</label>
+        <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, draft.images?.tcMethodGraphic?.url, 'about'); upNested(['images', 'tcMethodGraphic'], { ...(draft.images?.tcMethodGraphic || {}), url: u }); } }} />
+        {draft.images?.tcMethodGraphic?.url && <img src={draft.images.tcMethodGraphic.url} alt="tc method" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', objectPosition: draft.images?.tcMethodGraphic?.objectPosition || 'center', aspectRatio: draft.images?.tcMethodGraphic?.aspectRatio || '4 / 3', borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} />}
+        <FrameRow T={T} S={S} value={draft.images?.tcMethodGraphic || {}} onChange={(patch) => upNested(['images', 'tcMethodGraphic'], { ...(draft.images?.tcMethodGraphic || {}), ...patch })} />
       </Box>
 
       <Box title="لیست مشاورین (نمایش در صفحه درباره ما)">
@@ -435,6 +452,46 @@ function AboutSettings(props: any) {
         <button type="button" style={AdminBtn()} onClick={addConsultant}><ZkPlusIcon size={13} /> افزودن مشاور</button>
       </Box>
     </>
+  );
+}
+
+// کنترل نسبت ابعاد + موقعیت برش برای تصاویر (مثل FrameControls در صفحه تصاویر)
+const ASPECT_PRESETS: { label: string; value: string }[] = [
+  { label: 'اصلی (مستطیل)', value: '4 / 3' },
+  { label: 'ویدیو', value: '16 / 9' },
+  { label: 'مربع', value: '1 / 1' },
+  { label: 'پرتره', value: '3 / 4' },
+  { label: 'عمودی', value: '9 / 16' },
+  { label: 'بدون محدودیت', value: 'auto' },
+];
+const POSITIONS: { label: string; value: string }[] = [
+  { label: 'وسط', value: 'center' },
+  { label: 'بالا', value: 'top' },
+  { label: 'پایین', value: 'bottom' },
+  { label: 'چپ', value: 'left' },
+  { label: 'راست', value: 'right' },
+  { label: 'بالا چپ', value: 'top left' },
+  { label: 'بالا راست', value: 'top right' },
+  { label: 'پایین چپ', value: 'bottom left' },
+  { label: 'پایین راست', value: 'bottom right' },
+];
+function FrameRow({ T, S, value, onChange }: { T: any; S: any; value?: { aspectRatio?: string; objectPosition?: string }; onChange: (patch: { aspectRatio?: string; objectPosition?: string }) => void }) {
+  const v: any = value || {};
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+      <div>
+        <label style={S.lbl}>نسبت ابعاد</label>
+        <select style={S.inp} defaultValue={v.aspectRatio || '4 / 3'} onChange={(e) => onChange({ aspectRatio: e.target.value })}>
+          {ASPECT_PRESETS.map((p) => <option key={p.label} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label style={S.lbl}>موقعیت برش</label>
+        <select style={S.inp} defaultValue={v.objectPosition || 'center'} onChange={(e) => onChange({ objectPosition: e.target.value })}>
+          {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
+    </div>
   );
 }
 

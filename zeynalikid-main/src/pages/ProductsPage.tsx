@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import JsonLd from '../components/JsonLd';
@@ -178,8 +179,8 @@ export default function ProductsPage({ app }: { app: any }) {
         )}
       </div>
 
-      {/* Product Detail Modal (full-screen mobile, same pattern as courses) */}
-      {selectedProduct && (
+      {/* Product Detail Modal (full-screen mobile, same pattern as courses) — از طریق Portal تا روی هدر قرار گیرد */}
+      {selectedProduct && createPortal(
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={closeDetail}>
           <div style={{ width: '100%', maxWidth: '100%', height: '100dvh', background: 'var(--zk-surface)', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <ProductDetailView
@@ -195,7 +196,8 @@ export default function ProductsPage({ app }: { app: any }) {
               onConsult={goConsult}
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>

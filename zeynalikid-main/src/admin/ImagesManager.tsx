@@ -19,8 +19,7 @@ import React, { useState } from 'react';
 import {
   ZkUploadIcon, ZkImageIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon,
   ZkArrowUpIcon, ZkArrowDownIcon, ZkDownloadIcon,
-} from './adminIcons';
-import ImageCropper from './ImageCropper';
+} from './adminIcons';import ImageCropper from './ImageCropper';
 
 // ─── بخش‌ها و پوشهٔ هر بخش ──────────────────────────────────────────
 export const IMAGE_SECTIONS: { id: string; label: string; folder: string; target: string; hint: string }[] = [
@@ -362,28 +361,13 @@ export default function ImagesManager(props: Props) {
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
-              field="aboutHero" title="عکس بالای صفحهٔ «درباره ما»" note="بنر بالای صفحهٔ دربارهٔ ما" defaultAspectRatio="16 / 9" imgStyle={{ width: 220, maxHeight: 124, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
-            />
-            <SingleImageEditor
-              T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
-              supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
-              field="tcMethodGraphic"
-              title="تصویر روش TC در صفحهٔ «درباره ما»"
-              note="این تصویر داخل کارت «روش TC» در صفحهٔ درباره ما، کنار توضیحات تحلیل زبان، برنامه شخصی‌سازی‌شده، پشتیبانی و پیگیری رشد نمایش داده می‌شود."
-              fallbackUrl="/images/graphics/graphic-tc-method.webp"
-              fallbackAlt="تصویر روش TC"
-              sourceFile="graphic-tc-method.webp"
-              uploadLabel="بارگذاری و جایگزینی تصویر روش TC"
-              highlight
-              defaultAspectRatio="4 / 3"
-              imgStyle={{ width: 220, maxHeight: 165, objectFit: 'cover', objectPosition: 'center', borderRadius: 12 }}
+              field="trustBox" title="عکس باکس اعتماد (فرمولاسیون / مجوزها)" note="عکس کنار متن اعتمادساز در صفحهٔ اصلی (مثل «فرمولاسیون آلمان»)" defaultAspectRatio="4 / 3" imgStyle={{ width: 200, maxHeight: 150, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
             />
             <SingleImageEditor
               T={T} S={S} AdminBtn={AdminBtn} editCfg={editCfg} setEditCfg={setEditCfg}
               supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} deleteStoredImage={deleteStoredImage}
               field="trustBox" title="عکس باکس اعتماد (فرمولاسیون / مجوزها)" note="عکس کنار متن اعتمادساز در صفحهٔ اصلی (مثل «فرمولاسیون آلمان»)" defaultAspectRatio="4 / 3" imgStyle={{ width: 200, maxHeight: 150, objectFit: 'cover', objectPosition: 'center', borderRadius: 10 }}
-            />
-          </>
+            />          </>
         )}
 
         {/* منطقهٔ آپلود */}

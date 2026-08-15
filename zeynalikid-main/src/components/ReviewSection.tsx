@@ -77,7 +77,11 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!name.trim() || submitting) return;
+    if (submitting) return;
+    if (!comment.trim()) {
+      alert(isFa ? 'لطفاً متن نظر را بنویسید.' : 'Please write your comment.');
+      return;
+    }
     if (!isValidReviewPhone(phone, detectedCountryCode)) {
       alert(isFa ? 'لطفاً شماره تماس معتبر وارد کنید. برای شماره خارجی، کد کشور را نیز وارد کنید.' : 'Please enter a valid phone number, including the country code for international numbers.');
       return;
@@ -174,21 +178,23 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
                 ))}
               </div>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'نام و نام خانوادگی' : 'Your Name'} *</label>
-              <input type="text" required value={name} onChange={(event) => setName(event.target.value)} placeholder={isFa ? 'نام شما...' : 'Enter your name...'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'نام و نام خانوادگی' : 'Your Name'}</label>
+                <input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder={isFa ? 'نام شما (اختیاری)' : 'Your name (optional)'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'شماره تماس' : 'Phone Number'} *</label>
+                <input type="tel" inputMode="tel" required dir="ltr" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isFa ? '09193344411' : '09193344411'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', textAlign: 'left', boxSizing: 'border-box' }} />
+              </div>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'شماره تماس' : 'Phone Number'} *</label>
-              <input type="tel" inputMode="tel" required dir="ltr" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isFa ? '09193123469 یا +12125550123' : '09193123469 or +12125550123'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', textAlign: 'left', boxSizing: 'border-box' }} />
-              {phone && <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 4 }}>{reviewCountryFlag(detectedCountryCode, countries)} {isFa ? `کشور تشخیص‌داده‌شده: ${detectedCountry?.name || 'سایر'} • نمایش عمومی: ${maskReviewPhone(normalizeReviewPhone(phone, detectedCountryCode), detectedCountryCode) || '—'}` : `Detected country: ${detectedCountry?.nameEn || 'Other'} • Public: ${maskReviewPhone(normalizeReviewPhone(phone, detectedCountryCode), detectedCountryCode) || '—'}`}</small>}
-              <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: 3 }}>{isFa ? 'شماره کامل فقط در پنل مدیریت دیده می‌شود؛ در سایت چهار رقم میانی با x پوشانده می‌شود.' : 'The full number is admin-only; the public site masks its middle digits.'}</small>
-            </div>
+            {phone && <small style={{ display: 'block', fontSize: 10.5, color: T.mut, marginTop: -4, marginBottom: 4 }}>{reviewCountryFlag(detectedCountryCode, countries)} {isFa ? `کشور تشخیص‌داده‌شده: ${detectedCountry?.name || 'سایر'} • نمایش عمومی: ${maskReviewPhone(normalizeReviewPhone(phone, detectedCountryCode), detectedCountryCode) || '—'}` : `Detected country: ${detectedCountry?.nameEn || 'Other'} • Public: ${maskReviewPhone(normalizeReviewPhone(phone, detectedCountryCode), detectedCountryCode) || '—'}`}</small>}
+            <small style={{ display: 'block', fontSize: 11, color: T.mut, marginBottom: 10 }}>{isFa ? 'شماره شما کاملاً محفوظ است و نگران نباشید؛ برای احراز واقعی بودن نظر، شماره تماس را وارد می‌کنید.' : 'Your number is fully protected — it is requested only to verify a genuine review.'}</small>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'متن نظر' : 'Comment'}</label>
-              <textarea rows={3} value={comment} onChange={(event) => setComment(event.target.value)} placeholder={isFa ? 'نظر یا تجربه خود را بنویسید...' : 'Write your comment...'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'متن نظر' : 'Comment'} *</label>
+              <textarea rows={2} value={comment} onChange={(event) => setComment(event.target.value)} placeholder={isFa ? 'نظر یا تجربه خود را بنویسید...' : 'Write your comment...'} style={{ width: '100%', padding: '10px 12px', borderRadius: T.inputRadius || 10, border: `1px solid ${T.brd}`, background: T.inp, color: T.txt, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
             </div>
-            <button type="submit" disabled={!name.trim() || submitting} style={{ padding: '12px 24px', borderRadius: T.btnRadius || 12, border: 0, background: !name.trim() || submitting ? T.brd : T.grad || T.acc, color: !name.trim() || submitting ? T.mut : '#fff', fontWeight: 800, fontSize: 14, cursor: !name.trim() || submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+            <button type="submit" disabled={submitting || !comment.trim() || !phone.trim()} style={{ padding: '12px 24px', borderRadius: T.btnRadius || 12, border: 0, background: submitting || !comment.trim() || !phone.trim() ? T.brd : T.grad || T.acc, color: submitting || !comment.trim() || !phone.trim() ? T.mut : '#fff', fontWeight: 800, fontSize: 14, cursor: submitting || !comment.trim() || !phone.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
               {submitting ? (isFa ? 'در حال ارسال...' : 'Submitting...') : (isFa ? 'ارسال نظر' : 'Submit Review')}
             </button>
           </>

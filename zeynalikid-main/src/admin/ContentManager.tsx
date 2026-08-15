@@ -393,6 +393,39 @@ function MediaLibraryManager(props: any) {
           <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.description || ''} onCommit={(v: string) => chg(i, 'description', v)} rows={3} />
           <label style={S.lbl}>توضیحات (نمایش در صفحه معرفی دوره‌ها)</label>
           <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.descriptionCourses || ''} onCommit={(v: string) => chg(i, 'descriptionCourses', v)} rows={3} />
+          <label style={{ ...S.lbl, marginTop: 2, display: 'block' }}>هایلایت‌های متن (جملات رنگی جلب‌توجه)</label>
+          <p style={{ fontSize: 10.5, color: T.mut, margin: '0 0 6px', lineHeight: 1.7 }}>می‌توانید چند هایلایت رنگی اضافه کنید؛ در نمایش، قبل یا بعد از توضیحات/متن کامل به‌ترتیب ظاهر می‌شوند. رنگ‌های پاستیلی انتخاب کنید تا متن داخل با رنگِ هایلایت خوانا بماند.</p>
+          {(() => {
+            const highlights: any[] = it.highlights || [];
+            const setHighlights = (arr: any[]) => chg(i, 'highlights', arr);
+            return (
+              <div style={{ marginBottom: 8 }}>
+                {highlights.map((h: any, hi: number) => (
+                  <div key={h.id || hi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 8, marginBottom: 6, background: T.badge }}>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
+                      <select style={{ ...S.inp, flex: 1 }} value={h.color || '#DCFCE7'} onChange={(e) => { const a = [...highlights]; a[hi] = { ...a[hi], color: e.target.value }; setHighlights(a); }}>
+                        <option value="#DCFCE7">سبز ملایم</option>
+                        <option value="#FEF9C3">زرد ملایم</option>
+                        <option value="#FFE4E6">صورتی ملایم</option>
+                        <option value="#DBEAFE">آبی ملایم</option>
+                        <option value="#FFEDD5">نارنجی ملایم</option>
+                        <option value="#F3E8FF">بنفش ملایم</option>
+                        <option value="#CCFBF1">فیروزه‌ای ملایم</option>
+                        <option value="#E2E8F0">خاکستری ملایم</option>
+                      </select>
+                      <button type="button" style={{ ...AdminBtn(), color: T.err, padding: '4px 10px' }} onClick={() => setHighlights(highlights.filter((_: any, j: number) => j !== hi))}>حذف</button>
+                    </div>
+                    <StableAdminTextarea style={{ ...S.ta, minHeight: 50, background: h.color || '#DCFCE7', color: '#1F2937' }} defaultValue={h.text || ''} onCommit={(v: string) => { const a = [...highlights]; a[hi] = { ...a[hi], text: v }; setHighlights(a); }} rows={2} placeholder="متن هایلایت..." />
+                    <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+                      <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} disabled={hi === 0} onClick={() => { const a = [...highlights]; const j = hi - 1; [a[hi], a[j]] = [a[j], a[hi]]; setHighlights(a); }}>بالا</button>
+                      <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} disabled={hi === highlights.length - 1} onClick={() => { const a = [...highlights]; const j = hi + 1; [a[hi], a[j]] = [a[j], a[hi]]; setHighlights(a); }}>پایین</button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" style={AdminBtn()} onClick={() => setHighlights([...highlights, { id: 'hl' + uid(), color: '#DCFCE7', text: '' }])}>+ افزودن هایلایت</button>
+              </div>
+            );
+          })()}
           {sectionKey === 'education' && (
             <>
               <label style={S.lbl}>کلمات کلیدی (با کاما یا ویرگول جدا کنید)</label>

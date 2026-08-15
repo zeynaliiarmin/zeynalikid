@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, verifyAdminBiometric } from '../utils/adminBiometric';
-import { loginAdminSession } from '../utils/adminSession';
+import { loginAdminSession, getAdminSessionToken, validateAdminSession } from '../utils/adminSession';
 // Phase 3: VITE_ADMIN_PASSWORD removed — login only via admin-session Edge Function.
 // ADMIN_PHONE and ADMIN_PASSWORD live in Supabase Edge Function secrets, never in frontend.
 export default function AdminLoginPage({app}:{app:any}){
@@ -24,6 +24,17 @@ export default function AdminLoginPage({app}:{app:any}){
      setAErr(e?.message||'اتصال امن به سرور انجام نشد');
    }
  };
- const bio=async()=>{setBioBusy(true);setAErr('');try{if(await verifyAdminBiometric())done();else setAErr('تأیید بیومتریک انجام نشد')}catch{setAErr('اثر انگشت یا Face ID تأیید نشد')}finally{setBioBusy(false)}};
+ const bio=async()=>{setBioBusy(true);setAErr('');try{
+   // ابتدا اگر نشست معتبری در این دستگاه ذخیره شده، آن را با بیومتریک فعال کنیم (بدون نیاز به رمز)
+   if(getAdminSessionToken()){
+     const s=await validateAdminSession().catch(()=>({valid:false}));
+     if(s&&s.valid){ done(); setBioBusy(false); return; }
+   }
+   // تأیید بیومتریک؛ اگر نشست معتبری موجود نباشد، باید یک‌بار با رمز وارد شوید (نشست برای دفعات بعد ذخیره می‌شود)
+   if(await verifyAdminBiometric()){
+     if(getAdminSessionToken()){ const s=await validateAdminSession().catch(()=>({valid:false})); if(s&&s.valid){ done(); setBioBusy(false); return; } }
+     setAErr('برای اولین ورود روی این دستگاه، یک‌بار با شماره و رمز وارد شوید؛ ورود بعدی با اثر انگشت / Face ID انجام می‌شود.');
+   } else setAErr('تأیید بیومتریک انجام نشد');
+ }catch{setAErr('اثر انگشت یا Face ID تأیید نشد')}finally{setBioBusy(false)}};
  return <div style={{...S.page,direction:'ltr'}}><style>{css}</style><div style={{...S.card,maxWidth:380,textAlign:'center'}}><h2 style={{color:T.ttl}}>Admin Panel</h2><p style={{color:T.mut,fontSize:12}}>zeynalikid — restricted access</p><Field label="Phone" value={aPhone} onChange={(v:string)=>setAPhone(p2e(v))} ph="09xxxxxxxxx"/><label style={{...S.lbl,textAlign:'left'}}>Password</label><div style={{position:'relative',marginBottom:12}}><input ref={pwdRef} type={showPwd?'text':'password'} style={{...S.inp,textAlign:'center',letterSpacing:showPwd?'1px':'4px'}} value={aPwd} onChange={e=>setAPwd(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ok()}}/><button type="button" onClick={()=>setShowPwd(v=>!v)} style={{position:'absolute',right:8,top:7,padding:7,border:0,background:'transparent',color:T.mut,cursor:'pointer'}}>{showPwd?'Hide':'Show'}</button></div>{aErr&&<div style={{fontSize:11,color:T.err,marginTop:4}}>{aErr}</div>}<button style={S.btn} onClick={ok}>Login</button>{hasAdminBiometric()&&<button type="button" style={{...S.btnGhost,marginTop:10,width:'100%'}} onClick={bio} disabled={bioBusy}>{bioBusy?'در حال تأیید…':'ورود با اثر انگشت / Face ID'}</button>}<button type="button" style={{marginTop:12,border:0,background:'transparent',color:T.mut,cursor:'pointer',fontFamily:'inherit'}} onClick={goHome}>بازگشت به صفحه اصلی</button></div></div>
 }

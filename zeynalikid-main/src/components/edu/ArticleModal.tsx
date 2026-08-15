@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { type EduItem, durationLabel, typeLabel } from './edu-data';
 import EduCard from './EduCard';
 import EduPlayer from './EduPlayer';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
+import { Highlights, RichText } from '../MediaHighlights';
 
 /**
  * مدال جزئیات محتوا — Stage 8
@@ -24,7 +26,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
   const paras = (item.body || '').split('\n\n').filter(Boolean);
 
-  return (
+  return createPortal(
     <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
       <div className="zke-modal-win">
         <div className="zke-modal-head">
@@ -45,18 +47,22 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
 
           {item.type !== 'text' && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}
 
+          <Highlights highlights={(item as any).highlights} />
           {item.type === 'text' ? (
             <>
-              {paras.map((p, i) => (
-                <span key={i}>
-                  <p>{p}</p>
-                  {i === 0 && item.quote && <blockquote>{item.quote}</blockquote>}
-                </span>
-              ))}
-              {!paras.length && <p>{en ? item.descEn : item.desc}</p>}
+              {paras.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {paras.map((p, i) => (
+                    <RichText key={i} text={p} lang={lang} />
+                  ))}
+                </div>
+              ) : (
+                <RichText text={en ? item.descEn : item.desc} lang={lang} />
+              )}
+              {item.quote && <blockquote>{item.quote}</blockquote>}
             </>
           ) : (
-            <p>{en ? item.descEn : item.desc}</p>
+            <RichText text={en ? item.descEn : item.desc} lang={lang} />
           )}
 
           <div className="zke-cta">
@@ -75,6 +81,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

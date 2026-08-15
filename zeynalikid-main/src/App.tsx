@@ -1035,7 +1035,7 @@ function App(){
  const location=useLocation(); const navigate=useNavigate();
  // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
  // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
- const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return sessionStorage.getItem('zk_admin_authed')==='true' && !!getAdminSessionToken(); } catch { return false; } });
+ const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return (typeof localStorage!=='undefined'&&localStorage.getItem('zk_admin_authed')==='true') && !!getAdminSessionToken(); } catch { return false; } });
  const [adminSettingsLoading,setAdminSettingsLoading]=useState(()=>adminAuthed&&isSupabaseConfigured);
  const [adminTab,setAdminTab]=useState('dashboard');
  // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
@@ -1121,6 +1121,9 @@ function App(){
  // اصلاح ۳۱: ثبت بازدید صفحه — بسیار سبک و بی‌صدا؛ در صورت خطا هیچ تأثیری روی تجربه کاربری ندارد و صفحهٔ پنل مدیریت (admin/admin-login) ثبت نمی‌شود.
  useEffect(()=>{ if(view==='admin'||view==='admin-login')return; try{trackPageView(location.pathname)}catch{} },[location.pathname]);
  useEffect(()=>{let alive=true; if(isSupabaseConfigured){fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(e=>console.warn('Could not load settings from Supabase',e))} return()=>{alive=false}},[]);
+ // اصلاح: تازه‌سازی دوره‌ای تنظیمات عمومی در صفحات عمومی تا تغییرات (سوالات متداول، محتوا و…)
+ // بدون نیاز به رفرش/ذخیرهٔ دستی هر چند ساعت در سایت نمایان شود.
+ useEffect(()=>{if(!isSupabaseConfigured||view==='admin'||view==='admin-login')return;let alive=true;const refresh=()=>{fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(()=>{})};const iv=setInterval(refresh,60000);return()=>{alive=false;clearInterval(iv)}},[view,isSupabaseConfigured]);
  // پس از ورود مدیر، تنظیمات کامل و احرازهویت‌شده دوباره بارگذاری می‌شود. تا پایان این مرحله
  // پنل قابل ویرایش نیست تا پاسخ عمومیِ فیلترشده هرگز محصولات یا تصاویر را با پیش‌فرض بازنویسی نکند.
  useEffect(()=>{if(!adminAuthed||!isSupabaseConfigured)return;let alive=true;setAdminSettingsLoading(true);fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products}))}).catch(e=>console.warn('Could not load full admin settings',e)).finally(()=>{if(alive)setAdminSettingsLoading(false)});return()=>{alive=false}},[adminAuthed]);

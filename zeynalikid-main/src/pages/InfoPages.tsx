@@ -314,8 +314,10 @@ export function AboutPage({app}:{app:any}){
      {/* Story */}
      <div style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:20,padding:"22px 20px",marginBottom:24}}>
        <div style={{fontWeight:800,fontSize:15.5,color:T.ttl,marginBottom:10}}>{lang==="en"?"Our Story":"داستان ما"}</div>
-       <div style={{fontSize:14.5,lineHeight:1.9,color:T.mut}}>
-         {lang==="en"?"Founded with a single promise: every child deserves to grow, thrive and feel confident. We use the TC method — a warm, science-based approach rooted in tongue analysis, personalized nutrition, and continuous parental support." : "با یک وعده ساده شروع کردیم: هر کودک شایسته رشد، شکوفایی و اعتماد به نفس است. ما از روش TC استفاده می‌کنیم — رویکردی گرم، مبتنی بر علم و ریشه‌دار در تحلیل زبان، تغذیه شخصی‌سازی‌شده و پشتیبانی مداوم والدین."}
+       <div style={{fontSize:14.5,lineHeight:1.9,color:T.mut,whiteSpace:"pre-wrap"}}>
+         {lang==="en"
+           ?(cfg.aboutStoryTextEn||cfg.aboutStoryText||"Founded with a single promise: every child deserves to grow, thrive and feel confident. We use the TC method — a warm, science-based approach rooted in tongue analysis, personalized nutrition, and continuous parental support.")
+           :(cfg.aboutStoryText||"با یک وعده ساده شروع کردیم: هر کودک شایسته رشد، شکوفایی و اعتماد به نفس است. ما از روش TC استفاده می‌کنیم — رویکردی گرم، مبتنی بر علم و ریشه‌دار در تحلیل زبان، تغذیه شخصی‌سازی‌شده و پشتیبانی مداوم والدین.")}
        </div>
      </div>
 
@@ -331,8 +333,10 @@ export function AboutPage({app}:{app:any}){
            />
          </div>}
          <div style={{flex:1,minWidth:180}}>
-           <div style={{fontWeight:800,color:T.ttl,marginBottom:8,fontSize:15}}>{lang==="en"?"The TC Method":"روش TC"}</div>
-           <div style={{fontSize:13.5,lineHeight:1.85,color:T.mut}}>{lang==="en"?"A calm, evidence-informed path: 1) Tongue analysis 2) Personalized supplement & nutrition plan 3) Weekly support 4) Growth tracking":"مسیر آرام و مبتنی بر شواهد: ۱) تحلیل زبان ۲) برنامه تغذیه و مکمل شخصی‌سازی‌شده ۳) پشتیبانی هفتگی ۴) پیگیری رشد"}</div>
+           <div style={{fontWeight:800,color:T.ttl,marginBottom:8,fontSize:15}}>{lang==="en"?(cfg.tcMethodTitleEn||"The TC Method"):(cfg.tcMethodTitle||"روش TC")}</div>
+           <div style={{fontSize:13.5,lineHeight:1.85,color:T.mut,whiteSpace:"pre-wrap"}}>{lang==="en"
+             ?(cfg.tcMethodTextEn||cfg.tcMethodText||"A calm, evidence-informed path: 1) Tongue analysis 2) Personalized supplement & nutrition plan 3) Weekly support 4) Growth tracking")
+             :(cfg.tcMethodText||"مسیر آرام و مبتنی بر شواهد: ۱) تحلیل زبان ۲) برنامه تغذیه و مکمل شخصی‌سازی‌شده ۳) پشتیبانی هفتگی ۴) پیگیری رشد")}</div>
          </div>
        </div>
      </div>

@@ -3,6 +3,9 @@ const endpoint = `${base}/functions/v1/admin-session`;
 const TOKEN_KEY = 'zk_admin_session_token';
 const DEVICE_KEY = 'zk_admin_device_id';
 const AUTHED_KEY = 'zk_admin_authed';
+// نشست ادمین در localStorage ذخیره می‌شود (نه sessionStorage) تا هنگام ورود با
+// Face ID / اثر انگشت یا پس از رفرش، نشست معتبر حفظ شود و به صفحهٔ لاگین برنگردد.
+const STORE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = typeof localStorage !== 'undefined' ? localStorage : (typeof sessionStorage !== 'undefined' ? sessionStorage : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as any));
 const deviceInfo = () => ({
   device_name: `${navigator.platform || 'Device'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`,
   platform: navigator.platform || 'Unknown',
@@ -17,14 +20,14 @@ export async function adminSessionAction(action: string, payload: Record<string,
 }
 export async function loginAdminSession(phone: string, password: string) {
   const data = await adminSessionAction('login', { phone, password, ...deviceInfo() });
-  sessionStorage.setItem(TOKEN_KEY, data.sessionToken);
-  sessionStorage.setItem(DEVICE_KEY, data.deviceId);
-  sessionStorage.setItem(AUTHED_KEY, 'true');
+  STORE.setItem(TOKEN_KEY, data.sessionToken);
+  STORE.setItem(DEVICE_KEY, data.deviceId);
+  STORE.setItem(AUTHED_KEY, 'true');
   return data;
 }
-export const getAdminSessionToken = () => sessionStorage.getItem(TOKEN_KEY) || '';
-export const getAdminDeviceId = () => sessionStorage.getItem(DEVICE_KEY) || '';
-export const clearAdminSession = () => { sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(DEVICE_KEY); sessionStorage.removeItem(AUTHED_KEY); };
+export const getAdminSessionToken = () => STORE.getItem(TOKEN_KEY) || '';
+export const getAdminDeviceId = () => STORE.getItem(DEVICE_KEY) || '';
+export const clearAdminSession = () => { STORE.removeItem(TOKEN_KEY); STORE.removeItem(DEVICE_KEY); STORE.removeItem(AUTHED_KEY); };
 
 /**
  * Revoke ALL admin sessions (every device) via admin-session revoke_all action.
@@ -120,7 +123,7 @@ export async function validateAdminSession(): Promise<{ valid: boolean; ownerPho
   try {
     const data = await adminSessionAction('validate_session', { sessionToken: token });
     if (data?.valid === true) {
-      sessionStorage.setItem(AUTHED_KEY, 'true');
+      STORE.setItem(AUTHED_KEY, 'true');
       return { valid: true, ownerPhone: data.ownerPhone };
     }
     clearAdminSession();

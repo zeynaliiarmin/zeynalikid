@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, PhoneIcon } from './Icons';
 import CollapsibleCardText from './CollapsibleCardText';
+import { Highlights } from './MediaHighlights';
 import { extractDirectMediaUrl, normalizeMediaInput } from '../utils/mediaInput';
 
 export function mediaThumb(type:string){
@@ -101,7 +102,8 @@ export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'vi
   const normalized=normalizeEmbedCode(code);
   if(type==='image'){
     const safeSrc=extractDirectMediaUrl(normalized,'image');
-    return safeSrc?<img data-manual-embed="image" src={safeSrc} alt="" style={{width:'100%',aspectRatio:'16 / 9',objectFit:'cover',display:'block',background:'#000'}} draggable={false}/>:null;
+    // نمایش کامل عکس بدون برش — صرف‌نظر از ابعاد اصلی؛ هر عکسی با هر ابعادی کامل دیده می‌شود.
+    return safeSrc?<img data-manual-embed="image" src={safeSrc} alt="" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000'}} draggable={false}/>:null;
   }
   if(type==='audio'){
     const safeSrc=extractDirectMediaUrl(normalized,'audio');
@@ -131,6 +133,7 @@ function MediaCardInfo({item,type,masked,T,secure=true,lang}:{item:any,type:stri
     lessLabel={lang==='en'?'Less':'کمتر'}
     direction={lang==='en'?'ltr':'rtl'}
   />
+  <Highlights highlights={item?.highlights} style={{ margin: '8px 0 0' }} />
   <div dir="ltr" aria-hidden={!masked} style={{height:20,marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"',visibility:masked?'visible':'hidden'}}><PhoneIcon size={12} color={T.acc}/> {masked||'0000xxxx000'}</div>
  </div>
 }
