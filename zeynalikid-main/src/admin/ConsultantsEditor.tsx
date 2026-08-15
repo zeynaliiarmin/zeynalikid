@@ -38,6 +38,24 @@ export default function ConsultantsEditor(props: any) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [photoOpen, setPhotoOpen] = useState<Record<string, boolean>>({});
   const [bankOpen, setBankOpen] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyTimer = React.useRef<any>(0);
+
+  const buildReferralLink = (code: string) => `${window.location.origin}/${code.trim()}`;
+
+  const copyReferralLink = (code: string) => {
+    const link = buildReferralLink(code);
+    try {
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(link);
+      else {
+        const ta = document.createElement('textarea');
+        ta.value = link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      }
+    } catch {}
+    setCopiedId(code);
+    clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const setConsultants = (arr: any[]) => setEditCfg({ ...draft, consultants: arr });
   const chg = (i: number, k: string, v: any) => { const a = [...consultants]; a[i] = { ...a[i], [k]: v }; setConsultants(a); };
@@ -119,7 +137,31 @@ export default function ConsultantsEditor(props: any) {
               <button type="button" style={{ ...AdminBtn(), padding: '8px 12px' }} onClick={() => chg(activeIdx, 'referralCode', makeReferralCode(active.nameEn))}>ساخت خودکار</button>
             </div>
             {!active.nameEn && <div style={{ fontSize: 10.5, color: T.warn || '#B45309', marginTop: 5 }}>نام انگلیسی را پر کنید تا کد لینک ساخته شود.</div>}
-            {active.referralCode && <div style={{ fontSize: 10.5, color: T.mut, marginTop: 5 }} dir="ltr">لینک: {`${window.location.origin}/?ad=${active.referralCode}`}</div>}
+            {active.referralCode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                <code dir="ltr" style={{ flex: 1, fontSize: 11.5, color: T.mut, background: T.badge, border: `1px solid ${T.brd}`, borderRadius: 8, padding: '6px 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{buildReferralLink(active.referralCode)}</code>
+                <button
+                  type="button"
+                  onClick={() => copyReferralLink(active.referralCode)}
+                  aria-label="کپی لینک"
+                  title="کپی لینک"
+                  style={{ flexShrink: 0, minHeight: 34, padding: '0 12px', borderRadius: 9, border: `1px solid ${copiedId === active.referralCode ? '#16A34A' : T.brd}`, background: copiedId === active.referralCode ? '#16A34A' : T.soft, color: copiedId === active.referralCode ? '#fff' : T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5, transition: 'all .2s ease', animation: copiedId === active.referralCode ? 'zk-copy-pop .3s ease' : undefined }}
+                >
+                  {copiedId === active.referralCode ? (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      کپی شد
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                      کپی
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+            <style>{`@keyframes zk-copy-pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}`}</style>
           </div>
 
           {/* تب‌های فرعی: عکس | بانک */}

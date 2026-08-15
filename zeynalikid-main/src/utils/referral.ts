@@ -1,8 +1,16 @@
 // ابزار کمکی مشاورین و لینک‌های ارجاع (referral)
-// کد ارجاع از پارامتر URL خوانده می‌شود: ?ad=CODE
+// کد ارجاع از مسیر (مثل /mhi) یا پارامتر URL (مثل ?ad=mhi) خوانده می‌شود.
 
 export function getReferralCodeFromUrl(): string {
   try {
+    // ۱) مسیر مستقیم: https://zeynalikid.vercel.app/mhi
+    const path = window.location.pathname || '';
+    const cleanPath = path.replace(/\/+$/, '').replace(/^\//, '');
+    // فقط اگر دقیقاً یک قطعهٔ ساده باشد و جزو مسیرهای شناخته‌شده نباشد
+    if (cleanPath && !cleanPath.includes('/') && !cleanPath.startsWith('admin') && !['courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done'].includes(cleanPath.split('?')[0])) {
+      return cleanPath.split('?')[0].trim();
+    }
+    // ۲) پارامتر URL: ?ad=CODE یا ?ref=CODE
     const q = new URLSearchParams(window.location.search);
     return (q.get('ad') || q.get('ref') || '').trim();
   } catch {
