@@ -362,9 +362,10 @@ export default function SettingsManager(props: Props) {
   );
 }
 
-// ── تب «درباره ما» — همهٔ محتوای صفحه درباره ما + لیست مشاورین ──
+// ── تب «درباره ما» — همهٔ محتوای صفحه درباره ما + لیست مشاورین (کارت‌های باز/بسته) ──
 function AboutSettings(props: any) {
   const { T, S, AdminBtn, Box, StableAdminInput, StableAdminTextarea, draft, up, upNested, fileToData, deleteStoredImage, uid } = props;
+  const [openConsultantId, setOpenConsultantId] = React.useState<string | null>(null);
   const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
     <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} /> {label}
@@ -374,7 +375,7 @@ function AboutSettings(props: any) {
   const setConsultants = (arr: any[]) => up('consultants', arr);
   const chgConsultant = (i: number, k: string, v: any) => { const a = [...consultants]; a[i] = { ...a[i], [k]: v }; setConsultants(a); };
   const moveConsultant = (i: number, dir: -1 | 1) => { const a = [...consultants]; const j = i + dir; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; setConsultants(a); };
-  const addConsultant = () => setConsultants([...consultants, { id: 'cons' + uid(), name: 'مشاور جدید', nameEn: 'New Consultant', title: '', titleEn: '', desc: '', descEn: '', photoUrl: '' }]);
+  const addConsultant = () => { const id = 'cons' + uid(); setConsultants([...consultants, { id, name: 'مشاور جدید', nameEn: 'New Consultant', title: '', titleEn: '', desc: '', descEn: '', photoUrl: '' }]); setOpenConsultantId(id); };
   const removeConsultant = (i: number) => { const a = [...consultants]; const removed = a[i]; if (removed?.photoUrl) { try { deleteStoredImage(removed.photoUrl); } catch {} } setConsultants(a.filter((_: any, j: number) => j !== i)); };
 
   return (
@@ -430,48 +431,70 @@ function AboutSettings(props: any) {
       </Box>
 
       <Box title="لیست مشاورین (نمایش در صفحه درباره ما)">
-        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>عکس مشاور را آپلود کنید، اسم به‌عنوان عنوان و توضیحات هر مشاور را بنویسید. مشاورین به‌صورت کارت در بخش مناسب صفحه درباره ما نمایش داده می‌شوند. نام انگلیسی مشاور برای ساخت لینک ارجاع الزامی است.</p>
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>عکس مشاور را آپلود کنید، اسم به‌عنوان عنوان و توضیحات هر مشاور را بنویسید. هر مشاور یک کارت باز/بسته دارد؛ با کلیک روی نام هر مشاور باز می‌شود و بقیه بسته می‌شوند. نام انگلیسی مشاور برای ساخت لینک ارجاع الزامی است.</p>
         {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>مشاوری ثبت نشده است.</p>}
-        {consultants.map((c: any, i: number) => (
-          <div key={c.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 12, marginBottom: 10, background: T.badge }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-              <label style={{ ...S.lbl, marginBottom: 0, flexShrink: 0 }}>عکس مشاور</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp, flex: 1 }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, c.photoUrl, 'consultants'); chgConsultant(i, 'photoUrl', u); } }} />
-            </div>
-            {c.photoUrl && <img src={c.photoUrl} alt="consultant" style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${T.brd}`, margin: '0 0 8px' }} />}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div><label style={S.lbl}>نام (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.name || ''} onCommit={(v: string) => chgConsultant(i, 'name', v)} /></div>
-              <div><label style={S.lbl}>Name (English)</label><StableAdminInput style={S.inp} defaultValue={c.nameEn || ''} onCommit={(v: string) => chgConsultant(i, 'nameEn', v)} /></div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div><label style={S.lbl}>سمت (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.title || ''} onCommit={(v: string) => chgConsultant(i, 'title', v)} /></div>
-              <div><label style={S.lbl}>Role (English)</label><StableAdminInput style={S.inp} defaultValue={c.titleEn || ''} onCommit={(v: string) => chgConsultant(i, 'titleEn', v)} /></div>
-            </div>
-            <div><label style={S.lbl}>توضیحات (فارسی)</label><StableAdminTextarea style={S.ta} defaultValue={c.desc || ''} onCommit={(v: string) => chgConsultant(i, 'desc', v)} rows={2} /></div>
-            <div><label style={S.lbl}>Description (English)</label><StableAdminTextarea style={S.ta} defaultValue={c.descEn || ''} onCommit={(v: string) => chgConsultant(i, 'descEn', v)} rows={2} /></div>
-            <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}` }}>
-              <div style={{ fontWeight: 800, fontSize: 12.5, color: T.ttl, marginBottom: 8 }}>لینک ارجاع اختصاصی (referral)</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 8, alignItems: 'end' }}>
-                <div>
-                  <label style={S.lbl}>کد لینک (کوتاه، یکتا)</label>
-                  <StableAdminInput dir="ltr" style={{ ...S.inp, fontFamily: 'monospace' }} defaultValue={c.referralCode || ''} onCommit={(v: string) => { const code = v.trim().toLowerCase(); const a = [...consultants]; a[i] = { ...a[i], referralCode: code }; setConsultants(a); }} placeholder="مثلاً ali" />
+        {consultants.map((c: any, i: number) => {
+          const isOpen = openConsultantId === c.id;
+          return (
+            <div key={c.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, marginBottom: 8, background: T.badge, overflow: 'hidden' }}>
+              {/* سربرگ کارت — با کلیک باز/بسته می‌شود */}
+              <button
+                type="button"
+                onClick={() => setOpenConsultantId(isOpen ? null : c.id)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'inherit' }}
+              >
+                {c.photoUrl ? (
+                  <img src={c.photoUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: `1px solid ${T.brd}` }} />
+                ) : (
+                  <span style={{ width: 36, height: 36, borderRadius: '50%', background: T.soft, color: T.mut, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 15 }}>{c.name ? c.name[0] : '?'}</span>
+                )}
+                <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 13.5, color: T.ttl }}>{c.name || 'بدون نام'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ color: T.mut, flexShrink: 0, transition: 'transform .2s ease', transform: isOpen ? 'rotate(180deg)' : 'none' }}><polyline points="6 9 12 15 18 9" /></svg>
+              </button>
+              {/* محتوای کارت — فقط وقتی باز است */}
+              {isOpen && (
+                <div style={{ padding: '0 12px 12px', borderTop: `1px solid ${T.brd}`, animation: 'fadeSlide .25s ease both' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                    <label style={{ ...S.lbl, marginBottom: 0, flexShrink: 0 }}>عکس مشاور</label>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" style={{ ...S.inp, flex: 1 }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await fileToData(f, c.photoUrl, 'consultants'); chgConsultant(i, 'photoUrl', u); } }} />
+                  </div>
+                  {c.photoUrl && <img src={c.photoUrl} alt="consultant" style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${T.brd}`, margin: '8px 0' }} />}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><label style={S.lbl}>نام (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.name || ''} onCommit={(v: string) => chgConsultant(i, 'name', v)} /></div>
+                    <div><label style={S.lbl}>Name (English)</label><StableAdminInput style={S.inp} defaultValue={c.nameEn || ''} onCommit={(v: string) => chgConsultant(i, 'nameEn', v)} /></div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><label style={S.lbl}>سمت (فارسی)</label><StableAdminInput style={S.inp} defaultValue={c.title || ''} onCommit={(v: string) => chgConsultant(i, 'title', v)} /></div>
+                    <div><label style={S.lbl}>Role (English)</label><StableAdminInput style={S.inp} defaultValue={c.titleEn || ''} onCommit={(v: string) => chgConsultant(i, 'titleEn', v)} /></div>
+                  </div>
+                  <div><label style={S.lbl}>توضیحات (فارسی)</label><StableAdminTextarea style={S.ta} defaultValue={c.desc || ''} onCommit={(v: string) => chgConsultant(i, 'desc', v)} rows={2} /></div>
+                  <div><label style={S.lbl}>Description (English)</label><StableAdminTextarea style={S.ta} defaultValue={c.descEn || ''} onCommit={(v: string) => chgConsultant(i, 'descEn', v)} rows={2} /></div>
+                  <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}` }}>
+                    <div style={{ fontWeight: 800, fontSize: 12.5, color: T.ttl, marginBottom: 8 }}>لینک ارجاع اختصاصی (referral)</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 8, alignItems: 'end' }}>
+                      <div>
+                        <label style={S.lbl}>کد لینک (کوتاه، یکتا)</label>
+                        <StableAdminInput dir="ltr" style={{ ...S.inp, fontFamily: 'monospace' }} defaultValue={c.referralCode || ''} onCommit={(v: string) => { const code = v.trim().toLowerCase(); const a = [...consultants]; a[i] = { ...a[i], referralCode: code }; setConsultants(a); }} placeholder="مثلاً ali" />
+                      </div>
+                      <button type="button" style={{ ...AdminBtn(), padding: '8px 12px' }} onClick={() => { const a = [...consultants]; a[i] = { ...a[i], referralCode: makeReferralCode(c.nameEn) }; setConsultants(a); }}>ساخت خودکار</button>
+                    </div>
+                    {c.referralCode && <div style={{ fontSize: 10.5, color: T.mut, marginTop: 5 }} dir="ltr">لینک: {`${window.location.origin}/${c.referralCode}`}</div>}
+                    {!c.referralCode && <div style={{ fontSize: 10.5, color: T.warn || '#B45309', marginTop: 5 }}>کد ارجاع تعیین نشده است. نام انگلیسی مشاور را پر کنید و «ساخت خودکار» بزنید.</div>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+                    <Checklist label="نمایش عکس در اطلاعات مشاور" value={c.showPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'showPhoto', v)} />
+                    <Checklist label="نمایش عکس دربارهٔ ما (بدون آپلود دوباره)" value={c.useAboutPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'useAboutPhoto', v)} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === 0} onClick={() => moveConsultant(i, -1)}><ZkArrowUpIcon size={13} /></button>
+                    <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === consultants.length - 1} onClick={() => moveConsultant(i, 1)}><ZkArrowDownIcon size={13} /></button>
+                    <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => removeConsultant(i)}>حذف</button>
+                  </div>
                 </div>
-                <button type="button" style={{ ...AdminBtn(), padding: '8px 12px' }} onClick={() => { const a = [...consultants]; a[i] = { ...a[i], referralCode: makeReferralCode(c.nameEn) }; setConsultants(a); }}>ساخت خودکار</button>
-              </div>
-              {c.referralCode && <div style={{ fontSize: 10.5, color: T.mut, marginTop: 5 }} dir="ltr">لینک: {`${window.location.origin}/?ad=${c.referralCode}`}</div>}
-              {!c.referralCode && <div style={{ fontSize: 10.5, color: T.warn || '#B45309', marginTop: 5 }}>کد ارجاع تعیین نشده است. نام انگلیسی مشاور را پر کنید و «ساخت خودکار» بزنید.</div>}
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
-              <Checklist label="نمایش عکس در اطلاعات مشاور" value={c.showPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'showPhoto', v)} />
-              <Checklist label="نمایش عکس دربارهٔ ما (بدون آپلود دوباره)" value={c.useAboutPhoto !== false} onChange={(v: boolean) => chgConsultant(i, 'useAboutPhoto', v)} />
-            </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === 0} onClick={() => moveConsultant(i, -1)}><ZkArrowUpIcon size={13} /></button>
-              <button type="button" style={{ ...AdminBtn(), padding: '6px 10px' }} disabled={i === consultants.length - 1} onClick={() => moveConsultant(i, 1)}><ZkArrowDownIcon size={13} /></button>
-              <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={() => removeConsultant(i)}>حذف</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         <button type="button" style={AdminBtn()} onClick={addConsultant}><ZkPlusIcon size={13} /> افزودن مشاور</button>
       </Box>
     </>
