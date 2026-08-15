@@ -990,13 +990,24 @@ export default function ReviewsEditor({ app }: { app: any }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, .7fr) minmax(0, 1.3fr)', gap: 10, marginBottom: 10 }}>
                     <div>
                       <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>کشور شماره:</label>
-                      <select style={S.inp} value={currentEdit.phoneCountry} onChange={(e) => setEditMap({ ...editMap, [r.id]: { ...currentEdit, phoneCountry: e.target.value } })}>
+                      <select style={S.inp} value={currentEdit.phoneCountry} onChange={(e) => { const pc = e.target.value; setEditMap({ ...editMap, [r.id]: { ...currentEdit, phoneCountry: pc, phone: manualMaskedPhoneTemplate(pc) } }); }}>
                         {countries.map((country: any) => <option key={country.id || country.code} value={country.code}>{reviewCountryFlag(country.code, countries)} {country.name} ({country.code})</option>)}
                       </select>
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: 11.5, color: T.mut, marginBottom: 4, fontWeight: 700 }}>شماره کامل کاربر / شماره ماسک‌شده دستی:</label>
-                      <input key={`review-phone-${r.id}-${r.phone || ''}`} dir="ltr" style={{ ...S.inp, textAlign: 'left' }} defaultValue={currentEdit.phone} onBlur={(e) => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], phone: e.target.value } }))} placeholder="09193123469 یا 09193xxxx69" />
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <input key={`review-phone-${r.id}-${r.phone || ''}`} dir="ltr" style={{ ...S.inp, textAlign: 'left', flex: 1 }} defaultValue={currentEdit.phone} onBlur={(e) => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], phone: e.target.value } }))} placeholder="09193123469 یا 09193xxxx69" />
+                        <button
+                          type="button"
+                          title="شماره رندوم همان کشور"
+                          aria-label="شماره رندوم"
+                          onClick={() => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], phone: manualMaskedPhoneTemplate(currentEdit.phoneCountry) } }))}
+                          style={{ flexShrink: 0, minHeight: 36, padding: '0 11px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.soft, color: T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800 }}
+                        >
+                          🎲
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div style={{ marginBottom: 10 }}>
@@ -1327,16 +1338,27 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>شماره نمایشی دستی</label>
-                  <input
-                    dir="ltr"
-                    inputMode="numeric"
-                    data-testid="manual-review-phone"
-                    style={{ ...S.inp, textAlign: 'left', fontFamily: 'monospace' }}
-                    value={newReview.phone}
-                    onChange={(e) => setNewReview({ ...newReview, phone: sanitizeManualMaskedPhone(e.target.value) })}
-                    placeholder={manualMaskedPhoneTemplate(newReview.phoneCountry)}
-                  />
-                  <small style={{ display: 'block', color: T.mut, fontSize: 10.5, marginTop: 4 }}>در یک فیلد: پنج رقم اول و دو رقم آخر را ویرایش کنید؛ چهار x میانی ثابت می‌ماند.</small>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      dir="ltr"
+                      inputMode="numeric"
+                      data-testid="manual-review-phone"
+                      style={{ ...S.inp, textAlign: 'left', fontFamily: 'monospace', flex: 1 }}
+                      value={newReview.phone}
+                      onChange={(e) => setNewReview({ ...newReview, phone: sanitizeManualMaskedPhone(e.target.value) })}
+                      placeholder={manualMaskedPhoneTemplate(newReview.phoneCountry)}
+                    />
+                    <button
+                      type="button"
+                      title="شماره رندوم همان کشور"
+                      aria-label="شماره رندوم"
+                      onClick={() => setNewReview({ ...newReview, phone: manualMaskedPhoneTemplate(newReview.phoneCountry) })}
+                      style={{ flexShrink: 0, minHeight: 38, padding: '0 12px', borderRadius: 9, border: `1px solid ${T.brd}`, background: T.soft, color: T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}
+                    >
+                      🎲 رندوم
+                    </button>
+                  </div>
+                  <small style={{ display: 'block', color: T.mut, fontSize: 10.5, marginTop: 4 }}>برای ساخت شمارهٔ رندوم همان کشور، دکمهٔ «رندوم» را بزنید؛ هر بار متفاوت ساخته می‌شود.</small>
                 </div>
               </div>
 

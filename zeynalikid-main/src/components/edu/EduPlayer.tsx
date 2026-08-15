@@ -38,10 +38,39 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
   };
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
+  // برای ویدیو: قبل از پخش، پیش‌نمایش (فریم اول / thumbnail) نشان داده می‌شود ولی پخش نمی‌شود؛
+  // با زدن دکمهٔ پخش، پخش واقعی (iframe یا ویدیو) شروع می‌شود.
   if (hasReal) {
+    const code = (item as any).manualCode || item.url || '';
+    if (kind === 'video' && !playing) {
+      return (
+        <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
+          <button
+            type="button"
+            onClick={onPlay}
+            aria-label={en ? 'Play video' : 'پخش ویدیو'}
+            style={{ position: 'relative', width: '100%', minHeight: 210, aspectRatio: '16 / 9', border: 0, padding: 0, cursor: 'pointer', background: '#000', borderRadius: 12, overflow: 'hidden', display: 'block' }}
+          >
+            {item.cover ? (
+              <img src={item.cover} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (item as any).thumbnail ? (
+              <img src={(item as any).thumbnail} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg,#0F766E22,#0EA5E911)' }} />
+            )}
+            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <PlayGlyph size={28} />
+              </span>
+            </span>
+          </button>
+          <p className="zke-player-note" style={{ color: 'var(--zk-text-muted)', fontSize: 11.5 }}>{en ? 'Preview — tap play to watch.' : 'پیش‌نمایش — برای پخش روی دکمه بزنید.'}</p>
+        </div>
+      );
+    }
     return (
       <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
-        <ManualEmbed code={(item as any).manualCode || item.url || ''} type={kind} minHeight={kind === 'audio' ? 90 : 220} />
+        <ManualEmbed code={code} type={kind} minHeight={kind === 'audio' ? 90 : 220} />
       </div>
     );
   }

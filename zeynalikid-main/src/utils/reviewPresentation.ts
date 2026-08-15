@@ -99,6 +99,10 @@ export function reviewCountryFlag(countryCode: string | undefined, countries: Re
 export function manualMaskedPhoneTemplate(countryCode: string): string {
   const local = localExamples[countryCode] || '12345678901';
   let digits = reviewDigits(local);
+  // شمارهٔ رندوم از همان الگوی کشور: ارقام میانی را تصادفی می‌سازیم (همان طولِ الگو)
+  const len = digits.length;
+  const rnd = Array.from({ length: len }, () => String(Math.floor(Math.random() * 10))).join('');
+  digits = rnd;
   if (countryCode !== '+98') {
     const dial = reviewDigits(countryCode);
     digits = `${dial}${digits.replace(/^0/, '')}`;
