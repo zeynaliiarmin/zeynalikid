@@ -107,9 +107,9 @@ export default function ConsultantsEditor(props: any) {
         </div>
       )}
 
-      {/* کارت مشاور فعال */}
+      {/* کارت مشاور فعال — key برای remount کامل با تغییر مشاور (رفع باگ نمایش اطلاعات مشاور قبلی) */}
       {active && (
-        <div style={{ border: `1px solid ${T.brd}`, borderRadius: 14, padding: 14, marginBottom: 12, background: T.badge }}>
+        <div key={active.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, padding: 14, marginBottom: 12, background: T.badge }}>
           {/* اطلاعات مشاور — بدون تب، همیشه باز */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <b style={{ color: T.ttl, fontSize: 14 }}>{active.name || 'بدون نام'}</b>
