@@ -6,7 +6,7 @@
 //   - Only whitelisted keys are returned.
 //   - Sensitive keys (adminPassword, adminPhone, emergencyToken, merchantId, clientSecret,
 //     apiKey, gatewaySecret, cryptoWallets addresses, etc.) are NEVER returned.
-//   - CORS: Zeynalikid production, Zeynalikid-owned Vercel previews, and local development only.
+//   - CORS: Farzandman production, Farzandman-owned Vercel previews, and local development only.
 //
 // Deploy: supabase functions deploy public-settings --no-verify-jwt
 
@@ -51,8 +51,9 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "delivery",
   // Banks (display only — but we strip sensitive fields below)
   "banks",
-  // Crypto visibility (addresses are stripped, only visibility flags returned)
+  // Crypto visibility + wallets (addresses are needed to display at payment)
   "cryptoVisibility",
+  "cryptoWallets",
   // Contacts (public)
   "contacts",
   "contactIcons",
@@ -111,7 +112,7 @@ const PUBLIC_SETTINGS_WHITELIST = [
 const PUBLIC_BANK_FIELDS = ["id", "name", "label", "logo", "color", "active", "order", "default"];
 
 // Crypto wallets: only return whether each is visible, never the address.
-const PUBLIC_CRYPTO_FIELDS = ["id", "name", "symbol", "logo", "color", "active", "network"];
+const PUBLIC_CRYPTO_FIELDS = ["id", "name", "symbol", "logo", "color", "active", "network", "address"];
 
 const PUBLIC_MEDIA_ITEM_FIELDS = [
   "id", "type", "title", "titleEn", "description", "descriptionEn", "descriptionCourses",

@@ -18,10 +18,11 @@ export function CryptoLogo({id,color,size=22}:{id:string,color?:string,size?:num
 
 export default function CoursePaymentPage({app}:{app:any}){
  const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress,referralConsultant}=app;
- // اگر مخاطب با لینک اختصاصی مشاور آمده و آن مشاور اطلاعات بانکی ثبت کرده باشد، فقط همان حساب نمایش داده می‌شود (حقِ مشاور حفظ می‌شود)
- const advisorBanks: any[] = (referralConsultant?.bank && (referralConsultant.bank.card || referralConsultant.bank.iban))
-   ? [{ id: 'advisor', name: referralConsultant.name || 'مشاور', card: referralConsultant.bank.card, iban: referralConsultant.bank.iban, order: 0, active: true }]
-   : [];
+ // اگر مخاطب با لینک اختصاصی مشاور آمده و آن مشاور اطلاعات بانکی ثبت کرده باشد، فقط همان حساب(های) مشاور نمایش داده می‌شود (حقِ مشاور حفظ می‌شود)
+ const advisorBankArr: any[] = (referralConsultant?.banks && Array.isArray(referralConsultant.banks)) ? referralConsultant.banks : (referralConsultant?.bank ? [referralConsultant.bank] : []);
+ const advisorBanks: any[] = advisorBankArr
+   .filter((b: any) => b && (b.card || b.iban))
+   .map((b: any, bi: number) => ({ id: 'advisor'+bi, name: b.name || (referralConsultant.name || 'مشاور'), card: b.card, iban: b.iban, order: bi, active: true }));
  const banks=(advisorBanks.length?advisorBanks:(cfg.banks||[])).filter((b:any)=>b.active&&b.card&&b.iban).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const chosen=banks.find((b:any)=>b.id===course.payment.bankId)||banks[0]; const [copied,setCopied]=useState<any>({}); const [toast,setToast]=useState('');
  const isDirty = Boolean(course.payment.receipt || course.payment.receiptText);
  useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?'); const receiptTextRef=useRef<HTMLTextAreaElement|null>(null);
@@ -61,7 +62,8 @@ export default function CoursePaymentPage({app}:{app:any}){
    setGatewayProcessing(false);
   }
  };
- const cryptoWallets=(cfg.cryptoWallets||[]).filter((w:any)=>w.active&&w.address).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
+ const advisorWalletArr: any[] = (referralConsultant?.wallets && Array.isArray(referralConsultant.wallets)) ? referralConsultant.wallets : (referralConsultant?.wallet ? [referralConsultant.wallet] : []);
+ const cryptoWallets=(advisorWalletArr.length ? advisorWalletArr.map((w:any,wi:number)=>({ id:'aw'+wi, name:w.name||'کیف پول', symbol:w.symbol||'USDT', address:w.address, active:true, order:wi })) : (cfg.cryptoWallets||[])).filter((w:any)=>w&&w.address).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
  const cryptoVisible=cfg.cryptoVisibility!=='off'&&cryptoWallets.length>0&&(cfg.cryptoVisibility==='all'||course.dest==='intl');
  const [cryptoId,setCryptoId]=useState('usdt');
  const crypto=cryptoWallets.find((w:any)=>w.id===cryptoId)||cryptoWallets[0];

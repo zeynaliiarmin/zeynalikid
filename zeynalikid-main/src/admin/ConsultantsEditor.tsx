@@ -192,20 +192,48 @@ export default function ConsultantsEditor(props: any) {
             </div>
           )}
 
-          {/* تب بانک و کیف پول (پیش‌فرض بسته) */}
+          {/* تب بانک و کیف پول (پیش‌فرض بسته) — ۳ حساب بانکی + ۲ کیف پول رمزارز */}
           {bankOpen[active.id] && (
-            <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}`, animation: 'fadeSlide .25s ease both' }}>
+            <div style={{ marginTop: 10, padding: '11px 12px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}`, animation: 'fadeSlide .25s ease both' }}>
               <div style={{ fontWeight: 800, fontSize: 12.5, color: T.ttl, marginBottom: 6 }}>اطلاعات بانکی و کیف پول (نمایش در پرداخت)</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div><label style={S.lbl}>نام بانک</label><input style={S.inp} defaultValue={active.bank?.name || ''} onBlur={(e) => chg(activeIdx, 'bank', { ...(active.bank || {}), name: e.target.value })} /></div>
-                <div><label style={S.lbl}>شماره کارت</label><input dir="ltr" style={S.inp} defaultValue={active.bank?.card || ''} onBlur={(e) => chg(activeIdx, 'bank', { ...(active.bank || {}), card: e.target.value })} /></div>
-              </div>
-              <div style={{ marginTop: 8 }}><label style={S.lbl}>شماره شبا (IR…)</label><input dir="ltr" style={S.inp} defaultValue={active.bank?.iban || ''} onBlur={(e) => chg(activeIdx, 'bank', { ...(active.bank || {}), iban: e.target.value })} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                <div><label style={S.lbl}>نام کیف پول رمزارز</label><input style={S.inp} defaultValue={active.wallet?.name || ''} onBlur={(e) => chg(activeIdx, 'wallet', { ...(active.wallet || {}), name: e.target.value })} /></div>
-                <div><label style={S.lbl}>نماد (مثلاً USDT)</label><input dir="ltr" style={S.inp} defaultValue={active.wallet?.symbol || ''} onBlur={(e) => chg(activeIdx, 'wallet', { ...(active.wallet || {}), symbol: e.target.value })} /></div>
-              </div>
-              <div style={{ marginTop: 8 }}><label style={S.lbl}>آدرس کیف پول</label><input dir="ltr" style={S.inp} defaultValue={active.wallet?.address || ''} onBlur={(e) => chg(activeIdx, 'wallet', { ...(active.wallet || {}), address: e.target.value })} /></div>
+
+              {/* ۳ حساب بانکی */}
+              <div style={{ fontWeight: 700, fontSize: 12, color: T.ttl, margin: '8px 0 6px' }}>حساب‌های بانکی (حداکثر ۳)</div>
+              {(active.banks && active.banks.length ? active.banks : [{}]).slice(0, 3).map((bk: any, bi: number) => (
+                <div key={bi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.badge }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <b style={{ fontSize: 11.5, color: T.mut }}>حساب {bi + 1}</b>
+                    <button type="button" style={{ ...AdminBtn(), marginLeft: 'auto', padding: '4px 10px', color: T.err }} onClick={() => { const arr = (active.banks || []).filter((_: any, j: number) => j !== bi); chg(activeIdx, 'banks', arr); }}>حذف</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><label style={S.lbl}>نام بانک</label><input style={S.inp} defaultValue={bk.name || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), name: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                    <div><label style={S.lbl}>شماره کارت</label><input dir="ltr" style={S.inp} defaultValue={bk.card || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), card: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                  </div>
+                  <div style={{ marginTop: 8 }}><label style={S.lbl}>شماره شبا (IR…)</label><input dir="ltr" style={S.inp} defaultValue={bk.iban || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), iban: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                </div>
+              ))}
+              {(!active.banks || active.banks.length < 3) && (
+                <button type="button" style={{ ...AdminBtn(), padding: '6px 12px' }} onClick={() => { const arr = (active.banks || []).length ? [...active.banks, {}] : [{}]; chg(activeIdx, 'banks', arr); }}>+ افزودن حساب بانکی</button>
+              )}
+
+              {/* ۲ کیف پول رمزارز */}
+              <div style={{ fontWeight: 700, fontSize: 12, color: T.ttl, margin: '14px 0 6px' }}>کیف پول‌های رمزارز (حداکثر ۲)</div>
+              {(active.wallets && active.wallets.length ? active.wallets : [{}]).slice(0, 2).map((w: any, wi: number) => (
+                <div key={wi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.badge }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <b style={{ fontSize: 11.5, color: T.mut }}>کیف پول {wi + 1}</b>
+                    <button type="button" style={{ ...AdminBtn(), marginLeft: 'auto', padding: '4px 10px', color: T.err }} onClick={() => { const arr = (active.wallets || []).filter((_: any, j: number) => j !== wi); chg(activeIdx, 'wallets', arr); }}>حذف</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><label style={S.lbl}>نام کیف پول رمزارز</label><input style={S.inp} defaultValue={w.name || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), name: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
+                    <div><label style={S.lbl}>نماد (مثلاً USDT)</label><input dir="ltr" style={S.inp} defaultValue={w.symbol || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), symbol: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
+                  </div>
+                  <div style={{ marginTop: 8 }}><label style={S.lbl}>آدرس کیف پول</label><input dir="ltr" style={S.inp} defaultValue={w.address || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), address: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
+                </div>
+              ))}
+              {(!active.wallets || active.wallets.length < 2) && (
+                <button type="button" style={{ ...AdminBtn(), padding: '6px 12px' }} onClick={() => { const arr = (active.wallets || []).length ? [...active.wallets, {}] : [{}]; chg(activeIdx, 'wallets', arr); }}>+ افزودن کیف پول رمزارز</button>
+              )}
             </div>
           )}
 

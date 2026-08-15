@@ -60,15 +60,34 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const [imageFailed, setImageFailed] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [showAllEdu, setShowAllEdu] = useState(false);
-  // ۵ محتوای آموزشی افقیِ رندوم برای نمایش (هر بار تغییر می‌کند)
+  const [eduTab, setEduTab] = useState<string>('all');
+  // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله(text)، پادکست(audio)، ویدیو(video)، عکس(image)
+  const eduByType = React.useMemo(() => {
+    const g: Record<string, any[]> = { text: [], audio: [], video: [], image: [] };
+    (educationalMedia || []).forEach((it: any) => {
+      const t = String(it.type || 'video');
+      if (g[t]) g[t].push(it); else g.video.push(it);
+    });
+    return g;
+  }, [educationalMedia]);
+  // تب‌هایی که فقط شامل نوع‌های دارای محتوا هستند
+  const eduTabs = React.useMemo(() => {
+    const list: { id: string; label: string }[] = [];
+    if (eduByType.text.length) list.push({ id: 'text', label: isFa ? 'مقاله' : 'Articles' });
+    if (eduByType.audio.length) list.push({ id: 'audio', label: isFa ? 'پادکست' : 'Podcasts' });
+    if (eduByType.video.length) list.push({ id: 'video', label: isFa ? 'ویدیو' : 'Videos' });
+    if (eduByType.image.length) list.push({ id: 'image', label: isFa ? 'عکس' : 'Images' });
+    return list;
+  }, [eduByType, isFa]);
+  // ۵ محتوای آموزشی افقیِ رندوم از تب فعال
   const eduPreview = React.useMemo(() => {
-    const arr = [...educationalMedia];
+    const arr = eduTab === 'all' ? [...educationalMedia] : [...(eduByType[eduTab] || [])];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr.slice(0, 5);
-  }, [educationalMedia]);
+  }, [educationalMedia, eduTab, eduByType]);
   useEffect(() => { setImageFailed(false); }, [course.image]);
   const showCourseImage = !!String(course.image || '').trim() && !imageFailed;
   const discountEndTime = course.discountEnd ? new Date(course.discountEnd).getTime() : 0;
@@ -250,7 +269,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               }}>
                 <img 
                   src={cfg?.courseInstructor?.photoUrl || "/images/specialist/specialist-trust.webp"} 
-                  alt={isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')} 
+                  alt={isFa ? (cfg?.courseInstructor?.name || 'آرمین زینالی') : (cfg?.courseInstructor?.nameEn || 'Armin Zeynali')} 
                   style={{ 
                     width: 72, 
                     height: 72, 
@@ -262,7 +281,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--zk-text)', marginBottom: 3 }}>
-                    {isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')}
+                    {isFa ? (cfg?.courseInstructor?.name || 'آرمین زینالی') : (cfg?.courseInstructor?.nameEn || 'Armin Zeynali')}
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.6 }}>
                     {isFa 
@@ -356,17 +375,32 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </div>
         </section>
 
-        {/* محتوای آموزشی مرتبط — بعد از جزئیات دوره و قبل از نظرات (افقی + مشاهده همه + صفحه جدا) */}
+        {/* محتوای آموزشی مرتبط — بعد از جزئیات دوره و قبل از نظرات (افقی + تب نوع + مشاهده همه + صفحه جدا) */}
         {educationalMedia.length > 0 && (
           <section id="course-detail-education" data-detail-section style={detailSectionStyle(navTopOffset)}>
-            <h2 style={detailSectionTitleStyle}>{isFa ? 'محتوای آموزشی مرتبط' : 'Related educational content'}</h2>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <h2 style={{ ...detailSectionTitleStyle, marginBottom: 0 }}>{isFa ? 'محتوای آموزشی مرتبط' : 'Related educational content'}</h2>
+              {/* تب‌های نوع محتوا — فقط تب‌هایی که محتوا دارند */}
+              {eduTabs.length > 1 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => setEduTab('all')} style={{ minHeight: 34, padding: '7px 14px', borderRadius: 999, border: `1px solid ${eduTab === 'all' ? 'var(--zk-primary)' : 'var(--zk-border)'}`, background: eduTab === 'all' ? 'var(--zk-primary-light)' : 'transparent', color: eduTab === 'all' ? 'var(--zk-primary)' : 'var(--zk-text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800 }}>
+                    {isFa ? 'همه' : 'All'}
+                  </button>
+                  {eduTabs.map((t) => (
+                    <button key={t.id} type="button" onClick={() => setEduTab(t.id)} style={{ minHeight: 34, padding: '7px 14px', borderRadius: 999, border: `1px solid ${eduTab === t.id ? 'var(--zk-primary)' : 'var(--zk-border)'}`, background: eduTab === t.id ? 'var(--zk-primary-light)' : 'transparent', color: eduTab === t.id ? 'var(--zk-primary)' : 'var(--zk-text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800 }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr', marginTop: 10 }}>
               {eduPreview.map((item: any, index: number) => (
                 <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: isFa ? 'rtl' : 'ltr' }}>
                   <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
                 </div>
               ))}
-              {educationalMedia.length > 5 && (
+              {(eduTab === 'all' ? educationalMedia : (eduByType[eduTab] || [])).length > 5 && (
                 <button
                   type="button"
                   onClick={() => setShowAllEdu(true)}
