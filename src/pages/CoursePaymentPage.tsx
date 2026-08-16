@@ -73,7 +73,7 @@ export default function CoursePaymentPage({app}:{app:any}){
   }
  };
  const advisorWalletArr: any[] = (referralConsultant?.wallets && Array.isArray(referralConsultant.wallets)) ? referralConsultant.wallets : (referralConsultant?.wallet ? [referralConsultant.wallet] : []);
- const cryptoWallets=(advisorWalletArr.length ? advisorWalletArr.map((w:any,wi:number)=>({ id:'aw'+wi, name:w.name||'کیف پول', symbol:w.symbol||'USDT', address:w.address, color:w.color, network:w.network, active:true, order:wi })) : (cfg.cryptoWallets||[])).filter((w:any)=>w&&w.address).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
+ const cryptoWallets=(advisorWalletArr.length ? advisorWalletArr.map((w:any,wi:number)=>({ id:'aw'+wi, name:w.name||'کیف پول', symbol:w.symbol||'USDT', address:w.address, color:w.color, network:w.network, active:true, order:wi })) : (cfg.cryptoWallets||[])).filter((w:any)=>w&&w.active!==false&&w.address).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
  const cryptoVisible=cfg.cryptoVisibility!=='off'&&cryptoWallets.length>0&&(cfg.cryptoVisibility==='all'||course.dest==='intl');
  const [cryptoId,setCryptoId]=useState('usdt');
  const crypto=cryptoWallets.find((w:any)=>w.id===cryptoId)||cryptoWallets[0];
