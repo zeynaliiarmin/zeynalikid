@@ -117,6 +117,13 @@ export function findTabByCode(tabs: any[], code: string): any | null {
   // دوم: خود id
   const byId = tabs.find((t: any) => String(t?.id || '').toLowerCase() === c);
   if (byId) return byId;
+  // سوم: حرف اول id (مثل h برای height) — برای تب‌هایی که shortCode ندارند
+  const byIdFirst = tabs.find((t: any) => String(t?.id || '').replace(/[^a-z]/gi, '').charAt(0).toLowerCase() === c);
+  if (byIdFirst) return byIdFirst;
+  // چهارم: حروف اول کلمات عنوان (مثل bg برای «بی‌اشتهایی / بدغذایی»)
+  const titleFirst = (t: any) => String(t?.title || '').replace(/[^a-zA-Zآ-ی]/gi, '').toLowerCase();
+  const byTitle = tabs.find((t: any) => titleFirst(t).startsWith(c) && c.length >= 2);
+  if (byTitle) return byTitle;
   return null;
 }
 
