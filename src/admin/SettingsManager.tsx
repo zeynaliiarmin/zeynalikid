@@ -415,16 +415,6 @@ function AboutSettings(props: any) {
         {draft.images?.tcMethodGraphic?.url && <img src={draft.images.tcMethodGraphic.url} alt="tc method" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', objectPosition: draft.images?.tcMethodGraphic?.objectPosition || 'center', aspectRatio: draft.images?.tcMethodGraphic?.aspectRatio || '4 / 3', borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} />}
         <FrameRow T={T} S={S} value={draft.images?.tcMethodGraphic || {}} onChange={(patch) => upNested(['images', 'tcMethodGraphic'], { ...(draft.images?.tcMethodGraphic || {}), ...patch })} />
       </Box>
-
-      <Box title="تنظیمات مشاورین و لینک‌های ارجاع">
-        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px', lineHeight: 1.8 }}>
-          مدیریت کامل مشاورین، لینک‌های ارجاع، اطلاعات بانکی و کیف پول هر مشاور در کارت اختصاصی «مشاورین و لینک‌های ارجاع» در پنل مدیریت انجام می‌شود.
-          <br />
-          با فعال‌کردن «نمایش انتخاب مشاور»، گزینهٔ انتخاب مشاور در روند ثبت‌نام دوره نمایش داده می‌شود؛ در غیر این صورت فقط از طریق لینک اختصاصی هر مشاور کار می‌کند.
-        </p>
-        <Checklist label="نمایش انتخاب مشاور در روند ثبت‌نام" value={(draft.referral || {}).showConsultantSelection === true} onChange={(v: boolean) => upNested(['referral', 'showConsultantSelection'], v)} />
-        <Checklist label="نمایش دکمه‌های CTA صفحهٔ اصلی (ثبت مشاوره / مشاهده دوره)" value={(draft.referral || {}).home?.showCta !== false} onChange={(v: boolean) => upNested(['referral', 'home', 'showCta'], v)} />
-      </Box>
     </>
   );
 }

@@ -494,9 +494,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         gap: 10, 
         zIndex: 10 
       }}>
-        <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
-          {isFa ? 'مشاوره رایگان' : 'Free consult'}
-        </button>
+        {!hasReferral && onConsult && (
+          <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
+            {isFa ? 'مشاوره رایگان' : 'Free consult'}
+          </button>
+        )}
         <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5 }}>
           {isFa ? 'ثبت‌نام این دوره' : 'Enroll'}
         </button>
