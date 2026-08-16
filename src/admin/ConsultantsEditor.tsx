@@ -132,6 +132,7 @@ export default function ConsultantsEditor(props: any) {
           </div>
           <div style={{ marginTop: 8 }}><label style={S.lbl}>توضیحات (فارسی)</label><textarea style={S.ta} rows={2} defaultValue={active.desc || ''} onBlur={(e) => chg(activeIdx, 'desc', e.target.value)} /></div>
           <div style={{ marginTop: 8 }}><label style={S.lbl}>Description (English)</label><textarea dir="ltr" style={S.ta} rows={2} defaultValue={active.descEn || ''} onBlur={(e) => chg(activeIdx, 'descEn', e.target.value)} /></div>
+          <div style={{ marginTop: 8 }}><label style={S.lbl}>متن معرفی در کادر مشاور (اختیاری — اگر خالی باشد از «توضیحات» استفاده می‌شود)</label><textarea style={S.ta} rows={3} defaultValue={active.introText || ''} onBlur={(e) => chg(activeIdx, 'introText', e.target.value)} placeholder="این متن بلندتر در کارت مشاور (هوم و صفحه دوره‌ها) نمایش داده می‌شود؛ مثل: خوشحالیم که با شما همراهیم؛ من مهناز مرسلی هستم و ..." /></div>
 
           {/* لینک ارجاع — بدون تب، همراه با اطلاعات باز می‌شود */}
           <div style={{ marginTop: 12, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}` }}>
@@ -207,9 +208,12 @@ export default function ConsultantsEditor(props: any) {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     <div><label style={S.lbl}>نام بانک</label><input style={S.inp} defaultValue={bk.name || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), name: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
-                    <div><label style={S.lbl}>شماره کارت</label><input dir="ltr" style={S.inp} defaultValue={bk.card || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), card: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                    <div><label style={S.lbl}>نام صاحب کارت/حساب</label><input style={S.inp} defaultValue={bk.holder || bk.accountName || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), holder: e.target.value }; chg(activeIdx, 'banks', arr); }} placeholder="مثلاً مهناز مرسلی" /></div>
                   </div>
-                  <div style={{ marginTop: 8 }}><label style={S.lbl}>شماره شبا (IR…)</label><input dir="ltr" style={S.inp} defaultValue={bk.iban || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), iban: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                    <div><label style={S.lbl}>شماره کارت</label><input dir="ltr" style={S.inp} defaultValue={bk.card || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), card: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                    <div><label style={S.lbl}>شماره شبا (IR…)</label><input dir="ltr" style={S.inp} defaultValue={bk.iban || ''} onBlur={(e) => { const arr = (active.banks || []).length ? [...active.banks] : [{}]; arr[bi] = { ...(arr[bi] || {}), iban: e.target.value }; chg(activeIdx, 'banks', arr); }} /></div>
+                  </div>
                 </div>
               ))}
               {(!active.banks || active.banks.length < 3) && (

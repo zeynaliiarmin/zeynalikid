@@ -41,9 +41,11 @@ interface Props {
   mediaVpnOn?: boolean;
   // اگر کاربر با لینک ارجاع آمده، دکمه مشاوره رایگان در ابتدای صفحه پنهان می‌شود
   hasReferral?: boolean;
+  // مشاور ارجاع‌دهنده (برای نمایش کادر معرفی در ابتدای جزئیات دوره)
+  referralConsultant?: any;
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false, referralConsultant = null }: Props) {
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -136,6 +138,19 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
   return (
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
+      {/* کارت معرفی مشاور ارجاع‌دهنده در ابتدای جزئیات دوره */}
+      {hasReferral && referralConsultant && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#FFF7ED', borderBottom: '1px solid #FED7AA' }}>
+          {referralConsultant.showPhoto !== false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
+            <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isFa ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)} style={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: '50%', border: '2px solid #FB923C', flexShrink: 0 }} />
+          ) : null}
+          <div style={{ minWidth: 0 }}>
+            <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, color: '#C2410C', marginBottom: 2 }}>{isFa ? 'شما توسط این مشاور مشاوره شده‌اید' : 'You are advised by'}</span>
+            <strong style={{ display: 'block', fontSize: 14, color: 'var(--zk-text)', fontWeight: 800, lineHeight: 1.4 }}>{isFa ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)}</strong>
+            {(isFa ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)) ? <span style={{ display: 'block', fontSize: 12, color: 'var(--zk-text-muted)', lineHeight: 1.7, marginTop: 4 }}>{isFa ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)}</span> : null}
+          </div>
+        </div>
+      )}
       {/* تصویر قهرمان فقط برای دوره‌ای که عکس اختصاصی دارد. */}
       {showCourseImage ? (
         <div style={{ position: 'relative', aspectRatio: course.aspectRatio || '16 / 9', background: 'var(--zk-surface-muted)' }}>
@@ -225,7 +240,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             )}
           </div>
 
-          <button onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, minHeight: 48 }}>
+          <button onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, minHeight: 48, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
             {isFa ? 'ثبت‌نام این دوره' : 'Enroll now'}
           </button>
         </div>
@@ -499,7 +514,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             {isFa ? 'مشاوره رایگان' : 'Free consult'}
           </button>
         )}
-        <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5 }}>
+        <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
           {isFa ? 'ثبت‌نام این دوره' : 'Enroll'}
         </button>
       </div>

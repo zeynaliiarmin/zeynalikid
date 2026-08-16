@@ -1191,10 +1191,17 @@ function App(){
    if (!tab) return;
    if (courseTab !== tab.id) setCourseTab(tab.id);
    if (typeof rt.courseIndex === 'number') {
-     if (location.pathname !== '/') navigate('/', { replace: true });
+     // لینک دوره مستقیم: به صفحه معرفی دوره‌ها برو و جزئیات دوره مشخص را باز کن
+     // (نه مستقیم روند ثبت‌نام) تا مخاطب ابتدا مشخصات دوره را ببیند و با دکمه «ثبت‌نام این دوره» اقدام کند.
      const courses = (tab.courses || []).filter((c: any) => c.active !== false);
      const target = courses[rt.courseIndex - 1];
-     if (target) setShipModal(target);
+     if (target) {
+       if (location.pathname !== '/courses') {
+         try { navigate('/courses', { replace: true, state: { courseId: target.id } }); } catch { setExpandedCourse(target); }
+       } else {
+         setExpandedCourse(target);
+       }
+     }
    } else {
      if (location.pathname !== '/courses') navigate('/courses', { replace: true });
    }
@@ -1300,5 +1307,5 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
 }}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}<div style={{paddingTop:showHeader?72:0,position:'relative',zIndex:1}}>{page}</div></>;
 }
 // اصلاح ۲۴: جلوگیری از رنگ آبی پیش‌فرض مرورگر در :visited/:active/:focus
-const css=`@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}*{box-sizing:border-box}button,button:active,button:focus{color:inherit;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}button:hover{filter:brightness(1.035)}button:active{transform:scale(.98)}input,textarea,select{font-size:16px!important}a,a:visited,a:active,a:focus{color:inherit;text-decoration:none}button:focus,a:focus{outline:none}button::-moz-focus-inner{border:0} @media(max-width:520px){body{margin:0} }`;
+const css=`@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes zk-hero-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}*{box-sizing:border-box}button,button:active,button:focus{color:inherit;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}button:hover{filter:brightness(1.035)}button:active{transform:scale(.98)}input,textarea,select{font-size:16px!important}a,a:visited,a:active,a:focus{color:inherit;text-decoration:none}button:focus,a:focus{outline:none}button::-moz-focus-inner{border:0} @media(max-width:520px){body{margin:0} }`;
 export default App;

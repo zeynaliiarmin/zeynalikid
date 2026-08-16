@@ -84,7 +84,7 @@ export default function HomePage({app}:{app:any}){
          <span style={{display:'inline-block',fontSize:10.5,fontWeight:800,color:'#C2410C',marginBottom:3}}>{lang==='en'?'You are advised by':'شما توسط این مشاور مشاوره شده‌اید'}</span>
          <strong style={{display:'block',fontSize:15,color:'var(--zk-text)',fontWeight:800,lineHeight:1.4}}>{isRtl?referralConsultant.name:(referralConsultant.nameEn||referralConsultant.name)}</strong>
          {(isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title))?<span style={{display:'block',fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.5,marginTop:2}}>{isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title)}</span>:null}
-         {(isRtl?referralConsultant.desc:(referralConsultant.descEn||referralConsultant.desc))?<span style={{display:'block',fontSize:11.5,color:'var(--zk-text-muted)',lineHeight:1.6,marginTop:4}}>{(isRtl?referralConsultant.desc:(referralConsultant.descEn||referralConsultant.desc))}</span>:null}
+         {(isRtl?referralConsultant.introText||referralConsultant.desc:(referralConsultant.introTextEn||referralConsultant.descEn||referralConsultant.introText||referralConsultant.desc))?<span style={{display:'block',fontSize:12.5,color:'var(--zk-text-muted)',lineHeight:1.8,marginTop:6}}>{(isRtl?referralConsultant.introText||referralConsultant.desc:(referralConsultant.introTextEn||referralConsultant.descEn||referralConsultant.introText||referralConsultant.desc))}</span>:null}
        </div>
      </section>
    )}

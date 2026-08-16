@@ -46,7 +46,7 @@ function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
 
 // Simplified CoursesPage with Stage 2 redesign + Stage 11 UX improvements
 export default function CoursesPage({ app }: { app: any }) {
-  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode } = app;
+  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode, referralConsultant } = app;
   const location = useLocation();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
@@ -186,6 +186,7 @@ export default function CoursesPage({ app }: { app: any }) {
             parentExperienceMedia={parentExperienceMedia}
             mediaVpnOn={mediaVpnOn}
             hasReferral={!!app.referralConsultant}
+            referralConsultant={app.referralConsultant}
             onRegister={() => {
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)
               if (app.setShipModal) {
@@ -217,7 +218,7 @@ export default function CoursesPage({ app }: { app: any }) {
         {/* Header */}
         <div style={{ paddingTop: 18, paddingBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: lang === 'fa' ? 'flex-end' : 'flex-start', marginBottom: 4 }}>
-            <button onClick={() => window.history.back()} style={{ minHeight: 44, background: 'transparent', border: 0, color: 'var(--zk-primary)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <button onClick={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else { window.history.back(); } }} style={{ minHeight: 44, background: 'transparent', border: 0, color: 'var(--zk-primary)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               {lang === 'en' ? 'Back' : 'بازگشت'}
             </button>
           </div>
@@ -228,6 +229,21 @@ export default function CoursesPage({ app }: { app: any }) {
             {lang === 'en' ? 'Evidence-based programs for your child’s growth, appetite and focus — with full parental support.' : 'برنامه‌های مبتنی بر شواهد برای رشد، اشتها و تمرکز فرزند شما — با پشتیبانی کامل والدین.'}
           </p>
         </div>
+
+        {/* کارت معرفی مشاور ارجاع‌دهنده — وقتی مخاطب با لینک اختصاصی مشاور آمده */}
+        {referralConsultant && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 16px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 20, boxShadow: 'var(--zk-shadow-light)', animation: 'fadeSlide .5s ease both' }}>
+            {referralConsultant.showPhoto !== false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
+              <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={lang === 'fa' ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)} style={{ width: 64, height: 64, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: '50%', border: '2px solid #FB923C', flexShrink: 0 }} />
+            ) : null}
+            <div style={{ minWidth: 0 }}>
+              <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, color: '#C2410C', marginBottom: 3 }}>{lang === 'en' ? 'You are advised by' : 'شما توسط این مشاور مشاوره شده‌اید'}</span>
+              <strong style={{ display: 'block', fontSize: 15, color: 'var(--zk-text)', fontWeight: 800, lineHeight: 1.4 }}>{lang === 'fa' ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)}</strong>
+              {(lang === 'fa' ? referralConsultant.title : (referralConsultant.titleEn || referralConsultant.title)) ? <span style={{ display: 'block', fontSize: 12, color: 'var(--zk-text-muted)', lineHeight: 1.5, marginTop: 2 }}>{lang === 'fa' ? referralConsultant.title : (referralConsultant.titleEn || referralConsultant.title)}</span> : null}
+              {(lang === 'fa' ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)) ? <span style={{ display: 'block', fontSize: 12.5, color: 'var(--zk-text-muted)', lineHeight: 1.8, marginTop: 6 }}>{lang === 'fa' ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)}</span> : null}
+            </div>
+          </div>
+        )}
 
         {/* پیام شناور زرد برای لینک ارجاع با تعیین تب */}
         {referralTarget?.tabCode && (() => {
