@@ -232,14 +232,25 @@ function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
         });
       }
       // Sanitize 'cryptoWallets' — strip addresses, keep only display fields
-      if (key === "cryptoWallets" && Array.isArray(val)) {
-        val = val.map((w: any) => {
-          const clean: Record<string, any> = {};
-          for (const f of PUBLIC_CRYPTO_FIELDS) {
-            if (f in w) clean[f] = w[f];
-          }
-          return clean;
-        });
+      // NOTE: settings may store this as a JSON-string instead of an array;
+      // normalize it first so downstream (payment page) always receives an array.
+      if (key === "cryptoWallets") {
+        let arr = val;
+        if (typeof val === "string") {
+          try { const p = JSON.parse(val); if (Array.isArray(p)) arr = p; else arr = []; }
+          catch { arr = []; }
+        }
+        if (Array.isArray(arr)) {
+          val = arr.map((w: any) => {
+            const clean: Record<string, any> = {};
+            for (const f of PUBLIC_CRYPTO_FIELDS) {
+              if (f in w) clean[f] = w[f];
+            }
+            return clean;
+          });
+        } else {
+          val = [];
+        }
       }
       if ((key === "education" || key === "experience") && val && typeof val === "object") {
         val = { items: Array.isArray(val.items) ? val.items.map(sanitizeMediaItem) : [] };
