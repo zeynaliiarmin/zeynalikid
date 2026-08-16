@@ -116,7 +116,7 @@ export function ExperiencePage({app}:{app:any}){
  );
  return (
    <>
-   <Helmet><title>تجربه والدین | زینالیکید</title><meta name="description" content="تجربه واقعی والدین از دوره‌های رشد و تغذیه زینالیکید — نتایج را ببینید و بشنوید" /></Helmet>
+   <Helmet><title>تجربه والدین | فرزند من</title><meta name="description" content="تجربه واقعی والدین از دوره‌های رشد و تغذیه فرزند من — نتایج را ببینید و بشنوید" /></Helmet>
      <SecurePage pageTitle={title} T={T} warningMessage={warningMessage}>
        <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang}/>:null}>
          {/* اصلاح ۱ (مرحله ۵): متن راهنمای رضایت والدین در بالای صفحه */}
@@ -183,14 +183,14 @@ export function EducationPage({app}:{app:any}){
  return (
   <>
      <JsonLd id="ld-edu-faq" data={JSON.stringify({'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqItems.map((it:any)=>({'@type':'Question',name:it.question,acceptedAnswer:{'@type':'Answer',text:it.answer}}))})} />
-   <Helmet><title>{en?'Education | Zeynalikid':'آموزش و همراهی والدین | زینالیکید'}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — growth, nutrition, appetite and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ همراهی در مسیر رشد، اشتها، تغذیه و تمرکز.'}/></Helmet>
+   <Helmet><title>{en?'Education | Farzandman':'آموزش و همراهی والدین | فرزند من'}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — growth, nutrition, appetite and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ همراهی در مسیر رشد، اشتها، تغذیه و تمرکز.'}/></Helmet>
    <main className="zke-root" dir={en?'ltr':'rtl'}>
     <div className="zke-container">
      <header className="zke-hero"><div className="zke-hero-inner">
       <button type="button" className="zke-back" onClick={goBack}><svg className="zk-ic-dir" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>{en?'Back':'بازگشت'}</button>
       {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang}/>:null}
       <h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1>
-      <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':'این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ماست برای کمک به والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری؛ برگرفته از تجربهٔ مشاوره‌های زینالیکید، با زبانی آرام و علمی.'}</p>
+      <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':'این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ماست برای کمک به والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری؛ برگرفته از تجربهٔ مشاوره‌های فرزند من، با زبانی آرام و علمی.'}</p>
       <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاورهٔ تخصصی نمی‌شود.'}</span></div>
      </div></header>
 
@@ -248,7 +248,7 @@ export function LicensesPage({app}:{app:any}){
  const title = lang==='en'?'Licenses':'مجوزها';
  return (
    <>
-     <Helmet><title>مجوزها | زینالیکید</title><meta name="description" content="مجوزها و گواهینامه‌های رسمی زینالیکید در حوزه رشد و تغذیه کودک و نوجوان" /></Helmet>
+     <Helmet><title>مجوزها | فرزند من</title><meta name="description" content="مجوزها و گواهینامه‌های رسمی فرزند من در حوزه رشد و تغذیه کودک و نوجوان" /></Helmet>
      <SecurePage pageTitle={title} T={T}>
        <PageShell app={app} title={title} variant="trust">
          <p style={{fontSize:13,color:T.mut,lineHeight:2,whiteSpace:'pre-wrap'}}>{cfg.licensesText||(lang==='en'?'Licenses and certificates will be published here soon.':'مجوزها و گواهینامه‌ها به‌زودی در این بخش منتشر می‌شوند.')}</p>
@@ -286,8 +286,8 @@ export function LicensesPage({app}:{app:any}){
 export function AboutPage({app}:{app:any}){
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  const aboutText=lang==="en"
-  ?(cfg.aboutTextEn||cfg.aboutText||"Zeynalikid is a specialized growth and nutrition consultation center for children, dedicated to increasing height growth, improving appetite, and boosting intelligence and focus in children and teenagers.")
-  :(cfg.aboutText||"مرکز مشاوره رشد و تغذیه کودک زینالیکید، با هدف افزایش رشد قد، بهبود اشتها و تقویت هوش کودکان و نوجوانان، برنامه‌های تخصصی و اختصاصی برای هر فرزند طراحی می‌کند.");
+  ?(cfg.aboutTextEn||cfg.aboutText||"Farzandman is a specialized growth and nutrition consultation center for children, dedicated to increasing height growth, improving appetite, and boosting intelligence and focus in children and teenagers.")
+  :(cfg.aboutText||"مرکز مشاوره رشد و تغذیه کودک فرزند من، با هدف افزایش رشد قد، بهبود اشتها و تقویت هوش کودکان و نوجوانان، برنامه‌های تخصصی و اختصاصی برای هر فرزند طراحی می‌کند.");
  const introText=lang==="en"?(cfg.aboutIntroTextEn||""):(cfg.aboutIntroText||"");
  const showIntro=cfg.pageContentOrder?.about?.showIntro!==false&&!!introText;
  const contactFirst=cfg.pageContentOrder?.about?.order==="contactFirst";
@@ -298,11 +298,11 @@ export function AboutPage({app}:{app:any}){
 
  return (
   <>
-   <Helmet><title>درباره ما | زینالیکید</title><meta name="description" content="آشنایی با تیم تخصصی زینالیکید در حوزه رشد و تغذیه کودک و نوجوان" /></Helmet>
+   <Helmet><title>درباره ما | فرزند من</title><meta name="description" content="آشنایی با تیم تخصصی فرزند من در حوزه رشد و تغذیه کودک و نوجوان" /></Helmet>
    <PageShell app={app} title={lang==="en"?"About Us":"درباره ما"} variant="trust">
      {/* Hero with specialist-hero-master.webp */}
      <div style={{marginBottom:26,borderRadius:20,overflow:"hidden",border:`1px solid ${T.brd}`,position:"relative"}}>
-       <img src={cfg.images?.aboutHero?.url || "/images/specialist/specialist-hero-master.webp"} alt={lang==="en"?"Zeynalikid specialist":"کارشناس ارشد زینالیکید"} style={{width:"100%",height:220,objectFit:"cover"}}/>
+       <img src={cfg.images?.aboutHero?.url || "/images/specialist/specialist-hero-master.webp"} alt={lang==="en"?"Farzandman specialist":"کارشناس ارشد فرزند من"} style={{width:"100%",height:220,objectFit:"cover"}}/>
        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent, rgba(0,0,0,.65))",padding:"48px 18px 18px"}}>
          <div style={{color:"#fff",fontSize:20,fontWeight:900,lineHeight:1.15}}>{cfg.specialistName||""}</div>
          <div style={{color:"rgba(255,255,255,.92)",fontSize:13.5,marginTop:2}}>{lang==="en"?"Child & Adolescent Growth & Nutrition Specialist":"کارشناس رشد و تغذیه کودک و نوجوان"}</div>
@@ -349,34 +349,12 @@ export function AboutPage({app}:{app:any}){
        </div>
      </div>
 
-     {/* Trust strip */}
-     <div style={{background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16,padding:"16px 18px",marginBottom:18,fontSize:13.5,lineHeight:1.8,color:T.mut}}>
-       {lang==="en"?"Over 10,000 families. No shortcuts. Just care, science, and results that speak for themselves." : "بیش از ۱۰٬۰۰۰ خانواده. بدون میان‌بر. فقط مراقبت، علم و نتایج واقعی."}
-     </div>
+    {/* Trust strip */}
+    <div style={{background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16,padding:"16px 18px",marginBottom:18,fontSize:13.5,lineHeight:1.8,color:T.mut}}>
+      {lang==="en"?"Over 10,000 families. No shortcuts. Just care, science, and results that speak for themselves." : "بیش از ۱۰٬۰۰۰ خانواده. بدون میان‌بر. فقط مراقبت، علم و نتایج واقعی."}
+    </div>
 
-     {/* لیست مشاورین — قابل مدیریت از پنل مدیریت (تنظیمات ← درباره ما) */}
-     {(cfg.consultants||[]).length>0&&(
-       <div style={{margin:"0 0 24px"}}>
-         <div style={{fontWeight:800,fontSize:15.5,marginBottom:12,color:T.ttl}}>{lang==="en"?"Our Team of Specialists":"تیم مشاورین ما"}</div>
-         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12}}>
-           {(cfg.consultants||[]).map((c:any)=>{
-             const name=lang==="en"?(c.nameEn||c.name):(c.name||"");
-             const role=lang==="en"?(c.titleEn||c.title):(c.title||"");
-             const desc=lang==="en"?(c.descEn||c.desc):(c.desc||"");
-             return (
-               <div key={c.id} style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:18,padding:"16px 14px",textAlign:"center",boxShadow:"var(--zk-shadow-light,0 3px 12px rgba(15,38,60,.05))"}}>
-                 {c.photoUrl?<img src={c.photoUrl} alt={name} loading="lazy" style={{width:92,height:92,borderRadius:"50%",objectFit:"cover",border:`2px solid ${T.acc}`,margin:"0 auto 10px",display:"block"}}/>:null}
-                 <div style={{fontWeight:800,fontSize:14,color:T.ttl,lineHeight:1.4}}>{name}</div>
-                 {role&&<div style={{fontSize:12,color:T.acc,fontWeight:700,marginTop:2}}>{role}</div>}
-                 {desc&&<div style={{fontSize:12,color:T.mut,lineHeight:1.75,marginTop:6,whiteSpace:"pre-wrap"}}>{desc}</div>}
-               </div>
-             );
-           })}
-         </div>
-       </div>
-     )}
-
-     {cfg.servicesVisibility?.about!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:"0 0 10px",fontWeight:800}}>{lang==="en"?"Our Services":"خدمات ما"}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==="en"?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==="carousel"?"carousel":"list"} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
+    {cfg.servicesVisibility?.about!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:"0 0 10px",fontWeight:800}}>{lang==="en"?"Our Services":"خدمات ما"}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==="en"?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==="carousel"?"carousel":"list"} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
      {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}
    </PageShell>
   </>
@@ -384,6 +362,6 @@ export function AboutPage({app}:{app:any}){
 }export function ContactPage({app}:{app:any}){
 
  const {cfg,T,lang,ContactPanel}=app;
- return <><Helmet><title>ارتباط با ما | زینالیکید</title><meta name="description" content="راه‌های ارتباط با تیم پشتیبانی و کارشناسان زینالیکید" /></Helmet><PageShell app={app} title={lang==='en'?'Contact Us':'ارتباط با ما'} variant="trust"><ContactPanel cfg={cfg} T={T} lang={lang}/>{/* اصلاح ۵۲: بخش خدمات در ارتباط با ما */}{cfg.servicesVisibility?.contact!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}</PageShell></>
+ return <><Helmet><title>ارتباط با ما | فرزند من</title><meta name="description" content="راه‌های ارتباط با تیم پشتیبانی و کارشناسان فرزند من" /></Helmet><PageShell app={app} title={lang==='en'?'Contact Us':'ارتباط با ما'} variant="trust"><ContactPanel cfg={cfg} T={T} lang={lang}/>{/* اصلاح ۵۲: بخش خدمات در ارتباط با ما */}{cfg.servicesVisibility?.contact!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}</PageShell></>
 }
 

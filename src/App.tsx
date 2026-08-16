@@ -9,7 +9,7 @@ import enDict from './locales/en';
 import { defaultCountries, defaultSettings as configDefaultSettings, migrateSettings, CURRENT_SETTINGS_VERSION } from './config/defaultSettings';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/trustFont';
 import { flagToEmoji, getCountryFlag } from './utils/phone';
-import { getReferralCodeFromUrl, findConsultantByCode } from './utils/referral';
+import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, findTabByCode, type ParsedReferral } from './utils/referral';
 
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { optimizeForUpload } from './utils/imageOptimizer';
@@ -389,17 +389,17 @@ Object.assign(TH, {
 
 const baseCountries=defaultCountries;
 const defTabs=[
- {id:'height',base:true,active:true,title:'رشد قد',image:'/images/asset13c-topic-growth.webp',titleEn:'Height growth',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های تخصصی افزایش رشد قد و قد کودکان با روش TC؛ برنامه اختصاصی مکمل و تغذیه برای رشد قد دختر و پسر و باز نگه‌داشتن صفحات رشد.',fullText:'در روش TC ابتدا با بررسی عکس زبان و شرایط فرزند شما، ریشه کندرشدی شناسایی می‌شود؛ سپس برنامه اختصاصی مکمل و تغذیه متناسب با طبع کودک تنظیم می‌گردد. پشتیبانی مرحله‌ای، پیگیری هفتگی وضعیت رشد و اصلاح برنامه در طول دوره بخشی از مسیر است. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
+ {id:'height',shortCode:'t',base:true,active:true,title:'رشد قد',image:'/images/asset13c-topic-growth.webp',titleEn:'Height growth',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های تخصصی افزایش رشد قد و قد کودکان با روش TC؛ برنامه اختصاصی مکمل و تغذیه برای رشد قد دختر و پسر و باز نگه‌داشتن صفحات رشد.',fullText:'در روش TC ابتدا با بررسی عکس زبان و شرایط فرزند شما، ریشه کندرشدی شناسایی می‌شود؛ سپس برنامه اختصاصی مکمل و تغذیه متناسب با طبع کودک تنظیم می‌گردد. پشتیبانی مرحله‌ای، پیگیری هفتگی وضعیت رشد و اصلاح برنامه در طول دوره بخشی از مسیر است. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
   {id:'h1',title:'تک دوره رشد قد',titleEn:'Height Growth - Single',desc:'برنامه اختصاصی مکمل و تغذیه برای رشد قد.',descEn:'Personalized supplement and nutrition plan for height growth.',features:['مناسب سنین ۲ تا ۱۷ سال','بررسی شرایط رشد','پشتیبانی مرحله‌ای'],price:'',image:'',popular:false,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:1,base:true},
   {id:'h2',title:'دو دوره رشد قد',titleEn:'Height Growth - Double',desc:'پکیج کامل‌تر برای پیگیری دو مرحله‌ای.',descEn:'A more complete two-stage plan.',features:['دو مرحله برنامه','پیگیری دقیق‌تر','مناسب سنین ۲ تا ۱۷ سال'],price:'',image:'',popular:true,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:2,base:true},
   {id:'h3',title:'سه دوره رشد قد',titleEn:'Height Growth - Triple',desc:'کامل‌ترین مسیر رشد قد با پیگیری بیشتر.',descEn:'The most complete height-growth path.',features:['سه مرحله برنامه','پیگیری کامل','مناسب سنین ۲ تا ۱۷ سال'],price:'',image:'',popular:false,bestseller:true,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:3,base:true}
  ]},
- {id:'appetite',base:true,active:true,title:'بی‌اشتهایی / بدغذایی',image:'/images/asset13c-topic-appetite.webp',titleEn:'Poor appetite',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های همراهی بی‌اشتهایی و بدغذایی بچه‌ها؛ با اصلاح طبع و مزاج، سیگنال گرسنگی فرزند شما را از ریشه فعال می‌کنند.',fullText:'به‌جای شربت‌های اشتهاآور موقت، در این دوره‌ها ریشه بی‌اشتهایی از طریق علم زبان‌شناسی و اصلاح مزاج شناسایی و همراهی می‌شود. برنامه تغذیه، تحلیل عادات غذایی و پشتیبانی کامل در طول دوره ارائه می‌گردد. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
+ {id:'appetite',shortCode:'b',base:true,active:true,title:'بی‌اشتهایی / بدغذایی',image:'/images/asset13c-topic-appetite.webp',titleEn:'Poor appetite',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های همراهی بی‌اشتهایی و بدغذایی بچه‌ها؛ با اصلاح طبع و مزاج، سیگنال گرسنگی فرزند شما را از ریشه فعال می‌کنند.',fullText:'به‌جای شربت‌های اشتهاآور موقت، در این دوره‌ها ریشه بی‌اشتهایی از طریق علم زبان‌شناسی و اصلاح مزاج شناسایی و همراهی می‌شود. برنامه تغذیه، تحلیل عادات غذایی و پشتیبانی کامل در طول دوره ارائه می‌گردد. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
   {id:'a1',title:'دوره متوسط',titleEn:'Medium plan',desc:'کمک به بهبود اشتها و الگوی تغذیه.',descEn:'Helps improve appetite and eating routine.',features:['برنامه تغذیه','پشتیبانی','مناسب سنین ۲ تا ۱۷ سال'],price:'',image:'',popular:false,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:1,base:true},
   {id:'a2',title:'دوره قوی',titleEn:'Strong plan',desc:'برنامه قوی‌تر برای بدغذایی و بی‌اشتهایی.',descEn:'A stronger plan for selective eating.',features:['تحلیل عادات غذایی','برنامه دقیق','پیگیری'],price:'',image:'',popular:true,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:2,base:true},
   {id:'a3',title:'دوره رویال',titleEn:'Royal plan',desc:'پکیج کامل با پشتیبانی ویژه.',descEn:'Complete package with premium support.',features:['پشتیبانی ویژه','برنامه کامل','اولویت بالا'],price:'',image:'',popular:false,bestseller:true,trending:true,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:3,base:true}
  ]},
- {id:'mind',base:true,active:true,title:'هوش و ذهن / تمرکز',image:'/images/asset13c-topic-focus.webp',titleEn:'Mind and focus',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های تقویت هوش و تمرکز کودکان و نوجوانان؛ با تغذیه هدفمند مغز، حافظه و یادگیری فرزند شما را تقویت می‌کنند.',fullText:'تمرکز پایین اغلب ریشه در کمبود ریزمغذی‌ها دارد. در این دوره‌ها با برنامه تغذیه مهندسی‌شده (امگا ۳، زینک، ویتامین‌های گروه B و...) مسیرهای عصبی تقویت می‌شوند و خواب و تمرکز بهبود می‌یابد. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
+ {id:'mind',shortCode:'m',base:true,active:true,title:'هوش و ذهن / تمرکز',image:'/images/asset13c-topic-focus.webp',titleEn:'Mind and focus',inactiveMessage:'دوره‌های این تب به اتمام رسیده است.',detailedInfo:{summary:'دوره‌های تقویت هوش و تمرکز کودکان و نوجوانان؛ با تغذیه هدفمند مغز، حافظه و یادگیری فرزند شما را تقویت می‌کنند.',fullText:'تمرکز پایین اغلب ریشه در کمبود ریزمغذی‌ها دارد. در این دوره‌ها با برنامه تغذیه مهندسی‌شده (امگا ۳، زینک، ویتامین‌های گروه B و...) مسیرهای عصبی تقویت می‌شوند و خواب و تمرکز بهبود می‌یابد. مناسب سنین ۲ تا ۱۷ سال.'},courses:[
   {id:'m1',title:'دوره پایه',titleEn:'Basic plan',desc:'شروع مسیر تمرکز و تقویت ذهن.',descEn:'Start the focus and mind-support path.',features:['برنامه پایه','راهنمای مصرف','مناسب سنین ۲ تا ۱۷ سال'],price:'',image:'',popular:false,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:1,base:true},
   {id:'m2',title:'دوره پیشرفته',titleEn:'Advanced plan',desc:'برنامه پیشرفته برای تمرکز بهتر.',descEn:'Advanced plan for better focus.',features:['فرمول قوی‌تر','پیگیری','برنامه مرحله‌ای'],price:'',image:'',popular:true,bestseller:false,trending:false,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:2,base:true},
   {id:'m3',title:'دوره تخصصی',titleEn:'Specialized plan',desc:'دوره تخصصی با پشتیبانی کامل.',descEn:'Specialized plan with full support.',features:['تخصصی','پشتیبانی کامل','اولویت بالا'],price:'',image:'',popular:false,bestseller:true,trending:true,ageBadge:true,btnText:'ثبت مستقیم این دوره',active:true,inactiveMessage:'اتمام موجودی',order:3,base:true}
@@ -1139,11 +1139,72 @@ function App(){
  useEffect(()=>{if(cfg&&cfg.version&&cfg.version<CURRENT_SETTINGS_VERSION&&isSupabaseConfigured){saveSettingsRemote(cfg).catch(e=>console.warn('Could not save migrated settings to Supabase',e))}},[cfg]);
  useEffect(()=>{const tabs=cfg.courseTabs||[]; if(tabs.length&&!tabs.some((x:any)=>x.id===courseTab))setCourseTab(tabs.find((x:any)=>x.active)?.id||tabs[0]?.id)},[cfg.courseTabs]);
  useEffect(()=>{try{const q=new URLSearchParams(window.location.search);const pname=q.get('pname')||'';const cc=q.get('cc')||'';const phone=q.get('phone')||'';if(pname||phone){setFd((f:any)=>({...f,pName:pname||f.pName,cc:cc||f.cc,pPhone:phone||f.pPhone}));setCourse((c:any)=>({...c,form:{...c.form,receiver:pname||c.form.receiver,phoneCc:cc||c.form.phoneCc,phone:phone||c.form.phone}}))}}catch{}},[]);
- // مشاور ارجاع‌دهنده از URL (?ad=CODE یا /CODE)
+ // مشاور ارجاع‌دهنده از URL (?ad=CODE یا /CODE یا لینک گسترش‌یافته /CODE+t+number)
  const [referralConsultant,setReferralConsultant]=useState<any|null>(null);
- useEffect(()=>{ const code=getReferralCodeFromUrl(); if(code){ const c=findConsultantByCode((cfg as any).consultants, code); if(c){ setReferralConsultant(c); try{ sessionStorage.setItem('zk_referral_code',code); }catch{} } } },[location.pathname, location.search]);
- // اگر کاربر از مسیر مستقیم کد (مثل /mhi) آمده باشد، pathname را به صفحهٔ اصلی نرمال کن (بدون از دست دادن کد ارجاع)
- useEffect(()=>{ const code=getReferralCodeFromUrl(); if(code){ const path=(window.location.pathname||'').replace(/\/+$/,'').replace(/^\//,''); if(path && path===code){ try{ window.history.replaceState({},'',window.location.pathname.replace(code,'') || '/'); }catch{} } } },[]);
+ const [referralTarget,setReferralTarget]=useState<ParsedReferral|null>(null);
+ const applyReferral = useCallback((code: string, target: ParsedReferral | null, consultants: any[]) => {
+   const c = findConsultantByCode(consultants, code);
+   if (c) {
+     setReferralConsultant(c);
+     setReferralTarget(target);
+     try { sessionStorage.setItem('zk_referral_code', code); } catch {}
+   }
+ }, []);
+ useEffect(()=>{
+   const parsed = parseReferral([], []);
+   if (parsed) {
+     try { sessionStorage.setItem('zk_referral_code', parsed.code); } catch {}
+     try {
+       const path = (window.location.pathname || '');
+       if (path && path !== '/' && new RegExp(`/${parsed.raw}/?$`, 'i').test(path)) {
+         navigate('/', { replace: true });
+       }
+     } catch {}
+   }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, []);
+ useEffect(()=>{
+   const consultants = (cfg as any).consultants || [];
+   const tabs = (cfg as any).courseTabs || [];
+   const parsed = parseReferral(consultants, tabs);
+   if (parsed) {
+     applyReferral(parsed.code, parsed, consultants);
+   } else {
+     const code = getReferralCodeFromUrl();
+     if (code) applyReferral(code, { code, raw: code }, consultants);
+   }
+ }, [location.pathname, location.search, cfg, applyReferral]);
+ useEffect(()=>{
+   const rt = referralTarget;
+   if (rt) {
+     try {
+       const path = (window.location.pathname || '');
+       if (path && path !== '/' && new RegExp(`/${rt.raw}/?$`, 'i').test(path)) {
+         navigate('/', { replace: true });
+       }
+     } catch {}
+   }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [referralTarget]);
+ useEffect(()=>{
+   const rt = referralTarget;
+   if (!rt) return;
+   const tabs = (cfg as any).courseTabs || [];
+   if (rt.tabCode) {
+     const tab = findTabByCode(tabs, rt.tabCode);
+     if (tab) {
+       if (courseTab !== tab.id) setCourseTab(tab.id);
+       if (typeof rt.courseIndex === 'number') {
+         const courses = (tab.courses || []).filter((c: any) => c.active !== false);
+         const target = courses[rt.courseIndex - 1];
+         if (target) setShipModal(target);
+       } else {
+         if (view !== 'courses') setView('courses');
+       }
+     }
+   }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [referralTarget?.raw]);
  // بازطراحی ظاهری: نئومورفیسم (سایه‌های نرم دوطرفه) + مینیمال (فضای باز، بدون شلوغی) + ممفیس (اشکال هندسی پاستلی در پس‌زمینه)
  const S:any=useMemo(()=>({page:{minHeight:'100dvh',fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",direction:lang==='fa'?'rtl':'ltr',padding:'calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',display:'flex',justifyContent:'center',alignItems:'flex-start',color:T.txt,position:'relative' as const,overflowX:'hidden' as const},card:{width:'100%',maxWidth:600,background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||18,padding:T.cardPadding||20,boxShadow:T.shadowLight||T.neuOut,boxSizing:'border-box' as const,position:'relative' as const,zIndex:1},lbl:{display:'block',fontSize:14,color:T.mut,marginBottom:7,fontWeight:700},inp:{width:'100%',padding:T.inputPadding||'13px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,minHeight:48,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',boxShadow:T.neuIn,transition:'box-shadow .25s ease, border-color .25s ease'},ta:{width:'100%',padding:T.inputPadding||'12px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,minHeight:100,resize:'vertical' as const,fontFamily:'inherit',boxShadow:T.neuIn},btn:{width:'100%',minHeight:48,padding:T.btnPadding||'14px 28px',background:T.grad,border:0,borderRadius:T.btnRadius||14,color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:T.shadowMedium||`4px 4px 10px rgba(0,0,0,.1),-2px -2px 8px rgba(255,255,255,.15), 0 6px 18px ${T.acc}2e`,fontFamily:'inherit',transition:'all .3s ease'},btnGhost:{width:'100%',minHeight:48,padding:T.btnPadding||'12px 26px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||14,color:T.acc,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:T.neuOut,fontFamily:'inherit',transition:'all .3s ease'},sec:{fontSize:14,fontWeight:800,color:T.ttl,margin:'14px 0 11px',display:'flex',gap:8,alignItems:'center'},div:{height:1,background:`linear-gradient(to right,transparent,${T.brd},transparent)`,margin:'16px 0'}}),[T,lang]);
  const countries=cfg.countryCodes||baseCountries; const hasCt=Object.values(cfg.contacts||{}).some((v:any)=>Array.isArray(v)?v.length:v);
@@ -1178,7 +1239,7 @@ function App(){
 const sameNumberAll=existingList.filter((x:any)=>digits(x.fullPhone||'')===digits(fp)); const hasConsultPrev=sameNumberAll.some((x:any)=>x.type==='consultation'); const consultCountPrev=sameNumberAll.filter((x:any)=>x.type==='consultation').length; const courseCountPrev=sameNumberAll.filter((x:any)=>x.type==='course').length; const autoPriority=(hasConsultPrev||consultCountPrev>=1||courseCountPrev>=1)?'high':'normal';
 const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data,category:'ثبتی',consultationStatus:'ثبتی',orderStatus:'جدید',priority:autoPriority,unread:true,isNew:true,followReminder:true,followUps:[null,null,null,null,null],adminNotes:'',usageInstructions:'',timeSlot:'',course:course.selected,shipping:{dest:course.dest,method:course.shippingMethod,...course.form,estimatedDelivery:deliveryText(),optionalSendDate:course.optionalSendDate},payment:{...pay,receipt_image:pay.receipt||'',receipt_text:pay.receiptText||'',bank:(cfg.banks||[]).find((b:any)=>b.id===pay.bankId)},childInfo:course.childInfo||null,tonguePhotos:course.tonguePhotos||[],editHistory:course.editedHistory||[],advisor:(()=>{const refC=referralConsultant||(course.advisorId?(cfg.consultants||[]).find((cn:any)=>String(cn.id)===String(course.advisorId)):null);return refC?{id:refC.id,name:refC.name,nameEn:refC.nameEn,referralCode:refC.referralCode}:null;})()}; if(isSupabaseConfigured){try{await createSubmission(entry as any)}catch(e){console.warn('Could not save submission to Supabase, falling back to localStorage',e);const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])}}else{const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])} setCourseResult(entry); clearPublicFormDrafts(); setFd(emptyFd()); setCourse(emptyCourse()); setEditChild(false); setShipModal(null); setView('course-confirm')}
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
- const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant};
+ const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,findTabByCode:((tabs:any[],code:string)=>findTabByCode(tabs,code))};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
  // اصلاح چانک-۱: Suspense برای Lazy Loading
  
@@ -1225,7 +1286,23 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
  const showMenu=view==='courses'||(!['child-info','course-shipping','course-payment','course-confirm'].includes(view)&&(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)));
  const showHeader=view!=='admin'&&!courseFlowViews.includes(view);
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
- return <>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}<div style={{paddingTop:showHeader?72:0,position:'relative',zIndex:1}}>{page}</div></>;
+ return <>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
+  if (referralTarget?.tabCode) {
+    const tab = findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode);
+    if (tab) {
+      if (typeof referralTarget.courseIndex==='number') {
+        const courses=(tab.courses||[]).filter((c:any)=>c.active!==false);
+        const target=courses[referralTarget.courseIndex-1];
+        if (target) setShipModal(target);
+        return;
+      }
+      setCourseTab(tab.id);
+      setView('courses');
+      return;
+    }
+  }
+  setView('courses');
+}}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}<div style={{paddingTop:showHeader?72:0,position:'relative',zIndex:1}}>{page}</div></>;
 }
 // اصلاح ۲۴: جلوگیری از رنگ آبی پیش‌فرض مرورگر در :visited/:active/:focus
 const css=`@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}*{box-sizing:border-box}button,button:active,button:focus{color:inherit;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}button:hover{filter:brightness(1.035)}button:active{transform:scale(.98)}input,textarea,select{font-size:16px!important}a,a:visited,a:active,a:focus{color:inherit;text-decoration:none}button:focus,a:focus{outline:none}button::-moz-focus-inner{border:0} @media(max-width:520px){body{margin:0} }`;

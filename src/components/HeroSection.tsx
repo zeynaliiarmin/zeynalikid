@@ -10,16 +10,19 @@ interface HeroSectionProps {
   imagePosition?: string;
   ctaText?: string;
   ctaLink?: string;
+  onCtaClick?: () => void;
   secondaryCtaText?: string;
   secondaryCtaLink?: string;
+  onSecondaryClick?: () => void;
   T: any;
   lang: 'fa' | 'en';
   animateCoursesCta?: boolean;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,secondaryCtaText,secondaryCtaLink,T,lang,animateCoursesCta}) => {
+const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,onCtaClick,secondaryCtaText,secondaryCtaLink,onSecondaryClick,T,lang,animateCoursesCta}) => {
   const navigate = useNavigate();
-  const go=(link?:string)=>{if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
+  const go=(link?:string)=>{if(onCtaClick){onCtaClick();return}if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
+  const goSecondary=()=>{if(onSecondaryClick){onSecondaryClick();return}if(!secondaryCtaLink)return;if(secondaryCtaLink.startsWith('/'))navigate(secondaryCtaLink);else window.location.href=secondaryCtaLink};
   const isRtl=lang==='fa';
 
   // تصویر انتخاب‌شده در پنل مدیریت باید بدون وابستگی به نام فایل نمایش داده شود.
@@ -92,9 +95,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
             </button>
           )}
           {secondaryCtaText && (
-            <button 
-              type="button" 
-              onClick={()=>go(secondaryCtaLink)} 
+            <button
+              type="button"
+              onClick={goSecondary}
               className="zk-btn zk-btn-secondary"
               style={animateCoursesCta ? {
                 minHeight:54, padding:'14px 26px', fontSize:15, fontWeight:800,

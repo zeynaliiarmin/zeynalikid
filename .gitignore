@@ -1,1 +1,10 @@
+node_modules/
+dist/
+.env
+*.tsbuildinfo
+tmp/
+test-output/
 .vercel
+.env*
+
+node_modules

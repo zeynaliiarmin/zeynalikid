@@ -46,11 +46,19 @@ function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
 
 // Simplified CoursesPage with Stage 2 redesign + Stage 11 UX improvements
 export default function CoursesPage({ app }: { app: any }) {
-  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest } = app;
+  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode } = app;
   const location = useLocation();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
-  const [filter, setFilter] = useState<string>('all');
+  // اگر از طریق لینک ارجاع با تعیین تب آمده، همان تب به‌صورت پیش‌فرض باز شود
+  const initialFilter = (() => {
+    if (referralTarget?.tabCode && findTabByCode) {
+      const t = findTabByCode(cfg.courseTabs||[], referralTarget.tabCode);
+      if (t) return t.id;
+    }
+    return 'all';
+  })();
+  const [filter, setFilter] = useState<string>(initialFilter);
   // ردیابی ورود به جزئیات دوره برای دکمه back گوشی (در پایین هم استفاده می‌شود)
   const detailPushedRef = React.useRef(false);
 
@@ -71,6 +79,15 @@ export default function CoursesPage({ app }: { app: any }) {
       }
     }
   }, [location.state?.courseId]);
+
+  // همگام‌سازی فیلتر با courseTab از app (برای لینک ارجاق با تعیین تب)
+  useEffect(() => {
+    if (referralTarget?.tabCode && findTabByCode) {
+      const t = findTabByCode(cfg.courseTabs||[], referralTarget.tabCode);
+      if (t && filter !== t.id) setFilter(t.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referralTarget?.raw]);
 
   // هماهنگی کامل فیلترهای دوره با پنل مدیریت (cfg.courseTabs) و حذف تب تخفیف‌دار در نبود دوره تخفیف‌دار
   const allAvailableCourses = (cfg.courseTabs || []).flatMap((t: any) =>
@@ -156,7 +173,7 @@ export default function CoursesPage({ app }: { app: any }) {
     return (
       <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
         <Helmet>
-          <title>{(lang === 'en' ? (selectedCourse.titleEn || selectedCourse.title) : selectedCourse.title)} | {lang === 'en' ? 'Zeynalikid' : 'زینالیکید'}</title>
+          <title>{(lang === 'en' ? (selectedCourse.titleEn || selectedCourse.title) : selectedCourse.title)} | {lang === 'en' ? 'Farzandman' : 'فرزند من'}</title>
         </Helmet>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 14px 80px' }}>
           <CourseDetailView
@@ -168,6 +185,7 @@ export default function CoursesPage({ app }: { app: any }) {
             educationalMedia={educationalMedia}
             parentExperienceMedia={parentExperienceMedia}
             mediaVpnOn={mediaVpnOn}
+            hasReferral={!!app.referralConsultant}
             onRegister={() => {
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)
               if (app.setShipModal) {
@@ -190,9 +208,9 @@ export default function CoursesPage({ app }: { app: any }) {
 
   return (
     <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
-      <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?'Zeynalikid growth & nutrition courses':'دوره‌های رشد و تغذیه زینالیکید',itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any,i:number)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:'زینالیکید',url:'https://zeynalikid.vercel.app/'}})))})} />
+      <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?'Farzandman growth & nutrition courses':'دوره‌های رشد و تغذیه فرزند من',itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any,i:number)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:'فرزند من',url:'https://farzandman.vercel.app/'}})))})} />
       <Helmet>
-        <title>{lang === 'en' ? 'Courses | Zeynalikid' : 'دوره‌های تخصصی | زینالیکید'}</title>
+        <title>{lang === 'en' ? 'Courses | Farzandman' : 'دوره‌های تخصصی | فرزند من'}</title>
       </Helmet>
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px 80px' }}>
@@ -210,6 +228,20 @@ export default function CoursesPage({ app }: { app: any }) {
             {lang === 'en' ? 'Evidence-based programs for your child’s growth, appetite and focus — with full parental support.' : 'برنامه‌های مبتنی بر شواهد برای رشد، اشتها و تمرکز فرزند شما — با پشتیبانی کامل والدین.'}
           </p>
         </div>
+
+        {/* پیام شناور زرد برای لینک ارجاع با تعیین تب */}
+        {referralTarget?.tabCode && (() => {
+          const t = findTabByCode ? findTabByCode(cfg.courseTabs||[], referralTarget.tabCode) : null;
+          if (!t) return null;
+          const tabName = lang==='en' ? (t.titleEn||t.title) : t.title;
+          return (
+            <div style={{marginBottom:14,padding:'12px 14px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:14,fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
+              {lang==='en'
+                ? `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
+                : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`}
+            </div>
+          );
+        })()}
 
         {/* Filter chips — horizontal scrollable */}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 10, marginBottom: 16, scrollSnapType: 'x mandatory' }}>

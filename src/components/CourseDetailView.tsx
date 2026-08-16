@@ -39,9 +39,11 @@ interface Props {
   educationalMedia?: any[];
   parentExperienceMedia?: any[];
   mediaVpnOn?: boolean;
+  // اگر کاربر با لینک ارجاع آمده، دکمه مشاوره رایگان در ابتدای صفحه پنهان می‌شود
+  hasReferral?: boolean;
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false }: Props) {
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -211,7 +213,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>
 
         {/* Price + CTA row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
           <div>
             {hasActiveDiscount ? (
               <>
@@ -227,6 +229,13 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             {isFa ? 'ثبت‌نام این دوره' : 'Enroll now'}
           </button>
         </div>
+        {!hasReferral && onConsult && (
+          <div style={{ marginBottom: 14 }}>
+            <button onClick={onConsult} style={{ width: '100%', minHeight: 44, padding: '10px 16px', borderRadius: 999, border: '1.5px dashed var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {isFa ? '💬 مشاوره رایگان' : '💬 Free consultation'}
+            </button>
+          </div>
+        )}
       </div>
 
       <StickyAnchorNav
@@ -269,7 +278,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               }}>
                 <img 
                   src={cfg?.courseInstructor?.photoUrl || "/images/specialist/specialist-trust.webp"} 
-                  alt={isFa ? (cfg?.courseInstructor?.name || 'آرمین زینالی') : (cfg?.courseInstructor?.nameEn || 'Armin Zeynali')} 
+                  alt={isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')} 
                   style={{ 
                     width: 72, 
                     height: 72, 
@@ -281,7 +290,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--zk-text)', marginBottom: 3 }}>
-                    {isFa ? (cfg?.courseInstructor?.name || 'آرمین زینالی') : (cfg?.courseInstructor?.nameEn || 'Armin Zeynali')}
+                    {isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')}
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.6 }}>
                     {isFa 

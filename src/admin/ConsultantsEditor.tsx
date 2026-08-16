@@ -2,7 +2,7 @@
 // هر مشاور یک تب دارد؛ درون تب هر مشاور: اطلاعات مشاور (بدون تب) + لینک ارجاع (بدون تب، همیشه باز) +
 // تب «عکس مشاور» (پیش‌فرض بسته) + تب «اطلاعات بانکی و کیف پول» (پیش‌فرض بسته).
 import React, { useState } from 'react';
-import { makeReferralCode } from '../utils/referral';
+import { makeReferralCode, suggestTabShortCode } from '../utils/referral';
 import { ZkPlusIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkCloseIcon } from './adminIcons';
 
 const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
@@ -42,6 +42,13 @@ export default function ConsultantsEditor(props: any) {
   const copyTimer = React.useRef<any>(0);
 
   const buildReferralLink = (code: string) => `${window.location.origin}/${code.trim()}`;
+  // به‌روزرسانی مخفف تب (shortCode) - با ذخیره در courseTabs
+  const setTabShortCode = (tabId: string, code: string) => {
+    const tabs = Array.isArray(draft.courseTabs) ? draft.courseTabs : [];
+    const v = code.trim().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 4);
+    const next = tabs.map((t: any) => t.id === tabId ? { ...t, shortCode: v } : t);
+    setEditCfg({ ...draft, courseTabs: next });
+  };
 
   const copyReferralLink = (code: string) => {
     const link = buildReferralLink(code);
@@ -175,20 +182,13 @@ export default function ConsultantsEditor(props: any) {
             <div style={{ marginTop: 10, padding: '9px 11px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}`, animation: 'fadeSlide .25s ease both' }}>
               <div style={{ fontWeight: 800, fontSize: 12.5, color: T.ttl, marginBottom: 6 }}>عکس مشاور</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <Checklist label="استفاده از عکس «درباره ما» (بدون آپلود دوباره)" value={active.useAboutPhoto === true} onChange={() => { const a = [...consultants]; a[activeIdx] = { ...active, useAboutPhoto: !active.useAboutPhoto }; setConsultants(a); }} />
                 <Checklist label="نمایش عکس در اطلاعات مشاور" value={active.showPhoto !== false} onChange={(v) => chg(activeIdx, 'showPhoto', v)} />
               </div>
-              {active.useAboutPhoto ? (
-                <div style={{ marginTop: 6, fontSize: 11, color: T.mut }}>عکس از «درباره ما» استفاده می‌شود.</div>
-              ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async (e) => { const f = e.target.files?.[0]; if (f) chg(activeIdx, 'photoUrl', await fileToData(f, active.photoUrl, 'consultants')); }} />
-                    {active.photoUrl && <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={async () => { await deleteStoredImage(active.photoUrl); chg(activeIdx, 'photoUrl', ''); }}>حذف</button>}
-                  </div>
-                  {active.photoUrl && <img src={active.photoUrl} alt="consultant" style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${T.brd}`, marginTop: 6 }} />}
-                </>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async (e) => { const f = e.target.files?.[0]; if (f) chg(activeIdx, 'photoUrl', await fileToData(f, active.photoUrl, 'consultants')); }} />
+                {active.photoUrl && <button type="button" style={{ ...AdminBtn(), color: T.err }} onClick={async () => { await deleteStoredImage(active.photoUrl); chg(activeIdx, 'photoUrl', ''); }}>حذف</button>}
+              </div>
+              {active.photoUrl && <img src={active.photoUrl} alt="consultant" style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${T.brd}`, marginTop: 6 }} />}
             </div>
           )}
 
@@ -246,6 +246,45 @@ export default function ConsultantsEditor(props: any) {
       )}
 
       <button type="button" style={AdminBtn()} onClick={add}><ZkPlusIcon size={13} /> افزودن مشاور</button>
+
+      {/* راهنمای لینک‌های گسترش‌یافته (نقشه راه) */}
+      <div style={{ marginTop: 18, padding: 12, borderRadius: 12, background: 'rgba(15,118,110,0.06)', border: '1px solid var(--zk-border, #E5E0D8)' }}>
+        <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--zk-text, #1F2937)', marginBottom: 6 }}>راهنمای لینک‌های ارجاع گسترش‌یافته (نقشه راه)</div>
+        <p style={{ fontSize: 11.5, color: 'var(--zk-text-muted, #6B7280)', lineHeight: 1.9, margin: '0 0 8px' }}>
+          هر مشاور می‌تواند با اضافه‌کردن حروف/اعداد به انتهای لینک پایه، کاربر را مستقیماً به یک تب یا یک دوره خاص ببرد.
+        </p>
+        <ul style={{ fontSize: 11.5, color: 'var(--zk-text-muted, #6B7280)', lineHeight: 1.9, margin: '0 0 10px', paddingInlineStart: 18 }}>
+          <li><b>لینک پایه</b> (مثال <code>/{active?.referralCode || 'code'}</code>): فقط صفحه اصلی + پیام راهنما.</li>
+          <li><b>لینک تب</b> (مثال <code>/{active?.referralCode || 'code'}<span style={{color:'#0F766E'}}>t</span></code>): دکمه‌ها به «مشاهده دوره‌های آن تب» تغییر می‌کنند و تب مربوطه باز می‌شود.</li>
+          <li><b>لینک دورهٔ مستقیم</b> (مثال <code>/{active?.referralCode || 'code'}<span style={{color:'#0F766E'}}>t1</span></code>): دکمه‌ها به «ثبت آن دوره» تغییر می‌کنند و کلیک روی آن مستقیماً روند ثبت‌نام را شروع می‌کند.</li>
+        </ul>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--zk-text, #1F2937)', marginBottom: 6 }}>مخفف هر تب (قابل ویرایش):</div>
+        <div style={{ display: 'grid', gap: 6 }}>
+          {(draft.courseTabs || []).filter((t: any) => t.active !== false).map((t: any) => {
+            const sc = String(t.shortCode || suggestTabShortCode(t, draft.courseTabs || [])).toLowerCase();
+            return (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--zk-surface, #fff)', border: '1px solid var(--zk-border, #E5E0D8)', borderRadius: 10, padding: 8 }}>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--zk-text, #1F2937)' }}>{t.title}</div>
+                <code dir="ltr" style={{ fontSize: 11, color: '#0F766E', background: 'rgba(15,118,110,.08)', padding: '3px 8px', borderRadius: 6 }}>/{active?.referralCode || 'code'}{sc}</code>
+                <input
+                  type="text"
+                  dir="ltr"
+                  maxLength={4}
+                  defaultValue={sc}
+                  onBlur={(e) => setTabShortCode(t.id, e.target.value)}
+                  style={{ width: 56, minHeight: 34, padding: '6px 8px', border: '1px solid var(--zk-border, #E5E0D8)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, textAlign: 'center' }}
+                />
+                <span style={{ fontSize: 10, color: 'var(--zk-text-muted, #6B7280)' }}>
+                  {(t.courses || []).filter((c: any) => c.active !== false).length > 0
+                    ? `۱-${(t.courses || []).filter((c: any) => c.active !== false).length} دوره`
+                    : 'بدون دوره'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ marginTop: 14 }}>
         <button type="button" style={S.btn} onClick={() => setSave(draft)}>ذخیره تغییرات</button>
       </div>

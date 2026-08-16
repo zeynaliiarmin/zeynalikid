@@ -1,0 +1,164 @@
+// ابزار کمکی مشاورین و لینک‌های ارجاع (referral)
+// کد ارجاع از مسیر (مثل /mhi) یا پارامتر URL (مثل ?ad=mhi) خوانده می‌شود.
+// نسخه گسترش‌یافته: پشتیبانی از لینک‌های نقشه راه مثل /afit (تب) یا /afit1 (دوره مستقیم)
+
+export interface ParsedReferral {
+  /** کد پایه مشاور (مثلاً afi) */
+  code: string;
+  /** کل رشته شناسایی‌شده (مثلاً afit1) */
+  raw: string;
+  /** مخفف تب (مثلاً t برای رشد قد) - خالی برای لینک پایه */
+  tabCode?: string;
+  /** شماره ۱-بیس دوره درون تب (مثلاً ۱ برای اولین دوره) - خالی برای لینک تب */
+  courseIndex?: number;
+}
+
+// مسیرهای سیستمی که نباید به عنوان کد ارجاع تفسیر شوند
+const SYSTEM_PATHS = new Set([
+  'admin','admin-login','courses','experience','education','about','contact','faq',
+  'products','form','consultation','track','growth','settings','profile','licenses',
+  'child-info','course-shipping','course-payment','course-confirm','course-done',
+  'payment-verify','service-worker.js','favicon.ico','robots.txt','sitemap.xml',
+  'assets','images','static','manifest.json'
+]);
+
+// حروف استاتیک/غیرقابل حدس را به‌عنوان پسوند تب نپذیر (مثلاً پسوندهای فایل)
+function isLikelyFile(s: string): boolean {
+  return /\.(js|css|png|jpg|jpeg|webp|gif|svg|ico|woff2?|ttf|map|json|html?|pdf|mp4|mp3|webm|txt)$/i.test(s);
+}
+
+// مسیر خام را با حذف trailing slash برمی‌گرداند
+function rawPath(): string {
+  try {
+    const p = (window.location.pathname || '').replace(/\/+$/, '').replace(/^\//, '');
+    return p.split('?')[0].trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * تجزیه لینک ارجاع گسترش‌یافته.
+ * ورودی: consultants و courseTabs برای تطبیق معکوس کد پایه و مخفف تب.
+ * خروجی: ParsedReferral یا null.
+ */
+export function parseReferral(consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
+  // ۱) پارامتر URL (?ad=CODE یا ?ref=CODE)
+  let raw = '';
+  try {
+    const q = new URLSearchParams(window.location.search);
+    raw = (q.get('ad') || q.get('ref') || '').trim();
+  } catch {}
+
+  // ۲) مسیر مستقیم
+  if (!raw) {
+    const p = rawPath();
+    if (p && !p.includes('/')) {
+      const first = p.split('?')[0].trim();
+      if (first && !SYSTEM_PATHS.has(first.toLowerCase()) && !isLikelyFile(first)) {
+        raw = first;
+      }
+    }
+  }
+
+  if (!raw) return null;
+
+  const list = Array.isArray(consultants) ? consultants : [];
+  const tabs = Array.isArray(courseTabs) ? courseTabs : [];
+
+  // کاندیدها به ترتیب طول نزولی تا طولانی‌ترین تطبیق برنده شود
+  const candidates = list
+    .map((c: any) => String(c?.referralCode || '').trim().toLowerCase())
+    .filter(Boolean)
+    .sort((a: string, b: string) => b.length - a.length);
+
+  const lowerRaw = raw.toLowerCase();
+  for (const code of candidates) {
+    if (!lowerRaw.startsWith(code)) continue;
+    const tail = lowerRaw.slice(code.length);
+    if (!tail) return { code, raw };
+
+    // tail می‌تواند '<tabCode>' یا '<tabCode><digits>' باشد
+    const m = tail.match(/^([a-z]+)(\d*)$/);
+    if (!m) continue;
+    const tabCode = m[1];
+    const digits = m[2];
+
+    // بررسی این‌که tabCode واقعاً به یک تب موجود نگاشت می‌شود
+    const tab = findTabByCode(tabs, tabCode);
+    if (!tab) continue;
+
+    if (!digits) {
+      return { code, raw, tabCode };
+    }
+    const idx = parseInt(digits, 10);
+    if (idx >= 1) {
+      return { code, raw, tabCode, courseIndex: idx };
+    }
+  }
+
+  return null;
+}
+
+/** پیدا کردن مشاور بر اساس کد ارجاع (case-insensitive) - ساده، برای سازگاری */
+export function findConsultantByCode(consultants: any[] | undefined, code: string): any | null {
+  if (!code || !Array.isArray(consultants)) return null;
+  const c = code.trim().toLowerCase();
+  return consultants.find((x: any) => x && String(x.referralCode || '').trim().toLowerCase() === c) || null;
+}
+
+/** پیدا کردن تب بر اساس مخفف سفارشی یا id یا حروف اول عنوان */
+export function findTabByCode(tabs: any[], code: string): any | null {
+  if (!code || !Array.isArray(tabs)) return null;
+  const c = code.trim().toLowerCase();
+  // اول: مخفف سفارشی
+  const byShort = tabs.find((t: any) => String(t?.shortCode || '').trim().toLowerCase() === c);
+  if (byShort) return byShort;
+  // دوم: خود id
+  const byId = tabs.find((t: any) => String(t?.id || '').toLowerCase() === c);
+  if (byId) return byId;
+  return null;
+}
+
+/** لیست مخفف‌های پیشنهادی برای یک تب (اولین حرف از id، سپس حرف اول کلمات عنوان) */
+export function suggestTabShortCode(tab: any, allTabs?: any[]): string {
+  if (tab?.shortCode) return tab.shortCode;
+  const used = new Set((allTabs || []).map((t: any) => String(t?.shortCode || '').toLowerCase()).filter(Boolean));
+  const idFirst = String(tab?.id || '').replace(/[^a-z]/gi, '').charAt(0).toLowerCase();
+  if (idFirst && !used.has(idFirst)) return idFirst;
+  const title = String(tab?.title || '');
+  for (const ch of title.replace(/[^a-zآ-ی]/gi, '').toLowerCase()) {
+    if (ch && !used.has(ch)) return ch;
+  }
+  return (idFirst || 'x') + (used.size + 1);
+}
+
+// ساخت کد ارجاع پیشنهادی از نام انگلیسی (۳ حرف اول، بدون فاصله)
+export function makeReferralCode(nameEn?: string): string {
+  const base = String(nameEn || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  return base.slice(0, 3);
+}
+
+// بررسی یکتایی کد ارجاع در لیست مشاورین (به‌جز خود مشاور)
+export function isReferralCodeUnique(consultants: any[] | undefined, code: string, excludeId?: string): boolean {
+  if (!code) return false;
+  const c = code.trim().toLowerCase();
+  return !(Array.isArray(consultants) && consultants.some((x: any) =>
+    x && String(x.referralCode || '').trim().toLowerCase() === c && String(x.id) !== String(excludeId)
+  ));
+}
+
+// سازگاری با نسخه قبلی: خواندن کد خام از URL
+export function getReferralCodeFromUrl(): string {
+  try {
+    const path = window.location.pathname || '';
+    const cleanPath = path.replace(/\/+$/, '').replace(/^\//, '');
+    if (cleanPath && !cleanPath.includes('/') && !cleanPath.startsWith('admin') && !['courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done'].includes(cleanPath.split('?')[0])) {
+      return cleanPath.split('?')[0].trim();
+    }
+    const q = new URLSearchParams(window.location.search);
+    return (q.get('ad') || q.get('ref') || '').trim();
+  } catch {
+    return '';
+  }
+}
