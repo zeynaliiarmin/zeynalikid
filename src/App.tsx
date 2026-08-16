@@ -1142,6 +1142,7 @@ function App(){
  // مشاور ارجاع‌دهنده از URL (?ad=CODE یا /CODE یا لینک گسترش‌یافته /CODE+t+number)
  const [referralConsultant,setReferralConsultant]=useState<any|null>(null);
  const [referralTarget,setReferralTarget]=useState<ParsedReferral|null>(null);
+ const referralHandledRef = useRef<string|null>(null);
  const applyReferral = useCallback((code: string, target: ParsedReferral | null, consultants: any[]) => {
    const c = findConsultantByCode(consultants, code);
    if (c) {
@@ -1157,7 +1158,7 @@ function App(){
      try {
        const path = (window.location.pathname || '');
        if (path && path !== '/' && new RegExp(`/${parsed.raw}/?$`, 'i').test(path)) {
-         navigate('/', { replace: true });
+         if (!parsed.tabCode) navigate('/', { replace: true });
        }
      } catch {}
    }
@@ -1176,35 +1177,29 @@ function App(){
  }, [location.pathname, location.search, cfg, applyReferral]);
  useEffect(()=>{
    const rt = referralTarget;
-   if (rt) {
-     try {
-       const path = (window.location.pathname || '');
-       if (path && path !== '/' && new RegExp(`/${rt.raw}/?$`, 'i').test(path)) {
-         navigate('/', { replace: true });
-       }
-     } catch {}
-   }
-   // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [referralTarget]);
- useEffect(()=>{
-   const rt = referralTarget;
    if (!rt) return;
-   const tabs = (cfg as any).courseTabs || [];
-   if (rt.tabCode) {
-     const tab = findTabByCode(tabs, rt.tabCode);
-     if (tab) {
-       if (courseTab !== tab.id) setCourseTab(tab.id);
-       if (typeof rt.courseIndex === 'number') {
-         const courses = (tab.courses || []).filter((c: any) => c.active !== false);
-         const target = courses[rt.courseIndex - 1];
-         if (target) setShipModal(target);
-       } else {
-         if (view !== 'courses') setView('courses');
-       }
+   if (referralHandledRef.current === rt.raw) return;
+   referralHandledRef.current = rt.raw;
+   if (!rt.tabCode) {
+     if (location.pathname !== '/') {
+       try { navigate('/', { replace: true }); } catch {}
      }
+     return;
+   }
+   const tabs = (cfg as any).courseTabs || [];
+   const tab = findTabByCode(tabs, rt.tabCode);
+   if (!tab) return;
+   if (courseTab !== tab.id) setCourseTab(tab.id);
+   if (typeof rt.courseIndex === 'number') {
+     if (location.pathname !== '/') navigate('/', { replace: true });
+     const courses = (tab.courses || []).filter((c: any) => c.active !== false);
+     const target = courses[rt.courseIndex - 1];
+     if (target) setShipModal(target);
+   } else {
+     if (location.pathname !== '/courses') navigate('/courses', { replace: true });
    }
    // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [referralTarget?.raw]);
+ }, [referralTarget, cfg]);
  // بازطراحی ظاهری: نئومورفیسم (سایه‌های نرم دوطرفه) + مینیمال (فضای باز، بدون شلوغی) + ممفیس (اشکال هندسی پاستلی در پس‌زمینه)
  const S:any=useMemo(()=>({page:{minHeight:'100dvh',fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",direction:lang==='fa'?'rtl':'ltr',padding:'calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',display:'flex',justifyContent:'center',alignItems:'flex-start',color:T.txt,position:'relative' as const,overflowX:'hidden' as const},card:{width:'100%',maxWidth:600,background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||18,padding:T.cardPadding||20,boxShadow:T.shadowLight||T.neuOut,boxSizing:'border-box' as const,position:'relative' as const,zIndex:1},lbl:{display:'block',fontSize:14,color:T.mut,marginBottom:7,fontWeight:700},inp:{width:'100%',padding:T.inputPadding||'13px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,minHeight:48,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',boxShadow:T.neuIn,transition:'box-shadow .25s ease, border-color .25s ease'},ta:{width:'100%',padding:T.inputPadding||'12px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,minHeight:100,resize:'vertical' as const,fontFamily:'inherit',boxShadow:T.neuIn},btn:{width:'100%',minHeight:48,padding:T.btnPadding||'14px 28px',background:T.grad,border:0,borderRadius:T.btnRadius||14,color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:T.shadowMedium||`4px 4px 10px rgba(0,0,0,.1),-2px -2px 8px rgba(255,255,255,.15), 0 6px 18px ${T.acc}2e`,fontFamily:'inherit',transition:'all .3s ease'},btnGhost:{width:'100%',minHeight:48,padding:T.btnPadding||'12px 26px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||14,color:T.acc,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:T.neuOut,fontFamily:'inherit',transition:'all .3s ease'},sec:{fontSize:14,fontWeight:800,color:T.ttl,margin:'14px 0 11px',display:'flex',gap:8,alignItems:'center'},div:{height:1,background:`linear-gradient(to right,transparent,${T.brd},transparent)`,margin:'16px 0'}}),[T,lang]);
  const countries=cfg.countryCodes||baseCountries; const hasCt=Object.values(cfg.contacts||{}).some((v:any)=>Array.isArray(v)?v.length:v);
