@@ -397,6 +397,7 @@ export default function CourseCard({
             justifyContent: 'center',
             transition: 'all .2s ease',
             animation: ctaPulse ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined,
+            WebkitAnimation: ctaPulse ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined,
           }}>
             {ctaLabel || (lang === 'en' ? 'View course' : 'مشاهده دوره')}
           </div>

@@ -1153,6 +1153,17 @@ function App(){
  const [referralConsultant,setReferralConsultant]=useState<any|null>(null);
  const [referralTarget,setReferralTarget]=useState<ParsedReferral|null>(null);
  const referralHandledRef = useRef<string|null>(null);
+ // ─── جلوگیری از فلش صفحهٔ اصلی قبل از resolve شدن لینک ارجاع ───
+ const [referralReady,setReferralReady]=useState<boolean>(()=>{
+   try {
+     const path=(window.location.pathname||'').replace(/\/+$/,'').replace(/^\//,'').split('?')[0];
+     const q=new URLSearchParams(window.location.search);
+     const raw=(q.get('ad')||q.get('ref')||path||'').trim();
+     const SYSTEM=['admin','admin-login','courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done','payment-verify'];
+     if(!raw||raw.includes('/')||SYSTEM.includes(raw.toLowerCase())||/\.(js|css|png|jpe?g|webp|svg|ico|json|html?|pdf|mp[34]|webm|txt|xml|webmanifest)$/i.test(raw)) return true;
+     return false;
+   } catch { return true; }
+ });
  // ─── آپدیت لینک ارجاع: پاپ‌آپ «درخواست مشاوره مجدد» در حالت ارجاع ───
  const [referralConsultOpen,setReferralConsultOpen]=useState(false);
  const [referralConsultReason,setReferralConsultReason]=useState('');
@@ -1207,9 +1218,15 @@ function App(){
    const parsed = parseReferral(consultants, tabs);
    if (parsed) {
      applyReferral(parsed.code, parsed, consultants);
+     setReferralReady(true);
    } else {
      const code = getReferralCodeFromUrl();
-     if (code) applyReferral(code, { code, raw: code }, consultants);
+     if (code) {
+       applyReferral(code, { code, raw: code }, consultants);
+       if (consultants.length > 0) setReferralReady(true);
+     } else {
+       setReferralReady(true);
+     }
    }
  }, [location.pathname, location.search, cfg, applyReferral]);
  useEffect(()=>{
@@ -1323,6 +1340,10 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
  const showMenu=view==='courses'||(!['child-info','course-shipping','course-payment','course-confirm'].includes(view)&&(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)));
  const showHeader=view!=='admin'&&!courseFlowViews.includes(view);
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
+ // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحهٔ عمومی را نشان نده ───
+ if(!referralReady && view!=='admin' && view!=='admin-login'){
+   return <div style={{minHeight:'100dvh',background:'var(--zk-bg, #FDF8F3)'}}/>;
+ }
  return <>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
   if (referralTarget?.tabCode) {
     const tab = findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode);
@@ -1390,5 +1411,5 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
 })()}<div style={{paddingTop:showHeader?72:0,position:'relative',zIndex:1}}>{page}</div></>;
 }
 // اصلاح ۲۴: جلوگیری از رنگ آبی پیش‌فرض مرورگر در :visited/:active/:focus
-const css=`@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes zk-hero-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}*{box-sizing:border-box}button,button:active,button:focus{color:inherit;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}button:hover{filter:brightness(1.035)}button:active{transform:scale(.98)}input,textarea,select{font-size:16px!important}a,a:visited,a:active,a:focus{color:inherit;text-decoration:none}button:focus,a:focus{outline:none}button::-moz-focus-inner{border:0} @media(max-width:520px){body{margin:0} }`;
+const css=`@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes floatSoft{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes zk-hero-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}@-webkit-keyframes fadeSlide{from{opacity:0;-webkit-transform:translateY(12px)}to{opacity:1;-webkit-transform:translateY(0)}}@-webkit-keyframes modalIn{from{opacity:0;-webkit-transform:translateY(20px) scale(.96)}to{opacity:1;-webkit-transform:translateY(0) scale(1)}}@-webkit-keyframes zk-hero-pulse{0%,100%{-webkit-transform:scale(1)}50%{-webkit-transform:scale(1.035)}}@-webkit-keyframes zk-menu-pulse{0%,100%{box-shadow:0 0 0 0 rgba(15,118,110,.4)}50%{box-shadow:0 0 0 8px rgba(15,118,110,0)}}.zk-pulse{-webkit-animation:zk-hero-pulse 1.6s ease-in-out infinite;animation:zk-hero-pulse 1.6s ease-in-out infinite}*{box-sizing:border-box}button,button:active,button:focus{color:inherit;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}button:hover{filter:brightness(1.035)}button:active{transform:scale(.98)}input,textarea,select{font-size:16px!important}a,a:visited,a:active,a:focus{color:inherit;text-decoration:none}button:focus,a:focus{outline:none}button::-moz-focus-inner{border:0} @media(max-width:520px){body{margin:0} }`;
 export default App;

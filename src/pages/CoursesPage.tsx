@@ -253,7 +253,7 @@ export default function CoursesPage({ app }: { app: any }) {
 
         {/* کارت معرفی مشاور ارجاع‌دهنده — وقتی مخاطب با لینک اختصاصی مشاور آمده */}
         {referralConsultant && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 16px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 20, boxShadow: 'var(--zk-shadow-light)', animation: 'fadeSlide .5s ease both' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 16px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 20, boxShadow: 'var(--zk-shadow-light)', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both' }}>
             {referralConsultant.showPhoto !== false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
               <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={lang === 'fa' ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)} style={{ width: 64, height: 64, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: '50%', border: '2px solid #FB923C', flexShrink: 0 }} />
             ) : null}

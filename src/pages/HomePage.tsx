@@ -77,7 +77,7 @@ export default function HomePage({app}:{app:any}){
 
    {/* کارت مشاور ارجاع‌دهنده (وقتی مخاطب با لینک اختصاصی مشاور وارد شده) */}
    {referralConsultant && (
-     <section className="zk-home-referral" style={{display:'flex',flexDirection:'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both'}}>
+     <section className="zk-home-referral" style={{display:'flex',flexDirection:'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both',WebkitAnimation:'fadeSlide .6s ease both'}}>
        {referralConsultant.showPhoto!==false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
          <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isRtl?referralConsultant.name:referralConsultant.nameEn||referralConsultant.name} style={{width:64,height:64,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid #FB923C',flexShrink:0}} />
        ) : null}
@@ -100,7 +100,7 @@ export default function HomePage({app}:{app:any}){
            ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
            : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
        </button>
      </section>
@@ -114,7 +114,7 @@ export default function HomePage({app}:{app:any}){
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
            : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {coursesCtaLabel}
        </button>
      </section>
@@ -132,7 +132,7 @@ export default function HomePage({app}:{app:any}){
              ? `Tap the button below to see the details and register "${cname}".`
              : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>
-         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
            {coursesCtaLabel}
          </button>
        </section>

@@ -240,7 +240,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             )}
           </div>
 
-          <button onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, minHeight: 48, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+          <button onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, minHeight: 48, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
             {isFa ? 'ثبت‌نام این دوره' : 'Enroll now'}
           </button>
         </div>
@@ -514,7 +514,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             {isFa ? 'مشاوره رایگان' : 'Free consult'}
           </button>
         )}
-        <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+        <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
           {isFa ? 'ثبت‌نام این دوره' : 'Enroll'}
         </button>
       </div>
