@@ -371,9 +371,18 @@ export default function ConsultationPage({ app }: { app: any }) {
           }
         }
 
+        // آپدیت لینک ارجاع: افزودن «دلیل درخواست مشاوره مجدد» (در صورت وجود) به متن یادداشت فرم
+        let consultNotes = fd.notes || '';
+        try {
+          const rReason = sessionStorage.getItem('zk_referral_reconsult_reason');
+          if (rReason && rReason.trim()) {
+            consultNotes = consultNotes ? `${consultNotes}\n[دلیل درخواست مشاورهٔ مجدد] ${rReason.trim()}` : `[دلیل درخواست مشاورهٔ مجدد] ${rReason.trim()}`;
+            try { sessionStorage.removeItem('zk_referral_reconsult_reason'); } catch {}
+          }
+        } catch {}
         const entry = {
           id: uid(), trackingCode, type: 'consultation', date: today(), time: now(),
-          ...fd, fullPhone: fp, voice_note_url,
+          ...fd, notes: consultNotes, fullPhone: fp, voice_note_url,
           category: 'مشاوره اولیه', consultationStatus: 'مشاوره اولیه',
           consultationStatusChangedAt: new Date().toISOString(),
           priority: autoPriority, unread: true, isNew: true, followReminder: true,

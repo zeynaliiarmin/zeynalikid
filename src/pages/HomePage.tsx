@@ -23,20 +23,21 @@ export default function HomePage({app}:{app:any}){
  // وقتی لینک ارجاع حاوی پسوند تب/دوره است، برچسب CTA و مقصد آن را تنظیم می‌کنیم
  const referralTab = referralTarget?.tabCode ? (app.findTabByCode?.(cfg.courseTabs||[], referralTarget.tabCode) || null) : null;
  const isDirectCourse = referralTab && typeof referralTarget?.courseIndex === 'number';
+ const directCourseName = (() => {
+   if (!isDirectCourse || !referralTab) return '';
+   const courses = (referralTab.courses||[]).filter((c:any)=>c.active!==false);
+   const target = courses[(referralTarget.courseIndex as number)-1];
+   return lang==='en' ? (target?.titleEn||target?.title||referralTab.title) : (target?.title||referralTab.title);
+ })();
  const coursesCtaLabel = isDirectCourse
-   ? (lang==='en' ? `Enroll in ${referralTab.titleEn||referralTab.title}` : `ثبت ${referralTab.title}`)
+   ? (lang==='en' ? `View & enroll in ${directCourseName}` : `مشاهده و ثبت ${directCourseName}`)
    : referralTab
    ? (lang==='en' ? `View ${referralTab.titleEn||referralTab.title} courses` : `مشاهده دوره‌های ${referralTab.title}`)
    : (lang==='en' ? 'View courses' : 'مشاهده دوره‌ها');
- const coursesCtaTo = isDirectCourse ? null : '/courses';
+ const coursesCtaTo = '/courses';
  const onCoursesCta = () => {
-   if (isDirectCourse) {
-     const courses = (referralTab.courses||[]).filter((c:any)=>c.active!==false);
-     const target = courses[(referralTarget.courseIndex as number)-1];
-     if (target) app.setShipModal?.(target);
-   } else {
-     setView('courses');
-   }
+   // آپدیت لینک ارجاع: رفتن به صفحه معرفی دوره‌ها؛ تب/اسکرول/برجسته‌سازی دوره بر اساس referralTarget در CoursesPage انجام می‌شود.
+   setView('courses');
  };
  // پیام شناور زرد برای لینک پایه (فقط کد مشاور)
  const showBaseTip = !!referralConsultant && !referralTab;
@@ -51,7 +52,7 @@ export default function HomePage({app}:{app:any}){
  const homeLayout=(cfg.homeLayout&&cfg.homeLayout.length?cfg.homeLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'contact',show:true}]);
  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، میانبر آن در صفحهٔ اصلی هم نمایش داده نشود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
- const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)).map((x:any)=>shortcutsBase[x.id]);
+ const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)&&!(referralConsultant&&x.id==='consult')).map((x:any)=>shortcutsBase[x.id]);
  const heroImage=cfg.images?.hero||{}; const trustBoxImage=cfg.images?.trustBox||{};
  const allCourses:any[]=[];(cfg.courseTabs||[]).forEach((tab:any)=>(tab.courses||[]).forEach((c:any)=>{if(c.active!==false)allCourses.push({...c,tabId:tab.id})}));
  const fc=cfg.featuredCourses||{}; const featuredCourseIds=Array.isArray(fc.courseIds)?fc.courseIds:[];
@@ -94,9 +95,14 @@ export default function HomePage({app}:{app:any}){
    {/* وقتی لینک ارجاع پایه است، یک باکس شناور زرد برای راهنمایی والد نمایش می‌دهیم */}
    {showBaseTip && (
      <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)',fontSize:13.5,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
-       {lang==='en'
-         ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
-         : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'}
+       <div style={{marginBottom:10}}>
+         {lang==='en'
+           ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
+           : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'}
+       </div>
+       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+         {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
+       </button>
      </section>
    )}
 
@@ -105,8 +111,8 @@ export default function HomePage({app}:{app:any}){
      <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
        <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
          {lang==='en'
-           ? 'Tap the button below to compare this category’s courses side by side and pick the best match for your child.'
-           : 'با زدن دکمهٔ زیر می‌توانید دوره‌های این بخش را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.'}
+           ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
+           : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`}
        </div>
        <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {coursesCtaLabel}
@@ -114,14 +120,24 @@ export default function HomePage({app}:{app:any}){
      </section>
    )}
 
-   {/* وقتی لینک ارجاع مستقیم به یک دوره است، دکمه ثبت مستقیم */}
-   {isDirectCourse && (
-     <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
-         {coursesCtaLabel}
-       </button>
-     </section>
-   )}
+   {/* وقتی لینک ارجاع مستقیم به یک دوره است */}
+   {isDirectCourse && referralTab && (() => {
+     const courses = (referralTab.courses||[]).filter((c:any)=>c.active!==false);
+     const target = courses[(referralTarget.courseIndex as number)-1];
+     const cname = lang==='en' ? (target?.titleEn||target?.title||referralTab.title) : (target?.title||referralTab.title);
+     return (
+       <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
+         <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
+           {lang==='en'
+             ? `Tap the button below to see the details and register "${cname}".`
+             : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`}
+         </div>
+         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+           {coursesCtaLabel}
+         </button>
+       </section>
+     );
+   })()}
 
    {trustBoxImage.enabled!==false&&(cfg.trustBoxes?.sentences?.health?.length>0 || cfg.trustMessages?.health?.length>0)&&<section className="zk-home-section" style={{marginTop:0}}><TrustBoxWithImage text={lang==='en' ? (cfg.trustBoxes?.sentences?.health?.[0]?.titleEn || cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '') : (cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '')} imageUrl={trustBoxImage.url || '/images/asset13c-trust-parent-care.webp'} imageAlt={trustBoxImage.alt||'مادر و کودک'} imagePosition={isRtl?'right':'left'} imageAspect={trustBoxImage.aspectRatio} imageObjectPosition={trustBoxImage.objectPosition} T={T}/></section>}
 

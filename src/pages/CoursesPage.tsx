@@ -150,6 +150,27 @@ export default function CoursesPage({ app }: { app: any }) {
     setSelectedCourse(null);
   };
 
+  // ─── آپدیت لینک ارجاع: دوره هدف (برای اسکرول + دکمه برجسته «مشاهده جزئیات و ثبت») ───
+  const referralTargetCourse = (() => {
+    if (!referralTarget?.tabCode || typeof referralTarget.courseIndex !== 'number') return null;
+    const t = findTabByCode ? findTabByCode(cfg.courseTabs || [], referralTarget.tabCode) : null;
+    if (!t) return null;
+    const courses = (t.courses || []).filter((c: any) => c.active !== false);
+    return courses[referralTarget.courseIndex - 1] || null;
+  })();
+  const [didScroll, setDidScroll] = useState(false);
+  React.useEffect(() => {
+    if (referralTargetCourse && !didScroll) {
+      const t = setTimeout(() => {
+        const el = document.getElementById(`zk-ref-course-${referralTargetCourse.id}`);
+        if (el) { try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {} }
+        setDidScroll(true);
+      }, 350);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referralTargetCourse?.id, didScroll]);
+
   // وقتی کاربر دکمه back گوشی/مرورگر را می‌زند، history.pop باعث می‌شود جزئیات بسته شود.
   // اگر صفحهٔ «مشاهده همه نظرات» باز باشد، آن را به عهدهٔ ReviewSection می‌گذاریم تا فقط آن بسته شود.
   React.useEffect(() => {
@@ -250,11 +271,16 @@ export default function CoursesPage({ app }: { app: any }) {
           const t = findTabByCode ? findTabByCode(cfg.courseTabs||[], referralTarget.tabCode) : null;
           if (!t) return null;
           const tabName = lang==='en' ? (t.titleEn||t.title) : t.title;
+          const isDir = typeof referralTarget?.courseIndex === 'number';
           return (
             <div style={{marginBottom:14,padding:'12px 14px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:14,fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
               {lang==='en'
-                ? `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
-                : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`}
+                ? isDir
+                  ? `Tap “View details & enroll” on the highlighted course to register this course.`
+                  : `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
+                : isDir
+                  ? `با زدن دکمهٔ «مشاهده جزئیات و ثبت» روی دورهٔ مشخص‌شده می‌توانید همان دوره را ثبت کنید.`
+                  : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`}
             </div>
           );
         })()}
@@ -336,18 +362,39 @@ export default function CoursesPage({ app }: { app: any }) {
           gap: 14,
         }}>
           {filteredCourses.length > 0 ? (
-            filteredCourses.map((cr: any) => (
-              <CourseCard
-                key={cr.id}
-                course={cr}
-                size="normal"
-                showStock
-                showDiscount
-                onCourseClick={openDetail}
-                T={T}
-                lang={lang}
-              />
-            ))
+            filteredCourses.map((cr: any) => {
+              const isTarget = !!referralTargetCourse && referralTargetCourse.id === cr.id;
+              return (
+                <div key={cr.id} id={isTarget ? `zk-ref-course-${cr.id}` : undefined} style={isTarget ? { scrollMarginTop: 20 } : undefined}>
+                  {isTarget && (
+                    <div style={{ marginBottom: 12, padding: '12px 14px', background: '#FEF9C3', border: '1.5px solid #FACC15', borderRadius: 14, fontSize: 12.5, lineHeight: 1.9, color: '#713F12', fontWeight: 700 }}>
+                      {lang === 'en'
+                        ? 'Tap the button below to view details and enroll in this course.'
+                        : `با زدن دکمهٔ «مشاهده جزئیات و ثبت ${cr.title}» می‌توانید جزئیات و ثبت‌نام این دوره را ببینید.`}
+                    </div>
+                  )}
+                  <CourseCard
+                    key={cr.id}
+                    course={cr}
+                    size="normal"
+                    showStock
+                    showDiscount
+                    onCourseClick={openDetail}
+                    T={T}
+                    lang={lang}
+                  />
+                  {isTarget && (
+                    <button
+                      type="button"
+                      onClick={() => openDetail(cr)}
+                      style={{ width: '100%', minHeight: 54, marginTop: 10, padding: '12px 18px', borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', border: 0, fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', animation: 'zk-hero-pulse 1.6s ease-in-out infinite' }}
+                    >
+                      {lang === 'en' ? `View details & enroll in ${cr.titleEn || cr.title}` : `مشاهده جزئیات و ثبت ${cr.title}`}
+                    </button>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div style={{ padding: 40, textAlign: 'center', background: 'var(--zk-surface)', borderRadius: 18, border: '1px solid var(--zk-border)' }}>
               <div style={{ fontSize: 15, color: 'var(--zk-text-muted)' }}>{lang === 'en' ? 'No courses match your filter.' : 'دوره‌ای با این فیلتر پیدا نشد.'}</div>
