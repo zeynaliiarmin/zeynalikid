@@ -140,10 +140,15 @@ export function suggestTabShortCode(tab: any, allTabs?: any[]): string {
   return (idFirst || 'x') + (used.size + 1);
 }
 
-// ساخت کد ارجاع پیشنهادی از نام انگلیسی (۳ حرف اول، بدون فاصله)
+// ساخت کد ارجاع پیشنهادی از نام انگلیسی (۲ حرف اول، بدون فاصله)
 export function makeReferralCode(nameEn?: string): string {
-  const base = String(nameEn || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-  return base.slice(0, 3);
+  // ۲ حرف: حرف اول نام + حرف اول نام خانوادگی (مثل Armin Zeynali → az)
+  const parts = String(nameEn || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0].charAt(0) + parts[1].charAt(0)).replace(/[^a-z]/g, '');
+  }
+  // تک‌کلمه‌ای: دو حرف اول
+  return (parts[0] || '').replace(/[^a-z]/g, '').slice(0, 2);
 }
 
 // بررسی یکتایی کد ارجاع در لیست مشاورین (به‌جز خود مشاور)

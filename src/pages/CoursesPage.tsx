@@ -274,13 +274,13 @@ export default function CoursesPage({ app }: { app: any }) {
           const isDir = typeof referralTarget?.courseIndex === 'number';
           return (
             <div style={{marginBottom:14,padding:'12px 14px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:14,fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
-              {lang==='en'
-                ? isDir
-                  ? `Tap “View details & enroll” on the highlighted course to register this course.`
-                  : `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
-                : isDir
-                  ? `با زدن دکمهٔ «مشاهده جزئیات و ثبت» روی دورهٔ مشخص‌شده می‌توانید همان دوره را ثبت کنید.`
-                  : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`}
+              {isDir
+                ? (cfg.referral?.texts?.coursesCourse || (lang==='en'
+                    ? `Tap “View details & enroll” on the highlighted course to register this course.`
+                    : `با زدن دکمهٔ «مشاهده جزئیات و ثبت» روی دورهٔ مشخص‌شده می‌توانید همان دوره را ثبت کنید.`))
+                : (cfg.referral?.texts?.coursesTab || (lang==='en'
+                    ? `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
+                    : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`))}
             </div>
           );
         })()}

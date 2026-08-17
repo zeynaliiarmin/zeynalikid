@@ -70,6 +70,7 @@ export default function ConsultantsEditor(props: any) {
   const add = () => { const a = [...consultants, { id: 'cons' + uid(), name: '', nameEn: '', title: '', titleEn: '', desc: '', descEn: '', photoUrl: '', aboutPhotoUrl: '', useAboutPhoto: false, showPhoto: true, active: true, referralCode: '' }]; setConsultants(a); setActiveIdx(a.length - 1); };
   const remove = (i: number) => { const a = [...consultants]; const removed = a[i]; if (removed?.photoUrl && !removed.aboutPhotoUrl) { try { deleteStoredImage(removed.photoUrl); } catch {} } const next = a.filter((_: any, j: number) => j !== i); setConsultants(next); setActiveIdx(Math.max(0, Math.min(activeIdx, next.length - 1))); };
   const setReferral = (patch: any) => setEditCfg({ ...draft, referral: { ...referral, ...patch } });
+  const setReferralText = (k: string, v: string) => setReferral({ texts: { ...((referral.texts) || {}), [k]: v } });
   const toggleSubTab = (key: 'photo' | 'bank', id: string) => {
     if (key === 'photo') setPhotoOpen((m) => ({ ...m, [id]: !m[id] }));
     else setBankOpen((m) => ({ ...m, [id]: !m[id] }));
@@ -80,7 +81,7 @@ export default function ConsultantsEditor(props: any) {
   return (
     <Box title="مشاورین و لینک‌های ارجاع">
       <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>
-        برای هر مشاور یک لینک ارجاع اختصاصی و کوتاه بسازید. نام انگلیسی مشاور برای ساخت کد الزامی است؛ کد از ۳ حرف اولِ نام انگلیسی ساخته می‌شود و قابل تغییر است. وقتی مخاطب از این لینک وارد سایت شود، کارت مشاور در صفحهٔ هوم نمایش داده می‌شود و اطلاعات بانکی/کیف پول همان مشاور در مرحلهٔ پرداخت در نظر گرفته می‌شود.
+        برای هر مشاور یک لینک ارجاع اختصاصی و کوتاه بسازید. نام انگلیسی مشاور برای ساخت کد الزامی است؛ کد به‌صورت خودکار از ۲ حرف اولِ نام انگلیسی ساخته می‌شود و قابل تغییر است. وقتی مخاطب از این لینک وارد سایت شود، کارت مشاور در صفحهٔ هوم نمایش داده می‌شود و اطلاعات بانکی/کیف پول همان مشاور در مرحلهٔ پرداخت در نظر گرفته می‌شود.
       </p>
       <div style={{ marginBottom: 12, padding: 10, borderRadius: 10, background: '#FEF3C7', border: '1px solid #F59E0B55', fontSize: 11.5, color: '#713F12', lineHeight: 1.8 }}>
         مدیریت کامل مشاورین، لینک‌های ارجاع، اطلاعات بانکی/کیف پول و عکس هر مشاور دقیقاً از همین بخش («مشاورین و لینک‌های ارجاع») انجام می‌شود. عکس هر مشاور را از تب «عکس مشاور» آپلود کنید.
@@ -90,6 +91,25 @@ export default function ConsultantsEditor(props: any) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 14, padding: 10, background: T.soft, borderRadius: 10 }}>
         <Checklist label="نمایش انتخاب مشاور در روند ثبت‌نام" value={referral.showConsultantSelection === true} onChange={(v) => setReferral({ showConsultantSelection: v })} />
         <Checklist label="نمایش دکمه‌های CTA صفحهٔ اصلی" value={referral.home?.showCta !== false} onChange={(v) => setReferral({ home: { ...(referral.home || {}), showCta: v } })} />
+      </div>
+
+      {/* ── متن‌های راهنمای قابل ویرایش در حالت لینک ارجاع ── */}
+      <div style={{ marginBottom: 14, padding: 12, borderRadius: 12, background: T.soft, border: `1px solid ${T.brd}` }}>
+        <div style={{ fontWeight: 800, fontSize: 13, color: T.ttl, marginBottom: 4 }}>متن‌های راهنمای قابل ویرایش (در حالت لینک ارجاع)</div>
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>هر کدام از این متن‌ها در صفحه‌ای که مشخص شده، وقتی مخاطب با لینک ارجاع وارد می‌شود نمایش داده می‌شود. اگر خالی باشد، متن پیش‌فرض سایت استفاده می‌شود.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک پایه — فقط کد مشاور)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeBase || ''} onBlur={(e) => setReferralText('homeBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeTab || ''} onBlur={(e) => setReferralText('homeTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeCourse || ''} onBlur={(e) => setReferralText('homeCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesTab || ''} onBlur={(e) => setReferralText('coursesTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesCourse || ''} onBlur={(e) => setReferralText('coursesCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>متن پیام پاپ‌آپ «درخواست مشاورهٔ مجدد»</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.popupTitle || ''} onBlur={(e) => setReferralText('popupTitle', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک پایه)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryBase || ''} onBlur={(e) => setReferralText('popupPrimaryBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک تب دوره)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryTab || ''} onBlur={(e) => setReferralText('popupPrimaryTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک دورهٔ مشخص)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryCourse || ''} onBlur={(e) => setReferralText('popupPrimaryCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ «مجدداً درخواست مشاوره دارم»</label><input style={S.inp} defaultValue={referral.texts?.reconsultLabel || ''} onBlur={(e) => setReferralText('reconsultLabel', e.target.value)} /></div>
+          <div><label style={S.lbl}>سؤال «به چه دلیلی مجدداً درخواست مشاوره دارید؟»</label><input style={S.inp} defaultValue={referral.texts?.reconsultQuestion || ''} onBlur={(e) => setReferralText('reconsultQuestion', e.target.value)} /></div>
+        </div>
       </div>
 
       {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>هنوز مشاوری ثبت نشده است. دکمهٔ «افزودن مشاور» را بزنید.</p>}

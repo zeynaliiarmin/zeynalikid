@@ -96,9 +96,9 @@ export default function HomePage({app}:{app:any}){
    {showBaseTip && (
      <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)',fontSize:13.5,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
        <div style={{marginBottom:10}}>
-         {lang==='en'
+         {(cfg.referral?.texts?.homeBase || (lang==='en'
            ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
-           : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'}
+           : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
        </div>
        <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
@@ -110,9 +110,9 @@ export default function HomePage({app}:{app:any}){
    {referralTab && !isDirectCourse && (
      <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
        <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
-         {lang==='en'
+         {(cfg.referral?.texts?.homeTab || (lang==='en'
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
-           : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`}
+           : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
        <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {coursesCtaLabel}
@@ -128,9 +128,9 @@ export default function HomePage({app}:{app:any}){
      return (
        <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
          <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
-           {lang==='en'
+           {(cfg.referral?.texts?.homeCourse || (lang==='en'
              ? `Tap the button below to see the details and register "${cname}".`
-             : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`}
+             : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>
          <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
            {coursesCtaLabel}

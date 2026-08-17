@@ -672,7 +672,7 @@ const defaultSettings:Any={
  showReceiptImage:true,whatsappNeedsCountryCode:false,
  i18n:{en:{heroTitle:'Wishing you a pleasant time',heroDesc:'This form is designed to review your child’s condition and schedule a private consultation.',noticeText:'This consultation is provided only to parents or legal guardians. Please complete the information carefully.',phoneNote:'Phone consultation only',submitBtnText:'Submit consultation request',successMsg:'Your child’s information was submitted successfully',successSubMsg:'We will contact you within 24 to 48 hours.',timeSlotLabel:'Preferred call time (optional)',directCourseBtn:'View and register courses',newFormBtn:'New form',contactBtn:'Contact us',parentInfo:'Parent / Guardian information',childInfo:'Child information',healthInfo:'Nutrition and health',consultTopic:'Consultation topic',multi:'You can select more than one item',gender:'Gender',boy:'Boy',girl:'Girl',age:'Age',height:'Height',weight:'Weight',digest:'Digestive issue',appetite:'Appetite',disease:'Special disease',specials:'Special conditions',notes:'Notes',required:'Required fields',adminLogin:'Admin Panel',login:'Login',phone:'Phone',password:'Password',back:'Back to consultation form',courses:'Courses',sendIran:'Shipping inside Iran',sendIntl:'Shipping outside Iran',chooseDest:'Please select shipping destination.',next:'Continue',backBtn:'Back',shippingInfo:'Shipping information',paymentInfo:'Payment information',finalConfirm:'Final confirmation',finalSubmit:'Submit final registration',editChild:'I want to edit my child information',contactUs:'Contact us'}}
 };
-function mergeSettings(rawParam:any){const raw=migrateSettings(rawParam);const m={...defaultSettings,...(raw||{})};m.adminPassword=raw?.adminPassword||''; m.dailyTips=raw?.dailyTips||defaultSettings.dailyTips;(m as any).manualUserQuestions=Array.isArray((raw as any)?.manualUserQuestions)?(raw as any).manualUserQuestions:(defaultSettings as any).manualUserQuestions||[];m.consultants=Array.isArray(raw?.consultants)?raw.consultants:(defaultSettings as any).consultants||[];m.referral={...(defaultSettings as any).referral||{},...(raw?.referral||{})};m.formFields={...defaultSettings.formFields,...(raw?.formFields||{})}; if(!raw?.formFields?.notes?.placeholder||raw.formFields.notes.placeholder==='توضیحات تکمیلی در صورت نیاز...') m.formFields.notes={...m.formFields.notes,placeholder:defaultSettings.formFields.notes.placeholder}; if(!raw?.photoUrl||raw.photoUrl===placeholder) m.photoUrl=PROFILE_PHOTO;m.contacts={...defaultSettings.contacts,...(raw?.contacts||{})};m.contactIcons={...defaultSettings.contactIcons,...(raw?.contactIcons||{})};m.translations={fa:{...faDict,...(raw?.translations?.fa||{})},en:{...enDict,...(raw?.translations?.en||{})}};m.contactVisibility={...defaultSettings.contactVisibility,...(raw?.contactVisibility||{})};m.countryCodes=raw?.countryCodes||defaultSettings.countryCodes;m.courseTabs=(Array.isArray(raw?.courseTabs)&&raw.courseTabs.length?raw.courseTabs:defaultSettings.courseTabs).map((t:any)=>{const def=(defaultSettings.courseTabs||[]).find((d:any)=>d.id===t.id);const sc=String(t?.shortCode||def?.shortCode||'').trim().toLowerCase();return sc?{...t,shortCode:sc}:t;});m.shippingMethods={iran:raw?.shippingMethods?.iran||defaultSettings.shippingMethods.iran,intl:raw?.shippingMethods?.intl||defaultSettings.shippingMethods.intl};m.delivery={...defaultSettings.delivery,...(raw?.delivery||{})};m.banks=raw?.banks||defaultSettings.banks;m.cryptoWallets=Array.isArray(raw?.cryptoWallets)?raw.cryptoWallets:(typeof raw?.cryptoWallets==='string'?(()=>{try{const p=JSON.parse(raw.cryptoWallets);return Array.isArray(p)?p:defaultSettings.cryptoWallets}catch{return defaultSettings.cryptoWallets}})():defaultSettings.cryptoWallets);m.cryptoVisibility=raw?.cryptoVisibility||defaultSettings.cryptoVisibility;m.trustMessages={health:raw?.trustMessages?.health||defaultSettings.trustMessages.health,height:raw?.trustMessages?.height||defaultSettings.trustMessages.height,appetite:raw?.trustMessages?.appetite||defaultSettings.trustMessages.appetite,mind:raw?.trustMessages?.mind||defaultSettings.trustMessages.mind};m.trustRotateMs=raw?.trustRotateMs||defaultSettings.trustRotateMs;
+function mergeSettings(rawParam:any){const raw=migrateSettings(rawParam);const m={...defaultSettings,...(raw||{})};m.adminPassword=raw?.adminPassword||''; m.dailyTips=raw?.dailyTips||defaultSettings.dailyTips;(m as any).manualUserQuestions=Array.isArray((raw as any)?.manualUserQuestions)?(raw as any).manualUserQuestions:(defaultSettings as any).manualUserQuestions||[];m.consultants=Array.isArray(raw?.consultants)?raw.consultants:(defaultSettings as any).consultants||[];m.referral={...(defaultSettings as any).referral||{},...(raw?.referral||{}),texts:{...((defaultSettings as any).referral?.texts||{}),...((raw?.referral||{}).texts||{})}};m.formFields={...defaultSettings.formFields,...(raw?.formFields||{})}; if(!raw?.formFields?.notes?.placeholder||raw.formFields.notes.placeholder==='توضیحات تکمیلی در صورت نیاز...') m.formFields.notes={...m.formFields.notes,placeholder:defaultSettings.formFields.notes.placeholder}; if(!raw?.photoUrl||raw.photoUrl===placeholder) m.photoUrl=PROFILE_PHOTO;m.contacts={...defaultSettings.contacts,...(raw?.contacts||{})};m.contactIcons={...defaultSettings.contactIcons,...(raw?.contactIcons||{})};m.translations={fa:{...faDict,...(raw?.translations?.fa||{})},en:{...enDict,...(raw?.translations?.en||{})}};m.contactVisibility={...defaultSettings.contactVisibility,...(raw?.contactVisibility||{})};m.countryCodes=raw?.countryCodes||defaultSettings.countryCodes;m.courseTabs=(Array.isArray(raw?.courseTabs)&&raw.courseTabs.length?raw.courseTabs:defaultSettings.courseTabs).map((t:any)=>{const def=(defaultSettings.courseTabs||[]).find((d:any)=>d.id===t.id);const sc=String(t?.shortCode||def?.shortCode||'').trim().toLowerCase();return sc?{...t,shortCode:sc}:t;});m.shippingMethods={iran:raw?.shippingMethods?.iran||defaultSettings.shippingMethods.iran,intl:raw?.shippingMethods?.intl||defaultSettings.shippingMethods.intl};m.delivery={...defaultSettings.delivery,...(raw?.delivery||{})};m.banks=raw?.banks||defaultSettings.banks;m.cryptoWallets=Array.isArray(raw?.cryptoWallets)?raw.cryptoWallets:(typeof raw?.cryptoWallets==='string'?(()=>{try{const p=JSON.parse(raw.cryptoWallets);return Array.isArray(p)?p:defaultSettings.cryptoWallets}catch{return defaultSettings.cryptoWallets}})():defaultSettings.cryptoWallets);m.cryptoVisibility=raw?.cryptoVisibility||defaultSettings.cryptoVisibility;m.trustMessages={health:raw?.trustMessages?.health||defaultSettings.trustMessages.health,height:raw?.trustMessages?.height||defaultSettings.trustMessages.height,appetite:raw?.trustMessages?.appetite||defaultSettings.trustMessages.appetite,mind:raw?.trustMessages?.mind||defaultSettings.trustMessages.mind};m.trustRotateMs=raw?.trustRotateMs||defaultSettings.trustRotateMs;
  // تصاویر عمومی باید عمیق ادغام شوند تا تنظیم Hero حتی در داده‌های قدیمی/ناقص همیشه در پنل موجود باشد.
  const defaultImages=(defaultSettings as any).images||{};
  const incomingImages=raw?.images||{};
@@ -887,7 +887,7 @@ function PlatformIcon({type,color,size=18}:{type:string,color:string,size?:numbe
 // بازطراحی: فوتر سبک و مینیمال (کپی‌رایت + یک لینک ارتباطی) برای صفحات اصلی
 function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onStartConsult}:{cfg:any,T:any,lang:Lang,setView:(v:string)=>void,referralConsultant?:any,requestConsult?:()=>void,onStartConsult?:()=>void}){
   const year = new Date().getFullYear();
-  const siteName = cfg.siteTitle || 'زینالیکید';
+  const siteName = (cfg.browserTitle && String(cfg.browserTitle).trim()) ? String(cfg.browserTitle).trim().replace(/["“”]+/g,'') : (cfg.siteTitle || 'زینالیکید');
   const c = cfg.contacts || {};
   const [openAcc, setOpenAcc] = useState<string | null>(null);
   const toggleAcc = (key: string) => setOpenAcc(openAcc === key ? null : key);
@@ -935,7 +935,9 @@ function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onStartCon
         <div className="zk-footer-grid">
         <div className="zk-footer-col">
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:10}}>
-            <div style={{width:34,height:34,borderRadius:999,background:`linear-gradient(135deg,${T.acc},#0F766E)`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:15}}>Z</div>
+            <div style={{width:34,height:34,borderRadius:999,background:`linear-gradient(135deg,${T.acc},#0F766E)`,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21C7 16 4 13 4 9.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 13 17 16 12 21z"/><path d="M12 8v13"/></svg>
+            </div>
             <div style={{fontWeight:900,fontSize:19,color:T.ttl}}>{siteName}</div>
           </div>
           <p style={{fontSize:13,color:T.mut,lineHeight:1.75,margin:0}}>{lang==='en'?'Specialized child growth & nutrition consultations using the TC method. Warm, human, science-backed support for every parent.':'مشاوره رشد و تغذیه کودک با روش TC. همراهی گرم، انسانی و علمی برای هر والد.'}</p>
@@ -1327,10 +1329,10 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   const tab = referralTarget?.tabCode ? findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode) : null;
   const isDir = tab && typeof referralTarget?.courseIndex === 'number';
   const mainLabel = isDir && tab
-    ? (lang==='en' ? `View details & enroll in ${tab.titleEn||tab.title}` : `مشاهده جزئیات و ثبت ${tab.title}`)
+    ? (cfg.referral?.texts?.popupPrimaryCourse || (lang==='en' ? `View details & enroll in ${tab.titleEn||tab.title}` : `مشاهده جزئیات و ثبت ${tab.title}`))
     : tab
-    ? (lang==='en' ? `View & compare ${tab.titleEn||tab.title} courses` : `مشاهده و مقایسه دوره‌های ${tab.title}`)
-    : (lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها');
+    ? (cfg.referral?.texts?.popupPrimaryTab || (lang==='en' ? `View & compare ${tab.titleEn||tab.title} courses` : `مشاهده و مقایسه دوره‌های ${tab.title}`))
+    : (cfg.referral?.texts?.popupPrimaryBase || (lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'));
   const primary = () => {
     setReferralConsultOpen(false);
     setReferralConsultShowReason(false);
@@ -1348,19 +1350,19 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
       <div style={{textAlign:'center',padding:'6px 2px'}}>
         <div style={{width:52,height:52,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}><MiniIcon type="course" T={T}/></div>
         <h3 style={{color:T.ttl,fontSize:16,margin:'0 0 8px',fontWeight:800,lineHeight:1.6}}>
-          {lang==='en'
+          {(cfg.referral?.texts?.popupTitle || (lang==='en'
             ? `You have already been advised by ${referralConsultant.nameEn||referralConsultant.name}. No need for a new consultation request.`
-            : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاورهٔ جدید نیست.`}
+            : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاورهٔ جدید نیست.`))}
         </h3>
         <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:16}}>
           <button type="button" onClick={primary} style={{minHeight:52,padding:'12px 16px',borderRadius:14,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:14.5,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>{mainLabel}</button>
           <button type="button" onClick={()=>setReferralConsultShowReason(true)} style={{minHeight:48,padding:'11px 16px',borderRadius:14,background:T.card,border:`1px solid ${T.brd}`,color:T.txt,fontWeight:700,fontSize:13.5,cursor:'pointer',fontFamily:'inherit'}}>
-            {lang==='en' ? 'I need a consultation again' : 'مجدداً درخواست مشاوره دارم'}
+            {(cfg.referral?.texts?.reconsultLabel || (lang==='en' ? 'I need a consultation again' : 'مجدداً درخواست مشاوره دارم'))}
           </button>
         </div>
         {referralConsultShowReason && (
           <div style={{marginTop:14,animation:'fadeSlide .3s ease both',textAlign:'right'}}>
-            <label style={{display:'block',fontSize:13,fontWeight:700,color:T.ttl,marginBottom:8}}>{lang==='en'?'Why do you need a consultation again?':'به چه دلیلی مجدداً درخواست مشاوره دارید؟'}</label>
+            <label style={{display:'block',fontSize:13,fontWeight:700,color:T.ttl,marginBottom:8}}>{(cfg.referral?.texts?.reconsultQuestion || (lang==='en'?'Why do you need a consultation again?':'به چه دلیلی مجدداً درخواست مشاوره دارید؟'))}</label>
             <textarea
               dir="auto"
               rows={3}

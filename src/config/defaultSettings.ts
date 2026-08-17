@@ -56,6 +56,20 @@ export const defaultSettings = {
     home: {
       showCta: true,               // نمایش دکمه‌های CTA هوم (ثبت مشاوره/مشاهده دوره)
     },
+    // ── متون راهنمای قابل‌ویرایش در حالت لینک ارجاع ──
+    texts: {
+      homeBase: '',
+      homeTab: '',
+      homeCourse: '',
+      coursesTab: '',
+      coursesCourse: '',
+      popupTitle: '',
+      popupPrimaryBase: '',
+      popupPrimaryTab: '',
+      popupPrimaryCourse: '',
+      reconsultLabel: '',
+      reconsultQuestion: '',
+    },
   },
 
   dailyTips: [
