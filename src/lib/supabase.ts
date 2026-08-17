@@ -265,7 +265,7 @@ export const fetchSettings = async (): Promise<AppSettings | null> => {
   try {
     const resp = await fetch(`${base}/functions/v1/public-settings?t=${Date.now()}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      headers: { 'Content-Type': 'application/json' },
     });
     if (resp.ok) {
       const body = await resp.json();
