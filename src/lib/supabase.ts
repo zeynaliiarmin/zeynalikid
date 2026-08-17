@@ -263,9 +263,9 @@ export const fetchSettings = async (): Promise<AppSettings | null> => {
   // Public context: use public-settings edge function (sanitized, no sensitive data)
   const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
   try {
-    const resp = await fetch(`${base}/functions/v1/public-settings`, {
+    const resp = await fetch(`${base}/functions/v1/public-settings?t=${Date.now()}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
     });
     if (resp.ok) {
       const body = await resp.json();
