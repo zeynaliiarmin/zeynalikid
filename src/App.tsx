@@ -860,21 +860,29 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 // اصلاح ۱-۴ (مرحله ۴): متن دکمه بستن اکنون از closeLabel قابل تنظیم است (پیش‌فرض فارسی حفظ شد چون Modal در scope ماژول تعریف شده و به publicText/lang دسترسی ندارد)
 function Modal({children,onClose,T,max=520,closeLabel='بستن'}:{children:any,onClose:()=>void,T:any,max?:number,closeLabel?:string}){return <div onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}} style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(30,20,30,.45)',backdropFilter:'blur(3px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,animation:'fade .35s ease both'}}><div style={{width:'100%',maxWidth:max,maxHeight:'88vh',overflow:'auto',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||20,padding:T.cardPadding||20,boxShadow:T.shadowStrong||'0 24px 60px rgba(0,0,0,.22)',animation:'modalIn .35s ease both'}}>{children}<button onClick={onClose} style={{marginTop:12,width:'100%',padding:12,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||12,background:T.card,color:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:700,boxShadow:T.neuOut}}>{closeLabel}</button></div></div>}
 function PlatformIcon({type,color,size=18}:{type:string,color:string,size?:number}){
-  // آیکون‌های برند بر اساس لوگوی واقعی: دایرهٔ گرادیانی + حرف فارسی سفید
-  // روبیکا: دایرهٔ قرمز-نارنجی با حرف «ر» — بله: دایرهٔ سبز با حرف «ب»
-  if(type==='rubika'||type==='bale'){
-    const gid = type==='rubika' ? 'rubikaGrad' : 'baleGrad';
-    const bg = type==='rubika' ? ['#F5484D','#E0383C'] : ['#35B46C','#1F8A4D'];
-    const letter = type==='rubika' ? 'ر' : 'ب';
-    return <svg width={size} height={size} viewBox="0 0 24 24" style={{flexShrink:0}}>
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={bg[0]}/>
-          <stop offset="100%" stopColor={bg[1]}/>
-        </linearGradient>
-      </defs>
-      <circle cx="12" cy="12" r="11" fill={`url(#${gid})`}/>
-      <text x="12" y="17" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="800" fontFamily="Vazirmatn, Tahoma, sans-serif" style={{userSelect:'none'}}>{letter}</text>
+  // آیکون‌های برند روبیکا و بله — وکتور سفارشی
+  if(type==='rubika'){
+    return <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+      <g strokeWidth="4" strokeLinejoin="round">
+        <polygon points="50,50 50,4 10,27" fill="#F1C40F" stroke="#F1C40F"/>
+        <polygon points="50,50 10,27 10,73" fill="#E67E22" stroke="#E67E22"/>
+        <polygon points="50,50 10,73 50,96" fill="#3498DB" stroke="#3498DB"/>
+        <polygon points="50,50 50,96 90,73" fill="#9B59B6" stroke="#9B59B6"/>
+        <polygon points="50,50 90,73 90,27" fill="#E74C3C" stroke="#E74C3C"/>
+        <polygon points="50,50 90,27 50,4" fill="#1ABC9C" stroke="#1ABC9C"/>
+      </g>
+      <g strokeWidth="2" strokeLinejoin="round">
+        <polygon points="50,50 29,38 50,26 71,38" fill="#ffffff" stroke="#ffffff"/>
+        <polygon points="50,50 29,38 29,62 50,74" fill="#ecf0f1" stroke="#ecf0f1"/>
+        <polygon points="50,50 71,38 71,62 50,74" fill="#bdc3c7" stroke="#bdc3c7"/>
+      </g>
+    </svg>;
+  }
+  if(type==='bale'){
+    return <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+      <circle cx="50" cy="50" r="42" fill="#1EBE96" />
+      <path d="M 18,35 C 18,20 15,10 5,5 C 20,5 30,12 35,18 Z" fill="#1EBE96" />
+      <path d="M 32,52 L 45,65 L 68,38" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>;
   }
   const paths:Any={
