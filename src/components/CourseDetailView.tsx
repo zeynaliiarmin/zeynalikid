@@ -279,7 +279,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             </div>
 
             {/* About the Instructor — Stage 11 dynamic setting */}
-            {(cfg?.courseInstructor?.show !== false) && (
+            {(!hasReferral && cfg?.courseInstructor?.show !== false) && (
               <div style={{ 
                 marginTop: 20, 
                 padding: '20px 22px', 

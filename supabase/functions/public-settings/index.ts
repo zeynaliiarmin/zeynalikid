@@ -206,7 +206,8 @@ function sanitizeConsultants(value: any): any[] {
         if (field in (c || {})) out[field] = c[field];
       });
       // اطلاعات بانکی/کیف پول مشاور برای نمایش در روند پرداخت (فقط فیلدهای لازم)
-      if (c?.bank) out.bank = { name: c.bank.name, card: c.bank.card, iban: c.bank.iban };
+      if (c?.bank) out.bank = { name: c.bank.name, card: c.bank.card, iban: c.bank.iban, holder: c.bank.holder || c.bank.accountName };
+      if (c?.banks && Array.isArray(c.banks)) out.banks = c.banks.map((b: any) => ({ name: b?.name, card: b?.card, iban: b?.iban, holder: b?.holder || b?.accountName, active: b?.active !== false })).filter((b: any) => b && (b.card || b.iban));
       if (c?.wallet) out.wallet = { id: c.wallet.id, name: c.wallet.name, symbol: c.wallet.symbol, address: c.wallet.address, network: c.wallet.network, color: c.wallet.color };
       return out;
     });
