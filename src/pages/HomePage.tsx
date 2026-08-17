@@ -15,7 +15,7 @@ import TrustBoxNew from '../components/TrustBoxNew';
 import ProductCard from '../components/ProductCard';
 
 export default function HomePage({app}:{app:any}){
- const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view}=app;
+ const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view,consultPulse,startConsult}=app;
  const isRtl=lang==='fa';
  // انیمیشن دکمه «مشاهده دوره‌ها» تا وقتی کاربر وارد روند ثبت‌نام دوره نشده فعال می‌ماند.
  const inCourseFlow = ['child-info','course-shipping','course-payment','course-confirm','course-done'].includes(view);
@@ -43,7 +43,7 @@ export default function HomePage({app}:{app:any}){
  const showBaseTip = !!referralConsultant && !referralTab;
  const servicesMode=(cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list') as 'list'|'carousel';
  const shortcutsBase:Record<string,{icon:React.ReactNode;title:string;desc:string;to?:string;fn?:()=>void}>={
-  consult:{icon:<ConsultIcon size={24} color={T.acc}/>,title:lang==='en'?'Request consultation':'ثبت درخواست مشاوره',desc:lang==='en'?'A clear first step for your child':'قدم اول برای شناخت بهتر شرایط فرزند',to:'/form'},
+  consult:{icon:<ConsultIcon size={24} color={T.acc}/>,title:lang==='en'?'Request consultation':'ثبت درخواست مشاوره',desc:lang==='en'?'A clear first step for your child':'قدم اول برای شناخت بهتر شرایط فرزند',fn:()=>startConsult?.()},
   courses:{icon:<CoursesIcon size={24} color={T.acc}/>,title:referralTab?(isDirectCourse?coursesCtaLabel:`مشاهده دوره‌های ${referralTab.title}`):publicText('menuCourses','معرفی دوره‌ها'),desc:lang==='en'?'View available courses':'مشاهده و ثبت‌نام دوره‌ها',to:referralTab?undefined:'/courses',fn:referralTab?onCoursesCta:undefined},
   experience:{icon:<VideoIcon size={24} color={T.acc}/>,title:lang==='en'?"Parents' experience":'تجربه والدین',desc:lang==='en'?'Stories and answers for parents':'تجربه‌ها و پاسخ‌های والدین',to:'/experience'},
   licenses:{icon:<LicensesIcon size={24} color={T.acc}/>,title:publicText('menuLicenses','مجوزها'),desc:lang==='en'?'Documents and information':'اطلاعات و مستندات مجموعه',to:'/licenses'},
@@ -52,7 +52,7 @@ export default function HomePage({app}:{app:any}){
  const homeLayout=(cfg.homeLayout&&cfg.homeLayout.length?cfg.homeLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'contact',show:true}]);
  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، میانبر آن در صفحهٔ اصلی هم نمایش داده نشود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
- const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)&&!(referralConsultant&&x.id==='consult')).map((x:any)=>shortcutsBase[x.id]);
+ const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)).map((x:any)=>shortcutsBase[x.id]);
  const heroImage=cfg.images?.hero||{}; const trustBoxImage=cfg.images?.trustBox||{};
  const allCourses:any[]=[];(cfg.courseTabs||[]).forEach((tab:any)=>(tab.courses||[]).forEach((c:any)=>{if(c.active!==false)allCourses.push({...c,tabId:tab.id})}));
  const fc=cfg.featuredCourses||{}; const featuredCourseIds=Array.isArray(fc.courseIds)?fc.courseIds:[];
@@ -77,7 +77,7 @@ export default function HomePage({app}:{app:any}){
 
    {/* کارت مشاور ارجاع‌دهنده (وقتی مخاطب با لینک اختصاصی مشاور وارد شده) */}
    {referralConsultant && (
-     <section className="zk-home-referral" style={{display:'flex',flexDirection:isRtl?'row-reverse':'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both'}}>
+     <section className="zk-home-referral" style={{display:'flex',flexDirection:'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both'}}>
        {referralConsultant.showPhoto!==false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
          <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isRtl?referralConsultant.name:referralConsultant.nameEn||referralConsultant.name} style={{width:64,height:64,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid #FB923C',flexShrink:0}} />
        ) : null}
@@ -90,7 +90,7 @@ export default function HomePage({app}:{app:any}){
      </section>
    )}
 
-   {!referralConsultant && heroImage.enabled!==false&&<HeroSection title={lang==='en'?(cfg.heroTitleEn||cfg.heroTitle||'A clearer path for your child’s growth'):(cfg.heroTitle||'مسیر روشن‌تری برای رشد فرزند شما')} subtitle={lang==='en'?(cfg.heroSubtitleEn||cfg.heroSubtitle||'Understand growth, nutrition and daily needs with calm, expert guidance.'):(cfg.heroSubtitle||'با شناخت بهتر رشد، تغذیه و نیازهای روزانه، آگاهانه‌تر کنار فرزندتان باشید.')} imageUrl={heroImage.url||'/images/asset13c-hero-mother-child.webp'} imageAlt={heroImage.alt||'کودک شاد و سالم'} imageAspect={heroImage.aspectRatio} imagePosition={heroImage.objectPosition} ctaText={lang==='en'?'Request consultation':'ثبت درخواست مشاوره'} ctaLink="/form" secondaryCtaText={coursesCtaLabel} secondaryCtaLink={coursesCtaTo||undefined} onSecondaryClick={coursesCtaTo?undefined:onCoursesCta} T={T} lang={lang} animateCoursesCta={animateCta}/>}
+   {!referralConsultant && heroImage.enabled!==false&&<HeroSection title={lang==='en'?(cfg.heroTitleEn||cfg.heroTitle||'A clearer path for your child’s growth'):(cfg.heroTitle||'مسیر روشن‌تری برای رشد فرزند شما')} subtitle={lang==='en'?(cfg.heroSubtitleEn||cfg.heroSubtitle||'Understand growth, nutrition and daily needs with calm, expert guidance.'):(cfg.heroSubtitle||'با شناخت بهتر رشد، تغذیه و نیازهای روزانه، آگاهانه‌تر کنار فرزندتان باشید.')} imageUrl={heroImage.url||'/images/asset13c-hero-mother-child.webp'} imageAlt={heroImage.alt||'کودک شاد و سالم'} imageAspect={heroImage.aspectRatio} imagePosition={heroImage.objectPosition} ctaText={lang==='en'?'Request consultation':'ثبت درخواست مشاوره'} ctaLink="/form" onCtaClick={()=>startConsult?.()} secondaryCtaText={coursesCtaLabel} secondaryCtaLink={coursesCtaTo||undefined} onSecondaryClick={coursesCtaTo?undefined:onCoursesCta} T={T} lang={lang} animateCoursesCta={animateCta} animateConsultCta={!!consultPulse}/>}
 
    {/* وقتی لینک ارجاع پایه است، یک باکس شناور زرد برای راهنمایی والد نمایش می‌دهیم */}
    {showBaseTip && (
@@ -141,7 +141,7 @@ export default function HomePage({app}:{app:any}){
 
    {trustBoxImage.enabled!==false&&(cfg.trustBoxes?.sentences?.health?.length>0 || cfg.trustMessages?.health?.length>0)&&<section className="zk-home-section" style={{marginTop:0}}><TrustBoxWithImage text={lang==='en' ? (cfg.trustBoxes?.sentences?.health?.[0]?.titleEn || cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '') : (cfg.trustBoxes?.sentences?.health?.[0]?.title || cfg.trustMessages.health[0]?.title || '')} imageUrl={trustBoxImage.url || '/images/asset13c-trust-parent-care.webp'} imageAlt={trustBoxImage.alt||'مادر و کودک'} imagePosition={isRtl?'right':'left'} imageAspect={trustBoxImage.aspectRatio} imageObjectPosition={trustBoxImage.objectPosition} T={T}/></section>}
 
-   {shortcuts.length>0&&<section className="zk-home-section" aria-label={lang==='en'?'Quick access':'دسترسی سریع'}><div className="zk-home-section-heading"><h2 className="zk-home-section-title" style={{margin:0}}>{lang==='en'?'Quick access':'دسترسی سریع'}</h2></div><div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:10}}>{shortcuts.map((item:any,i:number)=>{const Comp:any=item.to?Link:'button';const props=item.to?{to:item.to}:{onClick:item.fn,type:'button'};const wide=shortcuts.length%2===1&&i===shortcuts.length-1;return <Comp key={item.title} {...props} style={{gridColumn:wide?'1/-1':undefined,display:'flex',alignItems:'center',gap:10,minHeight:78,padding:'11px 12px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:T.neuOut,color:T.txt,textDecoration:'none',fontFamily:'inherit',textAlign:isRtl?'right':'left',cursor:'pointer'}}><span style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:12,background:T.soft,flexShrink:0}}>{item.icon}</span><span style={{minWidth:0}}><strong style={{display:'block',fontSize:12.5,lineHeight:1.6}}>{item.title}</strong><small style={{display:'block',fontSize:10.5,color:T.mut,lineHeight:1.6}}>{item.desc}</small></span></Comp>})}</div></section>}
+   {shortcuts.length>0&&<section className="zk-home-section" aria-label={lang==='en'?'Quick access':'دسترسی سریع'}><div className="zk-home-section-heading"><h2 className="zk-home-section-title" style={{margin:0}}>{lang==='en'?'Quick access':'دسترسی سریع'}</h2></div><div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:10}}>{shortcuts.map((item:any,i:number)=>{const Comp:any=item.to?Link:'button';const props=item.to?{to:item.to}:{onClick:item.fn,type:'button'};const wide=shortcuts.length%2===1&&i===shortcuts.length-1;const pulseItem=!!consultPulse&&item.title===(lang==='en'?'Request consultation':'ثبت درخواست مشاوره');return <Comp key={item.title} {...props} style={{gridColumn:wide?'1/-1':undefined,display:'flex',alignItems:'center',gap:10,minHeight:78,padding:'11px 12px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:T.neuOut,color:T.txt,textDecoration:'none',fontFamily:'inherit',textAlign:isRtl?'right':'left',cursor:'pointer',animation:pulseItem?'zk-hero-pulse 1.6s ease-in-out infinite':undefined}}><span style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:12,background:T.soft,flexShrink:0}}>{item.icon}</span><span style={{minWidth:0}}><strong style={{display:'block',fontSize:12.5,lineHeight:1.6}}>{item.title}</strong><small style={{display:'block',fontSize:10.5,color:T.mut,lineHeight:1.6}}>{item.desc}</small></span></Comp>})}</div></section>}
 
    {cfg.trustBoxes?.enabled!==false&&cfg.trustBoxes?.home?.enabled!==false&&<section className="zk-home-section"><TrustBoxNew sentences={cfg.trustBoxes?.sentences?.health||[]} interval={cfg.trustBoxes?.home?.interval||cfg.trustBoxes?.defaultInterval||8} T={T} design="classic" lang={lang}/></section>}
 
@@ -226,7 +226,7 @@ export default function HomePage({app}:{app:any}){
    {cfg.pageContentOrder?.home?.order==='contactFirst'
     ? <>{showContactOn('home')&&<section className="zk-home-section"><ContactPanel cfg={cfg} T={T} lang={lang}/></section>}{cfg.pageContentOrder?.home?.showIntro!==false&&<FAQSection app={app}/>}</>
     : <>{cfg.pageContentOrder?.home?.showIntro!==false&&<FAQSection app={app}/>} {showContactOn('home')&&<section className="zk-home-section"><ContactPanel cfg={cfg} T={T} lang={lang}/></section>}</>}
-   <Footer cfg={cfg} T={T} lang={lang} setView={setView}/>
+   <Footer cfg={cfg} T={T} lang={lang} setView={setView} referralConsultant={referralConsultant} requestConsult={()=>app.requestConsult?.()} onStartConsult={()=>app.startConsult?.()} />
    <InstallPrompt lang={lang}/>
   </div>
  </main>;

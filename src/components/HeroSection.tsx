@@ -17,9 +17,10 @@ interface HeroSectionProps {
   T: any;
   lang: 'fa' | 'en';
   animateCoursesCta?: boolean;
+  animateConsultCta?: boolean;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,onCtaClick,secondaryCtaText,secondaryCtaLink,onSecondaryClick,T,lang,animateCoursesCta}) => {
+const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageAlt,imageAspect,imagePosition,ctaText,ctaLink,onCtaClick,secondaryCtaText,secondaryCtaLink,onSecondaryClick,T,lang,animateCoursesCta,animateConsultCta}) => {
   const navigate = useNavigate();
   const go=(link?:string)=>{if(onCtaClick){onCtaClick();return}if(!link)return;if(link.startsWith('/'))navigate(link);else window.location.href=link};
   const goSecondary=()=>{if(onSecondaryClick){onSecondaryClick();return}if(!secondaryCtaLink)return;if(secondaryCtaLink.startsWith('/'))navigate(secondaryCtaLink);else window.location.href=secondaryCtaLink};
@@ -89,7 +90,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
               type="button" 
               onClick={()=>go(ctaLink)} 
               className="zk-btn zk-btn-primary"
-              style={animateCoursesCta ? {minHeight:40, padding:'9px 16px', fontSize:12.5} : {minHeight:48, padding:'13px 26px', fontSize:15}}
+              style={animateConsultCta ? {
+                minHeight:52, padding:'13px 28px', fontSize:15, fontWeight:800,
+                animation:'zk-hero-pulse 1.6s ease-in-out infinite',
+              } : (animateCoursesCta ? {minHeight:40, padding:'9px 16px', fontSize:12.5} : {minHeight:48, padding:'13px 26px', fontSize:15})}
             >
               {ctaText}
             </button>

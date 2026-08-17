@@ -39,6 +39,8 @@ interface CourseCardProps {
   onCourseClick?: (course: CourseType) => void;
   T?: any;
   lang?: 'fa' | 'en';
+  ctaLabel?: string;
+  ctaPulse?: boolean;
 }
 
 function CountdownTimer({
@@ -113,7 +115,9 @@ export default function CourseCard({
   onTagOverride,
   onCourseClick,
   T,
-  lang = 'fa'
+  lang = 'fa',
+  ctaLabel,
+  ctaPulse
 }: CourseCardProps) {
   const navigate = useNavigate();
   const isHero = size === 'hero';
@@ -385,15 +389,16 @@ export default function CourseCard({
             minHeight: 44,
             padding: '10px 16px',
             borderRadius: '999px',
-            fontSize: '13.5px',
-            fontWeight: 700,
+            fontSize: ctaPulse ? '14px' : '13.5px',
+            fontWeight: ctaPulse ? 800 : 700,
             textAlign: 'center',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all .2s ease',
+            animation: ctaPulse ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined,
           }}>
-            {lang === 'en' ? 'View course' : 'مشاهده دوره'}
+            {ctaLabel || (lang === 'en' ? 'View course' : 'مشاهده دوره')}
           </div>
         )}
       </div>

@@ -46,7 +46,7 @@ function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
 
 // Simplified CoursesPage with Stage 2 redesign + Stage 11 UX improvements
 export default function CoursesPage({ app }: { app: any }) {
-  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode, referralConsultant } = app;
+  const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode, referralConsultant, requestConsult, startConsult } = app;
   const location = useLocation();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
@@ -222,7 +222,7 @@ export default function CoursesPage({ app }: { app: any }) {
           />
         </div>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
-          <Footer cfg={cfg} T={T} lang={lang} />
+          <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={startConsult} />
         </div>
       </div>
     );
@@ -364,12 +364,15 @@ export default function CoursesPage({ app }: { app: any }) {
           {filteredCourses.length > 0 ? (
             filteredCourses.map((cr: any) => {
               const isTarget = !!referralTargetCourse && referralTargetCourse.id === cr.id;
+              const ctaL = isTarget
+                ? (lang === 'en' ? `View details & enroll in ${cr.titleEn || cr.title}` : `مشاهده جزئیات و ثبت ${cr.title}`)
+                : undefined;
               return (
                 <div key={cr.id} id={isTarget ? `zk-ref-course-${cr.id}` : undefined} style={isTarget ? { scrollMarginTop: 20 } : undefined}>
                   {isTarget && (
                     <div style={{ marginBottom: 12, padding: '12px 14px', background: '#FEF9C3', border: '1.5px solid #FACC15', borderRadius: 14, fontSize: 12.5, lineHeight: 1.9, color: '#713F12', fontWeight: 700 }}>
                       {lang === 'en'
-                        ? 'Tap the button below to view details and enroll in this course.'
+                        ? 'Tap the highlighted button to view details and enroll in this course.'
                         : `با زدن دکمهٔ «مشاهده جزئیات و ثبت ${cr.title}» می‌توانید جزئیات و ثبت‌نام این دوره را ببینید.`}
                     </div>
                   )}
@@ -382,16 +385,9 @@ export default function CoursesPage({ app }: { app: any }) {
                     onCourseClick={openDetail}
                     T={T}
                     lang={lang}
+                    ctaLabel={ctaL}
+                    ctaPulse={isTarget}
                   />
-                  {isTarget && (
-                    <button
-                      type="button"
-                      onClick={() => openDetail(cr)}
-                      style={{ width: '100%', minHeight: 54, marginTop: 10, padding: '12px 18px', borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', border: 0, fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', animation: 'zk-hero-pulse 1.6s ease-in-out infinite' }}
-                    >
-                      {lang === 'en' ? `View details & enroll in ${cr.titleEn || cr.title}` : `مشاهده جزئیات و ثبت ${cr.title}`}
-                    </button>
-                  )}
                 </div>
               );
             })
@@ -448,7 +444,7 @@ export default function CoursesPage({ app }: { app: any }) {
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
         {showContactOn('courses') && <ContactPanel cfg={cfg} T={T} lang={lang} />}
-        <Footer cfg={cfg} T={T} lang={lang} />
+        <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={startConsult} />
       </div>
     </div>
   );

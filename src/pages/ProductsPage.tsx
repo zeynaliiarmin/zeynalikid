@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard';
 import ProductDetailView from '../components/ProductDetailView';
 
 export default function ProductsPage({ app }: { app: any }) {
-  const { cfg, T, lang, APP_A_URL, Footer, showContactOn, ContactPanel } = app;
+  const { cfg, T, lang, APP_A_URL, Footer, showContactOn, ContactPanel, referralConsultant, requestConsult, startConsult } = app;
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [filter, setFilter] = useState<'all' | 'personalized' | 'supplement' | 'education' | 'bundle'>('all');
@@ -205,7 +205,7 @@ export default function ProductsPage({ app }: { app: any }) {
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
         {showContactOn('products') && <ContactPanel cfg={cfg} T={T} lang={lang} />}
-        <Footer cfg={cfg} T={T} lang={lang} />
+        <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={startConsult} />
       </div>
     </div>
   );

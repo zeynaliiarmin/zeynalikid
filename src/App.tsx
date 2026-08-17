@@ -885,7 +885,7 @@ function PlatformIcon({type,color,size=18}:{type:string,color:string,size?:numbe
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{flexShrink:0}}><path d={paths[type]||paths.phone}/></svg>}
 // بازطراحی: فوتر سبک و مینیمال (کپی‌رایت + یک لینک ارتباطی) برای صفحات اصلی
-function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)=>void}){
+function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onStartConsult}:{cfg:any,T:any,lang:Lang,setView:(v:string)=>void,referralConsultant?:any,requestConsult?:()=>void,onStartConsult?:()=>void}){
   const year = new Date().getFullYear();
   const siteName = cfg.siteTitle || 'زینالیکید';
   const c = cfg.contacts || {};
@@ -909,7 +909,7 @@ function Footer({cfg,T,lang,setView}:{cfg:any,T:any,lang:Lang,setView:(v:string)
     { key: 'whatsapp', label: 'WhatsApp', url: c.whatsapp ? `https://wa.me/${digits(c.whatsapp)}` : null, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5zM8.5 7.8c.2 3.7 3.1 6.4 6.7 6.8l1-1.7-2.2-1-1 1c-1.3-.5-2.2-1.4-2.8-2.7l1-1-1-2.2-1.7.8z"/></svg> },
   ].filter(s => s.url);
 
-  const goConsult = () => { try { window.scrollTo({top:0,behavior:'smooth'}); } catch{}; setView('home'); };
+  const goConsult = () => { if (onStartConsult) onStartConsult(); };
 
   return (
     <footer style={{marginTop:32,background:`linear-gradient(180deg, ${T.soft} 0%, ${T.bg} 100%)`,borderTop:`1px solid ${T.brd}`,color:T.txt,fontFamily:'var(--zk-font)',position:'relative',zIndex:1,paddingBottom:'calc(12px + env(safe-area-inset-bottom, 0px))'}}>
@@ -1147,6 +1147,8 @@ function App(){
  const [referralConsultOpen,setReferralConsultOpen]=useState(false);
  const [referralConsultReason,setReferralConsultReason]=useState('');
  const [referralConsultShowReason,setReferralConsultShowReason]=useState(false);
+ // وقتی در حالت عادی روی «شروع مشاوره رایگان» (پایین صفحه) بزنند، اسکرول بالا + تپش دکمه مشاوره
+ const [consultPulse,setConsultPulse]=useState(0);
  const requestConsult=useCallback((reasonPreset?:string)=>{
    if (referralConsultant) {
      setReferralConsultReason(reasonPreset || '');
@@ -1156,6 +1158,18 @@ function App(){
      try { navigate('/form'); } catch { setView('form'); }
    }
  }, [referralConsultant, navigate, setView]);
+ // دکمه «شروع مشاوره رایگان» پایین صفحات: در حالت ارجاع پاپ‌آپ باز می‌شود، در حالت عادی اسکرول بالا + تپش دکمه مشاوره
+ const startConsult=useCallback(()=>{
+   if (referralConsultant) {
+     setReferralConsultReason('');
+     setReferralConsultShowReason(false);
+     setReferralConsultOpen(true);
+     return;
+   }
+   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+   setView('home');
+   setConsultPulse(Date.now());
+ }, [referralConsultant, setView]);
  const applyReferral = useCallback((code: string, target: ParsedReferral | null, consultants: any[]) => {
    const c = findConsultantByCode(consultants, code);
    if (c) {
@@ -1252,7 +1266,7 @@ function App(){
 const sameNumberAll=existingList.filter((x:any)=>digits(x.fullPhone||'')===digits(fp)); const hasConsultPrev=sameNumberAll.some((x:any)=>x.type==='consultation'); const consultCountPrev=sameNumberAll.filter((x:any)=>x.type==='consultation').length; const courseCountPrev=sameNumberAll.filter((x:any)=>x.type==='course').length; const autoPriority=(hasConsultPrev||consultCountPrev>=1||courseCountPrev>=1)?'high':'normal';
 const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data,category:'ثبتی',consultationStatus:'ثبتی',orderStatus:'جدید',priority:autoPriority,unread:true,isNew:true,followReminder:true,followUps:[null,null,null,null,null],adminNotes:'',usageInstructions:'',timeSlot:'',course:course.selected,shipping:{dest:course.dest,method:course.shippingMethod,...course.form,estimatedDelivery:deliveryText(),optionalSendDate:course.optionalSendDate},payment:{...pay,receipt_image:pay.receipt||'',receipt_text:pay.receiptText||'',bank:(cfg.banks||[]).find((b:any)=>b.id===pay.bankId)},childInfo:course.childInfo||null,tonguePhotos:course.tonguePhotos||[],editHistory:course.editedHistory||[],advisor:(()=>{const refC=referralConsultant||(course.advisorId?(cfg.consultants||[]).find((cn:any)=>String(cn.id)===String(course.advisorId)):null);return refC?{id:refC.id,name:refC.name,nameEn:refC.nameEn,referralCode:refC.referralCode}:null;})()}; if(isSupabaseConfigured){try{await createSubmission(entry as any)}catch(e){console.warn('Could not save submission to Supabase, falling back to localStorage',e);const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])}}else{const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])} setCourseResult(entry); clearPublicFormDrafts(); setFd(emptyFd()); setCourse(emptyCourse()); setEditChild(false); setShipModal(null); setView('course-confirm')}
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
- const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,findTabByCode:((tabs:any[],code:string)=>findTabByCode(tabs,code))};
+ const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:any[],code:string)=>findTabByCode(tabs,code))};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
  // اصلاح چانک-۱: Suspense برای Lazy Loading
  
@@ -1309,7 +1323,7 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
     }
   }
   setView('courses');
-}}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}{referralConsultOpen&&referralConsultant&&(()=>{
+}} onConsultClick={()=>{ requestConsult(); }}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}{referralConsultOpen&&referralConsultant&&(()=>{
   const tab = referralTarget?.tabCode ? findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode) : null;
   const isDir = tab && typeof referralTarget?.courseIndex === 'number';
   const mainLabel = isDir && tab
