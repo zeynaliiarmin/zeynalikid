@@ -52,9 +52,9 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
             style={{ position: 'relative', width: '100%', minHeight: 210, aspectRatio: '16 / 9', border: 0, padding: 0, cursor: 'pointer', background: '#000', borderRadius: 12, overflow: 'hidden', display: 'block' }}
           >
             {item.cover ? (
-              <img src={item.cover} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={item.cover} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (item as any).thumbnail ? (
-              <img src={(item as any).thumbnail} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={(item as any).thumbnail} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg,#0F766E22,#0EA5E911)' }} />
             )}

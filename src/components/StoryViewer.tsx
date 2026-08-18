@@ -17,7 +17,7 @@ function resolveImage(slide: StorySlide, vpnOn: boolean): string {
 }
 
 function SlideMedia({ src, onReady }: { src: string; onReady?: () => void }) {
-  return <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} draggable={false} onLoad={() => onReady?.()} />;
+  return <img src={src} alt="" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} draggable={false} onLoad={() => onReady?.()} />;
 }
 
 // ─── StoryViewer: اسلایدشو تمام‌صفحه ───

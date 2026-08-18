@@ -16,10 +16,12 @@ export default function EduCard({ item, lang, onOpen }: { item: EduItem; lang: s
   const badgeCls = item.type === 'text' ? 't-text' : item.type === 'video' ? 't-video' : item.type === 'image' ? 't-image' : 't-audio';
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
   const cta = item.type === 'text' ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : item.type === 'image' ? (en ? 'View' : 'مشاهده') : (en ? 'Listen' : 'شنیدن');
+  // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
+  const isImage = item.type === 'image';
   return (
     <article className="zke-card">
-      <button type="button" className="zke-cover" onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
-        {item.cover ? <img src={item.cover} alt="" loading="lazy" /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
+      <button type="button" className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
+        {item.cover ? <img src={item.cover} alt="" loading="lazy" referrerPolicy="no-referrer" style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
         <span className={`zke-badge ${badgeCls}`}><Icon size={12} /> {typeLabel(item.type, lang)}</span>
         {item.type === 'video' && <span className="zke-play-ov"><PlayGlyph /></span>}
         {item.type === 'audio' && <Wave />}

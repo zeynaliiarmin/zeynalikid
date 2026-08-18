@@ -252,6 +252,9 @@ export default function ConsultantsEditor(props: any) {
                     <div><label style={S.lbl}>نام کیف پول رمزارز</label><input style={S.inp} defaultValue={w.name || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), name: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
                     <div><label style={S.lbl}>نماد (مثلاً USDT)</label><input dir="ltr" style={S.inp} defaultValue={w.symbol || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), symbol: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
                   </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                    <div><label style={S.lbl}>شبکه (Network)</label><input dir="ltr" style={S.inp} defaultValue={w.network || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), network: e.target.value }; chg(activeIdx, 'wallets', arr); }} placeholder="TRC20 / ERC20 / ..." /></div>
+                  </div>
                   <div style={{ marginTop: 8 }}><label style={S.lbl}>آدرس کیف پول</label><input dir="ltr" style={S.inp} defaultValue={w.address || ''} onBlur={(e) => { const arr = (active.wallets || []).length ? [...active.wallets] : [{}]; arr[wi] = { ...(arr[wi] || {}), address: e.target.value }; chg(activeIdx, 'wallets', arr); }} /></div>
                 </div>
               ))}

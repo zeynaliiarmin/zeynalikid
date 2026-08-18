@@ -1,5 +1,5 @@
 // کارت نمایش یک آیتم رسانه‌ای (ویدیو / ویس / عکس / متن) — استفاده در تجربه والدین و آموزش‌ها
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, PhoneIcon } from './Icons';
 import CollapsibleCardText from './CollapsibleCardText';
 import { Highlights } from './MediaHighlights';
@@ -100,10 +100,15 @@ export const isHtmlEmbedCode=(code:any)=>/^<\s*[a-zA-Z!]/.test(normalizeEmbedCod
 // همچنان پخش می‌شود ولی style/script/handlerهای همراه آن وارد DOM نمی‌شوند.
 export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'video'|'audio'|'image',minHeight?:number}){
   const normalized=normalizeEmbedCode(code);
+  // اگر لینک تصویر (مثل ImgURL) از کار بیفتد/منقضی شود، به‌جای باکس سیاه، یک placeholder ملایم نشان می‌دهیم.
+  const [imgFailed,setImgFailed]=useState(false);
+  useEffect(()=>{setImgFailed(false)},[code]);
   if(type==='image'){
     const safeSrc=extractDirectMediaUrl(normalized,'image');
+    if(!safeSrc)return null;
+    if(imgFailed)return <div data-manual-embed="image-fallback" style={{width:'100%',aspectRatio:'16 / 9',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,background:'#0b0b0b',color:'#9ca3af',fontSize:12}}><PhotoIcon size={26} color="#6b7280"/><span>تصویر در دسترس نیست</span></div>;
     // نمایش کامل عکس بدون برش — صرف‌نظر از ابعاد اصلی؛ هر عکسی با هر ابعادی کامل دیده می‌شود.
-    return safeSrc?<img data-manual-embed="image" src={safeSrc} alt="" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000'}} draggable={false}/>:null;
+    return <img data-manual-embed="image" src={safeSrc} alt="" referrerPolicy="no-referrer" onError={()=>setImgFailed(true)} style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000'}} draggable={false}/>;
   }
   if(type==='audio'){
     const safeSrc=extractDirectMediaUrl(normalized,'audio');
@@ -179,7 +184,7 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:an
     ?<div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={url} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" title={item.title||'video'} style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>
     :<button onClick={()=>setPlaying(true)} style={{position:'relative',width:'100%',paddingTop:'56.25%',background:T.soft,border:0,cursor:'pointer'}}>{item.thumbnail?<img src={item.thumbnail} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} draggable={false}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc} /></span>}<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{width:52,height:52,borderRadius:'50%',background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,paddingInlineStart:4}}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></span></span></button>))}
   {type==='audio'&&<div style={{aspectRatio:'16 / 9',padding:'14px 12px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
-  {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" style={{width:'100%',aspectRatio:'16 / 9',objectFit:'cover',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
+  {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
   {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.acc}}><TextIcon size={44} color={T.acc}/></div>}
   <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} />
  </div>
