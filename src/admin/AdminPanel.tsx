@@ -1404,10 +1404,11 @@ function ThemeManagerEditor(){
   </>
  }
 
- // ─── انتخاب کادر/موقعیت کاور هایلایت (شبیه کراپ کاور اینستاگرام) ───
- // کنترل با ژست لمسی: یک انگشت برای جابه‌جایی عکس، دو انگشت (پینچ) برای بزرگ‌نمایی، اسکرول ماوس برای زوم.
- // خروجی به‌صورت object-position (موقعیت) + scale (زوم) ذخیره می‌شود تا سایت دقیقاً همان کادر را نشان دهد.
- const COVER_FRAME = 200;
+ // ─── تنظیم کادر کاور هایلایت (شبیه کراپ کاور اینستاگرام) — در یک مودال تمام‌صفحه ───
+ // حرکت با یک انگشت (جابه‌جایی) و دو انگشت (پینچ زوم)؛ اسکرول ماوس هم زوم می‌کند.
+ // حین حرکت فقط state داخلی آپدیت می‌شود (بدون re-render والد) تا حرکت روان باشد؛
+ // مقدار نهایی فقط با دکمهٔ «تأیید کادر» به پنل منتقل می‌شود.
+ const COVER_FRAME = 280;
 
  function clampCoverPan(W: number, H: number, coverScale: number, z: number, x: number, y: number) {
   const S = coverScale * z;
@@ -1416,9 +1417,9 @@ function ThemeManagerEditor(){
   return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
  }
 
- function CoverPositionPicker({ T, src, position, zoom, onChange }: {
+ function CoverCropModal({ T, src, position, zoom, onClose, onApply }: {
   T: any; src: string; position: string; zoom: number;
-  onChange: (patch: { coverPosition?: string; coverZoom?: number }) => void;
+  onClose: () => void; onApply: (coverPosition: string, coverZoom: number) => void;
  }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -1430,16 +1431,15 @@ function ThemeManagerEditor(){
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const zRef = useRef(z);
   const panRef = useRef(pan);
-  const posZoomRef = useRef({ position, zoom });
+  const initRef = useRef({ position, zoom });
   useEffect(() => { zRef.current = z; }, [z]);
   useEffect(() => { panRef.current = pan; }, [pan]);
-  useEffect(() => { posZoomRef.current = { position, zoom }; }, [position, zoom]);
+  useEffect(() => { initRef.current = { position, zoom }; }, [position, zoom]);
 
   const W = img?.naturalWidth || 1;
   const H = img?.naturalHeight || 1;
   const coverScale = Math.max(COVER_FRAME / W, COVER_FRAME / H);
 
-  // بارگذاری تصویر برای خواندن ابعاد واقعی
   useEffect(() => {
    let alive = true;
    setLoadError(false);
@@ -1453,10 +1453,10 @@ function ThemeManagerEditor(){
    return () => { alive = false; };
   }, [src]);
 
-  // مقداردهی اولیه از کادر ذخیره‌شده (فقط بعد از بارگذاری تصویر)
+  // مقداردهی اولیه از کادر ذخیره‌شده
   useEffect(() => {
    if (!img) return;
-   const { position: pos, zoom: z0 } = posZoomRef.current;
+   const { position: pos, zoom: z0 } = initRef.current;
    const parts = String(pos || '50% 50%').trim().split(/\s+/);
    const readP = (s: string) => { const n = parseFloat(s); return Number.isFinite(n) ? n : 50; };
    const px = Math.max(0, Math.min(100, readP(parts[0])));
@@ -1468,26 +1468,10 @@ function ThemeManagerEditor(){
    const cy = (py / 100) * baseWinY + COVER_FRAME / (2 * coverScale);
    const S = coverScale * zv;
    const np = clampCoverPan(W, H, coverScale, zv, (W / 2 - cx) * S, (H / 2 - cy) * S);
-   zRef.current = zv;
-   panRef.current = np;
-   setZ(zv);
-   setPan(np);
-  }, [img]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const commit = (zv: number, p: { x: number; y: number }) => {
-   const S = coverScale * zv;
-   const cx = W / 2 - p.x / S;
-   const cy = H / 2 - p.y / S;
-   const baseWinX = W - COVER_FRAME / coverScale;
-   const baseWinY = H - COVER_FRAME / coverScale;
-   let px = 50, py = 50;
-   if (baseWinX > 1) px = Math.max(0, Math.min(100, (cx - COVER_FRAME / (2 * coverScale)) / baseWinX * 100));
-   if (baseWinY > 1) py = Math.max(0, Math.min(100, (cy - COVER_FRAME / (2 * coverScale)) / baseWinY * 100));
-   onChange({
-    coverPosition: `${Math.round(px * 10) / 10}% ${Math.round(py * 10) / 10}%`,
-    coverZoom: Math.round(zv * 100) / 100,
-   });
-  };
+   zRef.current = zv; panRef.current = np;
+   setZ(zv); setPan(np);
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [img]);
 
   const applyZoom = (zv: number) => {
    const nz = Math.max(1, Math.min(3, zv));
@@ -1496,20 +1480,17 @@ function ThemeManagerEditor(){
    const np = clampCoverPan(W, H, coverScale, nz, panRef.current.x * (newS / oldS), panRef.current.y * (newS / oldS));
    zRef.current = nz; panRef.current = np;
    setZ(nz); setPan(np);
-   commit(nz, np);
   };
 
   const applyPan = (x: number, y: number) => {
    const np = clampCoverPan(W, H, coverScale, zRef.current, x, y);
    panRef.current = np; setPan(np);
-   commit(zRef.current, np);
   };
 
   const reset = () => {
    const np = clampCoverPan(W, H, coverScale, 1, 0, 0);
    zRef.current = 1; panRef.current = np;
    setZ(1); setPan(np);
-   commit(1, np);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -1539,7 +1520,6 @@ function ThemeManagerEditor(){
     const np = clampCoverPan(W, H, coverScale, nz, pinch.current.panX * (newS / oldS), pinch.current.panY * (newS / oldS));
     zRef.current = nz; panRef.current = np;
     setZ(nz); setPan(np);
-    commit(nz, np);
     return;
    }
    if (drag.current && pointers.current.size === 1) {
@@ -1556,16 +1536,31 @@ function ThemeManagerEditor(){
     drag.current = { x: pt.x, y: pt.y, px: panRef.current.x, py: panRef.current.y };
    }
   };
-
   const onWheel = (e: React.WheelEvent) => {
    e.preventDefault();
    applyZoom(zRef.current * (e.deltaY < 0 ? 1.08 : 0.92));
   };
 
+  const confirm = () => {
+   const S = coverScale * z;
+   const cx = W / 2 - pan.x / S;
+   const cy = H / 2 - pan.y / S;
+   const baseWinX = W - COVER_FRAME / coverScale;
+   const baseWinY = H - COVER_FRAME / coverScale;
+   let px = 50, py = 50;
+   if (baseWinX > 1) px = Math.max(0, Math.min(100, (cx - COVER_FRAME / (2 * coverScale)) / baseWinX * 100));
+   if (baseWinY > 1) py = Math.max(0, Math.min(100, (cy - COVER_FRAME / (2 * coverScale)) / baseWinY * 100));
+   onApply(`${Math.round(px * 10) / 10}% ${Math.round(py * 10) / 10}%`, Math.round(z * 100) / 100);
+   onClose();
+  };
+
   return (
-   <div style={{ marginTop: 6, marginBottom: 8, padding: 10, borderRadius: 12, background: T.soft, border: `1px solid ${T.brd}` }}>
-    <div style={{ fontSize: 12, fontWeight: 800, color: T.ttl, marginBottom: 6 }}>تنظیم کادر کاور (شبیه کراپ کاور اینستاگرام)</div>
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+   <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9800, background: 'rgba(15,23,42,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+    <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(420px,100%)', maxHeight: 'calc(100dvh - 28px)', overflowY: 'auto', background: T.card || '#fff', borderRadius: 20, padding: 16, boxShadow: '0 20px 50px rgba(0,0,0,.3)' }}>
+     <b style={{ display: 'block', marginBottom: 4, color: T.ttl, fontSize: 16 }}>تنظیم کادر کاور</b>
+     <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.9, margin: '0 0 12px' }}>
+      با <b>یک انگشت</b> عکس را داخل دایره جابه‌جا کنید و با <b>دو انگشت</b> (پینچ) بزرگ‌نمایی را کم/زیاد کنید. روی کامپیوتر با اسکرول ماوس زوم کنید.
+     </p>
      <div
       ref={frameRef}
       onPointerDown={onPointerDown}
@@ -1573,27 +1568,26 @@ function ThemeManagerEditor(){
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
-      style={{ width: COVER_FRAME, height: COVER_FRAME, borderRadius: '50%', overflow: 'hidden', background: '#111827', position: 'relative', touchAction: 'none', cursor: img ? 'grab' : 'default', flexShrink: 0, boxShadow: `0 0 0 2px ${T.acc || '#0f766e'}`, WebkitUserSelect: 'none', userSelect: 'none' }}
+      style={{ width: COVER_FRAME, height: COVER_FRAME, borderRadius: '50%', overflow: 'hidden', background: '#111827', position: 'relative', touchAction: 'none', cursor: img ? 'grab' : 'default', margin: '0 auto 12px', boxShadow: `0 0 0 3px ${T.acc || '#0f766e'}`, WebkitUserSelect: 'none', userSelect: 'none' }}
      >
       {img ? (
        <img src={src} alt="" referrerPolicy="no-referrer" draggable={false}
         style={{ position: 'absolute', left: '50%', top: '50%', width: W, height: H, maxWidth: 'none', maxHeight: 'none', transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${coverScale * z})`, transformOrigin: 'center center', pointerEvents: 'none', display: 'block' }} />
       ) : loadError ? (
-       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', fontSize: 11, padding: 10, textAlign: 'center' }}>تصویر بارگذاری نشد — لینک کاور را بررسی کنید</div>
+       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', fontSize: 12, padding: 12, textAlign: 'center' }}>تصویر بارگذاری نشد — لینک کاور را بررسی کنید</div>
       ) : (
-       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 11, padding: 10, textAlign: 'center' }}>ابتدا لینک کاور را وارد کنید</div>
+       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 12 }}>در حال آماده‌سازی…</div>
       )}
      </div>
-     <div style={{ flex: 1, minWidth: 180 }}>
-      <div style={{ fontSize: 11, color: T.mut, lineHeight: 1.8, marginBottom: 8 }}>
-       با <b>یک انگشت</b> عکس را جابه‌جا کنید و با <b>دو انگشت</b> (پینچ) بزرگ‌نمایی را کم/زیاد کنید. روی کامپیوتر با اسکرول ماوس زوم کنید.
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-       <span style={{ fontSize: 11, color: T.mut, whiteSpace: 'nowrap' }}>بزرگ‌نمایی</span>
-       <input type="range" min={1} max={3} step={0.05} value={z} onChange={(e) => applyZoom(Number(e.target.value))} style={{ flex: 1, accentColor: T.acc || '#0f766e' }} />
-       <span style={{ fontSize: 11, color: T.mut, direction: 'ltr', minWidth: 40, textAlign: 'center' }}>{z.toFixed(2)}x</span>
-      </div>
-      <button type="button" onClick={reset} style={{ minHeight: 30, marginTop: 8, padding: '4px 12px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.card, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 }}>بازنشانی کادر</button>
+     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <span style={{ fontSize: 11, color: T.mut, whiteSpace: 'nowrap' }}>بزرگ‌نمایی</span>
+      <input type="range" min={1} max={3} step={0.05} value={z} onChange={(e) => applyZoom(Number(e.target.value))} style={{ flex: 1, accentColor: T.acc || '#0f766e' }} />
+      <span style={{ fontSize: 11, color: T.mut, direction: 'ltr', minWidth: 42, textAlign: 'center' }}>{z.toFixed(2)}x</span>
+     </div>
+     <div style={{ display: 'flex', gap: 8 }}>
+      <button type="button" onClick={reset} disabled={!img} style={{ minHeight: 44, padding: '8px 14px', borderRadius: 11, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>بازنشانی</button>
+      <button type="button" onClick={onClose} style={{ flex: 1, minHeight: 44, borderRadius: 11, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>انصراف</button>
+      <button type="button" disabled={!img} onClick={confirm} style={{ flex: 1, minHeight: 44, borderRadius: 11, border: 0, background: T.acc || '#0f766e', color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>تأیید کادر</button>
      </div>
     </div>
    </div>
@@ -1601,6 +1595,7 @@ function ThemeManagerEditor(){
  } function HighlightsTabEditor(){
   // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
   // قبلاً از `highlights` استفاده می‌کرد که در سایت اثری نداشت — باگ رفع شد.
+  const [coverCropFor,setCoverCropFor]=useState<number|null>(null);
   const rawSH=editCfg.storyHighlights&&typeof editCfg.storyHighlights==='object'?editCfg.storyHighlights:{};
   const items:any[]=Array.isArray(rawSH.highlights)?rawSH.highlights:(rawSH.highlights&&typeof rawSH.highlights==='object'?Object.values(rawSH.highlights):[]);
   const upd=(list:any[])=>setEditCfg({...editCfg,storyHighlights:{...rawSH,highlights:list}});
@@ -1628,7 +1623,7 @@ function ThemeManagerEditor(){
       <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
       <label style={S.lbl}>آدرس کاور (اختیاری)</label>
       <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.coverUrl||''} onCommit={(v:string)=>chg(i,'coverUrl',canonicalizeMediaInput(v,'image'))} placeholder="لینک دانلود مستقیم ImgURL"/>
-      {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); return coverSrc ? <CoverPositionPicker T={T} src={coverSrc} position={it.coverPosition||'50% 50%'} zoom={Number(it.coverZoom)||1} onChange={(p:any)=>{if(p.coverPosition!==undefined)chg(i,'coverPosition',p.coverPosition); if(p.coverZoom!==undefined)chg(i,'coverZoom',p.coverZoom)}}/> : <div style={{fontSize:11,color:T.mut,marginBottom:6}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</div>;})()}
+      {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); const cpos=it.coverPosition||'50% 50%'; const czoom=Number(it.coverZoom)||1; return <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:8}}>{coverSrc?<><span style={{width:58,height:58,borderRadius:'50%',overflow:'hidden',background:'#111827',border:`2px solid ${T.acc}`,flexShrink:0,display:'inline-block'}}><img src={coverSrc} alt="" referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:cpos,transform:`scale(${czoom})`}}/></span><button type="button" style={AdminBtn()} onClick={()=>setCoverCropFor(i)}>تنظیم کادر کاور</button></>:<span style={{fontSize:11,color:T.mut}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</span>}</div>;})()}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
        <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
        <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
@@ -1661,6 +1656,7 @@ function ThemeManagerEditor(){
     <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
    </Box>
    <button style={S.btn} onClick={()=>setSave({...editCfg,storyHighlights:{...(editCfg.storyHighlights||{}),highlights:items}})}>ذخیره هایلایت‌ها</button>
+   {coverCropFor!==null&&(()=>{const cit=items[coverCropFor]; const csrc=extractDirectMediaUrl(cit?.coverUrl,'image'); return csrc?<CoverCropModal T={T} src={csrc} position={cit?.coverPosition||'50% 50%'} zoom={Number(cit?.coverZoom)||1} onClose={()=>setCoverCropFor(null)} onApply={(pos:any,zo:any)=>{chg(coverCropFor,'coverPosition',pos);chg(coverCropFor,'coverZoom',zo);}}/>:null;})()}
   </>}
 
  function LicensesTabEditor(){
