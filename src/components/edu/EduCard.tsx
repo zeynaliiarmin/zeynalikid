@@ -11,11 +11,14 @@ const Wave = () => (
   </span>
 );
 
-export default function EduCard({ item, lang, onOpen }: { item: EduItem; lang: string; onOpen: (it: EduItem) => void }) {
+export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; lang: string; onOpen: (it: EduItem) => void; views?: number }) {
   const en = lang === 'en';
   const badgeCls = item.type === 'text' ? 't-text' : item.type === 'video' ? 't-video' : item.type === 'image' ? 't-image' : 't-audio';
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
   const cta = item.type === 'text' ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : item.type === 'image' ? (en ? 'View' : 'مشاهده') : (en ? 'Listen' : 'شنیدن');
+  const viewsText = (typeof views === 'number' && !Number.isNaN(views))
+    ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
+    : null;
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
   const isImage = item.type === 'image';
   return (
@@ -37,6 +40,7 @@ export default function EduCard({ item, lang, onOpen }: { item: EduItem; lang: s
           direction={en ? 'ltr' : 'rtl'}
         />
         <div className="zke-meta">
+          {viewsText && <span className="zke-meta-views"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>{viewsText}</span>}
           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></svg>{en ? item.dateEn : item.date}</span>
           <span>{durationLabel(item, lang)}</span>
         </div>

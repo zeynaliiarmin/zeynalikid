@@ -10,11 +10,15 @@ import { Highlights, RichText } from '../MediaHighlights';
  * مدال جزئیات محتوا — Stage 8
  * موبایل: BottomSheet تمام‌صفحه · دسکتاپ: پنجره وسط (حداکثر ۷۶۰)
  */
-export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult }: {
+export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult, views, viewsOf }: {
   item: EduItem; related: EduItem[]; lang: string;
   onClose: () => void; onOpen: (it: EduItem) => void; onConsult: () => void;
+  views?: number; viewsOf?: (item: EduItem) => number;
 }) {
   const en = lang === 'en';
+  const viewsText = (typeof views === 'number' && !Number.isNaN(views))
+    ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
+    : null;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
@@ -40,6 +44,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
 
         <div className="zke-article">
           <div className="zke-article-meta">
+            {viewsText && <span style={{ color: 'var(--zk-primary, #0F766E)', fontWeight: 700 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>{viewsText}</span>}
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="3.4" /><path d="M5 20c.7-3.8 3.4-6 7-6s6.3 2.2 7 6" /></svg>{en ? 'Zeynalikid care team' : 'تیم همراهی زینالیکید'}</span>
             <span>{en ? item.dateEn : item.date}</span>
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {durationLabel(item, lang)}</span>
@@ -75,7 +80,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
             <div className="zke-related">
               <h4>{en ? 'Related content' : 'محتوای مرتبط'}</h4>
               <div className="zke-related-row">
-                {related.map(r => <EduCard key={r.id} item={r} lang={lang} onOpen={onOpen} />)}
+                {related.map(r => <EduCard key={r.id} item={r} lang={lang} onOpen={onOpen} views={viewsOf ? viewsOf(r) : undefined} />)}
               </div>
             </div>
           )}

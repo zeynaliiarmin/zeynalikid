@@ -20,6 +20,7 @@ import { StoryHighlightsBar, LegacyStoryHighlightsBar } from '../components/Stor
 import type { Highlight } from '../components/StoryViewer';
 import ServicesSection from '../components/ServicesSection';
 import { getMediaItemsForDestination, prioritizeRotatingExperienceVideo, toEducationMediaItem } from '../utils/mediaPlacement';
+import { loadRealViews, recordView, totalViews } from '../utils/eduViews';
 
 // اصلاح ۲۹ (مرحله ۷): پارامتر اختیاری topSlot برای نمایش هایلایت استوری در بالای صفحه (قبل از عنوان اصلی)
 function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title:string,children:any,topSlot?:any,variant?:'default'|'trust'|'education'}){
@@ -144,8 +145,11 @@ export function EducationPage({app}:{app:any}){
  const [q,setQ]=useState(''); const [askOpen,setAskOpen]=useState(false);
  // Stage 8: فیلتر «نوع محتوا» (نه دسته‌بندی موضوعی — طبق تصمیم پروژه لغو شده)
  const [typeF,setTypeF]=useState<'all'|'text'|'video'|'audio'|'faq'>('all');
- const [sortUI,setSortUI]=useState('new'); // UI مرتب‌سازی — منطق آن در کد نیست (استاتیک)
+ const [sortUI,setSortUI]=useState('new'); // مرتب‌سازی: جدیدترین / پربازدیدترین (بر اساس بازدید واقعی)
  const [openItem,setOpenItem]=useState<EduItem|null>(null);
+ // بازدیدهای واقعی (localStorage همان دستگاه) — روی عدد شروع هر محتوا اضافه می‌شود
+ const [realViews,setRealViews]=useState<Record<string, number>>(() => loadRealViews());
+ const viewsOf = (item: any) => totalViews(item, realViews[String(item?.id)] || 0);
  // رفع باگ دکمه برگشت گوشی: بستن مودال محتوای آموزشی با دکمه back
  const eduDetailRef=useRef(false);
  useEffect(()=>{
@@ -153,14 +157,14 @@ export function EducationPage({app}:{app:any}){
   window.addEventListener('popstate',onPop);
   return ()=>window.removeEventListener('popstate',onPop);
  },[]);
- const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ try{window.history.pushState({zkEduDetail:true},'')}catch{} eduDetailRef.current=true; } setOpenItem(it); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
+ const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ try{window.history.pushState({zkEduDetail:true},'')}catch{} eduDetailRef.current=true; } setOpenItem(it); setRealViews((prev)=>recordView(prev, String(it?.id))); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
  const closeEduItem=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; try{window.history.back()}catch{} } setOpenItem(null); };
  const mediaVpnOn=useVpn(cfg);
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  const source:any[]=usingSamples?(EDU_SAMPLES as any[]):real;
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);
- const filtered=useMemo(()=>typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF),[searched,typeF]);
+ const filtered=useMemo(()=>{const base=typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF); if(sortUI==='seen')return [...base].sort((a:any,b:any)=>viewsOf(b)-viewsOf(a)); return base;},[searched,typeF,sortUI,realViews]);
  const suggestedKeywords=useMemo(()=>{const map=new Map<string,number>();source.forEach((x:any)=>(x.keywords||[]).forEach((kw:string)=>{const k=String(kw).trim().toLowerCase();if(k)map.set(k,(map.get(k)||0)+1)}));return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,cfg.suggestedKeywordsCount||8).map(([k])=>k)},[source,cfg.suggestedKeywordsCount]);
  const faqReal=(en?cfg.faqItemsEn:cfg.faqItems)||[];
  const faqItems=faqReal.length?faqReal.map((x:any)=>({id:String(x.id),question:x.question,answer:x.answer})):FAQ_SAMPLES.map(x=>({id:x.id,question:(en&&x.qEn)?x.qEn:x.q,answer:(en&&x.aEn)?x.aEn:x.a}));
@@ -217,7 +221,7 @@ export function EducationPage({app}:{app:any}){
       <>
        {q&&<p style={{fontSize:11.5,color:'var(--zk-text-muted)',margin:'0 0 12px'}}>{en?`${filtered.length} result(s) for "${q}"`:`${filtered.length.toLocaleString('fa-IR')} نتیجه برای «${q}»`}</p>}
        {filtered.length?(
-        <div className="zke-grid">{filtered.map((it:any)=><EduCard key={it.id} item={it as EduItem} lang={lang} onOpen={(x)=>openEduItem(x as EduItem)}/>)}</div>
+        <div className="zke-grid">{filtered.map((it:any)=><EduCard key={it.id} item={it as EduItem} lang={lang} onOpen={(x)=>openEduItem(x as EduItem)} views={viewsOf(it)}/>)}</div>
        ):(
         <div className="zke-empty">
          <SearchIcon size={26}/>
@@ -233,7 +237,7 @@ export function EducationPage({app}:{app:any}){
      {cfg.servicesVisibility?.trainings!==false&&<div style={{marginTop:26}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{en?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>en?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
      {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}
     </div>
-    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} onClose={closeEduItem} onOpen={(x)=>openEduItem(x as EduItem)} onConsult={consult}/>}
+    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} onClose={closeEduItem} onOpen={(x)=>openEduItem(x as EduItem)} onConsult={consult} views={viewsOf(openItem)} viewsOf={(x:any)=>viewsOf(x)}/>}
    </main>
   </>
  );

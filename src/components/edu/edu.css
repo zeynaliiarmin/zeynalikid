@@ -123,6 +123,7 @@ html[data-theme="dark"] .zke-badge.t-image { background: #E7D8B8; }
 .zke-card-desc { margin: 0; font-size: 12px; color: var(--zk-text-muted); line-height: 1.9; }
 .zke-meta { display: flex; align-items: center; gap: 10px; font-size: 10.5px; color: var(--zk-text-muted); margin-top: 2px; }
 .zke-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.zke-meta-views { color: var(--zk-primary, #0F766E); font-weight: 700; white-space: nowrap; }
 .zke-card-cta {
   margin-top: auto; padding-top: 10px; display: flex;
 }

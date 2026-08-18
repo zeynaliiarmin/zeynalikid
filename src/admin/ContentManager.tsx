@@ -36,6 +36,11 @@ const MEDIA_CATEGORIES: [string, string][] = [
   ['intelligence', 'هوش'],
 ];
 
+// تبدیل ارقام فارسی/عربی به انگلیسی برای فیلد عددی «شمارش شروع بازدید»
+const faToEn = (s: string) => String(s || '')
+  .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+  .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+
 export default function ContentManager(props: Props) {
   const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, cfg, setSave, fileToData, p2e, uid } = props;
 
@@ -267,6 +272,10 @@ function MediaManager(props: any) {
                     </label>
                   </div>
                   <Field label="عنوان" value={it.title || ''} onChange={(v: string) => chg(gi, 'title', v)} ph="" />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginBottom: 8 }}>
+                    <label style={S.lbl}>شمارش شروع بازدید (به هزار — خالی = رندوم ۳۰ تا ۶۰ هزار)</label>
+                    <StableAdminInput dir="ltr" numeric inputMode="numeric" style={S.inp} defaultValue={it.viewsSeed ? String(Math.round(it.viewsSeed / 1000)) : ''} onCommit={(v: string) => { const k = parseInt(faToEn(v), 10); chg(gi, 'viewsSeed', (Number.isFinite(k) && k > 0 ? k * 1000 : undefined)); }} placeholder="مثلاً ۴۵" />
+                  </div>
                   <label style={S.lbl}>توضیحات</label>
                   <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.description || ''} onCommit={(v: string) => chg(gi, 'description', v)} rows={3} />
                   {type === 'video' && (
@@ -389,6 +398,10 @@ function MediaLibraryManager(props: any) {
             </select>
           </div>
           <Field label="عنوان" value={it.title || ''} onChange={(v: string) => chg(i, 'title', v)} ph="" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginBottom: 8 }}>
+            <label style={S.lbl}>شمارش شروع بازدید (به هزار — خالی = رندوم ۳۰ تا ۶۰ هزار)</label>
+            <StableAdminInput dir="ltr" numeric inputMode="numeric" style={S.inp} defaultValue={it.viewsSeed ? String(Math.round(it.viewsSeed / 1000)) : ''} onCommit={(v: string) => { const k = parseInt(faToEn(v), 10); chg(i, 'viewsSeed', (Number.isFinite(k) && k > 0 ? k * 1000 : undefined)); }} placeholder="مثلاً ۴۵" />
+          </div>
           <label style={S.lbl}>توضیحات (نمایش در صفحه تجربه والدین)</label>
           <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.description || ''} onCommit={(v: string) => chg(i, 'description', v)} rows={3} />
           <label style={S.lbl}>توضیحات (نمایش در صفحه معرفی دوره‌ها)</label>

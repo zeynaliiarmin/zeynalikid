@@ -118,7 +118,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     closingRef.current = true;
     setClosing(true);
     clearTimeout(timerRef.current);
-    window.setTimeout(() => onCloseRef.current(), 260);
+    window.setTimeout(() => onCloseRef.current(), 360);
   }, []);
 
   const next = useCallback(() => {
@@ -216,9 +216,10 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999, background: '#000', display: 'flex', flexDirection: 'column',
+      paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
-      animation: closing ? 'zk-story-out .26s ease forwards' : 'zk-story-in .25s ease both',
-      WebkitAnimation: closing ? 'zk-story-out .26s ease forwards' : 'zk-story-in .25s ease both',
+      animation: closing ? 'zk-story-out .36s ease forwards' : 'zk-story-in .25s ease both',
+      WebkitAnimation: closing ? 'zk-story-out .36s ease forwards' : 'zk-story-in .25s ease both',
     }}
       onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}>
