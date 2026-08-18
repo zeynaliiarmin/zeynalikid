@@ -39,6 +39,7 @@ function SlideMedia({ src, onReady }: { src: string; onReady?: () => void }) {
         pointerEvents: 'none',
       }}
       onLoad={() => onReady?.()}
+      onError={() => onReady?.()}
     />
   );
 }
@@ -52,6 +53,9 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [sIdx, setSIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [loaded, setLoaded] = useState(false); // لود کامل عکس استوری فعلی
+  const [closing, setClosing] = useState(false); // انیمیشن خروج (swipe پایین)
+  const closingRef = useRef(false);
   const timerRef = useRef<number>(0);
   const startRef = useRef(0);
   const elapsedRef = useRef(0);
@@ -103,8 +107,18 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     elapsedRef.current = 0;
     if (markPrev && currentRef.current) markSeenAt(currentRef.current.hi, currentRef.current.si);
     currentRef.current = { hi, si };
+    setLoaded(false);
     setHIdx(hi); setSIdx(si); setProgress(0);
   }, [markSeenAt]);
+
+  // خروج با انیمیشن (swipe پایین) — بعد از پایان انیمیشن واقعاً بسته می‌شود
+  const exitStory = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    clearTimeout(timerRef.current);
+    window.setTimeout(() => onCloseRef.current(), 260);
+  }, []);
 
   const next = useCallback(() => {
     const hi = hIdxRef.current, si = sIdxRef.current;
@@ -168,6 +182,13 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     if (swipeStartRef.current) {
       const diffX = e.clientX - swipeStartRef.current.x;
       const diffY = e.clientY - swipeStartRef.current.y;
+      // کشیدن از بالا به پایین = خروج از استوری‌ها (مثل اینستاگرام)
+      if (diffY > 80 && Math.abs(diffY) > Math.abs(diffX)) {
+        skipClickRef.current = true;
+        swipeStartRef.current = null;
+        exitStory();
+        return;
+      }
       if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
         skipClickRef.current = true;
         if (diffX > 0) prev(); else next();
@@ -195,7 +216,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999, background: '#000', display: 'flex', flexDirection: 'column',
       touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
-      animation: 'zk-story-in .25s ease both', WebkitAnimation: 'zk-story-in .25s ease both',
+      animation: closing ? 'zk-story-out .26s ease forwards' : 'zk-story-in .25s ease both',
+      WebkitAnimation: closing ? 'zk-story-out .26s ease forwards' : 'zk-story-in .25s ease both',
     }}
       onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}>
@@ -220,9 +242,14 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
         {paused && <span style={{ color: 'rgba(255,255,255,.85)', fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: 'rgba(255,255,255,.16)' }}>⏸ {isEn ? 'Paused' : 'متوقف'}</span>}
         <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
       </div>
-      {/* تصویر — با انیمیشن تغییر استوری/هایلایت */}
-      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>
-        {imgSrc ? <SlideMedia src={imgSrc} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
+      {/* تصویر — با انیمیشن تغییر استوری/هایلایت + لودینگ وسط استوری */}
+      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>
+        {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
+        {imgSrc && !loaded && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: '50%', border: '3px solid rgba(255,255,255,.22)', borderTopColor: '#fff', animation: 'zk-ring-spin .8s linear infinite', WebkitAnimation: 'zk-ring-spin .8s linear infinite' }} />
+          </div>
+        )}
       </div>
       {/* عنوان اسلاید */}
       {slide.title && <div style={{ textAlign: 'center', padding: '8px 16px', color: '#fff', fontSize: 13 }}>{slide.title}</div>}
@@ -263,8 +290,31 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
   const [progress, setProgress] = useState(() => {
     try { return JSON.parse(localStorage.getItem('zk_story_progress_v1') || '{}'); } catch { return {}; }
   });
+  const storyHistRef = useRef(false);
+
   useEffect(() => { detectVpnOn().then(v => setVpnOn(v)).catch(() => setVpnOn(false)); }, []);
   useEffect(() => { if (openIdx === null) { try { setProgress(JSON.parse(localStorage.getItem('zk_story_progress_v1') || '{}')); } catch { setProgress({}); } } }, [openIdx]);
+
+  // دکمهٔ Back گوشی/مرورگر باید فقط استوری را ببندد، نه اینکه به صفحهٔ قبل (هوم) برگردد.
+  useEffect(() => {
+    const onPop = () => { storyHistRef.current = false; setOpenIdx(null); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const openStory = useCallback((i: number) => {
+    if (!storyHistRef.current) {
+      try { window.history.pushState({ zkStory: true }, ''); } catch {}
+      storyHistRef.current = true;
+    }
+    setOpenIdx(i);
+  }, []);
+  const closeStory = useCallback(() => {
+    if (storyHistRef.current) {
+      storyHistRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    setOpenIdx(null);
+  }, []);
 
   if (!active.length) return null;
   return (
@@ -284,7 +334,7 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
           const seenSet = new Set((progress?.[hl.id]?.seen) || []);
           const seen = stories.length > 0 && stories.every((s) => seenSet.has(s.id));
           return (
-            <button key={hl.id} className="zk-hl-btn" onClick={() => setOpenIdx(i)} style={{ scrollSnapAlign: 'start' }}>
+            <button key={hl.id} className="zk-hl-btn" onClick={() => openStory(i)} style={{ scrollSnapAlign: 'start' }}>
               <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : '#fff' }}>
                 {!seen && <span className="zk-hl-spin" aria-hidden="true" />}
                 <div className="zk-hl-inner" style={{ background: T.card }}>
@@ -296,7 +346,7 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
           );
         })}
       </div>
-      {openIdx !== null && <StoryViewer highlights={active} startHighlight={openIdx} T={T} lang={lang} onClose={() => setOpenIdx(null)} vpnOn={vpnOn} />}
+      {openIdx !== null && <StoryViewer highlights={active} startHighlight={openIdx} T={T} lang={lang} onClose={closeStory} vpnOn={vpnOn} />}
     </>
   );
 }
