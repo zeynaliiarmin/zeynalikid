@@ -287,7 +287,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 }
 
 // ─── نوار هایلایت‌ها (دایره‌ها) با حلقهٔ رنگی/خاکستری ───
-export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highlight[]; T: any; lang: 'fa' | 'en' }) {
+export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { highlights: Highlight[]; T: any; lang: 'fa' | 'en'; mediaCountryMode?: string }) {
   const active = (highlights || []).filter(h => h.active !== false && h.stories?.some(s => s.active !== false)).sort((a, b) => (a.order || 0) - (b.order || 0));
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [vpnOn, setVpnOn] = useState(false);
@@ -296,7 +296,15 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
   });
   const storyHistRef = useRef(false);
 
-  useEffect(() => { detectVpnOn().then(v => setVpnOn(v)).catch(() => setVpnOn(false)); }, []);
+  // پیروی از تنظیم «تشخیص VPN / کشور کاربر» (mediaCountryMode) مثل بقیهٔ محتواها
+  useEffect(() => {
+    let alive = true;
+    const mode = mediaCountryMode || 'auto';
+    if (mode === 'iran') { setVpnOn(false); return; }
+    if (mode === 'intl') { setVpnOn(true); return; }
+    detectVpnOn().then(v => { if (alive) setVpnOn(v); }).catch(() => { if (alive) setVpnOn(false); });
+    return () => { alive = false; };
+  }, [mediaCountryMode]);
   useEffect(() => { if (openIdx === null) { try { setProgress(JSON.parse(localStorage.getItem('zk_story_progress_v1') || '{}')); } catch { setProgress({}); } } }, [openIdx]);
 
   // دکمهٔ Back گوشی/مرورگر باید فقط استوری را ببندد، نه اینکه به صفحهٔ قبل (هوم) برگردد.
@@ -356,12 +364,12 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
 }
 
 // Backward compatibility: اگر از ساختار قدیمی (items بدون highlights) استفاده شود
-export function LegacyStoryHighlightsBar({ items, T, lang }: { items: any[]; T: any; lang: 'fa' | 'en' }) {
+export function LegacyStoryHighlightsBar({ items, T, lang, mediaCountryMode }: { items: any[]; T: any; lang: 'fa' | 'en'; mediaCountryMode?: string }) {
   const highlights: Highlight[] = [{
     id: 'legacy', title: 'استوری', stories: (items || []).map((it: any) => ({
       id: it.id, imageCodeExternal: it.embedCode || '', imageCodeInternal: it.embedCode || '',
       title: it.title, order: it.order, active: it.active,
     })), active: true,
   }];
-  return <StoryHighlightsBar highlights={highlights} T={T} lang={lang} />;
+  return <StoryHighlightsBar highlights={highlights} T={T} lang={lang} mediaCountryMode={mediaCountryMode} />;
 }

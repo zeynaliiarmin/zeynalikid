@@ -37,7 +37,7 @@ import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
 import ImageCropper from './ImageCropper';
 import CoursesEditor from './CoursesEditor';
-import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
+import { canonicalizeMediaInput, extractDirectMediaUrl, extractImageLinkList } from '../utils/mediaInput';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -1595,7 +1595,44 @@ function ThemeManagerEditor(){
     </div>
    </div>
   );
- } function HighlightsTabEditor(coverCropFor:number|null, setCoverCropFor:(v:number|null)=>void){
+ }
+ // ─── افزودن دسته‌جمعی استوری — دو فیلد (داخلی/خارجی) + ساخت خودکار اسلاید از هر لینک ───
+ function BulkStoryAdder({ T, S, AdminBtn, onAdd }: { T: any; S: any; AdminBtn: () => any; onAdd: (internalLinks: string[], externalLinks: string[]) => void }) {
+  const [internalText, setInternalText] = useState('');
+  const [externalText, setExternalText] = useState('');
+  const [note, setNote] = useState('');
+  const [err, setErr] = useState('');
+  const add = () => {
+   const intLinks = extractImageLinkList(internalText);
+   const extLinks = extractImageLinkList(externalText);
+   if (!intLinks.length && !extLinks.length) { setErr('هیچ لینک معتبری پیدا نشد. لینک‌ها باید با https:// شروع شوند.'); setNote(''); return; }
+   const count = Math.max(intLinks.length, extLinks.length);
+   onAdd(intLinks, extLinks);
+   setErr('');
+   setNote(`${count} استوری ساخته شد.`);
+   setInternalText(''); setExternalText('');
+   window.setTimeout(() => setNote(''), 4000);
+  };
+  return (
+   <details style={{ marginTop: 10, border: `1px dashed ${T.acc || '#0f766e'}55`, borderRadius: 10, padding: 8, background: T.card }}>
+    <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, color: T.acc }}>+ افزودن دسته‌جمعی استوری‌ها (کپی همه لینک‌ها یک‌جا)</summary>
+    <div style={{ marginTop: 10 }}>
+     <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.8, margin: '0 0 8px' }}>
+      همه لینک‌ها را اینجا بچسبانید؛ هر لینک یک استوری می‌شود. لینک‌ها می‌توانند با خط جدید، کاما یا فاصله جدا شده باشند؛ تگ <span dir="ltr">&lt;img src="…"&gt;</span> هم پذیرفته می‌شود. اگر فقط یکی از دو فیلد را پر کنید، همان لینک برای هر دو حالت (VPN روشن/خاموش) استفاده می‌شود؛ اگر هر دو را پر کنید، به‌ترتیب خط‌به‌خط با هم جفت می‌شوند.
+     </p>
+     <label style={S.lbl}>لینک‌های داخلی — VPN خاموش</label>
+     <textarea dir="ltr" rows={7} value={internalText} onChange={(e) => setInternalText(e.target.value)} style={{ ...S.ta, fontFamily: 'monospace', fontSize: 11.5, marginBottom: 8, minHeight: 90 }} placeholder={"https://i.imageupload.app/2aa856227ada888997f3.jpeg\nhttps://i.imageupload.app/xxx.jpeg"} />
+     <label style={S.lbl}>لینک‌های خارجی — VPN روشن (اختیاری)</label>
+     <textarea dir="ltr" rows={7} value={externalText} onChange={(e) => setExternalText(e.target.value)} style={{ ...S.ta, fontFamily: 'monospace', fontSize: 11.5, marginBottom: 8, minHeight: 90 }} placeholder={"https://cdn.imgurl.ir/uploads/a.webp\nhttps://cdn.imgurl.ir/uploads/b.webp"} />
+     <button type="button" style={AdminBtn()} onClick={add}>ساخت استوری‌ها</button>
+     {err && <div style={{ fontSize: 11, color: T.err, marginTop: 6 }}>{err}</div>}
+     {note && <div style={{ fontSize: 11, color: T.ok, marginTop: 6, fontWeight: 800 }}>{note}</div>}
+    </div>
+   </details>
+  );
+ }
+
+ function HighlightsTabEditor(coverCropFor:number|null, setCoverCropFor:(v:number|null)=>void){
   // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
   // قبلاً از `highlights` استفاده می‌کرد که در سایت اثری نداشت — باگ رفع شد.
   const rawSH=editCfg.storyHighlights&&typeof editCfg.storyHighlights==='object'?editCfg.storyHighlights:{};
@@ -1652,6 +1689,7 @@ function ThemeManagerEditor(){
         </div>
        </div>)}
        <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={()=>addStory(i)}>+ افزودن اسلاید</button>
+       <BulkStoryAdder T={T} S={S} AdminBtn={AdminBtn} onAdd={(intLinks:any,extLinks:any)=>{const a=[...items];const stories=[...(a[i].stories||[])];const start=stories.length;const count=Math.max(intLinks.length,extLinks.length);for(let k=0;k<count;k++){const ext=extLinks[k]||intLinks[k]||'';const int=intLinks[k]||extLinks[k]||'';stories.push({id:'st'+uid(),title:'',imageCodeExternal:ext,imageCodeInternal:int,active:true,order:start+k+1})}a[i]={...a[i],stories};upd(a)}}/>
       </div>
      </div>
     </details>)}

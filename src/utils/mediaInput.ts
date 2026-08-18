@@ -82,3 +82,38 @@ export function canonicalizeMediaInput(value: unknown, kind: 'image' | 'audio' =
   const normalized = normalizeMediaInput(value);
   return extractDirectMediaUrl(normalized, kind) || normalized;
 }
+
+// ─── استخراج لیست لینک‌های تصویر از یک متن چسبانده‌شده (برای افزودن دسته‌جمعی استوری) ───
+// هر لینک http(s) یا src هر تگ <img> شناسایی می‌شود؛ لینک‌ها می‌توانند با خط جدید، کاما،
+// فاصله یا پرانتز از هم جدا شده باشند. فقط لینک‌های معتبر http/https برگردانده می‌شوند (بدون تکرار).
+function cleanListUrl(u: string): string {
+  let s = String(u || '').trim()
+    .replace(/[)\],،؛'"<>]+$/, '')
+    .replace(/^['"(<\s]+/, '');
+  if (!/^https?:\/\//i.test(s)) return '';
+  try {
+    const p = new URL(s);
+    return p.protocol === 'http:' || p.protocol === 'https:' ? p.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+export function extractImageLinkList(value: unknown): string[] {
+  const normalized = normalizeMediaInput(value);
+  if (!normalized) return [];
+  const out: string[] = [];
+  const push = (candidate: string) => {
+    const cleaned = cleanListUrl(candidate);
+    if (cleaned && !out.includes(cleaned)) out.push(cleaned);
+  };
+  // ۱) تگ‌های <img src="...">
+  const imgRe = /<img\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/gi;
+  let m;
+  while ((m = imgRe.exec(normalized))) push(m[1]);
+  // ۲) لینک‌های مستقیم http(s) — روی پرانتز/براکت/کاما/ویرگول هم قطع می‌شود تا
+  //    متن‌های بهم‌ریختهٔ کپی‌شده (مثل `](https://…)` یا `…jpeg)،(`) درست جدا شوند.
+  const urlRe = /https?:\/\/[^\s"'<>()\[\],،؛]+/gi;
+  while ((m = urlRe.exec(normalized))) push(m[0]);
+  return out;
+}

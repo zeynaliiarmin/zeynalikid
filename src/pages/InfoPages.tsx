@@ -119,7 +119,7 @@ export function ExperiencePage({app}:{app:any}){
    <>
    <Helmet><title>تجربه والدین | فرزند من</title><meta name="description" content="تجربه واقعی والدین از دوره‌های رشد و تغذیه فرزند من — نتایج را ببینید و بشنوید" /></Helmet>
      <SecurePage pageTitle={title} T={T} warningMessage={warningMessage}>
-       <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang}/>:null}>
+       <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}>
          {/* اصلاح ۱ (مرحله ۵): متن راهنمای رضایت والدین در بالای صفحه */}
          <div style={{background:`${T.warn}15`,border:`1px solid ${T.warn}`,color:T.warn,borderRadius:12,padding:'11px 14px',fontSize:12.5,fontWeight:700,lineHeight:1.85,marginBottom:16}}>{consentNotice}</div>
 
@@ -192,7 +192,7 @@ export function EducationPage({app}:{app:any}){
     <div className="zke-container">
      <header className="zke-hero"><div className="zke-hero-inner">
       <button type="button" className="zke-back" onClick={goBack}><svg className="zk-ic-dir" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>{en?'Back':'بازگشت'}</button>
-      {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang}/>:null}
+      {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}
       <h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1>
       <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':'این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ماست برای کمک به والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری؛ برگرفته از تجربهٔ مشاوره‌های فرزند من، با زبانی آرام و علمی.'}</p>
       <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاورهٔ تخصصی نمی‌شود.'}</span></div>
