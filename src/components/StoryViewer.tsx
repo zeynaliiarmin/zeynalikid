@@ -55,6 +55,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false); // لود کامل عکس استوری فعلی
   const [closing, setClosing] = useState(false); // انیمیشن خروج (swipe پایین)
+  const [holding, setHolding] = useState(false); // نگه‌داشتن انگشت → محو UI و توقف تایمر
   const closingRef = useRef(false);
   const timerRef = useRef<number>(0);
   const startRef = useRef(0);
@@ -169,8 +170,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const skipClickRef = useRef(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const beginHold = useCallback(() => { pressStartRef.current = Date.now(); skipClickRef.current = false; setPaused(true); pauseTimer(); }, [pauseTimer]);
-  const endHold = useCallback(() => { setPaused(false); startTimer(); }, [startTimer]);
+  const beginHold = useCallback(() => { pressStartRef.current = Date.now(); skipClickRef.current = false; setHolding(true); setPaused(true); pauseTimer(); }, [pauseTimer]);
+  const endHold = useCallback(() => { setHolding(false); setPaused(false); startTimer(); }, [startTimer]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
@@ -221,26 +222,28 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     }}
       onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}>
-      {/* نوار پیشرفت اینستاگرامی: هر بخش = یک استوری؛ کامل‌شده سفید، فعال در حال پر شدن، بقیه کم‌نور */}
-      <div style={{ display: 'flex', gap: 4, padding: '10px 10px 6px' }}>
-        {stories.map((_, i) => {
-          const done = i < sIdx;
-          const current = i === sIdx;
-          return (
-            <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.35)', overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 2, background: '#fff', width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
-            </div>
-          );
-        })}
-      </div>
-      {/* هدر */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
-          {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} />}
+      {/* نوار پیشرفت + هدر — هنگام نگه‌داشتن انگشت با انیمیشن محو می‌شوند تا تصویر کامل دیده شود */}
+      <div style={{ opacity: holding ? 0 : 1, transition: 'opacity .3s ease', pointerEvents: holding ? 'none' : 'auto' }}>
+        {/* نوار پیشرفت اینستاگرامی: هر بخش = یک استوری؛ کامل‌شده سفید، فعال در حال پر شدن، بقیه کم‌نور */}
+        <div style={{ display: 'flex', gap: 4, padding: '10px 10px 6px' }}>
+          {stories.map((_, i) => {
+            const done = i < sIdx;
+            const current = i === sIdx;
+            return (
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.35)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 2, background: '#fff', width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
+              </div>
+            );
+          })}
         </div>
-        <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
-        {paused && <span style={{ color: 'rgba(255,255,255,.85)', fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: 'rgba(255,255,255,.16)' }}>⏸ {isEn ? 'Paused' : 'متوقف'}</span>}
-        <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
+        {/* هدر */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
+            {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} />}
+          </div>
+          <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
+          <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
+        </div>
       </div>
       {/* تصویر — با انیمیشن تغییر استوری/هایلایت + لودینگ وسط استوری */}
       <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>
@@ -251,8 +254,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
           </div>
         )}
       </div>
-      {/* عنوان اسلاید */}
-      {slide.title && <div style={{ textAlign: 'center', padding: '8px 16px', color: '#fff', fontSize: 13 }}>{slide.title}</div>}
+      {/* عنوان اسلاید — هنگام نگه‌داشتن انگشت محو می‌شود */}
+      {slide.title && <div style={{ textAlign: 'center', padding: '8px 16px', color: '#fff', fontSize: 13, opacity: holding ? 0 : 1, transition: 'opacity .3s ease' }}>{slide.title}</div>}
 
       {/* راهنمای اولین ورود */}
       {showHint && (
