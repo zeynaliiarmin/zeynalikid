@@ -226,7 +226,24 @@ function sanitizeConsultants(value: any): any[] {
 }
 
 function sanitizeReferral(value: any): any {
-  return { showConsultantSelection: value?.showConsultantSelection === true, home: { showCta: value?.home?.showCta !== false } };
+  // متون راهنمای قابل ویرایش (فقط کلیدهای شناخته‌شده به‌صورت رشته) — بدون این‌ها، متن‌های سفارشی
+  // مدیر هرگز به سایت عمومی نمی‌رسیدند (feature متون قابل ویرایش عملاً بی‌اثر بود).
+  const allowedTextKeys = [
+    "homeBase", "homeTab", "homeCourse",
+    "coursesTab", "coursesCourse",
+    "popupTitle", "popupPrimaryBase", "popupPrimaryTab", "popupPrimaryCourse",
+    "reconsultLabel", "reconsultQuestion",
+  ];
+  const texts: Record<string, string> = {};
+  const sourceTexts = value?.texts && typeof value.texts === "object" ? value.texts : {};
+  for (const key of allowedTextKeys) {
+    if (typeof sourceTexts[key] === "string") texts[key] = sourceTexts[key];
+  }
+  return {
+    showConsultantSelection: value?.showConsultantSelection === true,
+    home: { showCta: value?.home?.showCta !== false },
+    texts,
+  };
 }
 
 function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
