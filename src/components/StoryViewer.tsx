@@ -230,15 +230,13 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       {/* نوار پیشرفت + هدر — هنگام نگه‌داشتن انگشت با انیمیشن محو می‌شوند تا تصویر کامل دیده شود */}
       <div style={{ opacity: holding ? 0 : 1, transition: 'opacity .3s ease', pointerEvents: holding ? 'none' : 'auto' }}>
         {/* نوار پیشرفت اینستاگرامی: هر بخش = یک استوری؛ کامل‌شده سفید، فعال در حال پر شدن، بقیه کم‌نور */}
-        <div style={{ display: 'flex', gap: 4, padding: '10px 10px 6px' }}>
+        <div style={{ display: 'flex', gap: 4, padding: '10px 10px 6px', direction: 'ltr' }}>
           {stories.map((_, i) => {
             const done = i < sIdx;
             const current = i === sIdx;
-            // جهت پرشدن نوار: در فارسی (RTL) از راست به چپ و در انگلیسی (LTR) از چپ به راست پر می‌شود.
-            const anchorStyle = isEn ? { left: 0 } : { right: 0 };
             return (
               <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.35)', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 0, bottom: 0, height: '100%', borderRadius: 2, background: '#fff', ...anchorStyle, width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
+                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, height: '100%', borderRadius: 2, background: '#fff', width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
               </div>
             );
           })}
@@ -267,9 +265,9 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       {/* راهنمای اولین ورود */}
       {showHint && (
         <div onClick={(e) => { e.stopPropagation(); dismissHint(); }} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(0,0,0,.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: '#fff', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: '#fff', textAlign: 'center', direction: 'ltr' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, animation: 'zk-hint-pulse 1.4s ease-in-out infinite', WebkitAnimation: 'zk-hint-pulse 1.4s ease-in-out infinite' }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>
               <span style={{ fontSize: 12, fontWeight: 800 }}>{isEn ? 'Previous' : 'قبلی'}</span>
             </div>
             <div style={{ maxWidth: 260 }}>
@@ -282,7 +280,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
               <div style={{ marginTop: 12, display: 'inline-block', padding: '8px 18px', borderRadius: 999, background: '#fff', color: '#111', fontSize: 12.5, fontWeight: 800 }}>{isEn ? 'Got it' : 'متوجه شدم'}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, animation: 'zk-hint-pulse 1.4s ease-in-out infinite', WebkitAnimation: 'zk-hint-pulse 1.4s ease-in-out infinite' }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
               <span style={{ fontSize: 12, fontWeight: 800 }}>{isEn ? 'Next' : 'بعدی'}</span>
             </div>
           </div>
