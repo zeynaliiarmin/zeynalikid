@@ -3,6 +3,7 @@
 // جدید: نوار پیشرفت اینستاگرامی + حلقهٔ رنگی/خاکستری + ادامه از جای دیده‌شده + راهنمای اولین ورود +
 //       نگه‌داشتن انگشت = توقف تایمر (بدون منوی دانلود/کپی) + ضد دانلود تصویر
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { detectVpnOn } from '../utils/vpn';
 import { extractDirectMediaUrl } from '../utils/mediaInput';
 import { markStorySeen, getResumeIndex, hasSeenStoryHint, markStoryHintSeen } from '../utils/storyProgress';
@@ -213,7 +214,10 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 
   const isEn = lang === 'en';
 
-  return (
+  // رندر با createPortal به body تا استوری از قید stacking-context صفحه خارج شود و
+  // بالای هدر ثابت سایت (z-index 1200) بنشیند — در نتیجه هدر پنهان می‌شود و نوار پیشرفت
+  // در بالای صفحه دیده می‌شود. بعد از بستن استوری، هدر دوباره نمایان می‌شود.
+  return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999, background: '#000', display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -282,7 +286,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
