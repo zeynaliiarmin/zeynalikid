@@ -174,3 +174,13 @@ export function getReferralCodeFromUrl(): string {
     return '';
   }
 }
+
+// جایگزینی توکن‌های پویا ({tab}، {course}، {consultant}) در متن‌های راهنمای ارجاع.
+// وقتی مدیر متن سفارشی با توکن ذخیره کرده باشد، این تابع نام واقعی را جایگزین می‌کند.
+export function fillReferralText(text: string | null | undefined, vars: Record<string, string>): string {
+  let out = String(text || '');
+  for (const [key, value] of Object.entries(vars || {})) {
+    out = out.split(`{${key}}`).join(String(value ?? ''));
+  }
+  return out;
+}

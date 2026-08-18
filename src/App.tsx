@@ -9,7 +9,7 @@ import enDict from './locales/en';
 import { defaultCountries, defaultSettings as configDefaultSettings, migrateSettings, CURRENT_SETTINGS_VERSION } from './config/defaultSettings';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/trustFont';
 import { flagToEmoji, getCountryFlag } from './utils/phone';
-import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, findTabByCode, type ParsedReferral } from './utils/referral';
+import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, findTabByCode, fillReferralText, type ParsedReferral } from './utils/referral';
 
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { optimizeForUpload } from './utils/imageOptimizer';
@@ -1358,9 +1358,13 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   const tab = referralTarget?.tabCode ? findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode) : null;
   const isDir = tab && typeof referralTarget?.courseIndex === 'number';
   const mainLabel = isDir && tab
-    ? (cfg.referral?.texts?.popupPrimaryCourse || (lang==='en' ? `View details & enroll in ${tab.titleEn||tab.title}` : `مشاهده جزئیات و ثبت ${tab.title}`))
+    ? (cfg.referral?.texts?.popupPrimaryCourse
+      ? fillReferralText(cfg.referral.texts.popupPrimaryCourse, { course: lang==='en' ? (tab.titleEn||tab.title) : tab.title })
+      : (lang==='en' ? `View details & enroll in ${tab.titleEn||tab.title}` : `مشاهده جزئیات و ثبت ${tab.title}`))
     : tab
-    ? (cfg.referral?.texts?.popupPrimaryTab || (lang==='en' ? `View & compare ${tab.titleEn||tab.title} courses` : `مشاهده و مقایسه دوره‌های ${tab.title}`))
+    ? (cfg.referral?.texts?.popupPrimaryTab
+      ? fillReferralText(cfg.referral.texts.popupPrimaryTab, { tab: lang==='en' ? (tab.titleEn||tab.title) : tab.title })
+      : (lang==='en' ? `View & compare ${tab.titleEn||tab.title} courses` : `مشاهده و مقایسه دوره‌های ${tab.title}`))
     : (cfg.referral?.texts?.popupPrimaryBase || (lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'));
   const primary = () => {
     setReferralConsultOpen(false);
@@ -1379,7 +1383,9 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
       <div style={{textAlign:'center',padding:'6px 2px'}}>
         <div style={{width:52,height:52,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}><MiniIcon type="course" T={T}/></div>
         <h3 style={{color:T.ttl,fontSize:16,margin:'0 0 8px',fontWeight:800,lineHeight:1.6}}>
-          {(cfg.referral?.texts?.popupTitle || (lang==='en'
+          {(cfg.referral?.texts?.popupTitle
+            ? fillReferralText(cfg.referral.texts.popupTitle, { consultant: lang==='en' ? (referralConsultant.nameEn||referralConsultant.name) : referralConsultant.name })
+            : (lang==='en'
             ? `You have already been advised by ${referralConsultant.nameEn||referralConsultant.name}. No need for a new consultation request.`
             : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاورهٔ جدید نیست.`))}
         </h3>

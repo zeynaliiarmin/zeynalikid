@@ -8,6 +8,7 @@ import TrustBoxNew from '../components/TrustBoxNew';
 import MediaCard from '../components/MediaCard';
 import useMediaVpn from '../hooks/useMediaVpn';
 import { getMediaItemsForDestinations, type MediaDestination } from '../utils/mediaPlacement';
+import { fillReferralText } from '../utils/referral';
 
 function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
   const [failed, setFailed] = useState(false);
@@ -278,7 +279,9 @@ export default function CoursesPage({ app }: { app: any }) {
                 ? (cfg.referral?.texts?.coursesCourse || (lang==='en'
                     ? `Tap “View details & enroll” on the highlighted course to register this course.`
                     : `با زدن دکمهٔ «مشاهده جزئیات و ثبت» روی دورهٔ مشخص‌شده می‌توانید همان دوره را ثبت کنید.`))
-                : (cfg.referral?.texts?.coursesTab || (lang==='en'
+                : (cfg.referral?.texts?.coursesTab
+                    ? fillReferralText(cfg.referral.texts.coursesTab, { tab: tabName })
+                    : (lang==='en'
                     ? `Tap “View course” on each card to compare ${tabName} courses and choose the best match for your child.`
                     : `با زدن دکمه مشاهده دوره در هر کارت می‌توانید دوره‌های ${tabName} را مقایسه کنید و انتخاب بهتری داشته باشید.`))}
             </div>

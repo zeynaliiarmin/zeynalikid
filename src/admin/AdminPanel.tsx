@@ -107,7 +107,7 @@ export default function AdminPanel({app}:{app:any}){
  const subsRef=useRef<any[]>(subs); subsRef.current=subs;
  const [loadingSubs,setLoadingSubs]=useState(false);
  useEffect(()=>{let alive=true; const local=getLS(SK.subs,[]); if(isSupabaseConfigured){setLoadingSubs(true); fetchSubmissions().then(list=>{if(alive){const cloud=list||[]; const cloudIds=new Set(cloud.map((x:any)=>String(x.id))); setSubsState([...cloud,...local.filter((x:any)=>!cloudIds.has(String(x.id)))] )}}).catch(e=>{console.warn('Could not load submissions from Supabase',e);if(alive)setSubsState(local)}).finally(()=>{if(alive)setLoadingSubs(false)})}else setSubsState(local); return()=>{alive=false}},[]);
- const setSubs=useCallback((updater:any)=>{setSubsState(prev=>{const next=typeof updater==='function'?updater(prev):updater; const removedSubs=prev.filter((x:any)=>!next.some((y:any)=>y.id===x.id)); if(isSupabaseConfigured){try{const prevById=new Map(prev.map((x:any)=>[x.id,x])); if(removedSubs.length)softDeleteMultipleSubmissions(removedSubs.map((x:any)=>x.id)).catch(e=>console.warn('soft delete failed',e)); next.forEach((x:any)=>{const p=prevById.get(x.id); if(p&&p!==x)updateSubmission(x.id,x).catch(e=>console.warn('update failed',e))})}catch(e){console.warn(e)}}else{setLS(SK.subs,next); if(removedSubs.length){const now=new Date().toISOString(); removedSubs.forEach((x:any)=>{if(x?.payment?.receipt)deleteStoredImage(x.payment.receipt).catch(()=>{})}); const trash=getLS('zkid_trash_v1',[]); setLS('zkid_trash_v1',[...trash,...removedSubs.map((x:any)=>({...x,deleted_at:now,payment:x?.payment?.receipt?{...x.payment,receipt:'',receipt_image:'',receiptDeletedAt:now}:x.payment}))])}} if(removedSubs.length)setTrashKey(k=>k+1); return next})},[]);
+ const setSubs=useCallback((updater:any)=>{setSubsState(prev=>{const next=typeof updater==='function'?updater(prev):updater; const removedSubs=prev.filter((x:any)=>!next.some((y:any)=>y.id===x.id)); if(removedSubs.length){const removedIds=new Set(removedSubs.map((x:any)=>String(x.id))); try{const local=getLS(SK.subs,[]); if(Array.isArray(local)&&local.length)setLS(SK.subs,local.filter((x:any)=>!removedIds.has(String(x.id))))}catch{}} if(isSupabaseConfigured){try{const prevById=new Map(prev.map((x:any)=>[x.id,x])); if(removedSubs.length)softDeleteMultipleSubmissions(removedSubs.map((x:any)=>x.id)).catch(e=>console.warn('soft delete failed',e)); next.forEach((x:any)=>{const p=prevById.get(x.id); if(p&&p!==x)updateSubmission(x.id,x).catch(e=>console.warn('update failed',e))})}catch(e){console.warn(e)}}else{setLS(SK.subs,next); if(removedSubs.length){const now=new Date().toISOString(); removedSubs.forEach((x:any)=>{if(x?.payment?.receipt)deleteStoredImage(x.payment.receipt).catch(()=>{})}); const trash=getLS('zkid_trash_v1',[]); setLS('zkid_trash_v1',[...trash,...removedSubs.map((x:any)=>({...x,deleted_at:now,payment:x?.payment?.receipt?{...x.payment,receipt:'',receipt_image:'',receiptDeletedAt:now}:x.payment}))])}} if(removedSubs.length)setTrashKey(k=>k+1); return next})},[]);
  // اصلاح ۳-د: اگر فرم مشاوره‌ای بیش از ۱ روز در وضعیت «مشاوره شده» مانده باشد، به‌طور خودکار به «پیگیری» منتقل می‌شود (فقط یک‌بار در بارگذاری پنل بررسی می‌شود، بدون تداخل با ویرایش دستی هم‌زمان)
  useEffect(()=>{const now=Date.now(); const changed:any[]=[]; subs.forEach((x:any)=>{if(x.type==='consultation'&&x.consultationStatus==='مشاوره شده'&&x.consultationStatusChangedAt){const t=Date.parse(x.consultationStatusChangedAt); if(!isNaN(t)&&(now-t)>24*60*60*1000)changed.push(x.id)}}); if(changed.length)setSubs((list:any[])=>list.map(x=>changed.includes(x.id)?{...x,consultationStatus:'پیگیری',consultationStatusChangedAt:new Date().toISOString(),category:'پیگیری',changeHistory:logChange(x,'انتقال خودکار به پیگیری (بیش از ۱ روز از مشاوره‌شده)')}:x))},[subs.length]);
  const [editCfg,setEditCfgRawRaw]=useState<any|null>(null);
@@ -1404,6 +1404,99 @@ function ThemeManagerEditor(){
   </>
  }
 
+ // ─── انتخاب کادر/موقعیت کاور هایلایت (شبیه کراپ کاور اینستاگرام — غیرمخرب) ───
+ // موقعیت به‌صورت object-position و بزرگ‌نمایی به‌صورت scale ذخیره می‌شود؛ عکس اصلی دوباره آپلود/برش نمی‌شود.
+ const COVER_POS_PRESETS: { label: string; value: string }[] = [
+  { label: '↖', value: '0% 0%' }, { label: '↑', value: '50% 0%' }, { label: '↗', value: '100% 0%' },
+  { label: '←', value: '0% 50%' }, { label: '●', value: '50% 50%' }, { label: '→', value: '100% 50%' },
+  { label: '↙', value: '0% 100%' }, { label: '↓', value: '50% 100%' }, { label: '↘', value: '100% 100%' },
+ ];
+
+ function parseCoverPosition(position: string): [number, number] {
+  const parts = String(position || '50% 50%').trim().split(/\s+/);
+  const px = Math.max(0, Math.min(100, parseFloat(parts[0]) || 50));
+  const py = Math.max(0, Math.min(100, parseFloat(parts[1]) || 50));
+  return [px, py];
+ }
+
+ function CoverPositionPicker({ T, src, position, zoom, onChange }: {
+  T: any; src: string; position: string; zoom: number;
+  onChange: (patch: { coverPosition?: string; coverZoom?: number }) => void;
+ }) {
+  const [localPos, setLocalPos] = useState(position || '50% 50%');
+  const [localZoom, setLocalZoom] = useState(Number(zoom) || 1);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+
+  const apply = (pos: string, zoomValue: number) => {
+   setLocalPos(pos); setLocalZoom(zoomValue);
+   onChange({ coverPosition: pos, coverZoom: zoomValue });
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+   if (!frameRef.current) return;
+   e.preventDefault();
+   try { frameRef.current.setPointerCapture(e.pointerId); } catch {}
+   const [px, py] = parseCoverPosition(localPos);
+   drag.current = { px, py, x: e.clientX, y: e.clientY };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+   if (!drag.current || !frameRef.current) return;
+   const rect = frameRef.current.getBoundingClientRect();
+   const dx = ((e.clientX - drag.current.x) / Math.max(1, rect.width)) * 100;
+   const dy = ((e.clientY - drag.current.y) / Math.max(1, rect.height)) * 100;
+   const px = Math.max(0, Math.min(100, drag.current.px - dx));
+   const py = Math.max(0, Math.min(100, drag.current.py - dy));
+   const pos = `${Math.round(px * 10) / 10}% ${Math.round(py * 10) / 10}%`;
+   setLocalPos(pos);
+   onChange({ coverPosition: pos });
+  };
+  const onPointerUp = () => { drag.current = null; };
+
+  const [px, py] = parseCoverPosition(localPos);
+
+  return (
+   <div style={{ marginTop: 6, marginBottom: 8, padding: 10, borderRadius: 12, background: T.soft, border: `1px solid ${T.brd}` }}>
+    <div style={{ fontSize: 12, fontWeight: 800, color: T.ttl, marginBottom: 6 }}>تنظیم کادر کاور (شبیه کراپ کاور اینستاگرام)</div>
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+     <div
+      ref={frameRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      style={{ width: 150, height: 150, borderRadius: '50%', overflow: 'hidden', background: '#111827', position: 'relative', touchAction: 'none', cursor: 'grab', flexShrink: 0, boxShadow: `0 0 0 2px ${T.acc || '#0f766e'}` }}
+     >
+      {src ? (
+       <img src={src} alt="" referrerPolicy="no-referrer" draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${px}% ${py}%`, transform: `scale(${localZoom})`, pointerEvents: 'none', display: 'block' }} />
+      ) : (
+       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: 11, padding: 8, textAlign: 'center' }}>ابتدا لینک کاور را وارد کنید</div>
+      )}
+     </div>
+     <div style={{ flex: 1, minWidth: 200 }}>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+       {COVER_POS_PRESETS.map((p) => (
+        <button key={p.value} type="button" onClick={() => apply(p.value, localZoom)}
+         style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${localPos === p.value ? (T.acc || '#0f766e') : T.brd}`, background: localPos === p.value ? T.soft : T.card, color: T.ttl, cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+         title={p.value}>{p.label}</button>
+       ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+       <span style={{ fontSize: 11, color: T.mut, whiteSpace: 'nowrap' }}>بزرگ‌نمایی</span>
+       <input type="range" min={1} max={3} step={0.05} value={localZoom}
+        onChange={(e) => apply(localPos, Number(e.target.value))}
+        style={{ flex: 1, accentColor: T.acc || '#0f766e' }} />
+       <span style={{ fontSize: 11, color: T.mut, direction: 'ltr', minWidth: 40, textAlign: 'center' }}>{localZoom.toFixed(2)}x</span>
+      </div>
+      <button type="button" onClick={() => apply('50% 50%', 1)} style={{ minHeight: 30, marginTop: 8, padding: '4px 12px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.card, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 }}>بازنشانی کادر</button>
+      <div style={{ fontSize: 10.5, color: T.mut, marginTop: 6, lineHeight: 1.6 }}>عکس را با انگشت بکشید یا از نقطه‌های بالا انتخاب کنید؛ برای نزدیک‌تر کردن، بزرگ‌نمایی را افزایش دهید.</div>
+     </div>
+    </div>
+   </div>
+  );
+ }
+
  function HighlightsTabEditor(){
   // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
   // قبلاً از `highlights` استفاده می‌کرد که در سایت اثری نداشت — باگ رفع شد.
@@ -1434,7 +1527,7 @@ function ThemeManagerEditor(){
       <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
       <label style={S.lbl}>آدرس کاور (اختیاری)</label>
       <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.coverUrl||''} onCommit={(v:string)=>chg(i,'coverUrl',canonicalizeMediaInput(v,'image'))} placeholder="لینک دانلود مستقیم ImgURL"/>
-      {extractDirectMediaUrl(it.coverUrl,'image')&&<img data-admin-highlight-cover-preview src={extractDirectMediaUrl(it.coverUrl,'image')} alt="پیش‌نمایش کاور" style={{width:72,height:72,objectFit:'cover',borderRadius:'50%',border:`1px solid ${T.brd}`,marginBottom:7}}/>}
+      {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); return coverSrc ? <CoverPositionPicker T={T} src={coverSrc} position={it.coverPosition||'50% 50%'} zoom={Number(it.coverZoom)||1} onChange={(p:any)=>{if(p.coverPosition!==undefined)chg(i,'coverPosition',p.coverPosition); if(p.coverZoom!==undefined)chg(i,'coverZoom',p.coverZoom)}}/> : <div style={{fontSize:11,color:T.mut,marginBottom:6}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</div>;})()}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
        <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
        <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>

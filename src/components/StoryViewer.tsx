@@ -123,7 +123,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       {/* هدر */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
-          {highlightCover && <img src={highlightCover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+          {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined }} />}
         </div>
         <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1 }}>{hl?.title || ''}</span>
         {paused && <span style={{ color: 'rgba(255,255,255,.8)', fontSize: 12, fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,255,255,.15)' }}>متوقف</span>}
@@ -157,7 +157,7 @@ export function StoryHighlightsBar({ highlights, T, lang }: { highlights: Highli
           <button key={hl.id} onClick={() => setOpenIdx(i)} style={{ scrollSnapAlign: 'start', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, border: 0, background: 'transparent', cursor: 'pointer', padding: 0, flexShrink: 0, fontFamily: 'inherit' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', padding: 2, background: T.grad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: T.card, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {previewUrl ? <img src={previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} /> : <span style={{ fontSize: 20 }}></span>}
+                {previewUrl ? <img src={previewUrl} alt="" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined }} draggable={false} /> : <span style={{ fontSize: 20 }}></span>}
               </div>
             </div>
             <span style={{ fontSize: 10, color: T.mut, fontWeight: 600, maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hl.title}</span>

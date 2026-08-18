@@ -173,6 +173,8 @@ function sanitizeStoryHighlights(value: any): Record<string, any> {
   const source = value && typeof value === "object" ? value : {};
   const highlights = (Array.isArray(source.highlights) ? source.highlights : []).map((highlight: any) => ({
     id: String(highlight?.id || ""), title: String(highlight?.title || ""), coverUrl: String(highlight?.coverUrl || ""),
+    coverPosition: typeof highlight?.coverPosition === "string" ? highlight.coverPosition : "",
+    coverZoom: typeof highlight?.coverZoom === "number" && highlight.coverZoom >= 1 ? highlight.coverZoom : 1,
     active: highlight?.active !== false, order: Number(highlight?.order) || 0,
     stories: (Array.isArray(highlight?.stories) ? highlight.stories : []).map((story: any) => ({
       id: String(story?.id || ""), title: String(story?.title || ""),

@@ -13,6 +13,7 @@ import HeroSection from '../components/HeroSection';
 import TrustBoxWithImage from '../components/TrustBoxWithImage';
 import TrustBoxNew from '../components/TrustBoxNew';
 import ProductCard from '../components/ProductCard';
+import { fillReferralText } from '../utils/referral';
 
 export default function HomePage({app}:{app:any}){
  const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view,consultPulse,startConsult,requestConsult}=app;
@@ -110,7 +111,9 @@ export default function HomePage({app}:{app:any}){
    {referralTab && !isDirectCourse && (
      <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
        <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
-         {(cfg.referral?.texts?.homeTab || (lang==='en'
+         {(cfg.referral?.texts?.homeTab
+           ? fillReferralText(cfg.referral.texts.homeTab, { tab: lang === 'en' ? (referralTab.titleEn || referralTab.title) : referralTab.title })
+           : (lang==='en'
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
            : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
@@ -128,7 +131,9 @@ export default function HomePage({app}:{app:any}){
      return (
        <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
          <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
-           {(cfg.referral?.texts?.homeCourse || (lang==='en'
+           {(cfg.referral?.texts?.homeCourse
+             ? fillReferralText(cfg.referral.texts.homeCourse, { course: cname })
+             : (lang==='en'
              ? `Tap the button below to see the details and register "${cname}".`
              : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>

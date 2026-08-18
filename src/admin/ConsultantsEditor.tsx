@@ -3,6 +3,7 @@
 // تب «عکس مشاور» (پیش‌فرض بسته) + تب «اطلاعات بانکی و کیف پول» (پیش‌فرض بسته).
 import React, { useState } from 'react';
 import { makeReferralCode, suggestTabShortCode } from '../utils/referral';
+import { DEFAULT_REFERRAL_TEXTS } from '../config/referralTexts';
 import { ZkPlusIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkCloseIcon } from './adminIcons';
 
 const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
@@ -96,19 +97,19 @@ export default function ConsultantsEditor(props: any) {
       {/* ── متن‌های راهنمای قابل ویرایش در حالت لینک ارجاع ── */}
       <div style={{ marginBottom: 14, padding: 12, borderRadius: 12, background: T.soft, border: `1px solid ${T.brd}` }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: T.ttl, marginBottom: 4 }}>متن‌های راهنمای قابل ویرایش (در حالت لینک ارجاع)</div>
-        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>هر کدام از این متن‌ها در صفحه‌ای که مشخص شده، وقتی مخاطب با لینک ارجاع وارد می‌شود نمایش داده می‌شود. اگر خالی باشد، متن پیش‌فرض سایت استفاده می‌شود.</p>
+        <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>مقدار داخل هر فیلد، همان متن پیش‌فرضی است که اکنون در سایت نمایش داده می‌شود؛ هر بخش را هر طور خواستید ویرایش کنید. اگر فیلدی را کاملاً خالی کنید، سایت دوباره همین متن پیش‌فرض را نشان می‌دهد (متن پیش‌فرض از سایت حذف نمی‌شود). توکن‌های <span dir="ltr">{'{tab}'}</span>، <span dir="ltr">{'{course}'}</span> و <span dir="ltr">{'{consultant}'}</span> به‌صورت خودکار با نام واقعی تب/دوره/مشاور جایگزین می‌شوند.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک پایه — فقط کد مشاور)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeBase || ''} onBlur={(e) => setReferralText('homeBase', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeTab || ''} onBlur={(e) => setReferralText('homeTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeCourse || ''} onBlur={(e) => setReferralText('homeCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesTab || ''} onBlur={(e) => setReferralText('coursesTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesCourse || ''} onBlur={(e) => setReferralText('coursesCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>متن پیام پاپ‌آپ «درخواست مشاورهٔ مجدد»</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.popupTitle || ''} onBlur={(e) => setReferralText('popupTitle', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک پایه)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryBase || ''} onBlur={(e) => setReferralText('popupPrimaryBase', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک تب دوره)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryTab || ''} onBlur={(e) => setReferralText('popupPrimaryTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک دورهٔ مشخص)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryCourse || ''} onBlur={(e) => setReferralText('popupPrimaryCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ «مجدداً درخواست مشاوره دارم»</label><input style={S.inp} defaultValue={referral.texts?.reconsultLabel || ''} onBlur={(e) => setReferralText('reconsultLabel', e.target.value)} /></div>
-          <div><label style={S.lbl}>سؤال «به چه دلیلی مجدداً درخواست مشاوره دارید؟»</label><input style={S.inp} defaultValue={referral.texts?.reconsultQuestion || ''} onBlur={(e) => setReferralText('reconsultQuestion', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک پایه — فقط کد مشاور)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeBase || DEFAULT_REFERRAL_TEXTS.homeBase} onBlur={(e) => setReferralText('homeBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeTab || DEFAULT_REFERRAL_TEXTS.homeTab} onBlur={(e) => setReferralText('homeTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeCourse || DEFAULT_REFERRAL_TEXTS.homeCourse} onBlur={(e) => setReferralText('homeCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesTab || DEFAULT_REFERRAL_TEXTS.coursesTab} onBlur={(e) => setReferralText('coursesTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesCourse || DEFAULT_REFERRAL_TEXTS.coursesCourse} onBlur={(e) => setReferralText('coursesCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>متن پیام پاپ‌آپ «درخواست مشاورهٔ مجدد»</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.popupTitle || DEFAULT_REFERRAL_TEXTS.popupTitle} onBlur={(e) => setReferralText('popupTitle', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک پایه)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryBase || DEFAULT_REFERRAL_TEXTS.popupPrimaryBase} onBlur={(e) => setReferralText('popupPrimaryBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک تب دوره)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryTab || DEFAULT_REFERRAL_TEXTS.popupPrimaryTab} onBlur={(e) => setReferralText('popupPrimaryTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک دورهٔ مشخص)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryCourse || DEFAULT_REFERRAL_TEXTS.popupPrimaryCourse} onBlur={(e) => setReferralText('popupPrimaryCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمهٔ «مجدداً درخواست مشاوره دارم»</label><input style={S.inp} defaultValue={referral.texts?.reconsultLabel || DEFAULT_REFERRAL_TEXTS.reconsultLabel} onBlur={(e) => setReferralText('reconsultLabel', e.target.value)} /></div>
+          <div><label style={S.lbl}>سؤال «به چه دلیلی مجدداً درخواست مشاوره دارید؟»</label><input style={S.inp} defaultValue={referral.texts?.reconsultQuestion || DEFAULT_REFERRAL_TEXTS.reconsultQuestion} onBlur={(e) => setReferralText('reconsultQuestion', e.target.value)} /></div>
         </div>
       </div>
 
