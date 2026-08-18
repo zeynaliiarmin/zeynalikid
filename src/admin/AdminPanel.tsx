@@ -1404,56 +1404,163 @@ function ThemeManagerEditor(){
   </>
  }
 
- // ─── انتخاب کادر/موقعیت کاور هایلایت (شبیه کراپ کاور اینستاگرام — غیرمخرب) ───
- // موقعیت به‌صورت object-position و بزرگ‌نمایی به‌صورت scale ذخیره می‌شود؛ عکس اصلی دوباره آپلود/برش نمی‌شود.
- const COVER_POS_PRESETS: { label: string; value: string }[] = [
-  { label: '↖', value: '0% 0%' }, { label: '↑', value: '50% 0%' }, { label: '↗', value: '100% 0%' },
-  { label: '←', value: '0% 50%' }, { label: '●', value: '50% 50%' }, { label: '→', value: '100% 50%' },
-  { label: '↙', value: '0% 100%' }, { label: '↓', value: '50% 100%' }, { label: '↘', value: '100% 100%' },
- ];
+ // ─── انتخاب کادر/موقعیت کاور هایلایت (شبیه کراپ کاور اینستاگرام) ───
+ // کنترل با ژست لمسی: یک انگشت برای جابه‌جایی عکس، دو انگشت (پینچ) برای بزرگ‌نمایی، اسکرول ماوس برای زوم.
+ // خروجی به‌صورت object-position (موقعیت) + scale (زوم) ذخیره می‌شود تا سایت دقیقاً همان کادر را نشان دهد.
+ const COVER_FRAME = 200;
 
- function parseCoverPosition(position: string): [number, number] {
-  const parts = String(position || '50% 50%').trim().split(/\s+/);
-  const px = Math.max(0, Math.min(100, parseFloat(parts[0]) || 50));
-  const py = Math.max(0, Math.min(100, parseFloat(parts[1]) || 50));
-  return [px, py];
+ function clampCoverPan(W: number, H: number, coverScale: number, z: number, x: number, y: number) {
+  const S = coverScale * z;
+  const maxX = Math.max(0, (W * S - COVER_FRAME) / 2);
+  const maxY = Math.max(0, (H * S - COVER_FRAME) / 2);
+  return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
  }
 
  function CoverPositionPicker({ T, src, position, zoom, onChange }: {
   T: any; src: string; position: string; zoom: number;
   onChange: (patch: { coverPosition?: string; coverZoom?: number }) => void;
  }) {
-  const [localPos, setLocalPos] = useState(position || '50% 50%');
-  const [localZoom, setLocalZoom] = useState(Number(zoom) || 1);
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [z, setZ] = useState(() => Number(zoom) || 1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const frameRef = useRef<HTMLDivElement | null>(null);
-  const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinch = useRef<{ dist: number; z: number; panX: number; panY: number } | null>(null);
+  const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const zRef = useRef(z);
+  const panRef = useRef(pan);
+  const posZoomRef = useRef({ position, zoom });
+  useEffect(() => { zRef.current = z; }, [z]);
+  useEffect(() => { panRef.current = pan; }, [pan]);
+  useEffect(() => { posZoomRef.current = { position, zoom }; }, [position, zoom]);
 
-  const apply = (pos: string, zoomValue: number) => {
-   setLocalPos(pos); setLocalZoom(zoomValue);
-   onChange({ coverPosition: pos, coverZoom: zoomValue });
+  const W = img?.naturalWidth || 1;
+  const H = img?.naturalHeight || 1;
+  const coverScale = Math.max(COVER_FRAME / W, COVER_FRAME / H);
+
+  // بارگذاری تصویر برای خواندن ابعاد واقعی
+  useEffect(() => {
+   let alive = true;
+   setLoadError(false);
+   setImg(null);
+   if (!src) return;
+   const el = new Image();
+   try { el.referrerPolicy = 'no-referrer'; } catch {}
+   el.onload = () => { if (alive && el.naturalWidth) setImg(el); };
+   el.onerror = () => { if (alive) setLoadError(true); };
+   el.src = src;
+   return () => { alive = false; };
+  }, [src]);
+
+  // مقداردهی اولیه از کادر ذخیره‌شده (فقط بعد از بارگذاری تصویر)
+  useEffect(() => {
+   if (!img) return;
+   const { position: pos, zoom: z0 } = posZoomRef.current;
+   const parts = String(pos || '50% 50%').trim().split(/\s+/);
+   const readP = (s: string) => { const n = parseFloat(s); return Number.isFinite(n) ? n : 50; };
+   const px = Math.max(0, Math.min(100, readP(parts[0])));
+   const py = Math.max(0, Math.min(100, readP(parts[1])));
+   const zv = Math.max(1, Math.min(3, Number(z0) || 1));
+   const baseWinX = W - COVER_FRAME / coverScale;
+   const baseWinY = H - COVER_FRAME / coverScale;
+   const cx = (px / 100) * baseWinX + COVER_FRAME / (2 * coverScale);
+   const cy = (py / 100) * baseWinY + COVER_FRAME / (2 * coverScale);
+   const S = coverScale * zv;
+   const np = clampCoverPan(W, H, coverScale, zv, (W / 2 - cx) * S, (H / 2 - cy) * S);
+   zRef.current = zv;
+   panRef.current = np;
+   setZ(zv);
+   setPan(np);
+  }, [img]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const commit = (zv: number, p: { x: number; y: number }) => {
+   const S = coverScale * zv;
+   const cx = W / 2 - p.x / S;
+   const cy = H / 2 - p.y / S;
+   const baseWinX = W - COVER_FRAME / coverScale;
+   const baseWinY = H - COVER_FRAME / coverScale;
+   let px = 50, py = 50;
+   if (baseWinX > 1) px = Math.max(0, Math.min(100, (cx - COVER_FRAME / (2 * coverScale)) / baseWinX * 100));
+   if (baseWinY > 1) py = Math.max(0, Math.min(100, (cy - COVER_FRAME / (2 * coverScale)) / baseWinY * 100));
+   onChange({
+    coverPosition: `${Math.round(px * 10) / 10}% ${Math.round(py * 10) / 10}%`,
+    coverZoom: Math.round(zv * 100) / 100,
+   });
+  };
+
+  const applyZoom = (zv: number) => {
+   const nz = Math.max(1, Math.min(3, zv));
+   const oldS = coverScale * zRef.current;
+   const newS = coverScale * nz;
+   const np = clampCoverPan(W, H, coverScale, nz, panRef.current.x * (newS / oldS), panRef.current.y * (newS / oldS));
+   zRef.current = nz; panRef.current = np;
+   setZ(nz); setPan(np);
+   commit(nz, np);
+  };
+
+  const applyPan = (x: number, y: number) => {
+   const np = clampCoverPan(W, H, coverScale, zRef.current, x, y);
+   panRef.current = np; setPan(np);
+   commit(zRef.current, np);
+  };
+
+  const reset = () => {
+   const np = clampCoverPan(W, H, coverScale, 1, 0, 0);
+   zRef.current = 1; panRef.current = np;
+   setZ(1); setPan(np);
+   commit(1, np);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-   if (!frameRef.current) return;
+   if (!img || !frameRef.current) return;
    e.preventDefault();
    try { frameRef.current.setPointerCapture(e.pointerId); } catch {}
-   const [px, py] = parseCoverPosition(localPos);
-   drag.current = { px, py, x: e.clientX, y: e.clientY };
+   pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+   if (pointers.current.size >= 2) {
+    const pts = [...pointers.current.values()];
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    pinch.current = { dist: dist || 1, z: zRef.current, panX: panRef.current.x, panY: panRef.current.y };
+    drag.current = null;
+   } else {
+    drag.current = { x: e.clientX, y: e.clientY, px: panRef.current.x, py: panRef.current.y };
+   }
   };
   const onPointerMove = (e: React.PointerEvent) => {
-   if (!drag.current || !frameRef.current) return;
-   const rect = frameRef.current.getBoundingClientRect();
-   const dx = ((e.clientX - drag.current.x) / Math.max(1, rect.width)) * 100;
-   const dy = ((e.clientY - drag.current.y) / Math.max(1, rect.height)) * 100;
-   const px = Math.max(0, Math.min(100, drag.current.px - dx));
-   const py = Math.max(0, Math.min(100, drag.current.py - dy));
-   const pos = `${Math.round(px * 10) / 10}% ${Math.round(py * 10) / 10}%`;
-   setLocalPos(pos);
-   onChange({ coverPosition: pos });
+   if (!img || !pointers.current.has(e.pointerId)) return;
+   e.preventDefault();
+   pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+   if (pointers.current.size >= 2 && pinch.current) {
+    const pts = [...pointers.current.values()];
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+    const nz = Math.max(1, Math.min(3, pinch.current.z * (dist / pinch.current.dist)));
+    const oldS = coverScale * pinch.current.z;
+    const newS = coverScale * nz;
+    const np = clampCoverPan(W, H, coverScale, nz, pinch.current.panX * (newS / oldS), pinch.current.panY * (newS / oldS));
+    zRef.current = nz; panRef.current = np;
+    setZ(nz); setPan(np);
+    commit(nz, np);
+    return;
+   }
+   if (drag.current && pointers.current.size === 1) {
+    applyPan(drag.current.px + (e.clientX - drag.current.x), drag.current.py + (e.clientY - drag.current.y));
+   }
   };
-  const onPointerUp = () => { drag.current = null; };
+  const onPointerUp = (e: React.PointerEvent) => {
+   pointers.current.delete(e.pointerId);
+   try { frameRef.current?.releasePointerCapture(e.pointerId); } catch {}
+   if (pointers.current.size < 2) pinch.current = null;
+   if (pointers.current.size === 0) drag.current = null;
+   else if (pointers.current.size === 1) {
+    const pt = [...pointers.current.values()][0];
+    drag.current = { x: pt.x, y: pt.y, px: panRef.current.x, py: panRef.current.y };
+   }
+  };
 
-  const [px, py] = parseCoverPosition(localPos);
+  const onWheel = (e: React.WheelEvent) => {
+   e.preventDefault();
+   applyZoom(zRef.current * (e.deltaY < 0 ? 1.08 : 0.92));
+  };
 
   return (
    <div style={{ marginTop: 6, marginBottom: 8, padding: 10, borderRadius: 12, background: T.soft, border: `1px solid ${T.brd}` }}>
@@ -1465,39 +1572,33 @@ function ThemeManagerEditor(){
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      style={{ width: 150, height: 150, borderRadius: '50%', overflow: 'hidden', background: '#111827', position: 'relative', touchAction: 'none', cursor: 'grab', flexShrink: 0, boxShadow: `0 0 0 2px ${T.acc || '#0f766e'}` }}
+      onWheel={onWheel}
+      style={{ width: COVER_FRAME, height: COVER_FRAME, borderRadius: '50%', overflow: 'hidden', background: '#111827', position: 'relative', touchAction: 'none', cursor: img ? 'grab' : 'default', flexShrink: 0, boxShadow: `0 0 0 2px ${T.acc || '#0f766e'}`, WebkitUserSelect: 'none', userSelect: 'none' }}
      >
-      {src ? (
+      {img ? (
        <img src={src} alt="" referrerPolicy="no-referrer" draggable={false}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${px}% ${py}%`, transform: `scale(${localZoom})`, pointerEvents: 'none', display: 'block' }} />
+        style={{ position: 'absolute', left: '50%', top: '50%', width: W, height: H, maxWidth: 'none', maxHeight: 'none', transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${coverScale * z})`, transformOrigin: 'center center', pointerEvents: 'none', display: 'block' }} />
+      ) : loadError ? (
+       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', fontSize: 11, padding: 10, textAlign: 'center' }}>تصویر بارگذاری نشد — لینک کاور را بررسی کنید</div>
       ) : (
-       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: 11, padding: 8, textAlign: 'center' }}>ابتدا لینک کاور را وارد کنید</div>
+       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 11, padding: 10, textAlign: 'center' }}>ابتدا لینک کاور را وارد کنید</div>
       )}
      </div>
-     <div style={{ flex: 1, minWidth: 200 }}>
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
-       {COVER_POS_PRESETS.map((p) => (
-        <button key={p.value} type="button" onClick={() => apply(p.value, localZoom)}
-         style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${localPos === p.value ? (T.acc || '#0f766e') : T.brd}`, background: localPos === p.value ? T.soft : T.card, color: T.ttl, cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
-         title={p.value}>{p.label}</button>
-       ))}
+     <div style={{ flex: 1, minWidth: 180 }}>
+      <div style={{ fontSize: 11, color: T.mut, lineHeight: 1.8, marginBottom: 8 }}>
+       با <b>یک انگشت</b> عکس را جابه‌جا کنید و با <b>دو انگشت</b> (پینچ) بزرگ‌نمایی را کم/زیاد کنید. روی کامپیوتر با اسکرول ماوس زوم کنید.
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
        <span style={{ fontSize: 11, color: T.mut, whiteSpace: 'nowrap' }}>بزرگ‌نمایی</span>
-       <input type="range" min={1} max={3} step={0.05} value={localZoom}
-        onChange={(e) => apply(localPos, Number(e.target.value))}
-        style={{ flex: 1, accentColor: T.acc || '#0f766e' }} />
-       <span style={{ fontSize: 11, color: T.mut, direction: 'ltr', minWidth: 40, textAlign: 'center' }}>{localZoom.toFixed(2)}x</span>
+       <input type="range" min={1} max={3} step={0.05} value={z} onChange={(e) => applyZoom(Number(e.target.value))} style={{ flex: 1, accentColor: T.acc || '#0f766e' }} />
+       <span style={{ fontSize: 11, color: T.mut, direction: 'ltr', minWidth: 40, textAlign: 'center' }}>{z.toFixed(2)}x</span>
       </div>
-      <button type="button" onClick={() => apply('50% 50%', 1)} style={{ minHeight: 30, marginTop: 8, padding: '4px 12px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.card, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 }}>بازنشانی کادر</button>
-      <div style={{ fontSize: 10.5, color: T.mut, marginTop: 6, lineHeight: 1.6 }}>عکس را با انگشت بکشید یا از نقطه‌های بالا انتخاب کنید؛ برای نزدیک‌تر کردن، بزرگ‌نمایی را افزایش دهید.</div>
+      <button type="button" onClick={reset} style={{ minHeight: 30, marginTop: 8, padding: '4px 12px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.card, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 }}>بازنشانی کادر</button>
      </div>
     </div>
    </div>
   );
- }
-
- function HighlightsTabEditor(){
+ } function HighlightsTabEditor(){
   // بازطراحی: اتصال به storyHighlights (ساختاری که سایت واقعاً از آن می‌خواند)
   // قبلاً از `highlights` استفاده می‌کرد که در سایت اثری نداشت — باگ رفع شد.
   const rawSH=editCfg.storyHighlights&&typeof editCfg.storyHighlights==='object'?editCfg.storyHighlights:{};
