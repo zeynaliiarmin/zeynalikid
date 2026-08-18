@@ -234,9 +234,11 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
           {stories.map((_, i) => {
             const done = i < sIdx;
             const current = i === sIdx;
+            // جهت پرشدن نوار: در فارسی (RTL) از راست به چپ و در انگلیسی (LTR) از چپ به راست پر می‌شود.
+            const anchorStyle = isEn ? { left: 0 } : { right: 0 };
             return (
-              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.35)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 2, background: '#fff', width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.35)', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 0, bottom: 0, height: '100%', borderRadius: 2, background: '#fff', ...anchorStyle, width: done ? '100%' : current ? `${progress}%` : '0%', transition: current ? 'none' : 'width .25s ease' }} />
               </div>
             );
           })}
