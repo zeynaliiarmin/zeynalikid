@@ -143,6 +143,7 @@ export default function CoursesPage({ app }: { app: any }) {
       try { window.history.pushState({ zkCourseMedia: true }, ''); } catch {}
       mediaOverlayPushedRef.current = true;
     }
+    try { (window as any).__zkCourseMedia = true; } catch {}
     setShowAllMedia(kind);
   };
   const closeShowAllMedia = () => {
@@ -150,12 +151,14 @@ export default function CoursesPage({ app }: { app: any }) {
       mediaOverlayPushedRef.current = false;
       try { window.history.back(); } catch {}
     }
+    try { (window as any).__zkCourseMedia = false; } catch {}
     setShowAllMedia(null);
   };
   React.useEffect(() => {
     const onPop = () => {
       if (mediaOverlayPushedRef.current) {
         mediaOverlayPushedRef.current = false;
+        try { (window as any).__zkCourseMedia = false; } catch {}
         setShowAllMedia(null);
       }
     };
@@ -176,6 +179,7 @@ export default function CoursesPage({ app }: { app: any }) {
       detailPushedRef.current = true;
     }
     setSelectedCourse(course);
+    try { sessionStorage.setItem('zk_course_detail', String(course.id)); } catch {}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
   };
 
@@ -184,8 +188,29 @@ export default function CoursesPage({ app }: { app: any }) {
       detailPushedRef.current = false;
       try { window.history.back(); } catch {}
     }
+    try { sessionStorage.removeItem('zk_course_detail'); } catch {}
     setSelectedCourse(null);
   };
+
+  // ─── بازیابی دورهٔ باز بعد از رفرش (بدون پریدن به فهرست دوره‌ها) ───
+  React.useEffect(() => {
+    try {
+      const id = sessionStorage.getItem('zk_course_detail');
+      if (id && !selectedCourse) {
+        const found = allAvailableCourses.find((c: any) => String(c.id) === id);
+        if (found) {
+          setSelectedCourse(found);
+          if (!detailPushedRef.current) {
+            try { window.history.pushState({ zkCourseDetail: true, from: window.location.pathname }, ''); } catch {}
+            detailPushedRef.current = true;
+          }
+        } else {
+          try { sessionStorage.removeItem('zk_course_detail'); } catch {}
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allAvailableCourses]);
 
   // ─── آپدیت لینک ارجاع: دوره هدف (برای اسکرول + دکمه برجسته «مشاهده جزئیات و ثبت») ───
   const referralTargetCourse = (() => {
@@ -209,15 +234,22 @@ export default function CoursesPage({ app }: { app: any }) {
   }, [referralTargetCourse?.id, didScroll]);
 
   // وقتی کاربر دکمه back گوشی/مرورگر را می‌زند، history.pop باعث می‌شود جزئیات بسته شود.
-  // اگر صفحهٔ «مشاهده همه نظرات» باز باشد، آن را به عهدهٔ ReviewSection می‌گذاریم تا فقط آن بسته شود.
+  // اگر صفحهٔ «مشاهده همه نظرات/پرسش‌ها/محتوای آموزشی/تجربه والدین» باز باشد، آن را به عهدهٔ
+  // همان کامپوننت می‌گذاریم تا فقط همان لایه بسته شود و جزئیات دوره باز بماند.
   React.useEffect(() => {
     const onPop = () => {
-      let reviewsOverlayOpen = false;
-      try { reviewsOverlayOpen = !!(window as any).__zkReviewsOverlayOpen; } catch {}
-      if (reviewsOverlayOpen) return;
+      let overlayOpen = false;
+      try {
+        overlayOpen = !!(window as any).__zkReviewsOverlayOpen
+          || !!(window as any).__zkFaqOverlayOpen
+          || !!(window as any).__zkEduOverlayOpen
+          || !!(window as any).__zkCourseMedia;
+      } catch {}
+      if (overlayOpen) return;
       if (detailPushedRef.current) {
         detailPushedRef.current = false;
         setSelectedCourse(null);
+        try { sessionStorage.removeItem('zk_course_detail'); } catch {}
       }
     };
     window.addEventListener('popstate', onPop);

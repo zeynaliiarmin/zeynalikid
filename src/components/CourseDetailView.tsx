@@ -112,10 +112,16 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const consultTopRef = React.useRef<HTMLButtonElement>(null);
   const [pulseTarget, setPulseTarget] = useState<'enroll' | 'consult' | null>(null);
   const scrollToTopAndPulse = (target: 'enroll' | 'consult') => {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { try { window.scrollTo(0, 0); } catch {} }
+    // اسکرول به دکمهٔ مربوطه در ابتدای صفحه
+    const el = target === 'enroll' ? enrollTopRef.current : consultTopRef.current;
+    try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }
+    // تپش بعد از رسیدن به بالا شروع شود تا کاربر حتماً آن را ببیند
     setPulseTarget(null);
-    requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget(target)));
-    window.setTimeout(() => setPulseTarget(null), 2600);
+    window.setTimeout(() => {
+      setPulseTarget(null);
+      requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget(target)));
+    }, 450);
+    window.setTimeout(() => setPulseTarget(null), 3100);
   };
   const [eduTab, setEduTab] = useState<string>('all');
   // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله (شامل متن/عکس قدیمی)، پادکست، ویدیو
@@ -187,6 +193,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       try { window.history.pushState({ zkFaqOverlay: true }, ''); } catch {}
       faqOverlayPushedRef.current = true;
     }
+    try { (window as any).__zkFaqOverlayOpen = true; } catch {}
     setShowAllFaq(true);
   };
   const closeShowAllFaq = () => {
@@ -194,13 +201,45 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       faqOverlayPushedRef.current = false;
       try { window.history.back(); } catch {}
     }
+    try { (window as any).__zkFaqOverlayOpen = false; } catch {}
     setShowAllFaq(false);
   };
   React.useEffect(() => {
     const onPop = () => {
       if (faqOverlayPushedRef.current) {
         faqOverlayPushedRef.current = false;
+        try { (window as any).__zkFaqOverlayOpen = false; } catch {}
         setShowAllFaq(false);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // باز/بستن صفحهٔ «مشاهده همه» محتوای آموزشی با مدیریت دکمه back گوشی
+  const eduOverlayPushedRef = React.useRef(false);
+  const openShowAllEdu = () => {
+    if (!eduOverlayPushedRef.current) {
+      try { window.history.pushState({ zkEduOverlay: true }, ''); } catch {}
+      eduOverlayPushedRef.current = true;
+    }
+    try { (window as any).__zkEduOverlayOpen = true; } catch {}
+    setShowAllEdu(true);
+  };
+  const closeShowAllEdu = () => {
+    if (eduOverlayPushedRef.current) {
+      eduOverlayPushedRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    try { (window as any).__zkEduOverlayOpen = false; } catch {}
+    setShowAllEdu(false);
+  };
+  React.useEffect(() => {
+    const onPop = () => {
+      if (eduOverlayPushedRef.current) {
+        eduOverlayPushedRef.current = false;
+        try { (window as any).__zkEduOverlayOpen = false; } catch {}
+        setShowAllEdu(false);
       }
     };
     window.addEventListener('popstate', onPop);
@@ -332,7 +371,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </div>
 
           <button ref={enrollTopRef} onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 800, fontSize: 14, minHeight: 48, animation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-            {isFa ? 'ثبت مستقیم این دوره' : 'Direct enrollment'}
+            {isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
           </button>
         </div>
         {!hasReferral && onConsult && (
@@ -518,7 +557,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               {(eduTab === 'all' ? educationalMedia : (eduByType[eduTab] || [])).length > 5 && (
                 <button
                   type="button"
-                  onClick={() => setShowAllEdu(true)}
+                  onClick={openShowAllEdu}
                   style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 160 }}
                 >
                   <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -536,7 +575,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button type="button" onClick={() => setShowAllEdu(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <button type="button" onClick={closeShowAllEdu} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
                 </button>
                 <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
@@ -667,8 +706,8 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
       {/* Bottom-sheet: نمایش کامل یک پرسش و پاسخ */}
       {faqSheet && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setFaqSheet(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 640, maxHeight: '80vh', overflowY: 'auto', background: 'var(--zk-surface, #fff)', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 16px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(0,0,0,.2)' }}>
+        <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setFaqSheet(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="zk-sheet-up" style={{ width: '100%', maxWidth: 640, maxHeight: '80vh', overflowY: 'auto', background: 'var(--zk-surface, #fff)', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 16px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(0,0,0,.2)' }}>
             <div style={{ width: 44, height: 5, borderRadius: 999, background: 'var(--zk-border)', margin: '0 auto 14px' }} />
             <b style={{ display: 'block', fontSize: 15, fontWeight: 900, color: 'var(--zk-text)', lineHeight: 1.8, marginBottom: 12 }}>{faqSheet.question}</b>
             <p style={{ margin: 0, fontSize: 13.5, lineHeight: 2, color: 'var(--zk-text-muted)' }}>{faqSheet.answer}</p>
@@ -700,7 +739,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </button>
         )}
         <button onClick={() => scrollToTopAndPulse('enroll')} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-          {isFa ? 'ثبت مستقیم این دوره' : 'Direct enrollment'}
+          {isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
         </button>
       </div>
     </div>
