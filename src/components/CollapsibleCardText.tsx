@@ -12,6 +12,9 @@ type Props = {
   lessLabel?: string;
   className?: string;
   direction?: 'rtl' | 'ltr';
+  // اگر داده شود، دکمهٔ «بیشتر» به‌جای باز شدن inline، این callback را صدا می‌زند
+  // (برای باز شدن bottom sheet اطلاعات کامل — مثل بخش نظرات)
+  onMore?: () => void;
 };
 
 export default function CollapsibleCardText({
@@ -26,6 +29,7 @@ export default function CollapsibleCardText({
   lessLabel = 'کمتر',
   className,
   direction = 'rtl',
+  onMore,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
@@ -75,7 +79,7 @@ export default function CollapsibleCardText({
         <button
           type="button"
           aria-expanded="false"
-          onClick={(event) => { event.stopPropagation(); setExpanded(true); }}
+          onClick={(event) => { event.stopPropagation(); if (onMore) onMore(); else setExpanded(true); }}
           style={{
             position: 'absolute',
             insetInlineEnd: 0,

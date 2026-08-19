@@ -4,18 +4,27 @@ import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import AskQuestionForm from './AskQuestionForm';
 import MediaCard from './MediaCard';
+import MediaDetailSheet from './MediaDetailSheet';
 import CourseCard from './CourseCard';
 import { submitUserQuestion } from '../lib/supabase';
+import { balancedRandomMix, mediaTypeOf } from '../utils/mediaPlacement';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 
-// ─── کارت پیش‌نمایش پرسش متداول (اسکرول افقی، حداکثر ۳ خط + دکمه بیشتر) ───
-function FaqPreviewCard({ item, isFa, onMore }: { item: any; isFa: boolean; onMore: () => void }) {
+// ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
+// سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
+// ۲ خط سؤال + ۲ خط پاسخ + دکمهٔ «بیشتر» (باز شدن bottom sheet کامل).
+function FaqPreviewCard({ item, isFa, T, onMore }: { item: any; isFa: boolean; T: any; onMore: () => void }) {
   const q = String(item?.question || '');
-  const needMore = q.length > 140;
+  const a = String(item?.answer || '');
+  const qLong = q.length > 90;
+  const qLines = qLong ? 2 : 8;
+  const aLines = qLong ? 2 : 3;
+  const needMore = qLong || a.length > 60;
   return (
-    <div onClick={onMore} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: 'var(--zk-surface)', border: '1px solid var(--zk-border)', borderRadius: 14, padding: '12px 13px', cursor: 'pointer', minHeight: 118, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 4px 15px rgba(15,23,42,.05)' }}>
-      <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--zk-text)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q}</div>
-      <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--zk-primary)', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div onClick={onMore} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card || 'var(--zk-surface)', border: `1px solid ${T.brd || 'var(--zk-border)'}`, borderRadius: 14, padding: 14, cursor: 'pointer', minHeight: 150, display: 'flex', flexDirection: 'column', boxShadow: T.neuOut || '0 4px 15px rgba(15,23,42,.05)', direction: isFa ? 'rtl' : 'ltr', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both' }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: T.txt || 'var(--zk-text)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: qLines, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q}</div>
+      <div style={{ marginTop: 8, fontSize: 12.5, color: T.mut || 'var(--zk-text-muted)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: aLines, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>{a || (isFa ? 'پاسخ…' : 'Answer…')}</div>
+      <div style={{ marginTop: 8, fontSize: 11.5, color: T.acc || 'var(--zk-primary)', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>{needMore ? (isFa ? 'بیشتر' : 'More') : (isFa ? 'مشاهده پاسخ' : 'View answer')}</span>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
       </div>
@@ -95,29 +104,32 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const [showAllEdu, setShowAllEdu] = useState(false);
   const [showAllFaq, setShowAllFaq] = useState(false);
   const [faqSheet, setFaqSheet] = useState<any>(null);
+  const [sheetItem, setSheetItem] = useState<any>(null);
+  const [eduAllTab, setEduAllTab] = useState<string>('all');
   const faqOverlayPushedRef = React.useRef(false);
   const [eduTab, setEduTab] = useState<string>('all');
-  // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله(text)، پادکست(audio)، ویدیو(video)، عکس(image)
+  // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله (شامل متن/عکس قدیمی)، پادکست، ویدیو
   const eduByType = React.useMemo(() => {
-    const g: Record<string, any[]> = { text: [], audio: [], video: [], image: [] };
+    const g: Record<string, any[]> = { article: [], audio: [], video: [] };
     (educationalMedia || []).forEach((it: any) => {
-      const t = String(it.type || 'video');
-      if (g[t]) g[t].push(it); else g.video.push(it);
+      const t = (it.type === 'article' || it.type === 'text' || it.type === 'image') ? 'article' : (it.type === 'audio' ? 'audio' : 'video');
+      (g[t] = g[t] || []).push(it);
     });
     return g;
   }, [educationalMedia]);
   // تب‌هایی که فقط شامل نوع‌های دارای محتوا هستند
   const eduTabs = React.useMemo(() => {
     const list: { id: string; label: string }[] = [];
-    if (eduByType.text.length) list.push({ id: 'text', label: isFa ? 'مقاله' : 'Articles' });
+    if (eduByType.article.length) list.push({ id: 'article', label: isFa ? 'مقاله' : 'Articles' });
     if (eduByType.audio.length) list.push({ id: 'audio', label: isFa ? 'پادکست' : 'Podcasts' });
     if (eduByType.video.length) list.push({ id: 'video', label: isFa ? 'ویدیو' : 'Videos' });
-    if (eduByType.image.length) list.push({ id: 'image', label: isFa ? 'عکس' : 'Images' });
     return list;
   }, [eduByType, isFa]);
-  // ۵ محتوای آموزشی افقیِ رندوم از تب فعال
+  // ۵ محتوای آموزشی افقیِ متوازنِ رندوم از تب فعال (ترکیبی از مقاله/ویدیو/پادکست)
   const eduPreview = React.useMemo(() => {
-    const arr = eduTab === 'all' ? [...educationalMedia] : [...(eduByType[eduTab] || [])];
+    if (eduTab === 'all') return balancedRandomMix(educationalMedia, 5);
+    const pool = eduByType[eduTab] || [];
+    const arr = [...pool];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -490,7 +502,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr', marginTop: 10 }}>
               {eduPreview.map((item: any, index: number) => (
                 <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: isFa ? 'rtl' : 'ltr' }}>
-                  <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                  <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure onMore={() => setSheetItem({ ...item, description: item.descriptionCourses || item.description })} />
                 </div>
               ))}
               {(eduTab === 'all' ? educationalMedia : (eduByType[eduTab] || [])).length > 5 && (
@@ -509,20 +521,35 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </section>
         )}
 
-        {/* صفحهٔ جداگانهٔ «مشاهده همه» محتوای آموزشی — تمام‌صفحه */}
+        {/* صفحهٔ جداگانهٔ «مشاهده همه» محتوای آموزشی — تمام‌صفحه با فیلتر نوع */}
         {showAllEdu && createPortal(
-          <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
-              <button type="button" onClick={() => setShowAllEdu(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
-              <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
+          <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button type="button" onClick={() => setShowAllEdu(false)} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
+                </button>
+                <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
+              </div>
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+                {[{ id: 'all', label: isFa ? 'همه' : 'All' }, ...eduTabs]
+                  .filter((t) => t.id === 'all' || educationalMedia.some((x: any) => mediaTypeOf(x) === t.id))
+                  .map((t) => (
+                    <button key={t.id} type="button" onClick={() => setEduAllTab(t.id)} style={{ minHeight: 34, padding: '7px 14px', borderRadius: 999, border: `1px solid ${eduAllTab === t.id ? 'var(--zk-primary)' : 'var(--zk-border)'}`, background: eduAllTab === t.id ? 'var(--zk-primary-light)' : 'transparent', color: eduAllTab === t.id ? 'var(--zk-primary)' : 'var(--zk-text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {t.label}
+                    </button>
+                  ))}
+              </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start', maxWidth: 1080, margin: '0 auto' }}>
-                {educationalMedia.map((item: any, index: number) => (
-                  <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
-                ))}
+                {educationalMedia
+                  .filter((item: any) => eduAllTab === 'all' || mediaTypeOf(item) === eduAllTab)
+                  .map((item: any, index: number) => (
+                    <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ animation: 'fadeSlide .45s ease both', WebkitAnimation: 'fadeSlide .45s ease both', animationDelay: `${Math.min(index, 8) * 40}ms` }}>
+                      <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure onMore={() => setSheetItem({ ...item, description: item.descriptionCourses || item.description })} />
+                    </div>
+                  ))}
               </div>
             </div>
           </div>,
@@ -536,7 +563,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               <h2 style={detailSectionTitleStyle}>{isFa ? 'تجربه و رضایت والدین مرتبط' : 'Related parent experiences'}</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
                 {parentExperienceMedia.map((item: any, index: number) => (
-                  <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                  <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure onMore={() => setSheetItem({ ...item, description: item.descriptionCourses || item.description })} />
                 ))}
               </div>
             </div>
@@ -563,9 +590,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           {courseFaqs.length ? (
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
               {faqPreview.map((item: any, index: number) => (
-                <div key={item.id || index} style={{ direction: isFa ? 'rtl' : 'ltr' }}>
-                  <FaqPreviewCard item={item} isFa={isFa} onMore={() => setFaqSheet(item)} />
-                </div>
+                <FaqPreviewCard key={item.id || index} item={item} isFa={isFa} T={T} onMore={() => setFaqSheet(item)} />
               ))}
               {courseFaqs.length > 5 && (
                 <button
@@ -638,6 +663,9 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>,
         document.body,
       )}
+
+      {/* Bottom sheet «بیشتر» — نمایش کامل محتوا از پایین (مثل نظرات) */}
+      {sheetItem && <MediaDetailSheet item={sheetItem} T={T} lang={lang} vpnOn={mediaVpnOn} onClose={() => setSheetItem(null)} />}
 
       {/* Sticky CTA on mobile — safe-area aware */}
       <div style={{ 

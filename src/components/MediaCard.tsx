@@ -122,11 +122,14 @@ export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'vi
 }
 
 // همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
-function MediaCardInfo({item,type,masked,T,secure=true,lang}:{item:any,type:string,masked:string,T:any,secure?:boolean,lang:string}){
+function MediaCardInfo({item,type,masked,T,secure=true,lang,expanded=false,onMore}:{item:any,type:string,masked:string,T:any,secure?:boolean,lang:string,expanded?:boolean,onMore?:()=>void}){
  const desc=String(type==='text'?(item.body||item.description||''):(item.description||''));
  return <div style={{padding:'10px 12px 12px',userSelect:secure?'none':undefined,display:'flex',flexDirection:'column',flex:1}}>
-  <b style={{display:'block',height:25.2,fontSize:14,lineHeight:1.8,color:T.ttl,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title||'\u00a0'}</b>
-  <CollapsibleCardText
+  <b style={{display:'block',minHeight:25.2,fontSize:14,lineHeight:1.8,color:T.ttl,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title||'\u00a0'}</b>
+  {expanded ? (
+   <div style={{fontSize:12,lineHeight:1.9,color:T.mut,whiteSpace:'pre-wrap',overflowWrap:'break-word'}}>{desc}</div>
+  ) : (
+   <CollapsibleCardText
     text={desc}
     color={T.mut}
     accentColor={T.acc}
@@ -137,13 +140,15 @@ function MediaCardInfo({item,type,masked,T,secure=true,lang}:{item:any,type:stri
     moreLabel={lang==='en'?'More…':'بیشتر…'}
     lessLabel={lang==='en'?'Less':'کمتر'}
     direction={lang==='en'?'ltr':'rtl'}
-  />
+    onMore={onMore}
+   />
+  )}
   <Highlights highlights={item?.highlights} style={{ margin: '8px 0 0' }} />
   <div dir="ltr" aria-hidden={!masked} style={{height:20,marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"',visibility:masked?'visible':'hidden'}}><PhoneIcon size={12} color={T.acc}/> {masked||'0000xxxx000'}</div>
  </div>
 }
 
-export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:any,T:any,lang:string,vpnOn?:boolean,secure?:boolean}){
+export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=false,onMore}:{item:any,T:any,lang:string,vpnOn?:boolean,secure?:boolean,expanded?:boolean,onMore?:()=>void}){
  const [playing,setPlaying]=useState(false);
  // «مقاله» (محتوای ادغام‌شدهٔ متن+عکس) مثل «متن» رندر می‌شود
  const type=(item.type==='article')?'text':(item.type||'video');
@@ -187,7 +192,7 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:an
   {type==='audio'&&<div style={{aspectRatio:'16 / 9',padding:'14px 12px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
   {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
   {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.acc}}><TextIcon size={44} color={T.acc}/></div>}
-  <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} />
+  <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} expanded={expanded} onMore={onMore} />
  </div>
 }
 

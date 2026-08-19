@@ -205,6 +205,62 @@ export function videoAutoThumb(code: unknown): string {
   return '';
 }
 
+// ─── ابزار نمایش رندوم متوازن محتوای آموزشی/تجربه ───
+
+/** نوع نمایشی یک آیتم رسانه‌ای: مقاله (شامل متن/عکس قدیمی)، ویدیو یا پادکست. */
+export function mediaTypeOf(item: any): 'article' | 'video' | 'audio' {
+  const t = String(item?.type || 'video');
+  if (t === 'article' || t === 'text' || t === 'image') return 'article';
+  if (t === 'audio') return 'audio';
+  return 'video';
+}
+
+export function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * انتخاب متوازن رندوم: تا جای ممکن از هر نوع موجود (مقاله/ویدیو/پادکست) حداقل یکی
+ * برمی‌دارد، سپس بقیهٔ ظرفیت را از کل مجموعهٔ باقی‌مانده به‌صورت رندوم پر می‌کند.
+ */
+export function balancedRandomMix(items: any[], count: number): any[] {
+  const arr = (items || []).slice();
+  if (arr.length <= count) return shuffleArray(arr);
+  const byType = new Map<string, any[]>();
+  arr.forEach((it) => {
+    const t = mediaTypeOf(it);
+    if (!byType.has(t)) byType.set(t, []);
+    byType.get(t)!.push(it);
+  });
+  const used = new Set<any>();
+  const pickRandom = (pool: any[]) => {
+    const available = pool.filter((x) => !used.has(x));
+    if (!available.length) return null;
+    const it = available[Math.floor(Math.random() * available.length)];
+    used.add(it);
+    return it;
+  };
+  const picked: any[] = [];
+  // ۱) یکی از هر نوع موجود
+  for (const t of shuffleArray(Array.from(byType.keys()))) {
+    if (picked.length >= count) break;
+    const it = pickRandom(byType.get(t)!);
+    if (it) picked.push(it);
+  }
+  // ۲) پر کردن بقیه
+  while (picked.length < count) {
+    const it = pickRandom(arr);
+    if (!it) break;
+    picked.push(it);
+  }
+  return picked;
+}
+
 /** استخراج videohash آپارات از کد/لینک ویدیو (برای گرفتن poster از Edge Function). */
 export function extractAparatHash(code: unknown): string {
   const c = normalizeMediaInput(code);
