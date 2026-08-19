@@ -57,6 +57,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [loaded, setLoaded] = useState(false); // لود کامل عکس استوری فعلی
   const [closing, setClosing] = useState(false); // انیمیشن خروج (swipe پایین)
   const [holding, setHolding] = useState(false); // نگه‌داشتن انگشت → محو UI و توقف تایمر
+  const [hlAnim, setHlAnim] = useState<'next' | 'prev' | null>(null); // انیمیشن تغییر هایلایت
+  useEffect(() => { if (!hlAnim) return; const t = setTimeout(() => setHlAnim(null), 420); return () => clearTimeout(t); }, [hlAnim]);
   const closingRef = useRef(false);
   const timerRef = useRef<number>(0);
   const startRef = useRef(0);
@@ -136,6 +138,19 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     else if (hi > 0) { const pst = storiesOf(activeRef.current[hi - 1]); goTo(hi - 1, Math.max(0, pst.length - 1), false); }
   }, [goTo]);
 
+  // ── تغییر هایلایت با کشیدن انگشت (swipe) — مثل اینستاگرام ──
+  const nextHighlight = useCallback(() => {
+    const hi = hIdxRef.current, si = sIdxRef.current;
+    const act = activeRef.current;
+    if (hi < act.length - 1) { markSeenAt(hi, si); goTo(hi + 1, 0); setHlAnim('next'); }
+    else { markSeenAt(hi, si); onCloseRef.current(); }
+  }, [goTo, markSeenAt]);
+
+  const prevHighlight = useCallback(() => {
+    const hi = hIdxRef.current;
+    if (hi > 0) { goTo(hi - 1, 0, false); setHlAnim('prev'); }
+  }, [goTo]);
+
   const startTimer = useCallback(() => {
     startRef.current = Date.now();
     const remaining = DURATION_MS - elapsedRef.current;
@@ -193,7 +208,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       }
       if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
         skipClickRef.current = true;
-        if (diffX > 0) prev(); else next();
+        // کشیدن افقی = تغییر هایلایت (نه استوری) — مثل اینستاگرام
+        if (diffX > 0) prevHighlight(); else nextHighlight();
       }
     }
     if (held > LONG_PRESS_MS) skipClickRef.current = true; // نگه‌داشتن طولانی → ناوبری نشود
@@ -213,6 +229,10 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   };
 
   const isEn = lang === 'en';
+
+  // انیمیشن تغییر محتوا: تغییر هایلایت (swipe) انیمیشن واضح‌تر، تغییر استوری (tap) انیمیشن ملایم
+  const hlAnimName = hlAnim === 'next' ? 'zk-story-hl-next' : hlAnim === 'prev' ? 'zk-story-hl-prev' : 'zk-story-slide';
+  const hlAnimDur = hlAnim ? '.4s' : '.3s';
 
   // رندر با createPortal به body تا استوری از قید stacking-context صفحه خارج شود و
   // بالای هدر ثابت سایت (z-index 1200) بنشیند — در نتیجه هدر پنهان می‌شود و نوار پیشرفت
@@ -246,12 +266,12 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
             {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} />}
           </div>
-          <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
+          <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>{hl?.title || ''}</span>
           <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
         </div>
       </div>
       {/* تصویر — با انیمیشن تغییر استوری/هایلایت + لودینگ وسط استوری */}
-      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>
+      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>
         {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
         {imgSrc && !loaded && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
