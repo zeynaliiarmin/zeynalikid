@@ -107,6 +107,16 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const [sheetItem, setSheetItem] = useState<any>(null);
   const [eduAllTab, setEduAllTab] = useState<string>('all');
   const faqOverlayPushedRef = React.useRef(false);
+  // ── دکمه‌های ابتدای صفحه (ثبت مستقیم / مشاوره) + تپش بعد از کلیک روی CTA پایین ──
+  const enrollTopRef = React.useRef<HTMLButtonElement>(null);
+  const consultTopRef = React.useRef<HTMLButtonElement>(null);
+  const [pulseTarget, setPulseTarget] = useState<'enroll' | 'consult' | null>(null);
+  const scrollToTopAndPulse = (target: 'enroll' | 'consult') => {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { try { window.scrollTo(0, 0); } catch {} }
+    setPulseTarget(null);
+    requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget(target)));
+    window.setTimeout(() => setPulseTarget(null), 2600);
+  };
   const [eduTab, setEduTab] = useState<string>('all');
   // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله (شامل متن/عکس قدیمی)، پادکست، ویدیو
   const eduByType = React.useMemo(() => {
@@ -321,14 +331,14 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             )}
           </div>
 
-          <button onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, minHeight: 48, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-            {isFa ? 'ثبت‌نام این دوره' : 'Enroll now'}
+          <button ref={enrollTopRef} onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 800, fontSize: 14, minHeight: 48, animation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+            {isFa ? 'ثبت مستقیم این دوره' : 'Direct enrollment'}
           </button>
         </div>
         {!hasReferral && onConsult && (
-          <div style={{ marginBottom: 14 }}>
-            <button onClick={onConsult} style={{ width: '100%', minHeight: 44, padding: '10px 16px', borderRadius: 999, border: '1.5px dashed var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {isFa ? '💬 مشاوره رایگان' : '💬 Free consultation'}
+          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'flex-start' }}>
+            <button ref={consultTopRef} onClick={onConsult} style={{ minHeight: 38, padding: '8px 16px', borderRadius: 999, border: '1px solid var(--zk-border)', background: 'transparent', color: 'var(--zk-text-muted)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', animation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+              {isFa ? 'مشاوره رایگان' : 'Free consult'}
             </button>
           </div>
         )}
@@ -578,15 +588,6 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
         <section id="course-detail-faq" data-detail-section style={detailSectionStyle(navTopOffset)}>
           <h2 style={detailSectionTitleStyle}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</h2>
-          <div style={{ marginBottom: 14, padding: '13px 14px', border: '1px solid var(--zk-border)', borderRadius: 16, background: 'var(--zk-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 190px' }}>
-              <b style={{ display: 'block', color: 'var(--zk-text)', fontSize: 13.5, marginBottom: 3 }}>{isFa ? 'پاسخ پرسش خود را پیدا نکردید؟' : 'Could not find your answer?'}</b>
-              <span style={{ color: 'var(--zk-text-muted)', fontSize: 12, lineHeight: 1.7 }}>{isFa ? 'سؤال متنی یا صوتی خود را همراه شماره تماس برای کارشناس ارسال کنید.' : 'Send your text or voice question and phone number to our specialist.'}</span>
-            </div>
-            <button type="button" onClick={() => setAskOpen(true)} style={{ minHeight: 44, padding: '9px 18px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'var(--zk-surface)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {isFa ? 'سؤال دارم' : 'Ask a question'}
-            </button>
-          </div>
           {courseFaqs.length ? (
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
               {faqPreview.map((item: any, index: number) => (
@@ -608,7 +609,17 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           ) : (
             <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز پرسش متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>
           )}
-          {askOpen && <AskQuestionForm T={T} lang={lang} pageSource={`course:${course.id}`} countries={countries} onClose={() => setAskOpen(false)} onSubmit={async (question, voiceNoteUrl, phone) => { await submitUserQuestion(question, voiceNoteUrl, `course:${course.id}`, phone); }} />}
+          {/* باکس «سوال دارم» — در انتهای کادر پرسش‌های متداول */}
+          <div style={{ marginTop: 14, padding: '13px 14px', border: '1px solid var(--zk-border)', borderRadius: 16, background: 'var(--zk-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 190px' }}>
+              <b style={{ display: 'block', color: 'var(--zk-text)', fontSize: 13.5, marginBottom: 3 }}>{isFa ? 'پاسخ پرسش خود را پیدا نکردید؟' : 'Could not find your answer?'}</b>
+              <span style={{ color: 'var(--zk-text-muted)', fontSize: 12, lineHeight: 1.7 }}>{isFa ? 'سؤال متنی یا صوتی خود را همراه شماره تماس برای کارشناس ارسال کنید.' : 'Send your text or voice question and phone number to our specialist.'}</span>
+            </div>
+            <button type="button" onClick={() => setAskOpen(true)} style={{ minHeight: 44, padding: '9px 18px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'var(--zk-surface)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {isFa ? 'سؤال دارم' : 'Ask a question'}
+            </button>
+          </div>
+          {askOpen && !showAllFaq && <AskQuestionForm T={T} lang={lang} pageSource={`course:${course.id}`} countries={countries} onClose={() => setAskOpen(false)} onSubmit={async (question, voiceNoteUrl, phone) => { await submitUserQuestion(question, voiceNoteUrl, `course:${course.id}`, phone); }} />}
         </section>
 
         {/* دوره‌های مشابه/مرتبط هم‌تب — بعد از پرسش‌های متداول (هماهنگ با پنل مدیریت) */}
@@ -643,8 +654,13 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p>
                 </details>
               ))}
+              {/* دکمهٔ «سوال دارم» در انتهای همه پرسش‌ها — باز شدن پاپ‌آپ پرسش */}
+              <button type="button" onClick={() => setAskOpen(true)} style={{ marginTop: 8, minHeight: 48, borderRadius: 14, border: '1px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                {isFa ? 'سوال دارم' : 'Ask a question'}
+              </button>
             </div>
           </div>
+          {askOpen && <AskQuestionForm T={T} lang={lang} pageSource={`course:${course.id}`} countries={countries} onClose={() => setAskOpen(false)} onSubmit={async (question, voiceNoteUrl, phone) => { await submitUserQuestion(question, voiceNoteUrl, `course:${course.id}`, phone); }} />}
         </div>,
         document.body,
       )}
@@ -679,12 +695,12 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         zIndex: 10 
       }}>
         {!hasReferral && onConsult && (
-          <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
+          <button onClick={() => scrollToTopAndPulse('consult')} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
             {isFa ? 'مشاوره رایگان' : 'Free consult'}
           </button>
         )}
-        <button onClick={onRegister} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-          {isFa ? 'ثبت‌نام این دوره' : 'Enroll'}
+        <button onClick={() => scrollToTopAndPulse('enroll')} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+          {isFa ? 'ثبت مستقیم این دوره' : 'Direct enrollment'}
         </button>
       </div>
     </div>

@@ -156,10 +156,12 @@ export default function StickyAnchorNav({ items, topOffset = 0, maxWidth = 960, 
         <div
           ref={navScrollerRef}
           dir={lang === 'fa' ? 'rtl' : 'ltr'}
-          style={{ height: '100%', display: 'flex', alignItems: 'stretch', gap: 2, overflowX: 'auto', scrollbarWidth: 'none', padding: '0 10px', overscrollBehaviorX: 'contain' }}
+          style={{ height: '100%', display: 'flex', alignItems: 'stretch', gap: 1, overflowX: 'auto', scrollbarWidth: 'none', padding: '0 6px', overscrollBehaviorX: 'contain' }}
         >
           {items.map((item) => {
             const active = activeId === item.id;
+            // تب‌های زیاد (مثل ۵ تب صفحهٔ دوره) فشرده‌تر می‌شوند تا بدون اسکرول افقی دیده شوند
+            const compact = items.length >= 5;
             return (
               <button
                 key={item.id}
@@ -172,12 +174,12 @@ export default function StickyAnchorNav({ items, topOffset = 0, maxWidth = 960, 
                   position: 'relative',
                   flex: '0 0 auto',
                   minHeight: 44,
-                  padding: '0 13px',
+                  padding: compact ? '0 7px' : '0 13px',
                   border: 0,
                   background: 'transparent',
                   color: active ? 'var(--zk-primary)' : 'var(--zk-text-muted)',
                   fontFamily: 'inherit',
-                  fontSize: 13,
+                  fontSize: compact ? 12.5 : 13,
                   fontWeight: active ? 850 : 650,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
