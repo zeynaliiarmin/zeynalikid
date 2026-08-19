@@ -62,6 +62,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [hlStage, setHlStage] = useState<'out' | 'in' | null>(null);
   const [hlInStart, setHlInStart] = useState(false);
   const hlDirRef = useRef<'next' | 'prev' | null>(null);
+  const [endAnim, setEndAnim] = useState(false); // پایان زنجیرهٔ هایلایت‌ها → مکعب محو به صفحه
+  const endRef = useRef(false);
   const [dragY, setDragY] = useState(0); // جابه‌جایی عمودی هنگام کشیدن برای خروج
   const [snapping, setSnapping] = useState(false); // بازگشت نرم بعد از کشیدن کوتاه به پایین
   const closingRef = useRef(false);
@@ -130,6 +132,17 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     window.setTimeout(() => onCloseRef.current(), 360);
   }, []);
 
+  // پایان زنجیرهٔ هایلایت‌ها: انیمیشن مکعبِ محو‌شونده و برگشت به صفحهٔ آموزش/تجربه والدین
+  // تا مخاطب متوجه شود که آخرین استوریِ آخرین هایلایت بوده است.
+  const finishLast = useCallback(() => {
+    if (endRef.current) return;
+    endRef.current = true;
+    markSeenAt(hIdxRef.current, sIdxRef.current);
+    clearTimeout(timerRef.current);
+    setEndAnim(true);
+    window.setTimeout(() => onCloseRef.current(), 520);
+  }, [markSeenAt]);
+
   // تابع تغییر هایلایت با انیمیشن — از طریق ref در دسترس next (برای رفتن خودکار) قرار می‌گیرد
   const startHlChangeRef = useRef<(dir: 'next' | 'prev') => void>(() => {});
 
@@ -139,7 +152,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     const st = storiesRef.current, act = activeRef.current;
     if (si < st.length - 1) goTo(hi, si + 1);
     else if (hi < act.length - 1) startHlChangeRef.current('next'); // آخرین استوری → هایلایت بعدی با انیمیشن مکعب
-    else { markSeenAt(hi, si); onCloseRef.current(); }
+    else { finishLast(); } // آخرین استوریِ آخرین هایلایت → مکعب محو + برگشت به صفحه
   }, [goTo, markSeenAt]);
 
   const prev = useCallback(() => {
@@ -153,7 +166,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     if (hlDirRef.current) return; // حین انیمیشن، ورودی جدید نادیده گرفته شود
     const hi = hIdxRef.current;
     const act = activeRef.current;
-    if (dir === 'next' && hi >= act.length - 1) { markSeenAt(hi, sIdxRef.current); onCloseRef.current(); return; }
+    if (dir === 'next' && hi >= act.length - 1) { finishLast(); return; }
     if (dir === 'prev' && hi <= 0) return;
     const newHi = dir === 'next' ? hi + 1 : hi - 1;
     // پیش‌بارگذاری تصویر هایلایت ورودی تا موقع چرخش، spinner ظاهر نشود و انیمیشن لگ نگیرد
@@ -337,9 +350,14 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       position: 'fixed', inset: 0, zIndex: 9999, background: '#000', display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
-      transform: closing ? 'translateY(100%)' : `translateY(${dragY}px)`,
-      opacity: closing ? 0 : Math.max(0, 1 - dragY / (typeof window !== 'undefined' ? window.innerHeight * 0.6 : 500)),
-      transition: (closing || snapping) ? 'transform .34s cubic-bezier(.4,0,.2,1), opacity .34s ease' : 'none',
+      transform: endAnim
+        ? 'perspective(1100px) rotateY(-16deg) translateY(26px) scale(.92)'
+        : closing ? 'translateY(100%)' : `translateY(${dragY}px)`,
+      opacity: (endAnim || closing) ? 0 : Math.max(0, 1 - dragY / (typeof window !== 'undefined' ? window.innerHeight * 0.6 : 500)),
+      transformOrigin: 'center center',
+      transition: endAnim
+        ? 'transform .5s cubic-bezier(.4,0,.2,1), opacity .5s ease'
+        : (closing || snapping) ? 'transform .34s cubic-bezier(.4,0,.2,1), opacity .34s ease' : 'none',
     }}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}>

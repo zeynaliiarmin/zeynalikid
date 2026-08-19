@@ -38,11 +38,14 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
   };
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
-  // برای ویدیو: قبل از پخش، پیش‌نمایش (فریم اول / thumbnail) نشان داده می‌شود ولی پخش نمی‌شود؛
-  // با زدن دکمهٔ پخش، پخش واقعی (iframe یا ویدیو) شروع می‌شود.
+  // برای ویدیو: اگر تصویر بندانگشتی/کاور داشته باشد، اول پیش‌نمایش (فریم اول / thumbnail) نشان داده
+  // می‌شود و با زدن دکمهٔ پخش، پخش واقعی شروع می‌شود. اگر هیچ تصویر بندانگشتی انتخاب نشده باشد،
+  // دکمهٔ میانی حذف و پلیر خودِ آپارات/یوتیوب مستقیماً نمایش داده می‌شود تا با یک ضربه (دکمهٔ پخش
+  // خود پلتفرم) ویدیو پخش شود.
   if (hasReal) {
     const code = (item as any).manualCode || item.url || '';
-    if (kind === 'video' && !playing) {
+    const hasThumb = !!(item.cover || (item as any).thumbnail);
+    if (kind === 'video' && hasThumb && !playing) {
       return (
         <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
           <button
