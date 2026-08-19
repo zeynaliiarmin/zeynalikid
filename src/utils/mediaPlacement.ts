@@ -165,9 +165,11 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
   const directImage = item?.type === 'image' ? extractDirectMediaUrl(code, 'image') : '';
   const directCover = extractDirectMediaUrl(item?.cover || item?.thumbnail, 'image');
   const safeCode = item?.type === 'image' ? directImage : code;
-  // اگر ویدیو هیچ تصویر بندانگشتی/کاوری نداشته باشد، اولین فریم خودِ ویدیو
-  // (یوتیوب/آپارات) به‌عنوان تصویر بندانگشتی کارت استفاده می‌شود (فقط برای کارت، نه پلیر مودال).
+  // اگر ویدیو هیچ تصویر بندانگشتی/کاوری نداشته باشد:
+  // - یوتیوب → تصویر بندانگشتی مستقیم (img.youtube.com)
+  // - آپارات → hash استخراج و از Edge Function «aparat-thumb» poster واقعی گرفته می‌شود
   const autoThumb = item?.type === 'video' ? videoAutoThumb(code) : '';
+  const aparatHash = item?.type === 'video' ? extractAparatHash(code) : '';
   return {
     ...item,
     title: item?.title || '',
@@ -178,22 +180,28 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
     date: item?.date || '',
     dateEn: item?.dateEn || item?.date || '',
     cover: directCover || autoThumb || directImage,
-    _autoCover: !directCover && !!autoThumb,
+    _autoCover: !directCover && (!!autoThumb || !!aparatHash),
+    ...(aparatHash ? { _aparatHash: aparatHash } : {}),
     ...(safeCode ? { manualCode: safeCode, url: safeCode } : {}),
   };
 }
 
-/** ساخت تصویر بندانگشتی خودکار از کد/لینک ویدیوی یوتیوب یا آپارات (اولین فریم). */
+/** ساخت تصویر بندانگشتی خودکار از کد/لینک ویدیوی یوتیوب (تصویر مستقیم). */
 export function videoAutoThumb(code: unknown): string {
   const c = normalizeMediaInput(code);
   if (!c) return '';
   // یوتیوب: watch?v= / embed/ / shorts/ / youtu.be/
   const yt = c.match(/(?:youtube\.com\/(?:watch\?(?:[^#"'\s]*&)?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
   if (yt?.[1]) return `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`;
-  // آپارات: /v/UID یا /video/video/embed/videohash/UID
-  const ap = c.match(/aparat\.com\/(?:v\/|video\/video\/embed\/videohash\/)([A-Za-z0-9]+)/);
-  if (ap?.[1]) return `https://www.aparat.com/video/video/embed/videohash/${ap[1]}/vt/frame`;
   return '';
+}
+
+/** استخراج videohash آپارات از کد/لینک ویدیو (برای گرفتن poster از Edge Function). */
+export function extractAparatHash(code: unknown): string {
+  const c = normalizeMediaInput(code);
+  if (!c) return '';
+  const ap = c.match(/aparat\.com\/(?:v\/|video\/video\/embed\/videohash\/)([A-Za-z0-9]+)/);
+  return ap?.[1] || '';
 }
 
 export const EXPERIENCE_VIDEO_ROTATION_KEY = 'zk_experience_video_rotation_v1';
