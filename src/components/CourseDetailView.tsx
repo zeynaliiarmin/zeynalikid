@@ -4,8 +4,24 @@ import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import AskQuestionForm from './AskQuestionForm';
 import MediaCard from './MediaCard';
+import CourseCard from './CourseCard';
 import { submitUserQuestion } from '../lib/supabase';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
+
+// ─── کارت پیش‌نمایش پرسش متداول (اسکرول افقی، حداکثر ۳ خط + دکمه بیشتر) ───
+function FaqPreviewCard({ item, isFa, onMore }: { item: any; isFa: boolean; onMore: () => void }) {
+  const q = String(item?.question || '');
+  const needMore = q.length > 140;
+  return (
+    <div onClick={onMore} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: 'var(--zk-surface)', border: '1px solid var(--zk-border)', borderRadius: 14, padding: '12px 13px', cursor: 'pointer', minHeight: 118, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 4px 15px rgba(15,23,42,.05)' }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--zk-text)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q}</div>
+      <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--zk-primary)', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{needMore ? (isFa ? 'بیشتر' : 'More') : (isFa ? 'مشاهده پاسخ' : 'View answer')}</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+      </div>
+    </div>
+  );
+}
 
 interface Course {
   id: string;
@@ -43,9 +59,11 @@ interface Props {
   hasReferral?: boolean;
   // مشاور ارجاع‌دهنده (برای نمایش کادر معرفی در ابتدای جزئیات دوره)
   referralConsultant?: any;
+  // باز کردن دورهٔ دیگر (برای بخش «دوره‌های مشابه»)
+  onOpenCourse?: (course: any) => void;
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false, referralConsultant = null }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false, referralConsultant = null, onOpenCourse }: Props) {
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -60,10 +78,24 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const legacyCourseFaqs = ((isFa ? cfg?.courseTabFaqs : cfg?.courseTabFaqsEn) || []).filter((item: any) => item.tab === course.tabId);
   const selectedCourseFaqs = ((isFa ? cfg?.faqItems : cfg?.faqItemsEn) || []).filter((item: any) => Array.isArray(item.placements) && item.placements.includes(`course:${course.tabId}`));
   const courseFaqs = [...legacyCourseFaqs, ...selectedCourseFaqs];
+  // دوره‌های مشابه/مرتبط هم‌تب (هماهنگ با پنل مدیریت — اگر تب/دوره جدیدی اضافه شود خودکار نمایش داده می‌شود)
+  const relatedCourses = React.useMemo(() => {
+    const tabs = Array.isArray(cfg?.courseTabs) ? cfg.courseTabs : [];
+    const sameTab = tabs.filter((t: any) => t?.id === course.tabId);
+    const list = sameTab.flatMap((t: any) =>
+      (Array.isArray(t?.courses) ? t.courses : [])
+        .filter((c: any) => c?.active !== false && c?.id !== course.id)
+        .map((c: any) => ({ ...c, tabId: t.id }))
+    );
+    return list.slice(0, 6);
+  }, [cfg, course.tabId, course.id]);
   const desc = isFa ? course.desc : (course.descEn || course.desc);
   const [imageFailed, setImageFailed] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [showAllEdu, setShowAllEdu] = useState(false);
+  const [showAllFaq, setShowAllFaq] = useState(false);
+  const [faqSheet, setFaqSheet] = useState<any>(null);
+  const faqOverlayPushedRef = React.useRef(false);
   const [eduTab, setEduTab] = useState<string>('all');
   // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله(text)، پادکست(audio)، ویدیو(video)، عکس(image)
   const eduByType = React.useMemo(() => {
@@ -114,7 +146,44 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     { id: 'course-detail-syllabus', label: isFa ? 'جزئیات دوره' : 'Course details' },
     { id: 'course-detail-reviews', label: isFa ? 'نظرات' : 'Reviews' },
     { id: 'course-detail-faq', label: isFa ? 'پرسش‌های متداول' : 'FAQ' },
+    ...(relatedCourses.length ? [{ id: 'course-detail-related', label: isFa ? 'دوره‌های مشابه' : 'Similar courses' }] : []),
   ];
+
+  // ۵ پرسش متداول رندوم برای پیش‌نمایش افقی (هر بار تغییر می‌کند)
+  const faqPreview = React.useMemo(() => {
+    const arr = [...courseFaqs];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 5);
+  }, [courseFaqs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // باز/بستن صفحهٔ «مشاهده همه پرسش‌ها» با مدیریت دکمه back گوشی
+  const openShowAllFaq = () => {
+    if (!faqOverlayPushedRef.current) {
+      try { window.history.pushState({ zkFaqOverlay: true }, ''); } catch {}
+      faqOverlayPushedRef.current = true;
+    }
+    setShowAllFaq(true);
+  };
+  const closeShowAllFaq = () => {
+    if (faqOverlayPushedRef.current) {
+      faqOverlayPushedRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    setShowAllFaq(false);
+  };
+  React.useEffect(() => {
+    const onPop = () => {
+      if (faqOverlayPushedRef.current) {
+        faqOverlayPushedRef.current = false;
+        setShowAllFaq(false);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // Enhanced syllabus with short content for accordion (4 items)
   const syllabusItems = (course.features && course.features.length > 0)
@@ -491,12 +560,84 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               {isFa ? 'سؤال دارم' : 'Ask a question'}
             </button>
           </div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {courseFaqs.length ? courseFaqs.map((item: any) => <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}><summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary><p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p></details>) : <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز پرسش متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>}
-          </div>
+          {courseFaqs.length ? (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
+              {faqPreview.map((item: any, index: number) => (
+                <div key={item.id || index} style={{ direction: isFa ? 'rtl' : 'ltr' }}>
+                  <FaqPreviewCard item={item} isFa={isFa} onMore={() => setFaqSheet(item)} />
+                </div>
+              ))}
+              {courseFaqs.length > 5 && (
+                <button
+                  type="button"
+                  onClick={openShowAllFaq}
+                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 118, direction: isFa ? 'rtl' : 'ltr' }}
+                >
+                  <span style={{ width: 58, height: 58, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13.5, color: 'var(--zk-text-muted)' }}>{isFa ? 'هنوز پرسش متداولی برای این دسته از دوره‌ها ثبت نشده است.' : 'No FAQs have been added for this course category yet.'}</div>
+          )}
           {askOpen && <AskQuestionForm T={T} lang={lang} pageSource={`course:${course.id}`} countries={countries} onClose={() => setAskOpen(false)} onSubmit={async (question, voiceNoteUrl, phone) => { await submitUserQuestion(question, voiceNoteUrl, `course:${course.id}`, phone); }} />}
         </section>
+
+        {/* دوره‌های مشابه/مرتبط هم‌تب — بعد از پرسش‌های متداول (هماهنگ با پنل مدیریت) */}
+        {relatedCourses.length > 0 && (
+          <section id="course-detail-related" data-detail-section style={detailSectionStyle(navTopOffset)}>
+            <h2 style={detailSectionTitleStyle}>{isFa ? 'دوره‌های مشابه' : 'Similar courses'}</h2>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: isFa ? 'rtl' : 'ltr' }}>
+              {relatedCourses.map((c: any) => (
+                <div key={c.id} style={{ flex: '0 0 260px', scrollSnapAlign: 'start', direction: isFa ? 'rtl' : 'ltr' }}>
+                  <CourseCard course={c} size="normal" T={T} lang={lang} onCourseClick={(cr: any) => onOpenCourse?.(cr)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
+
+      {/* صفحهٔ جداگانهٔ «مشاهده همه پرسش‌ها» — تمام‌صفحه با دکمه برگشت */}
+      {showAllFaq && createPortal(
+        <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
+            <button type="button" onClick={closeShowAllFaq} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</b>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 760, margin: '0 auto' }}>
+              {courseFaqs.map((item: any) => (
+                <details key={item.id} style={{ border: '1px solid var(--zk-border)', borderRadius: 14, padding: '11px 13px', background: 'var(--zk-surface)' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 13.5 }}>{item.question}</summary>
+                  <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* Bottom-sheet: نمایش کامل یک پرسش و پاسخ */}
+      {faqSheet && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setFaqSheet(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 640, maxHeight: '80vh', overflowY: 'auto', background: 'var(--zk-surface, #fff)', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '18px 16px calc(18px + env(safe-area-inset-bottom,0px))', boxShadow: '0 -10px 40px rgba(0,0,0,.2)' }}>
+            <div style={{ width: 44, height: 5, borderRadius: 999, background: 'var(--zk-border)', margin: '0 auto 14px' }} />
+            <b style={{ display: 'block', fontSize: 15, fontWeight: 900, color: 'var(--zk-text)', lineHeight: 1.8, marginBottom: 12 }}>{faqSheet.question}</b>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 2, color: 'var(--zk-text-muted)' }}>{faqSheet.answer}</p>
+            <button type="button" onClick={() => setFaqSheet(null)} style={{ marginTop: 16, width: '100%', minHeight: 46, borderRadius: 12, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {isFa ? 'بستن' : 'Close'}
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Sticky CTA on mobile — safe-area aware */}
       <div style={{ 

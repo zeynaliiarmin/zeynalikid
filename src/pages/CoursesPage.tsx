@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import JsonLd from '../components/JsonLd';
@@ -127,6 +128,45 @@ export default function CoursesPage({ app }: { app: any }) {
   const educationalMedia = placedMediaItems.filter((item: any) => !parentExperienceMedia.includes(item));
   const mediaVpnOn = useMediaVpn(cfg);
 
+  // ─── نمایش رندوم تجربه والدین و محتوای آموزشی (با هر بار رفرش تغییر می‌کند) ───
+  const shuffle = (arr: any[]) => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const shuffledExperience = React.useMemo(() => shuffle(parentExperienceMedia), [parentExperienceMedia]);
+  const shuffledEducation = React.useMemo(() => shuffle(educationalMedia), [educationalMedia]);
+  // صفحهٔ جداگانهٔ «مشاهده همه» برای تجربه والدین / محتوای آموزشی
+  const [showAllMedia, setShowAllMedia] = useState<'experience' | 'education' | null>(null);
+  const mediaOverlayPushedRef = React.useRef(false);
+  const openShowAllMedia = (kind: 'experience' | 'education') => {
+    if (!mediaOverlayPushedRef.current) {
+      try { window.history.pushState({ zkCourseMedia: true }, ''); } catch {}
+      mediaOverlayPushedRef.current = true;
+    }
+    setShowAllMedia(kind);
+  };
+  const closeShowAllMedia = () => {
+    if (mediaOverlayPushedRef.current) {
+      mediaOverlayPushedRef.current = false;
+      try { window.history.back(); } catch {}
+    }
+    setShowAllMedia(null);
+  };
+  React.useEffect(() => {
+    const onPop = () => {
+      if (mediaOverlayPushedRef.current) {
+        mediaOverlayPushedRef.current = false;
+        setShowAllMedia(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const goConsult = () => {
     window.location.href = APP_A_URL;
   };
@@ -209,6 +249,7 @@ export default function CoursesPage({ app }: { app: any }) {
             mediaVpnOn={mediaVpnOn}
             hasReferral={!!app.referralConsultant}
             referralConsultant={app.referralConsultant}
+            onOpenCourse={(cr: any) => { setSelectedCourse(cr); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
             onRegister={() => {
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)
               if (app.setShipModal) {
@@ -404,37 +445,75 @@ export default function CoursesPage({ app }: { app: any }) {
           )}
         </div>
 
-        {/* محتوای متصل به دوره‌ها، بعد از فهرست دوره و قبل از «دوره‌های مشابه»؛ تجربه والدین و آموزش‌ها عمداً جدا هستند. */}
+        {/* ─── تب «همه»: برای هر دستهٔ دوره (هماهنگ با پنل مدیریت) یک بخش مجزا با اسکرول افقی ─── */}
+        {filter === 'all' && (
+          <div>
+            {(cfg.courseTabs || []).filter((t: any) => t.active !== false).map((tab: any) => {
+              const tabCourses = (tab.courses || []).filter((c: any) => c.active !== false);
+              if (!tabCourses.length) return null;
+              return (
+                <section key={tab.id} style={{ marginTop: 28, marginBottom: 22 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+                    <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: 0, fontWeight: 800 }}>{lang === 'en' ? (tab.titleEn || tab.title) : tab.title}</h2>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+                    {tabCourses.map((c: any) => (
+                      <div key={c.id} style={{ flex: '0 0 260px', scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+                        <CourseCard course={{ ...c, tabId: tab.id }} size="normal" T={T} lang={lang} onCourseClick={openDetail} />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ─── تجربه و رضایت والدین + محتوای آموزشی مرتبط — افقی با دکمه «مشاهده همه» و صفحهٔ جدا ─── */}
         {parentExperienceMedia.length > 0 && (
           <section data-course-media-group="experience" aria-label={lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'} style={{ marginTop: 28, marginBottom: 22 }}>
-            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
-              {lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'}
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
-              {parentExperienceMedia.map((item: any, index: number) => (
-                <MediaCard key={`${item._mediaSource || 'experience'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: 0, fontWeight: 800 }}>
+                {lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'}
+              </h2>
+              <button type="button" onClick={() => openShowAllMedia('experience')} style={{ minHeight: 36, padding: '7px 15px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'transparent', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {lang === 'en' ? 'View all' : 'مشاهده همه'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+              {shuffledExperience.map((item: any, index: number) => (
+                <div key={`${item._mediaSource || 'experience'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+                  <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                </div>
               ))}
             </div>
           </section>
         )}
         {educationalMedia.length > 0 && (
           <section data-course-media-group="education" aria-label={lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'} style={{ marginTop: parentExperienceMedia.length ? 0 : 28, marginBottom: 22 }}>
-            <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
-              {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start' }}>
-              {educationalMedia.map((item: any, index: number) => (
-                <MediaCard key={`${item._mediaSource || 'education'}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: 0, fontWeight: 800 }}>
+                {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
+              </h2>
+              <button type="button" onClick={() => openShowAllMedia('education')} style={{ minHeight: 36, padding: '7px 15px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'transparent', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {lang === 'en' ? 'View all' : 'مشاهده همه'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+              {shuffledEducation.map((item: any, index: number) => (
+                <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+                  <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+                </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* Featured / Related horizontal on mobile */}
-        {filteredCourses.length > 0 && (
+        {/* Featured / Related horizontal — فقط در تب‌های غیر «همه» (در «همه» دوره‌های مشابه وجود ندارد) */}
+        {filter !== 'all' && filteredCourses.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 14 }}>{lang === 'en' ? 'You may also like' : 'دوره‌های مشابه'}</div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, direction: lang === 'en' ? 'ltr' : 'rtl' }}>
               {filteredCourses.slice(0, 4).map((c: any) => (
                 <div key={c.id} style={{ flex: '0 0 260px' }}>
                   <CourseCard course={c} size="normal" T={T} lang={lang} onCourseClick={openDetail} />
@@ -444,6 +523,28 @@ export default function CoursesPage({ app }: { app: any }) {
           </div>
         )}
       </div>
+
+      {/* صفحهٔ جداگانهٔ «مشاهده همه» تجربه والدین / محتوای آموزشی — تمام‌صفحه با دکمه برگشت */}
+      {showAllMedia && createPortal(
+        <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-bg, #FDF8F3)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
+            <button type="button" onClick={closeShowAllMedia} aria-label={lang === 'en' ? 'Back' : 'بازگشت'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>
+              {showAllMedia === 'experience' ? (lang === 'en' ? 'Parent experiences' : 'تجربه و رضایت والدین') : (lang === 'en' ? 'Educational content' : 'محتوای آموزشی')}
+            </b>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12, alignItems: 'flex-start', maxWidth: 1080, margin: '0 auto' }}>
+              {(showAllMedia === 'experience' ? parentExperienceMedia : educationalMedia).map((item: any, index: number) => (
+                <MediaCard key={`${item._mediaSource || showAllMedia}:${item.id || index}`} item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure />
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
         {showContactOn('courses') && <ContactPanel cfg={cfg} T={T} lang={lang} />}
