@@ -145,7 +145,8 @@ function MediaCardInfo({item,type,masked,T,secure=true,lang}:{item:any,type:stri
 
 export default function MediaCard({item,T,lang,vpnOn=false,secure=true}:{item:any,T:any,lang:string,vpnOn?:boolean,secure?:boolean}){
  const [playing,setPlaying]=useState(false);
- const type=item.type||'video';
+ // «مقاله» (محتوای ادغام‌شدهٔ متن+عکس) مثل «متن» رندر می‌شود
+ const type=(item.type==='article')?'text':(item.type||'video');
  const ytCode = item?.youtubeUrl || item?.youtubeCode || item?.platforms?.youtube || '';
  const apCode = item?.aparatUrl || item?.aparatCode || item?.platforms?.aparat || '';
  const extImg = item?.externalCode || item?.platforms?.externalImage || '';

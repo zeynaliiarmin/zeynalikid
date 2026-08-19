@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { isValidMediaUrl } from '../utils/detectCountry';
 import useMediaVpn from '../hooks/useMediaVpn';
 import MediaCard, { mediaThumb } from '../components/MediaCard';
-import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, SearchIcon } from '../components/Icons';
+import { VideoIcon, AudioIcon, TextIcon, SearchIcon } from '../components/Icons';
 import EduCard from '../components/edu/EduCard';
 import ArticleModal from '../components/edu/ArticleModal';
 import SmartFAQ from '../components/edu/SmartFAQ';
@@ -32,10 +32,14 @@ function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title
 const useVpn = useMediaVpn;
 
 function pickByPlatform(list: any[], type: string, vpnOn: boolean) {  
+  const typeMatches = (xt: string, t: string) => {
+    if (t === 'article') return xt === 'article' || xt === 'text' || xt === 'image';
+    return xt === t;
+  };
   const valid = (list || []).filter((x: any) => {  
     if (x.active === false) return false;  
-    if ((x.type || 'video') !== type) return false;  
-    if (type === 'text') return true;  
+    if (!typeMatches((x.type || 'video'), type)) return false;  
+    if (type === 'text' || type === 'article') return true;  
   
     const hasManual = !!String(x.manualCode || '').trim();  
     const hasYt = !!(x.youtubeUrl || x.youtubeCode || x.platforms?.youtube);  
@@ -60,17 +64,15 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  const baseTypes:{id:string; label:string; icon:React.ReactNode}[]=[
    {id:'video', label: lang==='en'?'Video':'ویدیو', icon:<VideoIcon size={14} color="currentColor" />},
    {id:'audio', label: lang==='en'?'Voice':'ویس', icon:<AudioIcon size={14} color="currentColor" />},
-   {id:'image', label: lang==='en'?'Photo':'عکس', icon:<PhotoIcon size={14} color="currentColor" />},
-   ...(withText?[{id:'text', label: lang==='en'?'Text':'متن', icon:<TextIcon size={14} color="currentColor" />}]:[])
+   {id:'article', label: lang==='en'?'Articles':'مقاله', icon:<TextIcon size={14} color="currentColor" />},
  ];
  // کنترل نمایش تب‌ها
  const tv = tabVisibility || cfg.experienceTabs || {};
  const types = baseTypes.filter(t=>{
    if(t.id==='video' && tv.video===false) return false;
    if(t.id==='audio' && tv.audio===false) return false;
-   if(t.id==='image' && tv.image===false) return false;
-   if(t.id==='text' && !tv.text && !withText) return false;
-   if(t.id==='text' && tv.text===false) return false;
+   // مقاله = متن + عکس + مقاله (هماهنگ با آموزش‌ها)
+   if(t.id==='article' && (tv.article === false || (tv.image === false && tv.text === false))) return false;
    return true;
  });
  const pools=useMemo(()=>Object.fromEntries(types.map((t)=>[t.id,pickByPlatform(items,t.id,vpnOn)])),[items,vpnOn,types.map(t=>t.id).join(',')]);
@@ -144,7 +146,7 @@ export function EducationPage({app}:{app:any}){
  const en=lang==='en';
  const [q,setQ]=useState(''); const [askOpen,setAskOpen]=useState(false);
  // Stage 8: فیلتر «نوع محتوا» (نه دسته‌بندی موضوعی — طبق تصمیم پروژه لغو شده)
- const [typeF,setTypeF]=useState<'all'|'text'|'video'|'audio'|'faq'>('all');
+ const [typeF,setTypeF]=useState<'all'|'article'|'video'|'audio'|'faq'>('all');
  const [sortUI,setSortUI]=useState('new'); // مرتب‌سازی: جدیدترین / پربازدیدترین (بر اساس بازدید واقعی)
  const [openItem,setOpenItem]=useState<EduItem|null>(null);
  // بازدیدهای واقعی (localStorage همان دستگاه) — روی عدد شروع هر محتوا اضافه می‌شود
@@ -177,9 +179,9 @@ export function EducationPage({app}:{app:any}){
  const contactFirst=cfg.pageContentOrder?.education?.order==='contactFirst';
  const IntroBlock=showIntro?<div style={{marginTop:22,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.mut,lineHeight:1.9}}>{introText}</div>:null;
  const ContactBlock=showContactOn('education')?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
- const chips:[('all'|'text'|'video'|'audio'|'faq'),string,any][]=[
+ const chips:[('all'|'article'|'video'|'audio'|'faq'),string,any][]=[
   ['all',en?'All':'همه',null],
-  ['text',en?'Articles':'مقاله‌ها',<TextIcon key="t" size={14}/>],
+  ['article',en?'Articles':'مقاله‌ها',<TextIcon key="t" size={14}/>],
   ['video',en?'Videos':'ویدیوها',<VideoIcon key="v" size={14}/>],
   ['audio',en?'Podcasts':'پادکست‌ها',<AudioIcon key="a" size={14}/>],
   ['faq',en?'FAQ':'پرسش‌های رایج',<SearchIcon key="f" size={14}/>],

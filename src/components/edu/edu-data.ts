@@ -6,7 +6,14 @@
  */
 import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 
-export type EduType = 'text' | 'video' | 'audio' | 'image';
+export type EduType = 'article' | 'text' | 'video' | 'audio' | 'image';
+
+export interface ArticleImage {
+  id: string;
+  url: string;
+  position?: number;
+}
+
 export interface EduItem {
   id: string;
   type: EduType;
@@ -22,11 +29,43 @@ export interface EduItem {
   keywords?: string[];
   body?: string;        // متن مقاله (پاراگراف‌ها با \n\n)
   quote?: string;
+  images?: ArticleImage[];
 }
+
+export const isArticleType = (t: string): boolean => t === 'article' || t === 'text' || t === 'image';
+
+export type ArticleBlock =
+  | { kind: 'para'; text: string }
+  | { kind: 'img'; url: string };
+
+export function buildArticleBlocks(item: any): ArticleBlock[] {
+  const paras = String(item?.body || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+  const images = (Array.isArray(item?.images) ? item.images : []).filter((im: any) => im && im.url);
+  const byPos: Record<number, any[]> = {};
+  images.forEach((im: any) => {
+    const p = Number(im.position) || 0;
+    (byPos[p] = byPos[p] || []).push(im);
+  });
+  const blocks: ArticleBlock[] = [];
+  const insertAt = (pos: number) => {
+    (byPos[pos] || []).forEach((im: any) => blocks.push({ kind: 'img', url: String(im.url) }));
+  };
+  insertAt(0);
+  paras.forEach((p, idx) => {
+    blocks.push({ kind: 'para', text: p });
+    insertAt(idx + 1);
+  });
+  const maxPos = paras.length;
+  Object.keys(byPos).map(Number).sort((a, b) => a - b).forEach((pos) => {
+    if (pos > maxPos) insertAt(pos);
+  });
+  return blocks;
+}
+
 
 export const EDU_SAMPLES: EduItem[] = [
   {
-    id: 's-a1', type: 'text',
+    id: 's-a1', type: 'article',
     title: 'بدغذایی یا انتخابگری؟ شناخت تفاوت‌ها بدون نگرانی',
     titleEn: 'Picky eating or food preference? A calm guide',
     desc: 'یک راهنمای آرام برای اینکه رفتار غذایی کودک را بهتر بشناسید و سفره را آرام‌تر کنید.',
@@ -37,7 +76,7 @@ export const EDU_SAMPLES: EduItem[] = [
     body: 'خیلی از والدین می‌پرسند کودک‌شان «بدغذا» است یا فقط انتخابگر. تفاوت این دو بیشتر از یک کلمه است؛ انتخابگری بخشی از رشد طبیعی سلیقهٔ کودک است و معمولاً با صبر و تنوعِ بدون فشار، به‌مرور آرام می‌شود.\n\nقدم اول این است که الگوی غذایی کودک را چند روز یادداشت کنید؛ ساعت‌ها، مقدارها و حال‌وهوای وعده‌ها. این یادداشت به شما و مشاور کمک می‌کند تصویر واقعی‌تری ببینید، نه تصویری که نگرانی می‌سازد.\n\nقدم دوم، جدا کردن «مسئولیت‌ها» است: چه چیزی و چه زمانی ارائه شود با والدین است، و چه مقدار خورده شود با کودک. این ساده‌سازی، فشار را از سفره کم می‌کند و به کودک اجازه می‌دهد به sinyal‌های سیری و گرسنگی خودش اعتماد کند.\n\nو در نهایت، اگر الگوی غذایی کودک با رشد یا انرژی روزمرهٔ او گره خورده و نگران‌کننده به نظر می‌رسد، بهترین مسیر گفت‌وگو با یک مشاور متخصص است؛ محتوای عمومی فقط برای آگاهی است، نه قضاوت یا نسخه.',
   },
   {
-    id: 's-a2', type: 'text',
+    id: 's-a2', type: 'article',
     title: 'روتین خواب و تمرکز مدرسه؛ ارتباطی که کمتر دیده می‌شود',
     titleEn: 'Sleep routine and school focus',
     desc: 'چطور یک روتین خواب ساده می‌تواند روز مدرسهٔ کودک را نرم‌تر کند.',
@@ -101,7 +140,7 @@ export const FAQ_SAMPLES: FaqSample[] = [
 ];
 
 export const typeLabel = (t: EduType, lang: string) =>
-  t === 'text' ? (lang === 'en' ? 'Article' : 'مقاله') :
+  (t === 'article' || t === 'text') ? (lang === 'en' ? 'Article' : 'مقاله') :
   t === 'video' ? (lang === 'en' ? 'Video' : 'ویدیو') :
   t === 'image' ? (lang === 'en' ? 'Photo' : 'تصویر') :
   (lang === 'en' ? 'Podcast' : 'پادکست');

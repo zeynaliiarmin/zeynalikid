@@ -120,7 +120,7 @@ const PUBLIC_MEDIA_ITEM_FIELDS = [
   "mediaCategory", "mediaCategories", "categories", "platform", "platforms", "manualCode",
   "youtubeCode", "aparatCode", "youtubeUrl", "aparatUrl", "externalCode", "internalCode",
   "imageUrl", "audioUrl", "url", "phone",
-  "viewsSeed", "minutes", "durationSec",
+  "viewsSeed", "minutes", "durationSec", "images",
 ];
 
 function maskPublicPhone(value: unknown): string {

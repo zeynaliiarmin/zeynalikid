@@ -28,6 +28,24 @@ interface Props {
   uid: () => number;
 }
 
+// تبدیل محتوای قدیمی آموزش‌ها (متن/عکس) به «مقاله» — بدون از دست دادن هیچ داده‌ای:
+// متن → مقاله با همان body؛ عکس → مقاله که لینک تصویرش به آرایهٔ images منتقل می‌شود.
+function normalizeEduItem(item: any): any {
+  const it = { ...item };
+  if (it.type === 'text') {
+    it.type = 'article';
+    if (!Array.isArray(it.images)) it.images = [];
+  } else if (it.type === 'image') {
+    it.type = 'article';
+    const imgUrl = extractDirectMediaUrl(it.externalCode || it.internalCode || it.imageUrl || it.url, 'image');
+    if (!Array.isArray(it.images) || !it.images.length) {
+      it.images = imgUrl ? [{ id: 'aimg0', url: imgUrl, position: 0 }] : [];
+    }
+  }
+  if (!Array.isArray(it.images)) it.images = [];
+  return it;
+}
+
 const MEDIA_CATEGORIES: [string, string][] = [
   ['education', 'آموزش‌ها'],
   ['parent-experience', 'تجربه والدین'],
@@ -93,7 +111,7 @@ export default function ContentManager(props: Props) {
         },
         education: {
           ...(draft.cfg.education || {}),
-          items: draft.eduItems.map((item: any) => migrateMediaItem(item, 'education')),
+          items: draft.eduItems.map((item: any) => normalizeEduItem(migrateMediaItem(item, 'education'))),
         },
         experienceTabs: draft.expTabs,
         mediaCountryMode: draft.mediaCountryMode,
@@ -162,13 +180,17 @@ export default function ContentManager(props: Props) {
 
       {/* ═══════════ کنترل نمایش تب‌های تجربه والدین ═══════════ */}
       <Box title="کنترل نمایش تب‌ها (تجربه والدین)">
-        {(['video', 'audio', 'image', 'text'] as const).map((tab) => (
+        {([['video', 'ویدیو'], ['audio', 'ویس'], ['article', 'مقاله']] as const).map(([tab, label]) => (
           <label key={tab} style={{ display: 'block', marginBottom: 6 }}>
-            <input type="checkbox" checked={expTabs[tab] !== false} onChange={(e) => setExpTabs((prev: any) => ({ ...prev, [tab]: e.target.checked }))} />
-            {' '}{tab === 'video' ? 'ویدیو' : tab === 'audio' ? 'ویس' : tab === 'image' ? 'عکس' : 'متن'}
+            <input type="checkbox" checked={tab === 'article' ? (expTabs.article !== false && expTabs.image !== false && expTabs.text !== false) : expTabs[tab] !== false} onChange={(e) => {
+              const v = e.target.checked;
+              if (tab === 'article') setExpTabs((prev: any) => ({ ...prev, article: v, image: v, text: v }));
+              else setExpTabs((prev: any) => ({ ...prev, [tab]: v }));
+            }} />
+            {' '}{label}
           </label>
         ))}
-        <p style={{ fontSize: 11, color: T.mut, marginTop: 6 }}>ادمین می‌تواند تعیین کند کدام تب‌ها نمایش داده شوند. گزینه «متن» بخش تجربه والدین را نیز فعال می‌کند.</p>
+        <p style={{ fontSize: 11, color: T.mut, marginTop: 6 }}>تب «مقاله» شامل مقاله‌ها، متن‌ها و عکس‌های این بخش است (هماهنگ با صفحهٔ آموزش‌ها).</p>
       </Box>
 
       {/* ═══════════ تشخیص VPN / کشور کاربر ═══════════ */}
@@ -352,11 +374,73 @@ function MediaManager(props: any) {
 }
 
 // ============================================================================
+// ادیتور تصاویر مقاله (چند عکس با ترتیب و موقعیت دلخواه در متن)
+// ============================================================================
+function ArticleImagesEditor({ T, S, AdminBtn, StableAdminInput, uid, images, paraCount, onChange }: { T: any; S: any; AdminBtn: () => any; StableAdminInput: any; uid: () => number; images: any[]; paraCount: number; onChange: (arr: any[]) => void }) {
+  const list: any[] = Array.isArray(images) ? images : [];
+  const set = (arr: any[]) => onChange(arr);
+  const chg = (idx: number, k: string, v: any) => { const a = [...list]; a[idx] = { ...a[idx], [k]: v }; set(a); };
+  const add = () => set([...list, { id: 'aimg' + uid(), url: '', position: 0 }]);
+  const remove = (idx: number) => set(list.filter((_, j) => j !== idx));
+  const move = (idx: number, dir: -1 | 1) => {
+    const a = [...list];
+    const cur = Number(a[idx]?.position) || 0;
+    const np = Math.max(0, cur + dir);
+    a[idx] = { ...a[idx], position: np };
+    set(a);
+  };
+  const posOptions: { v: number; l: string }[] = [{ v: 0, l: 'ابتدای مقاله (پیش‌فرض)' }];
+  for (let k = 1; k <= paraCount; k++) posOptions.push({ v: k, l: `بعد از پاراگراف ${k}` });
+  posOptions.push({ v: 9999, l: 'انتهای مقاله' });
+
+  return (
+    <div style={{ marginTop: 4, marginBottom: 8, padding: '8px 10px', borderRadius: 10, background: T.soft, border: `1px solid ${T.brd}` }}>
+      <label style={{ ...S.lbl, marginBottom: 4 }}>تصاویر مقاله ({list.length})</label>
+      <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.7, margin: '0 0 8px' }}>
+        چند عکس به مقاله اضافه کنید. هر عکس می‌تواند در «ابتدای مقاله»، «بعد از هر پاراگراف» یا «انتهای مقاله» قرار بگیرد؛ با دکمه‌های بالا/پایین موقعیتش را جابه‌جا کنید. اگر موقعیتی انتخاب نشود، به‌صورت پیش‌فرض در ابتدای مقاله نمایش داده می‌شود.
+      </p>
+      {list.map((im: any, idx: number) => (
+        <div key={im.id || idx} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 8, marginBottom: 8, background: T.card }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            {extractDirectMediaUrl(im.url, 'image') ? (
+              <img src={extractDirectMediaUrl(im.url, 'image')} alt="" referrerPolicy="no-referrer" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 8, border: `1px solid ${T.brd}`, flexShrink: 0, background: '#000' }} />
+            ) : (
+              <span style={{ width: 72, height: 54, borderRadius: 8, border: `1px dashed ${T.brd}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.mut, fontSize: 11, flexShrink: 0, background: T.soft }}>عکس</span>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <label style={{ fontSize: 10.5, color: T.mut, display: 'block', marginBottom: 3 }}>لینک تصویر (مستقیم یا تگ img)</label>
+              <StableAdminInput dir="ltr" style={{ ...S.inp, marginBottom: 6, fontSize: 12, fontFamily: 'monospace' }} defaultValue={im.url || ''} onCommit={(v: string) => chg(idx, 'url', canonicalizeMediaInput(v, 'image'))} placeholder="https://... یا <img src=...>" />
+              <select style={{ ...S.inp, marginBottom: 4 }} value={Number(im.position) === 9999 ? 9999 : (Number(im.position) || 0)} onChange={(e) => chg(idx, 'position', Number(e.target.value))}>
+                {posOptions.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} disabled={idx === 0} onClick={() => { const a = [...list]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; set(a); }}>↑</button>
+            <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} disabled={idx === list.length - 1} onClick={() => { const a = [...list]; [a[idx + 1], a[idx]] = [a[idx], a[idx + 1]]; set(a); }}>↓</button>
+            <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} onClick={() => move(idx, -1)}>موقعیت قبل‌تر</button>
+            <button type="button" style={{ ...AdminBtn(), padding: '4px 10px' }} onClick={() => move(idx, 1)}>موقعیت بعدتر</button>
+            <button type="button" style={{ ...AdminBtn(), color: T.err, padding: '4px 10px', marginInlineStart: 'auto' }} onClick={() => remove(idx)}>حذف عکس</button>
+          </div>
+        </div>
+      ))}
+      <button type="button" style={AdminBtn()} onClick={add}>+ افزودن عکس به مقاله</button>
+    </div>
+  );
+}
+
+// ============================================================================
 // MediaLibraryManager — تجربه والدین / آموزش‌ها — state محلی
 // ============================================================================
 function MediaLibraryManager(props: any) {
   const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, items, setItems, uid, sectionKey, title, withText, p2e } = props;
-  const typeOpts: [string, string][] = [['video', 'ویدیو'], ['audio', 'ویس'], ['image', 'عکس'], ...(withText ? [['text', 'متن'] as [string, string]] : [])];
+  const isEdu = sectionKey === 'education';
+  // در آموزش‌ها «عکس» و «متن» ادغام شده‌اند و فقط «مقاله / ویدیو / پادکست» وجود دارد.
+  const typeOpts: [string, string][] = isEdu
+    ? [['article', 'مقاله'], ['video', 'ویدیو'], ['audio', 'پادکست']]
+    : [['video', 'ویدیو'], ['audio', 'ویس'], ['image', 'عکس'], ...(withText ? [['text', 'متن'] as [string, string]] : [])];
+  // نوع‌های قدیمی (متن/عکس) در آموزش‌ها به‌صورت «مقاله» نمایش داده و هنگام ذخیره به مقاله تبدیل می‌شوند.
+  const normType = (t: any) => (isEdu && (t === 'text' || t === 'image')) ? 'article' : (t || 'video');
 
   const sourceDestination = sectionKey as MediaDestination;
   const chg = useCallback((i: number, k: string, v: any) => setItems((prev: any[]) => prev.map((x, j) => j === i ? { ...x, [k]: v } : x)), [setItems]);
@@ -375,7 +459,7 @@ function MediaLibraryManager(props: any) {
       };
     }));
   }, [setItems, sourceDestination]);
-  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: 'video', youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination]);
+  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination, isEdu]);
   const remove = useCallback((i: number) => setItems((prev: any[]) => prev.filter((_, j) => j !== i)), [setItems]);
   const move = useCallback((i: number, dir: -1 | 1) => setItems((prev: any[]) => {
     const a = [...prev]; const j = i + dir; if (j < 0 || j >= a.length) return prev;
@@ -387,13 +471,13 @@ function MediaLibraryManager(props: any) {
       {items.map((it: any, i: number) => (
         <details key={it.id || i} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginBottom: 8, background: T.badge }}>
           <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {i + 1}. {it.type === 'audio' ? '🔊' : it.type === 'image' ? '🖼️' : it.type === 'text' ? '📄' : '🎬'} {it.title || 'بدون عنوان'}{it.active === false ? ' (غیرفعال)' : ''}
+            {i + 1}. {normType(it.type) === 'article' ? '📄' : it.type === 'audio' ? '🔊' : it.type === 'image' ? '🖼️' : it.type === 'text' ? '📄' : '🎬'} {it.title || 'بدون عنوان'}{it.active === false ? ' (غیرفعال)' : ''}
           </summary>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0' }}>
             <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
               <input type="checkbox" checked={it.active !== false} onChange={(e) => chg(i, 'active', e.target.checked)} /> فعال
             </label>
-            <select style={{ ...S.inp, flex: 1 }} value={it.type || 'video'} onChange={(e) => chg(i, 'type', e.target.value)}>
+            <select style={{ ...S.inp, flex: 1 }} value={normType(it.type)} onChange={(e) => chg(i, 'type', e.target.value)}>
               {typeOpts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
@@ -445,10 +529,13 @@ function MediaLibraryManager(props: any) {
               <input style={{ ...S.inp, marginBottom: 8 }} defaultValue={(it.keywords || []).join(', ')} onBlur={(e) => chg(i, 'keywords', e.target.value.split(/[,،]/).map((s: string) => s.trim()).filter(Boolean))} placeholder="رشد قد, بی‌اشتهایی, هوش" />
             </>
           )}
-          {(it.type || 'video') === 'text' ? (
+          {(isEdu ? normType(it.type) === 'article' : (it.type || 'video') === 'text') ? (
             <>
-              <label style={S.lbl}>متن کامل</label>
-              <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.body || ''} onCommit={(v: string) => chg(i, 'body', v)} rows={3} />
+              <label style={S.lbl}>متن کامل مقاله (هر پاراگراف را با یک خط خالی جدا کنید)</label>
+              <StableAdminTextarea style={{ ...S.ta, marginBottom: 8, minHeight: 140 }} defaultValue={it.body || ''} onCommit={(v: string) => chg(i, 'body', v)} rows={7} placeholder={'پاراگراف اول\n\nپاراگراف دوم\n\n...'} />
+              {isEdu && (
+                <ArticleImagesEditor T={T} S={S} AdminBtn={AdminBtn} StableAdminInput={StableAdminInput} uid={uid} images={it.images || []} paraCount={String(it.body || '').split(/\n\n+/).filter((p: string) => p.trim()).length} onChange={(arr: any[]) => chg(i, 'images', arr)} />
+              )}
             </>
           ) : (
             <>

@@ -35,7 +35,7 @@ export function roundToMinute(totalSeconds: number): number {
  */
 export function computeDurationSeconds(item: any, detectedMediaSeconds = 0): number {
   const type = item?.type || 'text';
-  if (type === 'text') {
+  if (type === 'article' || type === 'text' || type === 'image') {
     return readingSeconds(item?.body, item?.description, item?.desc);
   }
   const descSeconds = readingSeconds(item?.description, item?.descriptionCourses, item?.desc);
@@ -66,7 +66,7 @@ const unitLabel = (type: string, unit: string, lang: string, kind: 'study' | 'wa
  */
 export function formatDuration(type: string, totalSeconds: number, lang: string): string {
   if (type === 'image') return lang === 'en' ? 'Photo' : 'تصویر';
-  const kind: 'study' | 'watch' | 'listen' = type === 'text' ? 'study' : type === 'video' ? 'watch' : 'listen';
+  const kind: 'study' | 'watch' | 'listen' = (type === 'article' || type === 'text') ? 'study' : type === 'video' ? 'watch' : 'listen';
   const s = Math.max(0, Number(totalSeconds) || 0);
   if (s <= 0) {
     return unitLabel(type, lang === 'en' ? '1 min' : '۱ دقیقه', lang, kind);
@@ -84,11 +84,11 @@ export function formatDurationMinutes(type: string, minutes: number, lang: strin
   if (type === 'image') return lang === 'en' ? 'Photo' : 'تصویر';
   const m = faNum(minutes);
   if (lang === 'en') {
-    return type === 'text' ? `${m} min read`
+    return (type === 'article' || type === 'text') ? `${m} min read`
       : type === 'video' ? `${m} min watch`
       : `${m} min listen`;
   }
-  return type === 'text' ? `${m} دقیقه مطالعه`
+  return (type === 'article' || type === 'text') ? `${m} دقیقه مطالعه`
     : type === 'video' ? `${m} دقیقه تماشا`
     : `${m} دقیقه شنیدن`;
 }

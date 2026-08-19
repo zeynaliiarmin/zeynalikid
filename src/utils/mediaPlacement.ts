@@ -162,16 +162,25 @@ export function pickPlacedMediaCode(item: any, vpnOn: boolean): string {
 export function toEducationMediaItem(item: any, vpnOn: boolean): any {
   const code = pickPlacedMediaCode(item, vpnOn);
   // پیش‌نمایش کارت باید هم برای لینک مستقیم ImgURL و هم برای <img src="…"> ساخته شود.
-  const directImage = item?.type === 'image' ? extractDirectMediaUrl(code, 'image') : '';
+  const rawType = item?.type || 'video';
+  const isArticle = rawType === 'article' || rawType === 'text' || rawType === 'image';
+  // محتوای قدیمی «عکس» → یک تصویر در ابتدای مقاله؛ محتوای قدیمی «متن» → مقالهٔ بدون تصویر.
+  const legacyImageUrl = rawType === 'image' ? (extractDirectMediaUrl(code, 'image') || extractDirectMediaUrl(item?.imageUrl || item?.url, 'image') || '') : '';
+  const images = Array.isArray(item?.images)
+    ? item.images.map((im: any) => ({ id: String(im?.id || 'img'), url: String(im?.url || ''), ...(im?.position != null ? { position: Number(im.position) || 0 } : {}) }))
+    : (legacyImageUrl ? [{ id: 'img0', url: legacyImageUrl, position: 0 }] : []);
+  const type = isArticle ? 'article' : rawType;
   const directCover = extractDirectMediaUrl(item?.cover || item?.thumbnail, 'image');
-  const safeCode = item?.type === 'image' ? directImage : code;
   // اگر ویدیو هیچ تصویر بندانگشتی/کاوری نداشته باشد:
   // - یوتیوب → تصویر بندانگشتی مستقیم (img.youtube.com)
   // - آپارات → hash استخراج و از Edge Function «aparat-thumb» poster واقعی گرفته می‌شود
-  const autoThumb = item?.type === 'video' ? videoAutoThumb(code) : '';
-  const aparatHash = item?.type === 'video' ? extractAparatHash(code) : '';
+  const autoThumb = rawType === 'video' ? videoAutoThumb(code) : '';
+  const aparatHash = rawType === 'video' ? extractAparatHash(code) : '';
+  const articleCover = (images.length ? extractDirectMediaUrl(images[0].url, 'image') || images[0].url : '');
   return {
     ...item,
+    type,
+    images,
     title: item?.title || '',
     titleEn: item?.titleEn || item?.title || '',
     desc: item?.desc ?? item?.description ?? '',
@@ -179,10 +188,10 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
     minutes: Number(item?.minutes) || 0,
     date: item?.date || '',
     dateEn: item?.dateEn || item?.date || '',
-    cover: directCover || autoThumb || directImage,
-    _autoCover: !directCover && (!!autoThumb || !!aparatHash),
+    cover: directCover || (isArticle ? articleCover : '') || autoThumb,
+    _autoCover: !directCover && !articleCover && (!!autoThumb || !!aparatHash),
     ...(aparatHash ? { _aparatHash: aparatHash } : {}),
-    ...(safeCode ? { manualCode: safeCode, url: safeCode } : {}),
+    ...(!isArticle && code ? { manualCode: code, url: code } : {}),
   };
 }
 

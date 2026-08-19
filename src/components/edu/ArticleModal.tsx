@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { type EduItem, typeLabel } from './edu-data';
+import { type EduItem, typeLabel, isArticleType, buildArticleBlocks } from './edu-data';
 import useMediaDuration from '../../hooks/useMediaDuration';
 import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 import EduCard from './EduCard';
 import EduPlayer from './EduPlayer';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import { Highlights, RichText } from '../MediaHighlights';
+import { extractDirectMediaUrl } from '../../utils/mediaInput';
 
 /**
  * مدال جزئیات محتوا — Stage 8
@@ -33,6 +34,8 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   }, [onClose]);
 
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
+  const isArticle = isArticleType(item.type);
+  const blocks = isArticle ? buildArticleBlocks(item) : [];
   const paras = (item.body || '').split('\n\n').filter(Boolean);
 
   return createPortal(
@@ -55,15 +58,19 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {duration}</span>
           </div>
 
-          {item.type !== 'text' && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}
+          {!isArticle && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}
 
           <Highlights highlights={(item as any).highlights} />
-          {item.type === 'text' ? (
+          {isArticle ? (
             <>
-              {paras.length ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {paras.map((p, i) => (
-                    <RichText key={i} text={p} lang={lang} />
+              {blocks.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {blocks.map((b, i) => b.kind === 'para' ? (
+                    <RichText key={i} text={b.text} lang={lang} />
+                  ) : (
+                    <img key={i} src={extractDirectMediaUrl(b.url, 'image') || b.url} alt="" loading="lazy" referrerPolicy="no-referrer"
+                      onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+                      style={{ width: '100%', height: 'auto', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: '1px solid var(--zk-border)', display: 'block', background: '#000' }} />
                   ))}
                 </div>
               ) : (

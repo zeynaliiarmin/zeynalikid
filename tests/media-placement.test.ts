@@ -59,7 +59,7 @@ assert(pickPlacedMediaCode({ ...dualVideo, displayMode: 'youtube' }, false) === 
 const educationMapped = toEducationMediaItem({ ...dualVideo, title: 'T', description: 'D', thumbnail: 'https://cdn.example.com/thumb.webp' }, false);
 assert(educationMapped.manualCode === 'AP' && educationMapped.desc === 'D' && educationMapped.cover === 'https://cdn.example.com/thumb.webp', 'admin media fields map to education player/card fields');
 const safeImageMapped = toEducationMediaItem({ type: 'image', externalCode: '<img src="https://cdn.imgurl.ir/uploads/photo.webp" onerror="alert(1)">', cover: '<script>alert(1)</script>' }, true);
-assert(safeImageMapped.manualCode === 'https://cdn.imgurl.ir/uploads/photo.webp' && safeImageMapped.cover === 'https://cdn.imgurl.ir/uploads/photo.webp', 'education image mapping extracts only the safe URL and never forwards raw HTML');
+assert(safeImageMapped.type === 'article' && safeImageMapped.images?.[0]?.url === 'https://cdn.imgurl.ir/uploads/photo.webp' && safeImageMapped.cover === 'https://cdn.imgurl.ir/uploads/photo.webp', 'education image mapping converts to article with the safe image URL and never forwards raw HTML');
 
 const memory = new Map<string, string>();
 const storage = { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => { memory.set(key, value); } };

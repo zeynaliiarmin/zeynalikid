@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { typeLabel, type EduItem } from './edu-data';
-import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
+import { TextIcon, VideoIcon, AudioIcon } from '../Icons';
 import CollapsibleCardText from '../CollapsibleCardText';
 import useMediaDuration from '../../hooks/useMediaDuration';
 import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
@@ -16,9 +16,10 @@ const Wave = () => (
 
 export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; lang: string; onOpen: (it: EduItem) => void; views?: number }) {
   const en = lang === 'en';
-  const badgeCls = item.type === 'text' ? 't-text' : item.type === 'video' ? 't-video' : item.type === 'image' ? 't-image' : 't-audio';
-  const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
-  const cta = item.type === 'text' ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : item.type === 'image' ? (en ? 'View' : 'مشاهده') : (en ? 'Listen' : 'شنیدن');
+  const isArticle = item.type === 'article' || item.type === 'text' || item.type === 'image';
+  const badgeCls = isArticle ? 't-text' : item.type === 'video' ? 't-video' : 't-audio';
+  const Icon = isArticle ? TextIcon : item.type === 'video' ? VideoIcon : AudioIcon;
+  const cta = isArticle ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : (en ? 'Listen' : 'شنیدن');
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
