@@ -57,8 +57,11 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [loaded, setLoaded] = useState(false); // لود کامل عکس استوری فعلی
   const [closing, setClosing] = useState(false); // انیمیشن خروج (swipe پایین)
   const [holding, setHolding] = useState(false); // نگه‌داشتن انگشت → محو UI و توقف تایمر
-  const [hlAnim, setHlAnim] = useState<'next' | 'prev' | null>(null); // انیمیشن تغییر هایلایت
-  useEffect(() => { if (!hlAnim) return; const t = setTimeout(() => setHlAnim(null), 460); return () => clearTimeout(t); }, [hlAnim]);
+  // انیمیشن مکعبی تغییر هایلایت — transition محور (همان مکانیزم انیمیشن خروج که تأیید شده کار می‌کند)
+  const [hlDir, setHlDir] = useState<'next' | 'prev' | null>(null);
+  const [hlStage, setHlStage] = useState<'out' | 'in' | null>(null);
+  const [hlInStart, setHlInStart] = useState(false);
+  const hlDirRef = useRef<'next' | 'prev' | null>(null);
   const [dragY, setDragY] = useState(0); // جابه‌جایی عمودی هنگام کشیدن برای خروج
   const [snapping, setSnapping] = useState(false); // بازگشت نرم بعد از کشیدن کوتاه به پایین
   const closingRef = useRef(false);
@@ -140,18 +143,30 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     else if (hi > 0) { const pst = storiesOf(activeRef.current[hi - 1]); goTo(hi - 1, Math.max(0, pst.length - 1), false); }
   }, [goTo]);
 
-  // ── تغییر هایلایت با کشیدن انگشت (swipe) — مثل اینستاگرام ──
-  const nextHighlight = useCallback(() => {
-    const hi = hIdxRef.current, si = sIdxRef.current;
+  // ── تغییر هایلایت با کشیدن انگشت (swipe) — انیمیشن مکعبی مثل اینستاگرام ──
+  const startHlChange = useCallback((dir: 'next' | 'prev') => {
+    if (hlDirRef.current) return; // حین انیمیشن، ورودی جدید نادیده گرفته شود
+    const hi = hIdxRef.current;
     const act = activeRef.current;
-    if (hi < act.length - 1) { markSeenAt(hi, si); goTo(hi + 1, 0); setHlAnim('next'); }
-    else { markSeenAt(hi, si); onCloseRef.current(); }
+    if (dir === 'next' && hi >= act.length - 1) { markSeenAt(hi, sIdxRef.current); onCloseRef.current(); return; }
+    if (dir === 'prev' && hi <= 0) return;
+    hlDirRef.current = dir;
+    setHlDir(dir); setHlStage('out'); setHlInStart(false);
+    clearTimeout(timerRef.current); // جلوگیری از advance خودکار در حین انیمیشن
+    window.setTimeout(() => {
+      const newHi = dir === 'next' ? hIdxRef.current + 1 : hIdxRef.current - 1;
+      goTo(newHi, 0); // محتوا عوض شود + استوری فعلی «دیده‌شده» ثبت شود
+      setHlStage('in');
+      requestAnimationFrame(() => requestAnimationFrame(() => setHlInStart(true)));
+    }, 280);
   }, [goTo, markSeenAt]);
 
-  const prevHighlight = useCallback(() => {
-    const hi = hIdxRef.current;
-    if (hi > 0) { goTo(hi - 1, 0, false); setHlAnim('prev'); }
-  }, [goTo]);
+  // پایان انیمیشن ورود هایلایت جدید
+  useEffect(() => {
+    if (hlStage !== 'in' || !hlInStart) return;
+    const t = window.setTimeout(() => { setHlDir(null); setHlStage(null); setHlInStart(false); hlDirRef.current = null; }, 340);
+    return () => clearTimeout(t);
+  }, [hlStage, hlInStart]);
 
   const startTimer = useCallback(() => {
     startRef.current = Date.now();
@@ -245,7 +260,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
         skipClickRef.current = true;
         dragYRef.current = 0;
         setDragY(0);
-        if (diffX > 0) prevHighlight(); else nextHighlight();
+        if (diffX > 0) startHlChange('prev'); else startHlChange('next');
         endHold();
         return;
       }
@@ -266,6 +281,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const highlightCover = extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn);
 
   const handleClick = (e: React.MouseEvent) => {
+    if (hlDirRef.current) return; // حین انیمیشن تغییر هایلایت
     if (skipClickRef.current) { skipClickRef.current = false; return; }
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -274,9 +290,28 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 
   const isEn = lang === 'en';
 
-  // انیمیشن تغییر محتوا: تغییر هایلایت (swipe) انیمیشن واضح‌تر، تغییر استوری (tap) انیمیشن ملایم
-  const hlAnimName = hlAnim === 'next' ? 'zk-story-hl-next' : hlAnim === 'prev' ? 'zk-story-hl-prev' : 'zk-story-slide';
-  const hlAnimDur = hlAnim ? '.4s' : '.3s';
+  // انیمیشن مکعبی تغییر هایلایت (transition محور)
+  const hlIsNext = hlDir === 'next';
+  let cubeTransform = 'rotateY(0deg)';
+  let cubeOpacity = 1;
+  let cubeOrigin = 'center center';
+  let cubeTransition = 'transform .3s cubic-bezier(.32,.72,.24,1), opacity .3s ease';
+  if (hlStage === 'out') {
+    cubeOrigin = hlIsNext ? 'left center' : 'right center';
+    cubeTransform = hlIsNext ? 'rotateY(-62deg)' : 'rotateY(62deg)';
+    cubeOpacity = 0.35;
+    cubeTransition = 'transform .28s ease-in, opacity .28s ease-in';
+  } else if (hlStage === 'in') {
+    cubeOrigin = hlIsNext ? 'right center' : 'left center';
+    if (!hlInStart) {
+      cubeTransform = hlIsNext ? 'rotateY(62deg)' : 'rotateY(-62deg)';
+      cubeOpacity = 0.35;
+      cubeTransition = 'none';
+    } else {
+      cubeTransform = 'rotateY(0deg)';
+      cubeOpacity = 1;
+    }
+  }
 
   // رندر با createPortal به body تا استوری از قید stacking-context صفحه خارج شود و
   // بالای هدر ثابت سایت (z-index 1200) بنشیند — در نتیجه هدر پنهان می‌شود و نوار پیشرفت
@@ -312,18 +347,22 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
             {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} />}
           </div>
-          <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>{hl?.title || ''}</span>
+          <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
           <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
         </div>
       </div>
-      {/* تصویر — با انیمیشن تغییر استوری/هایلایت + لودینگ وسط استوری */}
-      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', transformOrigin: hlAnim === 'next' ? 'left center' : hlAnim === 'prev' ? 'right center' : 'center', animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>
-        {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
-        {imgSrc && !loaded && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: '50%', border: '3px solid rgba(255,255,255,.22)', borderTopColor: '#fff', animation: 'zk-ring-spin .8s linear infinite', WebkitAnimation: 'zk-ring-spin .8s linear infinite' }} />
+      {/* تصویر — با انیمیشن مکعبی تغییر هایلایت + لودینگ وسط استوری */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', perspective: '1400px', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transform: cubeTransform, opacity: cubeOpacity, transformOrigin: cubeOrigin, transition: cubeTransition, willChange: 'transform, opacity' }}>
+          <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: hlDir ? 'none' : 'zk-story-slide .3s ease both', WebkitAnimation: hlDir ? 'none' : 'zk-story-slide .3s ease both' }}>
+            {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
+            {imgSrc && !loaded && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span aria-hidden="true" style={{ width: 42, height: 42, borderRadius: '50%', border: '3px solid rgba(255,255,255,.22)', borderTopColor: '#fff', animation: 'zk-ring-spin .8s linear infinite', WebkitAnimation: 'zk-ring-spin .8s linear infinite' }} />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
       {/* عنوان اسلاید — هنگام نگه‌داشتن انگشت محو می‌شود */}
       {slide.title && <div style={{ textAlign: 'center', padding: '8px 16px', color: '#fff', fontSize: 13, opacity: holding ? 0 : 1, transition: 'opacity .3s ease' }}>{slide.title}</div>}
