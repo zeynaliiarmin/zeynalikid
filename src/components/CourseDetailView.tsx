@@ -70,9 +70,11 @@ interface Props {
   referralConsultant?: any;
   // باز کردن دورهٔ دیگر (برای بخش «دوره‌های مشابه»)
   onOpenCourse?: (course: any) => void;
+  // سیگنال باز کردن خودکار تب مشاورهٔ بنفش (از دکمهٔ فوتر) + تپش دکمهٔ مشاوره
+  consultFocusSignal?: number;
 }
 
-export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false, referralConsultant = null, onOpenCourse }: Props) {
+export default function CourseDetailView({ course, T, lang, onClose, onRegister, onConsult, countries, educationalMedia = [], parentExperienceMedia = [], mediaVpnOn = false, hasReferral = false, referralConsultant = null, onOpenCourse, consultFocusSignal = 0 }: Props) {
   const isFa = lang === 'fa';
   const cfg: any = (() => {
     try {
@@ -106,12 +108,15 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const [faqSheet, setFaqSheet] = useState<any>(null);
   const [sheetItem, setSheetItem] = useState<any>(null);
   const [eduAllTab, setEduAllTab] = useState<string>('all');
+  const [consultOpen, setConsultOpen] = useState(false); // تب بنفش مشاوره (باز/بسته)
   const faqOverlayPushedRef = React.useRef(false);
   // ── دکمه‌های ابتدای صفحه (ثبت مستقیم / مشاوره) + تپش بعد از کلیک روی CTA پایین ──
   const enrollTopRef = React.useRef<HTMLButtonElement>(null);
   const consultTopRef = React.useRef<HTMLButtonElement>(null);
   const [pulseTarget, setPulseTarget] = useState<'enroll' | 'consult' | null>(null);
   const scrollToTopAndPulse = (target: 'enroll' | 'consult') => {
+    // برای مشاوره، تب بنفش باز می‌شود تا دکمهٔ مشاوره دیده شود
+    if (target === 'consult') setConsultOpen(true);
     // اسکرول به دکمهٔ مربوطه در ابتدای صفحه
     const el = target === 'enroll' ? enrollTopRef.current : consultTopRef.current;
     try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }
@@ -123,6 +128,19 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     }, 450);
     window.setTimeout(() => setPulseTarget(null), 3100);
   };
+
+  // وقتی از دکمهٔ فوتر «شروع مشاوره رایگان» صدا زده شود: تب باز + تپش دکمهٔ مشاوره
+  React.useEffect(() => {
+    if (consultFocusSignal && consultFocusSignal > 0) {
+      setConsultOpen(true);
+      setPulseTarget(null);
+      window.setTimeout(() => {
+        setPulseTarget(null);
+        requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget('consult')));
+      }, 450);
+      window.setTimeout(() => setPulseTarget(null), 3100);
+    }
+  }, [consultFocusSignal]);
   const [eduTab, setEduTab] = useState<string>('all');
   // گروه‌بندی محتوای آموزشی بر اساس نوع: مقاله (شامل متن/عکس قدیمی)، پادکست، ویدیو
   const eduByType = React.useMemo(() => {
@@ -142,16 +160,23 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     return list;
   }, [eduByType, isFa]);
   // ۵ محتوای آموزشی افقیِ متوازنِ رندوم از تب فعال (ترکیبی از مقاله/ویدیو/پادکست)
+  // مبنای رندوم امضای پایدارِ شناسه‌هاست تا با باز/بسته کردن محتوا، ترتیب نپرد.
+  const eduSignature = React.useMemo(() => (educationalMedia || []).map((x: any) => `${x._mediaSource || 'education'}:${x.id}`).join('|'), [educationalMedia]);
+  const eduRef = React.useRef(educationalMedia); eduRef.current = educationalMedia;
   const eduPreview = React.useMemo(() => {
-    if (eduTab === 'all') return balancedRandomMix(educationalMedia, 5);
-    const pool = eduByType[eduTab] || [];
+    const items = eduRef.current || [];
+    if (eduTab === 'all') return balancedRandomMix(items, 5);
+    const pool = items.filter((it: any) => {
+      const t = (it.type === 'article' || it.type === 'text' || it.type === 'image') ? 'article' : (it.type === 'audio' ? 'audio' : 'video');
+      return t === eduTab;
+    });
     const arr = [...pool];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr.slice(0, 5);
-  }, [educationalMedia, eduTab, eduByType]);
+  }, [eduSignature, eduTab]);
   useEffect(() => { setImageFailed(false); }, [course.image]);
   const showCourseImage = !!String(course.image || '').trim() && !imageFailed;
   const discountEndTime = course.discountEnd ? new Date(course.discountEnd).getTime() : 0;
@@ -375,10 +400,36 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </button>
         </div>
         {!hasReferral && onConsult && (
-          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'flex-start' }}>
-            <button ref={consultTopRef} onClick={onConsult} style={{ minHeight: 38, padding: '8px 16px', borderRadius: 999, border: '1px solid var(--zk-border)', background: 'transparent', color: 'var(--zk-text-muted)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', animation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-              {isFa ? 'مشاوره رایگان' : 'Free consult'}
-            </button>
+          <div style={{ margin: '0 0 14px' }}>
+            <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(124,58,237,.32)', background: 'linear-gradient(135deg, rgba(124,58,237,.10), rgba(168,85,247,.05))' }}>
+              <button
+                type="button"
+                onClick={() => setConsultOpen((v) => !v)}
+                aria-expanded={consultOpen}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: 'transparent', border: 0, cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', minHeight: 40 }}
+              >
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#6D28D9', textAlign: isFa ? 'right' : 'left', flex: 1, lineHeight: 1.6 }}>
+                  {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: consultOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .25s ease', flexShrink: 0 }}>
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              {consultOpen && (
+                <div style={{ padding: '4px 12px 12px', animation: 'fadeSlide .28s ease both', WebkitAnimation: 'fadeSlide .28s ease both' }}>
+                  <button
+                    ref={consultTopRef}
+                    onClick={onConsult}
+                    style={{ width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: 12, border: 0, background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', color: '#fff', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 18px rgba(124,58,237,.28)', animation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}
+                  >
+                    {isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
+                  </button>
+                  <p style={{ margin: '8px 2px 0', fontSize: 11.5, lineHeight: 1.8, color: '#5B21B6' }}>
+                    {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

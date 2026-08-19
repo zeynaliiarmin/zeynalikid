@@ -129,9 +129,15 @@ export default function CoursesPage({ app }: { app: any }) {
   const educationalMedia = placedMediaItems.filter((item: any) => !parentExperienceMedia.includes(item));
   const mediaVpnOn = useMediaVpn(cfg);
 
-  // ─── ۵ مورد رندومِ متوازن (ترکیبی از مقاله/ویدیو/پادکست) — با هر بار رفرش تغییر می‌کند ───
-  const previewExperience = React.useMemo(() => balancedRandomMix(parentExperienceMedia, 5), [parentExperienceMedia]);
-  const previewEducation = React.useMemo(() => balancedRandomMix(educationalMedia, 5), [educationalMedia]);
+  // ─── ۵ مورد رندومِ متوازن (ترکیبی از مقاله/ویدیو/پادکست) ───
+  // مبنای رندوم یک «امضای پایدار» از شناسه‌هاست؛ بنابراین فقط هنگام ورود به صفحه، رفرش،
+  // یا تغییر واقعی مجموعهٔ محتواها عوض می‌شود — نه با هر بار باز/بستن یک محتوا (بدون «پرش»).
+  const expSignature = React.useMemo(() => parentExperienceMedia.map((x: any) => `${x._mediaSource || 'experience'}:${x.id}`).join('|'), [parentExperienceMedia]);
+  const eduSignature = React.useMemo(() => educationalMedia.map((x: any) => `${x._mediaSource || 'education'}:${x.id}`).join('|'), [educationalMedia]);
+  const expRef = React.useRef(parentExperienceMedia); expRef.current = parentExperienceMedia;
+  const eduRef = React.useRef(educationalMedia); eduRef.current = educationalMedia;
+  const previewExperience = React.useMemo(() => balancedRandomMix(expRef.current, 5), [expSignature]);
+  const previewEducation = React.useMemo(() => balancedRandomMix(eduRef.current, 5), [eduSignature]);
   // bottom sheet «بیشتر» برای نمایش کامل یک محتوا
   const [sheetItem, setSheetItem] = useState<any>(null);
   // صفحهٔ جداگانهٔ «مشاهده همه» برای تجربه والدین / محتوای آموزشی
@@ -168,6 +174,15 @@ export default function CoursesPage({ app }: { app: any }) {
 
   const goConsult = () => {
     window.location.href = APP_A_URL;
+  };
+
+  // ─── دکمهٔ «شروع مشاوره رایگان» فوتر: به‌جای رفتن به هوم، به ابتدای صفحه اسکرول می‌شود؛
+  // اگر جزئیات دوره باز باشد، تب مشاورهٔ بنفش به‌صورت خودکار باز و دکمهٔ آن تپش می‌زند. ───
+  const [consultFocusSignal, setConsultFocusSignal] = useState(0);
+  const handleStartConsult = () => {
+    if (referralConsultant) { startConsult?.(); return; } // حالت لینک ارجاع → پاپ‌آپ
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { try { window.scrollTo(0, 0); } catch {} }
+    if (selectedCourse) setConsultFocusSignal((s) => s + 1);
   };
 
   // رفع باگ دکمه برگشت گوشی/مرورگر: جزئیات دوره به‌صورت inline (بدون تغییر URL) نمایش داده می‌شود.
@@ -289,10 +304,11 @@ export default function CoursesPage({ app }: { app: any }) {
               }
             }}
             onConsult={goConsult}
+            consultFocusSignal={consultFocusSignal}
           />
         </div>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
-          <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={startConsult} />
+          <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={handleStartConsult} />
         </div>
       </div>
     );
@@ -624,7 +640,7 @@ export default function CoursesPage({ app }: { app: any }) {
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px' }}>
         {showContactOn('courses') && <ContactPanel cfg={cfg} T={T} lang={lang} />}
-        <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={startConsult} />
+        <Footer cfg={cfg} T={T} lang={lang} referralConsultant={referralConsultant} requestConsult={requestConsult} onStartConsult={handleStartConsult} />
       </div>
     </div>
   );
