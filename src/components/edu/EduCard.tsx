@@ -1,6 +1,8 @@
-import { typeLabel, durationLabel, type EduItem } from './edu-data';
+import { typeLabel, type EduItem } from './edu-data';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import CollapsibleCardText from '../CollapsibleCardText';
+import useMediaDuration from '../../hooks/useMediaDuration';
+import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
 
 const PlayGlyph = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" /></svg>
@@ -19,6 +21,9 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
+  // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
+  const mediaSeconds = useMediaDuration(item as any);
+  const duration = formatDurationMinutes(item.type, computeDurationMinutes(item as any, mediaSeconds ?? 0), lang);
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
   const isImage = item.type === 'image';
   return (
@@ -42,7 +47,7 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
         <div className="zke-meta">
           {viewsText && <span className="zke-meta-views"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>{viewsText}</span>}
           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></svg>{en ? item.dateEn : item.date}</span>
-          <span>{durationLabel(item, lang)}</span>
+          <span>{duration}</span>
         </div>
         <div className="zke-card-cta">
           <button type="button" className="zke-pillbtn" onClick={() => onOpen(item)}>{cta}

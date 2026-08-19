@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { type EduItem, durationLabel, typeLabel } from './edu-data';
+import { type EduItem, typeLabel } from './edu-data';
+import useMediaDuration from '../../hooks/useMediaDuration';
+import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
 import EduCard from './EduCard';
 import EduPlayer from './EduPlayer';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
@@ -16,6 +18,9 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   views?: number; viewsOf?: (item: EduItem) => number;
 }) {
   const en = lang === 'en';
+  // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
+  const mediaSeconds = useMediaDuration(item as any);
+  const duration = formatDurationMinutes(item.type, computeDurationMinutes(item as any, mediaSeconds ?? 0), lang);
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
@@ -47,7 +52,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
             {viewsText && <span style={{ color: 'var(--zk-primary, #0F766E)', fontWeight: 700 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>{viewsText}</span>}
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="3.4" /><path d="M5 20c.7-3.8 3.4-6 7-6s6.3 2.2 7 6" /></svg>{en ? 'Zeynalikid care team' : 'تیم همراهی زینالیکید'}</span>
             <span>{en ? item.dateEn : item.date}</span>
-            <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {durationLabel(item, lang)}</span>
+            <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {duration}</span>
           </div>
 
           {item.type !== 'text' && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}

@@ -4,6 +4,8 @@
  * تنظیمات/پنل ادمین بارگذاری شوند، این نمونه‌ها استفاده نمی‌شوند.
  * لحن: گرم/مادرانه/علمی — بدون هیچ ادعای درمان یا تضمین.
  */
+import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
+
 export type EduType = 'text' | 'video' | 'audio' | 'image';
 export interface EduItem {
   id: string;
@@ -107,7 +109,7 @@ export const typeLabel = (t: EduType, lang: string) =>
 export const faNum = (n: number) => { try { return n.toLocaleString('fa-IR'); } catch { return String(n); } };
 
 export const durationLabel = (it: EduItem, lang: string) => {
-  const m = faNum(it.minutes);
-  if (lang === 'en') return it.type === 'text' ? `${m} min read` : it.type === 'video' ? `${m} min watch` : it.type === 'image' ? `${m} view` : `${m} min listen`;
-  return it.type === 'text' ? `${m} دقیقه مطالعه` : it.type === 'video' ? `${m} دقیقه تماشا` : it.type === 'image' ? `${m} مشاهده` : `${m} دقیقه شنیدن`;
+  // مدت‌زمان به‌صورت خودکار محاسبه می‌شود:
+  // مقاله = زمان مطالعهٔ متن (بر اساس تعداد کاراکتر)؛ ویدیو/ویس = مدت رسانه + زمان مطالعهٔ توضیحات.
+  return formatDurationMinutes(it.type, computeDurationMinutes(it as any), lang);
 };

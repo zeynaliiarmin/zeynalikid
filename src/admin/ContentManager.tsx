@@ -458,6 +458,8 @@ function MediaLibraryManager(props: any) {
                   <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.youtubeCode || it.manualCode || ''} onCommit={(v: string) => chg(i, 'youtubeCode', v.trim())} placeholder='<iframe src="https://www.youtube.com/embed/..."></iframe>' rows={3} />
                   <label style={S.lbl}>کد دستی آپارات (VPN خاموش)</label>
                   <StableAdminTextarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.aparatCode || ''} onCommit={(v: string) => chg(i, 'aparatCode', v.trim())} placeholder='<iframe src="https://www.aparat.com/..."></iframe>' rows={3} />
+                  <label style={S.lbl}>مدت‌زمان ویدیو (دقیقه — اختیاری؛ برای ویدیوهای یوتیوب/آپارات که مدتشان خودکار قابل تشخیص نیست)</label>
+                  <StableAdminInput dir="ltr" numeric inputMode="numeric" style={{ ...S.inp, marginBottom: 8 }} defaultValue={it.minutes ? String(it.minutes) : ''} onCommit={(v: string) => { const k = parseInt(faToEn(v), 10); chg(i, 'minutes', (Number.isFinite(k) && k > 0 ? k : undefined)); }} placeholder="مثلاً ۳" />
                 </>
               )}
               {(it.type || 'video') === 'image' && (
@@ -478,6 +480,8 @@ function MediaLibraryManager(props: any) {
                   <textarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.externalCode || it.manualCode || ''} onBlur={(e) => chg(i, 'externalCode', e.target.value.trim())} placeholder='<audio src="https://..." /> یا لینک مستقیم' />
                   <label style={S.lbl}>کد دستی صوتی داخلی (VPN خاموش)</label>
                   <textarea dir="ltr" style={{ ...S.ta, marginBottom: 8, fontFamily: 'monospace', fontSize: 11.5, minHeight: 54 }} defaultValue={it.internalCode || ''} onBlur={(e) => chg(i, 'internalCode', e.target.value.trim())} placeholder='<audio src="https://..." /> یا لینک مستقیم' />
+                  <label style={S.lbl}>مدت‌زمان ویس/پادکست (دقیقه — اختیاری؛ در صورت فایل مستقیم، خودکار تشخیص داده می‌شود)</label>
+                  <StableAdminInput dir="ltr" numeric inputMode="numeric" style={{ ...S.inp, marginBottom: 8 }} defaultValue={it.minutes ? String(it.minutes) : ''} onCommit={(v: string) => { const k = parseInt(faToEn(v), 10); chg(i, 'minutes', (Number.isFinite(k) && k > 0 ? k : undefined)); }} placeholder="مثلاً ۱۲" />
                 </>
               )}
               <label style={{ ...S.lbl, marginTop: 4 }}>نمایش از طریق</label>
