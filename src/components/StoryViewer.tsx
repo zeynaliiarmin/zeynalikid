@@ -58,7 +58,9 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [closing, setClosing] = useState(false); // انیمیشن خروج (swipe پایین)
   const [holding, setHolding] = useState(false); // نگه‌داشتن انگشت → محو UI و توقف تایمر
   const [hlAnim, setHlAnim] = useState<'next' | 'prev' | null>(null); // انیمیشن تغییر هایلایت
-  useEffect(() => { if (!hlAnim) return; const t = setTimeout(() => setHlAnim(null), 420); return () => clearTimeout(t); }, [hlAnim]);
+  useEffect(() => { if (!hlAnim) return; const t = setTimeout(() => setHlAnim(null), 460); return () => clearTimeout(t); }, [hlAnim]);
+  const [dragY, setDragY] = useState(0); // جابه‌جایی عمودی هنگام کشیدن برای خروج
+  const [snapping, setSnapping] = useState(false); // بازگشت نرم بعد از کشیدن کوتاه به پایین
   const closingRef = useRef(false);
   const timerRef = useRef<number>(0);
   const startRef = useRef(0);
@@ -181,39 +183,81 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, [next, prev, onClose]);
 
-  // ── نگه‌داشتن انگشت = توقف تایمر؛ رها کردن = ادامه از همان‌جا؛ swipe = جابه‌جایی ──
+  // ── نگه‌داشتن انگشت = توقف تایمر؛ رها کردن = ادامه از همان‌جا؛ swipe = تغییر هایلایت / خروج ──
   const pressStartRef = useRef(0);
   const skipClickRef = useRef(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const holdTimerRef = useRef(0);
+  const activePointerRef = useRef<number | null>(null);
+  const dragYRef = useRef(0);
 
-  const beginHold = useCallback(() => { pressStartRef.current = Date.now(); skipClickRef.current = false; setHolding(true); setPaused(true); pauseTimer(); }, [pauseTimer]);
-  const endHold = useCallback(() => { setHolding(false); setPaused(false); startTimer(); }, [startTimer]);
+  const beginHold = useCallback(() => {
+    pressStartRef.current = Date.now();
+    skipClickRef.current = false;
+    setPaused(true); pauseTimer();
+    holdTimerRef.current = window.setTimeout(() => setHolding(true), LONG_PRESS_MS);
+  }, [pauseTimer]);
+  const endHold = useCallback(() => {
+    clearTimeout(holdTimerRef.current);
+    setHolding(false);
+    setPaused(false);
+    startTimer();
+  }, [startTimer]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if (activePointerRef.current !== null) return; // فقط اولین انگشت
+    activePointerRef.current = e.pointerId;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
-    if (!swipeStartRef.current) swipeStartRef.current = { x: e.clientX, y: e.clientY };
+    swipeStartRef.current = { x: e.clientX, y: e.clientY };
     beginHold();
   };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (activePointerRef.current !== e.pointerId) return;
+    e.preventDefault();
+    const start = swipeStartRef.current;
+    if (!start) return;
+    const diffX = e.clientX - start.x;
+    const diffY = e.clientY - start.y;
+    // کشیدن عمودی به پایین → استوری همراه انگشت پایین می‌آید و محو می‌شود (مثل اینستاگرام)
+    if (diffY > 0 && Math.abs(diffY) > Math.abs(diffX)) {
+      dragYRef.current = diffY;
+      setDragY(diffY);
+    }
+  };
   const onPointerUp = (e: React.PointerEvent) => {
+    if (activePointerRef.current !== e.pointerId) return;
+    activePointerRef.current = null;
     const held = Date.now() - pressStartRef.current;
-    if (swipeStartRef.current) {
-      const diffX = e.clientX - swipeStartRef.current.x;
-      const diffY = e.clientY - swipeStartRef.current.y;
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (start) {
+      const diffX = e.clientX - start.x;
+      const diffY = e.clientY - start.y;
       // کشیدن از بالا به پایین = خروج از استوری‌ها (مثل اینستاگرام)
       if (diffY > 80 && Math.abs(diffY) > Math.abs(diffX)) {
         skipClickRef.current = true;
-        swipeStartRef.current = null;
+        endHold();
         exitStory();
         return;
       }
+      // کشیدن افقی = تغییر هایلایت (نه استوری) — مثل اینستاگرام
       if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
         skipClickRef.current = true;
-        // کشیدن افقی = تغییر هایلایت (نه استوری) — مثل اینستاگرام
+        dragYRef.current = 0;
+        setDragY(0);
         if (diffX > 0) prevHighlight(); else nextHighlight();
+        endHold();
+        return;
       }
     }
+    // کشیدن کوتاه به پایین بدون رسیدن به آستانه → بازگشت نرم به جای اول
+    if (dragYRef.current > 4) {
+      dragYRef.current = 0;
+      setSnapping(true);
+      setDragY(0);
+      window.setTimeout(() => setSnapping(false), 360);
+    }
     if (held > LONG_PRESS_MS) skipClickRef.current = true; // نگه‌داشتن طولانی → ناوبری نشود
-    swipeStartRef.current = null;
     endHold();
   };
 
@@ -242,11 +286,13 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       position: 'fixed', inset: 0, zIndex: 9999, background: '#000', display: 'flex', flexDirection: 'column',
       paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
-      animation: closing ? 'zk-story-out .36s ease forwards' : 'zk-story-in .25s ease both',
-      WebkitAnimation: closing ? 'zk-story-out .36s ease forwards' : 'zk-story-in .25s ease both',
+      transform: closing ? 'translateY(100%)' : `translateY(${dragY}px)`,
+      opacity: closing ? 0 : Math.max(0, 1 - dragY / (typeof window !== 'undefined' ? window.innerHeight * 0.6 : 500)),
+      transition: (closing || snapping) ? 'transform .34s cubic-bezier(.4,0,.2,1), opacity .34s ease' : 'none',
     }}
-      onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, animation: 'zk-story-in .25s ease both', WebkitAnimation: 'zk-story-in .25s ease both' }}>
       {/* نوار پیشرفت + هدر — هنگام نگه‌داشتن انگشت با انیمیشن محو می‌شوند تا تصویر کامل دیده شود */}
       <div style={{ opacity: holding ? 0 : 1, transition: 'opacity .3s ease', pointerEvents: holding ? 'none' : 'auto' }}>
         {/* نوار پیشرفت اینستاگرامی: هر بخش = یک استوری؛ کامل‌شده سفید، فعال در حال پر شدن، بقیه کم‌نور */}
@@ -271,7 +317,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
         </div>
       </div>
       {/* تصویر — با انیمیشن تغییر استوری/هایلایت + لودینگ وسط استوری */}
-      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>
+      <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', transformOrigin: hlAnim === 'next' ? 'left center' : hlAnim === 'prev' ? 'right center' : 'center', animation: `${hlAnimName} ${hlAnimDur} ease both`, WebkitAnimation: `${hlAnimName} ${hlAnimDur} ease both` }}>
         {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
         {imgSrc && !loaded && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -281,6 +327,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       </div>
       {/* عنوان اسلاید — هنگام نگه‌داشتن انگشت محو می‌شود */}
       {slide.title && <div style={{ textAlign: 'center', padding: '8px 16px', color: '#fff', fontSize: 13, opacity: holding ? 0 : 1, transition: 'opacity .3s ease' }}>{slide.title}</div>}
+      </div>
 
       {/* راهنمای اولین ورود */}
       {showHint && (
@@ -363,7 +410,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
         .zk-hl-spin{position:absolute;inset:-26px;background:conic-gradient(from 0deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5,#feda75);animation:zk-ring-spin 5s linear infinite;-webkit-animation:zk-ring-spin 5s linear infinite}
         .zk-hl-inner{position:relative;z-index:1;width:100%;height:100%;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center}
       `}</style>
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '8px 0 12px', WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '8px 0 12px', WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: 'ltr' }}>
         {active.map((hl, i) => {
           const stories = storiesOf(hl);
           const firstStory = stories[0];
