@@ -130,12 +130,15 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     window.setTimeout(() => onCloseRef.current(), 360);
   }, []);
 
+  // تابع تغییر هایلایت با انیمیشن — از طریق ref در دسترس next (برای رفتن خودکار) قرار می‌گیرد
+  const startHlChangeRef = useRef<(dir: 'next' | 'prev') => void>(() => {});
+
   const next = useCallback(() => {
     if (hlDirRef.current) return; // در حال انیمیشن تغییر هایلایت → تایمر خودکار دخالت نکند
     const hi = hIdxRef.current, si = sIdxRef.current;
     const st = storiesRef.current, act = activeRef.current;
     if (si < st.length - 1) goTo(hi, si + 1);
-    else if (hi < act.length - 1) goTo(hi + 1, 0);
+    else if (hi < act.length - 1) startHlChangeRef.current('next'); // آخرین استوری → هایلایت بعدی با انیمیشن مکعب
     else { markSeenAt(hi, si); onCloseRef.current(); }
   }, [goTo, markSeenAt]);
 
@@ -172,6 +175,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       requestAnimationFrame(() => requestAnimationFrame(() => setHlInStart(true)));
     }, 180);
   }, [goTo, markSeenAt]);
+  startHlChangeRef.current = startHlChange;
 
   // پایان انیمیشن ورود هایلایت جدید
   useEffect(() => {
