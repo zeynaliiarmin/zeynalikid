@@ -44,7 +44,12 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
   // خود پلتفرم) ویدیو پخش شود.
   if (hasReal) {
     const code = (item as any).manualCode || item.url || '';
-    const hasThumb = !!(item.cover || (item as any).thumbnail);
+    // بندانگشتی «واقعی» = چیزی که ادمین برای ویدیو تنظیم کرده (cover/thumbnail).
+    // cover خودکارِ ساخته‌شده از فریم اول ویدیو (با فلگ _autoCover) ملاک پیش‌نمایش نیست
+    // تا پلیر خودِ آپارات/یوتیوب مستقیم با یک دکمه نمایش داده شود.
+    const realThumb = ((item as any).thumbnail)
+      || ((item as any)._autoCover ? '' : (item.cover || ''));
+    const hasThumb = !!realThumb;
     if (kind === 'video' && hasThumb && !playing) {
       return (
         <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
@@ -54,10 +59,8 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
             aria-label={en ? 'Play video' : 'پخش ویدیو'}
             style={{ position: 'relative', width: '100%', minHeight: 210, aspectRatio: '16 / 9', border: 0, padding: 0, cursor: 'pointer', background: '#000', borderRadius: 12, overflow: 'hidden', display: 'block' }}
           >
-            {item.cover ? (
-              <img src={item.cover} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (item as any).thumbnail ? (
-              <img src={(item as any).thumbnail} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            {realThumb ? (
+              <img src={realThumb} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg,#0F766E22,#0EA5E911)' }} />
             )}

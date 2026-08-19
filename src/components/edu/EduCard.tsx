@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { typeLabel, type EduItem } from './edu-data';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import CollapsibleCardText from '../CollapsibleCardText';
@@ -26,10 +27,11 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
   const isImage = item.type === 'image';
+  const [coverFailed, setCoverFailed] = useState(false);
   return (
     <article className="zke-card">
       <button type="button" className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
-        {item.cover ? <img src={item.cover} alt="" loading="lazy" referrerPolicy="no-referrer" style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
+        {item.cover && !coverFailed ? <img src={item.cover} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setCoverFailed(true)} style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
         <span className={`zke-badge ${badgeCls}`}><Icon size={12} /> {typeLabel(item.type, lang)}</span>
         {item.type === 'video' && <span className="zke-play-ov"><PlayGlyph /></span>}
         {item.type === 'audio' && <Wave />}

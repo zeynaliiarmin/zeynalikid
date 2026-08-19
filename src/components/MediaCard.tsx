@@ -117,8 +117,8 @@ export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'vi
   const safeSrc=extractDirectMediaUrl(normalized,'video');
   if(!safeSrc)return null;
   const isDirectVideo=/<\s*(?:video|source)\b/i.test(normalized)||/\.(?:mp4|webm|ogv|mov)(?:[?#].*)?$/i.test(safeSrc);
-  if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000'}}/>;
-  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
+  if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000',borderRadius:14,overflow:'hidden'}}/>;
+  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
 // همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
