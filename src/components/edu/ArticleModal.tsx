@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { type EduItem, typeLabel } from './edu-data';
 import useMediaDuration from '../../hooks/useMediaDuration';
-import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
+import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 import EduCard from './EduCard';
 import EduPlayer from './EduPlayer';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
@@ -20,7 +20,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   const en = lang === 'en';
   // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
   const mediaSeconds = useMediaDuration(item as any);
-  const duration = formatDurationMinutes(item.type, computeDurationMinutes(item as any, mediaSeconds ?? 0), lang);
+  const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;

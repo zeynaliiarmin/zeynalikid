@@ -73,6 +73,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const hIdxRef = useRef(hIdx); hIdxRef.current = hIdx;
   const sIdxRef = useRef(sIdx); sIdxRef.current = sIdx;
   const activeRef = useRef(active); activeRef.current = active;
+  const vpnOnRef = useRef(vpnOn); vpnOnRef.current = vpnOn;
   const onCloseRef = useRef(onClose); onCloseRef.current = onClose;
   const currentRef = useRef<{ hi: number; si: number } | null>(null);
 
@@ -130,6 +131,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   }, []);
 
   const next = useCallback(() => {
+    if (hlDirRef.current) return; // در حال انیمیشن تغییر هایلایت → تایمر خودکار دخالت نکند
     const hi = hIdxRef.current, si = sIdxRef.current;
     const st = storiesRef.current, act = activeRef.current;
     if (si < st.length - 1) goTo(hi, si + 1);
@@ -150,21 +152,31 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     const act = activeRef.current;
     if (dir === 'next' && hi >= act.length - 1) { markSeenAt(hi, sIdxRef.current); onCloseRef.current(); return; }
     if (dir === 'prev' && hi <= 0) return;
+    const newHi = dir === 'next' ? hi + 1 : hi - 1;
+    // پیش‌بارگذاری تصویر هایلایت ورودی تا موقع چرخش، spinner ظاهر نشود و انیمیشن لگ نگیرد
+    const incoming = storiesOf(act[newHi])[0];
+    const incomingSrc = resolveImage(incoming, vpnOnRef.current);
+    if (incomingSrc) {
+      try {
+        const im = new Image();
+        im.referrerPolicy = 'no-referrer';
+        im.src = incomingSrc;
+      } catch { /* ignore */ }
+    }
     hlDirRef.current = dir;
     setHlDir(dir); setHlStage('out'); setHlInStart(false);
     clearTimeout(timerRef.current); // جلوگیری از advance خودکار در حین انیمیشن
     window.setTimeout(() => {
-      const newHi = dir === 'next' ? hIdxRef.current + 1 : hIdxRef.current - 1;
       goTo(newHi, 0); // محتوا عوض شود + استوری فعلی «دیده‌شده» ثبت شود
       setHlStage('in');
       requestAnimationFrame(() => requestAnimationFrame(() => setHlInStart(true)));
-    }, 280);
+    }, 180);
   }, [goTo, markSeenAt]);
 
   // پایان انیمیشن ورود هایلایت جدید
   useEffect(() => {
     if (hlStage !== 'in' || !hlInStart) return;
-    const t = window.setTimeout(() => { setHlDir(null); setHlStage(null); setHlInStart(false); hlDirRef.current = null; }, 340);
+    const t = window.setTimeout(() => { setHlDir(null); setHlStage(null); setHlInStart(false); hlDirRef.current = null; }, 280);
     return () => clearTimeout(t);
   }, [hlStage, hlInStart]);
 
@@ -295,17 +307,17 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   let cubeTransform = 'rotateY(0deg)';
   let cubeOpacity = 1;
   let cubeOrigin = 'center center';
-  let cubeTransition = 'transform .3s cubic-bezier(.32,.72,.24,1), opacity .3s ease';
+  let cubeTransition = 'transform .24s cubic-bezier(.32,.72,.24,1), opacity .24s ease';
   if (hlStage === 'out') {
     cubeOrigin = hlIsNext ? 'left center' : 'right center';
-    cubeTransform = hlIsNext ? 'rotateY(-62deg)' : 'rotateY(62deg)';
-    cubeOpacity = 0.35;
-    cubeTransition = 'transform .28s ease-in, opacity .28s ease-in';
+    cubeTransform = hlIsNext ? 'rotateY(-68deg)' : 'rotateY(68deg)';
+    cubeOpacity = 0.3;
+    cubeTransition = 'transform .18s cubic-bezier(.55,.06,.68,.19), opacity .18s ease-in';
   } else if (hlStage === 'in') {
     cubeOrigin = hlIsNext ? 'right center' : 'left center';
     if (!hlInStart) {
-      cubeTransform = hlIsNext ? 'rotateY(62deg)' : 'rotateY(-62deg)';
-      cubeOpacity = 0.35;
+      cubeTransform = hlIsNext ? 'rotateY(68deg)' : 'rotateY(-68deg)';
+      cubeOpacity = 0.3;
       cubeTransition = 'none';
     } else {
       cubeTransform = 'rotateY(0deg)';
@@ -353,7 +365,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
       </div>
       {/* تصویر — با انیمیشن مکعبی تغییر هایلایت + لودینگ وسط استوری */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', perspective: '1400px', overflow: 'hidden' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transform: cubeTransform, opacity: cubeOpacity, transformOrigin: cubeOrigin, transition: cubeTransition, willChange: 'transform, opacity' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transform: cubeTransform, opacity: cubeOpacity, transformOrigin: cubeOrigin, transition: cubeTransition, willChange: 'transform, opacity', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
           <div key={`${hIdx}-${sIdx}`} onClick={handleClick} onContextMenu={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative', animation: hlDir ? 'none' : 'zk-story-slide .3s ease both', WebkitAnimation: hlDir ? 'none' : 'zk-story-slide .3s ease both' }}>
             {imgSrc ? <SlideMedia src={imgSrc} onReady={() => setLoaded(true)} /> : <div style={{ color: '#888', fontSize: 14 }}>{isEn ? 'Image not found' : 'تصویر یافت نشد'}</div>}
             {imgSrc && !loaded && (

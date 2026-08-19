@@ -4,7 +4,7 @@
  * تنظیمات/پنل ادمین بارگذاری شوند، این نمونه‌ها استفاده نمی‌شوند.
  * لحن: گرم/مادرانه/علمی — بدون هیچ ادعای درمان یا تضمین.
  */
-import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
+import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 
 export type EduType = 'text' | 'video' | 'audio' | 'image';
 export interface EduItem {
@@ -111,5 +111,6 @@ export const faNum = (n: number) => { try { return n.toLocaleString('fa-IR'); } 
 export const durationLabel = (it: EduItem, lang: string) => {
   // مدت‌زمان به‌صورت خودکار محاسبه می‌شود:
   // مقاله = زمان مطالعهٔ متن (بر اساس تعداد کاراکتر)؛ ویدیو/ویس = مدت رسانه + زمان مطالعهٔ توضیحات.
-  return formatDurationMinutes(it.type, computeDurationMinutes(it as any), lang);
+  // زیر یک دقیقه → ثانیه؛ از یک دقیقه به بالا → دقیقه.
+  return formatDuration(it.type, computeDurationSeconds(it as any), lang);
 };

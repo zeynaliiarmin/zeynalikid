@@ -2,7 +2,7 @@ import { typeLabel, type EduItem } from './edu-data';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import CollapsibleCardText from '../CollapsibleCardText';
 import useMediaDuration from '../../hooks/useMediaDuration';
-import { computeDurationMinutes, formatDurationMinutes } from '../../utils/eduDuration';
+import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 
 const PlayGlyph = ({ size = 22 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" /></svg>
@@ -23,7 +23,7 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
     : null;
   // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
   const mediaSeconds = useMediaDuration(item as any);
-  const duration = formatDurationMinutes(item.type, computeDurationMinutes(item as any, mediaSeconds ?? 0), lang);
+  const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
   const isImage = item.type === 'image';
   return (
