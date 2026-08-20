@@ -1187,9 +1187,23 @@ function App(){
      setReferralConsultOpen(true);
      return;
    }
-   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
    setView('home');
-   setConsultPulse(Date.now());
+   setConsultPulse(0);
+   // اسکرول نرم به دکمهٔ «ثبت درخواست مشاوره» ابتدای صفحهٔ هوم + تپش موقت آن
+   // (اگر از صفحهٔ دیگری آمده باشد، صبر می‌کنیم تا هوم رندر شود و دکمه پیدا شود)
+   const tryScroll=(attempt:number)=>{
+     try {
+       const el=document.getElementById('zk-home-consult-cta');
+       if (el) {
+         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         setConsultPulse(Date.now());
+         window.setTimeout(()=>setConsultPulse(0), 3200);
+         return;
+       }
+     } catch {}
+     if (attempt<12) window.setTimeout(()=>tryScroll(attempt+1), 120);
+   };
+   tryScroll(0);
  }, [referralConsultant, setView]);
  const applyReferral = useCallback((code: string, target: ParsedReferral | null, consultants: any[]) => {
    const c = findConsultantByCode(consultants, code);

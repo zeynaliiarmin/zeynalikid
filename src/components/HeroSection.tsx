@@ -88,12 +88,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
         <div style={{display:'flex', flexWrap:'wrap', gap:'9px', alignItems:'center'}}>
           {ctaText && (
             <SwapCta
+              id="zk-home-consult-cta"
               variant="consult"
               labelA={ctaText}
-              labelB={isRtl ? 'همین حالا شروع کن' : 'Start right now'}
+              labelB={isRtl ? 'همین حالا شروع کن 💜' : 'Start right now 💜'}
               onClick={()=>go(ctaLink)}
               pulse={!!animateConsultCta}
-              glow={!animateConsultCta}
               style={animateConsultCta ? {
                 minHeight:52, padding:'13px 28px', fontSize:15,
               } : (animateCoursesCta ? {minHeight:40, padding:'9px 16px', fontSize:12.5} : {minHeight:48, padding:'13px 26px', fontSize:15})}

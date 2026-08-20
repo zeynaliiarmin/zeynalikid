@@ -116,19 +116,20 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const consultTopRef = React.useRef<HTMLButtonElement>(null);
   const [pulseTarget, setPulseTarget] = useState<'enroll' | 'consult' | null>(null);
   const scrollToTopAndPulse = (target: 'enroll' | 'consult') => {
-    // برای مشاوره، تب باز می‌شود تا دکمهٔ مشاوره دیده شود
+    // برای مشاوره تب باز می‌شود؛ برای ثبت‌نام تب بسته می‌شود تا دکمه به طرح اصلی برگردد
     if (target === 'consult') setConsultOpen(true);
+    else setConsultOpen(false);
     // اسکرول به دکمهٔ مربوطه در ابتدای صفحه؛ برای مشاوره کمی صبر می‌کنیم
     // تا آکاردئون کامل باز شود و دکمه در جای نهایی قرار بگیرد.
     const el = target === 'enroll' ? enrollTopRef.current : consultTopRef.current;
     const scrollNow = () => { try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} } };
-    if (target === 'consult') window.setTimeout(scrollNow, 200); else scrollNow();
+    if (target === 'consult') window.setTimeout(scrollNow, 220); else window.setTimeout(scrollNow, 80);
     // تپش بعد از رسیدن به بالا شروع شود تا کاربر حتماً آن را ببیند
     setPulseTarget(null);
     window.setTimeout(() => {
       setPulseTarget(null);
       requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget(target)));
-    }, 550);
+    }, 560);
     window.setTimeout(() => setPulseTarget(null), 3200);
   };
 
@@ -401,11 +402,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           <SwapCta
             ref={enrollTopRef}
             variant="enroll"
+            mode={consultOpen ? 'muted' : 'primary'}
             labelA={isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
-            labelB={isFa ? 'همین الان ثبت‌نام می‌کنم' : 'Enroll me now'}
+            labelB={isFa ? 'همین الان ثبت‌نام می‌کنم 🚀' : 'Enroll me now 🚀'}
             onClick={onRegister}
             pulse={(hasReferral || pulseTarget === 'enroll')}
-            glow={!hasReferral && !consultOpen && pulseTarget !== 'enroll'}
             style={{ padding: '11px 24px', fontSize: 14, minHeight: 48 }}
           />
         </div>
@@ -446,10 +447,9 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   ref={consultTopRef}
                   variant="consult"
                   labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
-                  labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
+                  labelB={isFa ? 'شروع مشاورهٔ رایگان 💜' : 'Start free consultation 💜'}
                   onClick={onConsult}
                   pulse={pulseTarget === 'consult'}
-                  glow={consultOpen && pulseTarget !== 'consult'}
                   style={{ width: '100%', minHeight: 46, padding: '12px 14px', fontSize: 14 }}
                 />
                 <p className="zk-consult-note">

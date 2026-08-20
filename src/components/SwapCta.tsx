@@ -4,15 +4,19 @@ import './zkCta.css';
 /**
  * SwapCta — دکمهٔ اصلی با «تعویض نرم متن» روی هاور (دسکتاپ) و تعویض خودکار (موبایل/لمسی).
  * الهام از ترفند Hover-Swap اینستاگرامی، اما بازطراحی‌شده برای پروژه:
- *  • تمام رنگ‌ها/سایه‌ها از توکن‌های CSS گرفته می‌شوند → با هر تم/دیزاین و حالت تیره خودکار هماهنگ می‌شود.
- *  • دو متن واقعی (نه content جعلی CSS) → دسترس‌پذیر، دو زبانه و بدون لرزش عرض.
+ *  • دو طرح مجزا: «مشاوره» (بنفشِ هماهنگ با برند) و «ثبت‌نام دوره» (گرادیان primary/accent تم).
  *  • فقط یک متن در لحظه دیده می‌شود (viewport با ارتفاع دقیق یک خط).
+ *  • سلسله‌مراتب با رنگ (mode) نه با درخشش دائمی: دکمهٔ ثبت دوره وقتی تب مشاوره باز است
+ *    به حالت محوتر (muted) می‌رود و با بسته شدن تب، با انیمیشن به طرح اصلی برمی‌گردد.
+ *  • تپش (pulse) فقط در حالت لینک ارجاع یا بعد از کلیک روی دکمهٔ پایین صفحه فعال می‌شود.
  *  • نسخهٔ لمسی: روی دستگاه‌های بدون هاور، متن به‌آرامی و دوره‌ای عوض می‌شود و هنگام لمس متوقف می‌شود.
  *  • احترام کامل به prefers-reduced-motion.
  */
 interface SwapCtaProps {
   /** نوع بصری دکمه */
   variant?: 'consult' | 'enroll';
+  /** سلسله‌مراتب رنگی دکمهٔ ثبت‌نام (primary = طرح اصلی، muted = محو وقتی مشاوره در کانون توجه است) */
+  mode?: 'primary' | 'muted';
   /** متن پیش‌فرض (و برچسب معنایی دکمه) */
   labelA: string;
   /** متن جایگزین که روی هاور/تعویض خودکار دیده می‌شود */
@@ -20,8 +24,7 @@ interface SwapCtaProps {
   onClick?: () => void;
   /** تپش قوی (یک‌بار، بعد از کلیک روی CTA پایین / حالت لینک ارجاع) */
   pulse?: boolean;
-  /** درخشش نرم و دوره‌ای برای جلب توجه (بدون جلف شدن) */
-  glow?: boolean;
+  id?: string;
   className?: string;
   style?: React.CSSProperties;
   type?: 'button' | 'submit';
@@ -29,7 +32,7 @@ interface SwapCtaProps {
 }
 
 const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapCta(
-  { variant = 'consult', labelA, labelB, onClick, pulse = false, glow = false, className = '', style, type = 'button', ariaLabel },
+  { variant = 'consult', mode = 'primary', labelA, labelB, onClick, pulse = false, id, className = '', style, type = 'button', ariaLabel },
   ref,
 ) {
   const [swapped, setSwapped] = useState(false);
@@ -71,12 +74,12 @@ const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapC
     'zk-swap-cta',
     variant === 'enroll' ? 'zk-swap-enroll' : 'zk-swap-consult',
     swapped ? 'zk-swap-on' : '',
-    pulse ? 'zk-swap-pulse' : (glow ? 'zk-swap-glow' : ''),
+    pulse ? 'zk-swap-pulse' : '',
     className,
   ].filter(Boolean).join(' ');
 
   return (
-    <button ref={ref} type={type} onClick={onClick} className={cls} style={style} aria-label={ariaLabel || labelA}>
+    <button ref={ref} id={id} type={type} onClick={onClick} className={cls} data-mode={mode} style={style} aria-label={ariaLabel || labelA}>
       <span className="zk-swap-viewport" aria-hidden="true">
         <span className="zk-swap-stack">
           <span className="zk-swap-line">{labelA}</span>

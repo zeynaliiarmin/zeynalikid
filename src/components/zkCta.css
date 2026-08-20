@@ -1,10 +1,24 @@
 /* ═══════════════════════════════════════════════════════════════════
    Zeynalikid — CTA با تعویض نرم متن (هاور/لمسی) + آکاردئون مشاورهٔ رایگان
-   تمام رنگ‌ها از توکن‌های --zk-* می‌آیند → هماهنگ خودکار با تم‌ها و حالت تیره
+   • طرح «مشاوره»: بنفشِ هماهنگ با برند (مادرانه و دعوت‌گر) — مستقل از رنگ اصلی تم
+   • طرح «ثبت‌نام دوره»: گرادیان primary/accent تم → با هر تم/حالت تیره هماهنگ
+   • این فایل در main.tsx هم import می‌شود تا keyframes در همهٔ صفحات (از جمله /courses)
+     در دسترس باشد — رفع باگ «تپش دکمهٔ مقصد»
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── keyframes سراسری (این فایل در main.tsx هم import می‌شود تا در همهٔ
-       صفحات از جمله /courses در دسترس باشد — رفع باگ «تپش دکمهٔ مقصد») ─── */
+/* ─── پالت بنفش مشاوره (برند) ─── */
+:root {
+  --zk-consult-a: #7C3AED;
+  --zk-consult-b: #A78BFA;
+  --zk-consult-deep: #6D28D9;
+}
+[data-theme='dark'] {
+  --zk-consult-a: #7C3AED;
+  --zk-consult-b: #8B5CF6;
+  --zk-consult-deep: #5B21B6;
+}
+
+/* ─── keyframes سراسری ─── */
 @keyframes fadeSlide {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -39,6 +53,28 @@
   }
 }
 
+/* تپش بنفش برای دکمهٔ مشاوره */
+@keyframes zk-consult-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.42);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(124, 58, 237, 0);
+  }
+}
+@-webkit-keyframes zk-consult-pulse {
+  0%, 100% {
+    -webkit-transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.42);
+  }
+  50% {
+    -webkit-transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(124, 58, 237, 0);
+  }
+}
+
 /* ─── پایهٔ دکمه ─── */
 .zk-swap-cta {
   position: relative;
@@ -56,7 +92,7 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)),
     box-shadow 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)),
-    background 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+    color 0.3s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
 }
 
 /* viewport فقط به‌اندازهٔ «یک خط» ارتفاع دارد → همیشه فقط یک متن دیده می‌شود */
@@ -92,43 +128,25 @@
 /* موبایل/لمسی: تعویض خودکار با کلاس zk-swap-on */
 .zk-swap-cta.zk-swap-on .zk-swap-stack { transform: translateY(-50%); }
 
-/* تپش قوی (حالت ارجاع / تپش بعد از کلیک CTA پایین) */
+/* تپش قوی — فقط بعد از کلیک CTA پایین یا حالت ارجاع */
 .zk-swap-cta.zk-swap-pulse {
   animation: zk-hero-pulse 1.6s ease-in-out infinite;
   -webkit-animation: zk-hero-pulse 1.6s ease-in-out infinite;
 }
-
-/* درخشش نرم برای جلب توجه (بدون جلف شدن) */
-.zk-swap-cta.zk-swap-glow {
-  animation: zk-cta-glow 2.6s ease-in-out infinite;
-  -webkit-animation: zk-cta-glow 2.6s ease-in-out infinite;
-}
-@keyframes zk-cta-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.32), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--zk-primary, #0F766E) 34%, transparent), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-  }
-  50% {
-    box-shadow: 0 0 0 9px rgba(15, 118, 110, 0), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-    box-shadow: 0 0 0 9px transparent, var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-  }
-}
-@-webkit-keyframes zk-cta-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.32), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-  }
-  50% {
-    box-shadow: 0 0 0 9px rgba(15, 118, 110, 0), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
-  }
+.zk-swap-consult.zk-swap-pulse {
+  animation: zk-consult-pulse 1.6s ease-in-out infinite;
+  -webkit-animation: zk-consult-pulse 1.6s ease-in-out infinite;
 }
 
-/* ─── طرح «مشاوره» — گرم و دعوت‌گر، با گرادیان و هالهٔ نرم ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   طرح «مشاوره» — بنفشِ مادرانه و دعوت‌گر
+   ═══════════════════════════════════════════════════════════════════ */
 .zk-swap-consult {
-  background: linear-gradient(135deg, var(--zk-primary), color-mix(in srgb, var(--zk-primary) 55%, var(--zk-accent, var(--zk-primary))));
-  box-shadow: var(--zk-shadow-light);
+  background: linear-gradient(135deg, var(--zk-consult-a), var(--zk-consult-b));
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.28), var(--zk-shadow-light);
 }
 
-/* بارقهٔ نرم عبوری */
+/* بارقهٔ نرم عبوری (شبیه لمسِ گرم) */
 .zk-swap-consult::after {
   content: '';
   position: absolute;
@@ -136,7 +154,7 @@
   bottom: -20%;
   width: 34%;
   left: -40%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   transform: skewX(-18deg);
   opacity: 0;
   z-index: 1;
@@ -145,8 +163,8 @@
 
 @media (hover: hover) {
   .zk-swap-consult:hover {
-    background: linear-gradient(135deg, var(--zk-primary-hover), var(--zk-primary));
-    box-shadow: var(--zk-shadow-medium);
+    background: linear-gradient(135deg, var(--zk-consult-deep), var(--zk-consult-a));
+    box-shadow: 0 0 0 5px rgba(124, 58, 237, 0.16), 0 8px 22px rgba(124, 58, 237, 0.32);
   }
   .zk-swap-consult:hover::after {
     opacity: 1;
@@ -155,33 +173,49 @@
   }
 }
 
-/* ─── طرح «ثبت‌نام دوره» — اقدام و پیشرفت ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   طرح «ثبت‌نام دوره» — گرادیان primary/accent تم + سوییچ نرم primary ↔ muted
+   ═══════════════════════════════════════════════════════════════════ */
 .zk-swap-enroll {
   background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
+  color: #fff;
   box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 26%, transparent), var(--zk-shadow-light);
 }
 
-/* پر شدن رنگ از پایین به بالا روی هاور */
-.zk-swap-enroll::before {
+/* لایهٔ محو (muted) که با باز شدن تب مشاوره، روی گرادیان اصلی می‌نشیند */
+.zk-swap-enroll::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: linear-gradient(135deg, var(--zk-accent, var(--zk-primary)), var(--zk-primary-hover));
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.32s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--zk-surface), var(--zk-surface-muted, #F1EDE6));
+  box-shadow: inset 0 0 0 1px var(--zk-border-strong);
+  opacity: 0;
+  transition: opacity 0.4s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  pointer-events: none;
+}
+.zk-swap-enroll .zk-swap-viewport { position: relative; z-index: 1; }
+
+.zk-swap-enroll[data-mode='muted']::after { opacity: 1; }
+.zk-swap-enroll[data-mode='muted'] {
+  color: var(--zk-text-muted);
+  box-shadow: var(--zk-shadow-light);
 }
 
 @media (hover: hover) {
-  .zk-swap-enroll:hover {
+  .zk-swap-enroll[data-mode='primary']:hover {
     transform: translateY(-2px);
     box-shadow: var(--zk-shadow-medium);
   }
-  .zk-swap-enroll:hover::before { transform: scaleY(1); }
+  .zk-swap-enroll[data-mode='muted']:hover {
+    box-shadow: var(--zk-shadow-medium);
+  }
 }
 
-/* ─── آکاردئون مشاورهٔ رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات) ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   آکاردئون مشاورهٔ رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات)
+   ═══════════════════════════════════════════════════════════════════ */
 .zk-consult-accordion {
   border-top: 1px solid var(--zk-border);
   background: transparent;
@@ -211,9 +245,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
+  background: linear-gradient(135deg, var(--zk-consult-a), var(--zk-consult-b));
   color: #fff;
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--zk-primary) 35%, transparent);
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
   transition: transform 0.3s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
 }
 .zk-consult-trigger[aria-expanded='true'] .zk-consult-trigger-badge { transform: rotate(45deg); }
@@ -239,7 +273,7 @@
 }
 
 .zk-consult-chev {
-  color: var(--zk-primary);
+  color: var(--zk-consult-deep);
   transition: transform 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
   flex-shrink: 0;
 }
@@ -247,7 +281,7 @@
 
 @media (hover: hover) {
   .zk-consult-trigger:hover {
-    background: color-mix(in srgb, var(--zk-primary) 6%, transparent);
+    background: rgba(124, 58, 237, 0.06);
   }
 }
 
