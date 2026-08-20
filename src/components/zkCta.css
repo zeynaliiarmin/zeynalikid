@@ -3,6 +3,43 @@
    تمام رنگ‌ها از توکن‌های --zk-* می‌آیند → هماهنگ خودکار با تم‌ها و حالت تیره
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ─── keyframes سراسری (این فایل در main.tsx هم import می‌شود تا در همهٔ
+       صفحات از جمله /courses در دسترس باشد — رفع باگ «تپش دکمهٔ مقصد») ─── */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@-webkit-keyframes fadeSlide {
+  from { opacity: 0; -webkit-transform: translateY(12px); }
+  to { opacity: 1; -webkit-transform: translateY(0); }
+}
+
+@keyframes zk-hero-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.35);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--zk-primary, #0F766E) 40%, transparent);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(15, 118, 110, 0);
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+@-webkit-keyframes zk-hero-pulse {
+  0%, 100% {
+    -webkit-transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.35);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--zk-primary, #0F766E) 40%, transparent);
+  }
+  50% {
+    -webkit-transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(15, 118, 110, 0);
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+/* ─── پایهٔ دکمه ─── */
 .zk-swap-cta {
   position: relative;
   display: inline-flex;
@@ -22,8 +59,10 @@
     background 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
 }
 
+/* viewport فقط به‌اندازهٔ «یک خط» ارتفاع دارد → همیشه فقط یک متن دیده می‌شود */
 .zk-swap-viewport {
   display: inline-block;
+  height: 1.5em;
   overflow: hidden;
   pointer-events: none;
   line-height: 1.5;
@@ -53,15 +92,39 @@
 /* موبایل/لمسی: تعویض خودکار با کلاس zk-swap-on */
 .zk-swap-cta.zk-swap-on .zk-swap-stack { transform: translateY(-50%); }
 
-/* تپش (حالت ارجاع / تپش بعد از کلیک CTA پایین) */
+/* تپش قوی (حالت ارجاع / تپش بعد از کلیک CTA پایین) */
 .zk-swap-cta.zk-swap-pulse {
   animation: zk-hero-pulse 1.6s ease-in-out infinite;
   -webkit-animation: zk-hero-pulse 1.6s ease-in-out infinite;
 }
 
-/* ─── طرح «مشاوره» — گرم و دعوت‌گر ─── */
+/* درخشش نرم برای جلب توجه (بدون جلف شدن) */
+.zk-swap-cta.zk-swap-glow {
+  animation: zk-cta-glow 2.6s ease-in-out infinite;
+  -webkit-animation: zk-cta-glow 2.6s ease-in-out infinite;
+}
+@keyframes zk-cta-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.32), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--zk-primary, #0F766E) 34%, transparent), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(15, 118, 110, 0), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+    box-shadow: 0 0 0 9px transparent, var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+  }
+}
+@-webkit-keyframes zk-cta-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.32), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(15, 118, 110, 0), var(--zk-shadow-medium, 0 5px 20px rgba(15, 23, 42, 0.10));
+  }
+}
+
+/* ─── طرح «مشاوره» — گرم و دعوت‌گر، با گرادیان و هالهٔ نرم ─── */
 .zk-swap-consult {
-  background: var(--zk-primary);
+  background: linear-gradient(135deg, var(--zk-primary), color-mix(in srgb, var(--zk-primary) 55%, var(--zk-accent, var(--zk-primary))));
   box-shadow: var(--zk-shadow-light);
 }
 
@@ -73,7 +136,7 @@
   bottom: -20%;
   width: 34%;
   left: -40%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   transform: skewX(-18deg);
   opacity: 0;
   z-index: 1;
@@ -82,8 +145,8 @@
 
 @media (hover: hover) {
   .zk-swap-consult:hover {
-    background: var(--zk-primary-hover);
-    box-shadow: 0 0 0 4px var(--zk-primary-light, rgba(15, 118, 110, 0.18)), var(--zk-shadow-medium);
+    background: linear-gradient(135deg, var(--zk-primary-hover), var(--zk-primary));
+    box-shadow: var(--zk-shadow-medium);
   }
   .zk-swap-consult:hover::after {
     opacity: 1;
@@ -92,18 +155,13 @@
   }
 }
 
-/* هالهٔ نرم در حالت تعویض خودکار (لمسی) */
-.zk-swap-consult.zk-swap-on {
-  box-shadow: 0 0 0 4px var(--zk-primary-light, rgba(15, 118, 110, 0.18)), var(--zk-shadow-light);
-}
-
 /* ─── طرح «ثبت‌نام دوره» — اقدام و پیشرفت ─── */
 .zk-swap-enroll {
   background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
-  box-shadow: var(--zk-shadow-light);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 26%, transparent), var(--zk-shadow-light);
 }
 
-/* پر شدن رنگ از پایین به بالا */
+/* پر شدن رنگ از پایین به بالا روی هاور */
 .zk-swap-enroll::before {
   content: '';
   position: absolute;
@@ -123,12 +181,6 @@
   .zk-swap-enroll:hover::before { transform: scaleY(1); }
 }
 
-.zk-swap-enroll.zk-swap-on::before { transform: scaleY(1); }
-.zk-swap-enroll.zk-swap-on {
-  transform: translateY(-1px);
-  box-shadow: var(--zk-shadow-medium);
-}
-
 /* ─── آکاردئون مشاورهٔ رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات) ─── */
 .zk-consult-accordion {
   border-top: 1px solid var(--zk-border);
@@ -139,53 +191,85 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   background: transparent;
   border: 0;
   cursor: pointer;
   font-family: inherit;
-  padding: 10px 16px;
-  min-height: 38px;
-  color: var(--zk-text-muted);
-  transition: color 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)), background 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  padding: 10px 16px 12px;
+  text-align: start;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
 }
 
-.zk-consult-trigger > span {
-  font-size: 12.5px;
-  font-weight: 700;
+/* نشان گرادیانی کوچک (آیکون برق) — امضای مینیمال این بخش */
+.zk-consult-trigger-badge {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
+  color: #fff;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--zk-primary) 35%, transparent);
+  transition: transform 0.3s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+}
+.zk-consult-trigger[aria-expanded='true'] .zk-consult-trigger-badge { transform: rotate(45deg); }
+
+.zk-consult-trigger-text {
   flex: 1;
-  line-height: 1.6;
-  text-align: start;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.zk-consult-trigger-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--zk-text);
+  line-height: 1.55;
+}
+.zk-consult-trigger-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--zk-text-muted);
+  line-height: 1.5;
 }
 
 .zk-consult-chev {
   color: var(--zk-primary);
-  transition: transform 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  transition: transform 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
   flex-shrink: 0;
 }
-
 .zk-consult-trigger[aria-expanded='true'] .zk-consult-chev { transform: rotate(180deg); }
 
 @media (hover: hover) {
   .zk-consult-trigger:hover {
-    color: var(--zk-primary);
-    background: var(--zk-primary-light, rgba(15, 118, 110, 0.08));
+    background: color-mix(in srgb, var(--zk-primary) 6%, transparent);
   }
 }
 
-/* باکس بازشدهٔ مشاوره — بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد */
+/* باکس بازشدهٔ مشاوره — انیمیشن باز/بستهٔ نرم (grid-rows) */
+.zk-consult-panel-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.2, 0, 0.2, 1);
+}
+.zk-consult-panel-wrap.zk-open { grid-template-rows: 1fr; }
+.zk-consult-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
 .zk-consult-panel {
-  padding: 4px 16px 16px;
+  padding: 2px 16px 16px;
   background: var(--zk-surface-muted, #F8F4EF);
   border-top: 1px solid var(--zk-border);
-  animation: fadeSlide 0.28s ease both;
-  -webkit-animation: fadeSlide 0.28s ease both;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
+.zk-consult-panel-wrap.zk-open .zk-consult-panel { opacity: 1; }
 
 .zk-consult-panel .zk-consult-note {
   margin: 10px 2px 0;
@@ -209,7 +293,11 @@
   .zk-swap-cta,
   .zk-swap-stack,
   .zk-swap-cta::before,
-  .zk-swap-cta::after {
+  .zk-swap-cta::after,
+  .zk-consult-panel-wrap,
+  .zk-consult-panel,
+  .zk-consult-trigger-badge,
+  .zk-consult-chev {
     transition: none !important;
     animation: none !important;
     -webkit-animation: none !important;

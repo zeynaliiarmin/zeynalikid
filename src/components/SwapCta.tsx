@@ -6,6 +6,7 @@ import './zkCta.css';
  * الهام از ترفند Hover-Swap اینستاگرامی، اما بازطراحی‌شده برای پروژه:
  *  • تمام رنگ‌ها/سایه‌ها از توکن‌های CSS گرفته می‌شوند → با هر تم/دیزاین و حالت تیره خودکار هماهنگ می‌شود.
  *  • دو متن واقعی (نه content جعلی CSS) → دسترس‌پذیر، دو زبانه و بدون لرزش عرض.
+ *  • فقط یک متن در لحظه دیده می‌شود (viewport با ارتفاع دقیق یک خط).
  *  • نسخهٔ لمسی: روی دستگاه‌های بدون هاور، متن به‌آرامی و دوره‌ای عوض می‌شود و هنگام لمس متوقف می‌شود.
  *  • احترام کامل به prefers-reduced-motion.
  */
@@ -17,8 +18,10 @@ interface SwapCtaProps {
   /** متن جایگزین که روی هاور/تعویض خودکار دیده می‌شود */
   labelB: string;
   onClick?: () => void;
-  /** فعال بودن انیمیشن تپش (حالت لینک ارجاع / تپش بعد از کلیک CTA پایین) */
+  /** تپش قوی (یک‌بار، بعد از کلیک روی CTA پایین / حالت لینک ارجاع) */
   pulse?: boolean;
+  /** درخشش نرم و دوره‌ای برای جلب توجه (بدون جلف شدن) */
+  glow?: boolean;
   className?: string;
   style?: React.CSSProperties;
   type?: 'button' | 'submit';
@@ -26,7 +29,7 @@ interface SwapCtaProps {
 }
 
 const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapCta(
-  { variant = 'consult', labelA, labelB, onClick, pulse = false, className = '', style, type = 'button', ariaLabel },
+  { variant = 'consult', labelA, labelB, onClick, pulse = false, glow = false, className = '', style, type = 'button', ariaLabel },
   ref,
 ) {
   const [swapped, setSwapped] = useState(false);
@@ -68,7 +71,7 @@ const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapC
     'zk-swap-cta',
     variant === 'enroll' ? 'zk-swap-enroll' : 'zk-swap-consult',
     swapped ? 'zk-swap-on' : '',
-    pulse ? 'zk-swap-pulse' : '',
+    pulse ? 'zk-swap-pulse' : (glow ? 'zk-swap-glow' : ''),
     className,
   ].filter(Boolean).join(' ');
 

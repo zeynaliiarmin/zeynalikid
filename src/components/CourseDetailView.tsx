@@ -116,18 +116,20 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const consultTopRef = React.useRef<HTMLButtonElement>(null);
   const [pulseTarget, setPulseTarget] = useState<'enroll' | 'consult' | null>(null);
   const scrollToTopAndPulse = (target: 'enroll' | 'consult') => {
-    // برای مشاوره، تب بنفش باز می‌شود تا دکمهٔ مشاوره دیده شود
+    // برای مشاوره، تب باز می‌شود تا دکمهٔ مشاوره دیده شود
     if (target === 'consult') setConsultOpen(true);
-    // اسکرول به دکمهٔ مربوطه در ابتدای صفحه
+    // اسکرول به دکمهٔ مربوطه در ابتدای صفحه؛ برای مشاوره کمی صبر می‌کنیم
+    // تا آکاردئون کامل باز شود و دکمه در جای نهایی قرار بگیرد.
     const el = target === 'enroll' ? enrollTopRef.current : consultTopRef.current;
-    try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }
+    const scrollNow = () => { try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} } };
+    if (target === 'consult') window.setTimeout(scrollNow, 200); else scrollNow();
     // تپش بعد از رسیدن به بالا شروع شود تا کاربر حتماً آن را ببیند
     setPulseTarget(null);
     window.setTimeout(() => {
       setPulseTarget(null);
       requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget(target)));
-    }, 450);
-    window.setTimeout(() => setPulseTarget(null), 3100);
+    }, 550);
+    window.setTimeout(() => setPulseTarget(null), 3200);
   };
 
   // وقتی از دکمهٔ فوتر «شروع مشاوره رایگان» صدا زده شود: تب باز + تپش دکمهٔ مشاوره
@@ -138,8 +140,8 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       window.setTimeout(() => {
         setPulseTarget(null);
         requestAnimationFrame(() => requestAnimationFrame(() => setPulseTarget('consult')));
-      }, 450);
-      window.setTimeout(() => setPulseTarget(null), 3100);
+      }, 550);
+      window.setTimeout(() => setPulseTarget(null), 3200);
     }
   }, [consultFocusSignal]);
   const [eduTab, setEduTab] = useState<string>('all');
@@ -403,13 +405,14 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             labelB={isFa ? 'همین الان ثبت‌نام می‌کنم' : 'Enroll me now'}
             onClick={onRegister}
             pulse={(hasReferral || pulseTarget === 'enroll')}
+            glow={!hasReferral && !consultOpen && pulseTarget !== 'enroll'}
             style={{ padding: '11px 24px', fontSize: 14, minHeight: 48 }}
           />
         </div>
       </div>
 
       {/* تب باز/بستهٔ مشاورهٔ رایگان — نازک و بدون کادر، چسبیده به پایین کادر اطلاعات.
-          با باز شدن، یک کادر باز می‌شود و بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد. */}
+          با باز شدن، یک کادر با انیمیشن نرم باز می‌شود و بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد. */}
       {!hasReferral && onConsult && (
         <div className="zk-consult-accordion">
           <button
@@ -418,29 +421,43 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             onClick={() => setConsultOpen((v) => !v)}
             aria-expanded={consultOpen}
           >
-            <span>
-              {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
+            <span className="zk-consult-trigger-badge" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" />
+                <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />
+              </svg>
+            </span>
+            <span className="zk-consult-trigger-text">
+              <span className="zk-consult-trigger-title">
+                {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
+              </span>
+              <span className="zk-consult-trigger-sub">
+                {isFa ? 'مشاورهٔ رایگان با کارشناس رشد و تغذیه' : 'Free consultation with our growth & nutrition specialist'}
+              </span>
             </span>
             <svg className="zk-consult-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
-          {consultOpen && (
-            <div className="zk-consult-panel">
-              <SwapCta
-                ref={consultTopRef}
-                variant="consult"
-                labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
-                labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
-                onClick={onConsult}
-                pulse={pulseTarget === 'consult'}
-                style={{ width: '100%', minHeight: 44, padding: '10px 14px', fontSize: 13.5 }}
-              />
-              <p className="zk-consult-note">
-                {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
-              </p>
+          <div className={`zk-consult-panel-wrap${consultOpen ? ' zk-open' : ''}`}>
+            <div className="zk-consult-panel-inner">
+              <div className="zk-consult-panel">
+                <SwapCta
+                  ref={consultTopRef}
+                  variant="consult"
+                  labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
+                  labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
+                  onClick={onConsult}
+                  pulse={pulseTarget === 'consult'}
+                  glow={consultOpen && pulseTarget !== 'consult'}
+                  style={{ width: '100%', minHeight: 46, padding: '12px 14px', fontSize: 14 }}
+                />
+                <p className="zk-consult-note">
+                  {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
+                </p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
