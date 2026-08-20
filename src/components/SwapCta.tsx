@@ -21,6 +21,8 @@ interface SwapCtaProps {
   labelA: string;
   /** متن جایگزین که روی هاور/تعویض خودکار دیده می‌شود */
   labelB: string;
+  /** آیکون SVG کنار متن جایگزین (labelB) — اختیاری */
+  iconB?: React.ReactNode;
   onClick?: () => void;
   /** تپش قوی (یک‌بار، بعد از کلیک روی CTA پایین / حالت لینک ارجاع) */
   pulse?: boolean;
@@ -32,7 +34,7 @@ interface SwapCtaProps {
 }
 
 const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapCta(
-  { variant = 'consult', mode = 'primary', labelA, labelB, onClick, pulse = false, id, className = '', style, type = 'button', ariaLabel },
+  { variant = 'consult', mode = 'primary', labelA, labelB, iconB, onClick, pulse = false, id, className = '', style, type = 'button', ariaLabel },
   ref,
 ) {
   const [swapped, setSwapped] = useState(false);
@@ -83,7 +85,10 @@ const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapC
       <span className="zk-swap-viewport" aria-hidden="true">
         <span className="zk-swap-stack">
           <span className="zk-swap-line">{labelA}</span>
-          <span className="zk-swap-line">{labelB}</span>
+          <span className="zk-swap-line">
+            {iconB && <span className="zk-swap-ic">{iconB}</span>}
+            <span>{labelB}</span>
+          </span>
         </span>
       </span>
     </button>

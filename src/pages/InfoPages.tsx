@@ -248,6 +248,28 @@ export function EducationPage({app}:{app:any}){
 // ===== مجوزها / درباره ما / ارتباط با ما =====
 export function LicensesPage({app}:{app:any}){
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
+ // جلوگیری از زوم در صفحهٔ مجوزها (پینچ، ctrl+scroll، کیبورد و ژست سافاری) — بدون تأثیر بر اسکرول
+ useEffect(()=>{
+  const block=(e:any)=>{try{e.preventDefault()}catch{}};
+  const onTouchMove=(e:TouchEvent)=>{if(e.touches.length>1)block(e)};
+  const onWheel=(e:WheelEvent)=>{if(e.ctrlKey)block(e)};
+  const onKey=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))block(e)};
+  const prevTouch=document.documentElement.style.touchAction;
+  document.documentElement.style.touchAction='pan-x pan-y';
+  document.addEventListener('touchmove',onTouchMove,{passive:false});
+  document.addEventListener('wheel',onWheel,{passive:false});
+  document.addEventListener('keydown',onKey);
+  document.addEventListener('gesturestart',block);
+  document.addEventListener('gesturechange',block);
+  return ()=>{
+   document.documentElement.style.touchAction=prevTouch;
+   document.removeEventListener('touchmove',onTouchMove);
+   document.removeEventListener('wheel',onWheel);
+   document.removeEventListener('keydown',onKey);
+   document.removeEventListener('gesturestart',block);
+   document.removeEventListener('gesturechange',block);
+  };
+ },[]);
  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک مستقیم به صفحهٔ اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
  if(!showLicensesPage) return <Navigate to="/" replace/>;

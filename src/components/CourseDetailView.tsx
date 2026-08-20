@@ -404,7 +404,8 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             variant="enroll"
             mode={consultOpen ? 'muted' : 'primary'}
             labelA={isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
-            labelB={isFa ? 'همین الان ثبت‌نام می‌کنم 🚀' : 'Enroll me now 🚀'}
+            labelB={isFa ? 'همین الان ثبت‌نام می‌کنم' : 'Enroll me now'}
+            iconB={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
             onClick={onRegister}
             pulse={(hasReferral || pulseTarget === 'enroll')}
             style={{ padding: '11px 24px', fontSize: 14, minHeight: 48 }}
@@ -443,15 +444,18 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           <div className={`zk-consult-panel-wrap${consultOpen ? ' zk-open' : ''}`}>
             <div className="zk-consult-panel-inner">
               <div className="zk-consult-panel">
-                <SwapCta
-                  ref={consultTopRef}
-                  variant="consult"
-                  labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
-                  labelB={isFa ? 'شروع مشاورهٔ رایگان 💜' : 'Start free consultation 💜'}
-                  onClick={onConsult}
-                  pulse={pulseTarget === 'consult'}
-                  style={{ width: '100%', minHeight: 46, padding: '12px 14px', fontSize: 14 }}
-                />
+                <div style={{ textAlign: 'center' }}>
+                  <SwapCta
+                    ref={consultTopRef}
+                    variant="consult"
+                    labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
+                    labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
+                    iconB={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.35 8.5 8.5 0 0 1-3.4-.7L3 21l1.9-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 9-8.35 8.38 8.38 0 0 1 9 8.35z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg>}
+                    onClick={onConsult}
+                    pulse={pulseTarget === 'consult'}
+                    style={{ minHeight: 46, padding: '12px 24px', fontSize: 14, width: 'auto' }}
+                  />
+                </div>
                 <p className="zk-consult-note">
                   {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
                 </p>
@@ -636,10 +640,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 <button
                   type="button"
                   onClick={openShowAllEdu}
-                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 160 }}
+                  style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 120 }}
                 >
-                  <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
                 </button>
@@ -714,10 +718,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 <button
                   type="button"
                   onClick={openShowAllFaq}
-                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 118, direction: isFa ? 'rtl' : 'ltr' }}
+                  style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 110, direction: isFa ? 'rtl' : 'ltr' }}
                 >
-                  <span style={{ width: 58, height: 58, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  <span style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
                 </button>

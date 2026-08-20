@@ -41,7 +41,7 @@ export default function AdminLoginPage({app}:{app:any}){
  return (
   <div className="zkgl-root zkgl-has-topbar" dir="ltr" style={{['--zkgl-acc' as any]:T.acc||'#0F766E', position:'fixed', inset:0, zIndex:1500, alignItems:'center', overflowY:'auto'}}>
    <style>{css}</style>
-   <GlassTopBar brand="Zeynalikid" lang={lang} setLang={setLang} T={T} onBack={goHome} backLabel={lang==='fa'?'بازگشت':'Back'} showLang={false} />
+   <GlassTopBar brand={lang==='fa'?'زینالیکید':'zeynalikid'} lang={lang} setLang={setLang} T={T} onBack={goHome} backLabel={lang==='fa'?'بازگشت':'Back'} showLang={false} />
    {/* پس‌زمینه: گرادیان تم + ممفیس + تصویر محو + اورلی تیره */}
    <div className="zkgl-bg" style={{ background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})` }}>
     <svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice">

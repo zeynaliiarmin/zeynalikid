@@ -535,10 +535,10 @@ export default function CoursesPage({ app }: { app: any }) {
                   type="button"
                   onClick={() => openShowAllMedia('experience')}
                   aria-label={lang === 'en' ? 'View all' : 'مشاهده همه'}
-                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
+                  style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
                 >
-                  <span style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
                 </button>
@@ -562,10 +562,10 @@ export default function CoursesPage({ app }: { app: any }) {
                   type="button"
                   onClick={() => openShowAllMedia('education')}
                   aria-label={lang === 'en' ? 'View all' : 'مشاهده همه'}
-                  style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
+                  style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
                 >
-                  <span style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
                 </button>

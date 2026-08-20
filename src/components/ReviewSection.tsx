@@ -280,10 +280,10 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
                 type="button"
                 onClick={openShowAll}
                 aria-label={isFa ? 'مشاهده همه' : 'View all'}
-                style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 }}
+                style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14 }}
               >
-                <span style={{ width: 64, height: 64, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
+                <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
                     <path d="M5 12h14" />
                     <path d="m13 6 6 6-6 6" />
                   </svg>
