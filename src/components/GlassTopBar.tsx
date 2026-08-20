@@ -11,9 +11,11 @@ interface Props {
   setLang: (l: 'fa' | 'en') => void;
   onBack?: () => void;
   backLabel?: string;
+  /** نمایش سوییچر زبان (برای صفحهٔ ورود ادمین خاموش است) */
+  showLang?: boolean;
 }
 
-export default function GlassTopBar({ brand, lang, setLang, onBack, backLabel = 'بازگشت' }: Props) {
+export default function GlassTopBar({ brand, lang, setLang, onBack, backLabel = 'بازگشت', showLang = true }: Props) {
   const rtl = lang === 'fa';
   return (
     <div className="zkgl-topbar" dir={rtl ? 'rtl' : 'ltr'}>
@@ -28,11 +30,15 @@ export default function GlassTopBar({ brand, lang, setLang, onBack, backLabel = 
         <span className="zkgl-topspacer" aria-hidden="true" />
       )}
       <span className="zkgl-topbrand">{brand}</span>
-      <div className="zkgl-lang" role="group" aria-label="Language">
-        <button type="button" className={lang === 'fa' ? 'zkgl-lang-on' : ''} onClick={() => setLang('fa')}>فا</button>
-        <span className="zkgl-langsep" aria-hidden="true">/</span>
-        <button type="button" className={lang === 'en' ? 'zkgl-lang-on' : ''} onClick={() => setLang('en')}>EN</button>
-      </div>
+      {showLang ? (
+        <div className="zkgl-lang" role="group" aria-label="Language">
+          <button type="button" className={lang === 'fa' ? 'zkgl-lang-on' : ''} onClick={() => setLang('fa')}>فا</button>
+          <span className="zkgl-langsep" aria-hidden="true">/</span>
+          <button type="button" className={lang === 'en' ? 'zkgl-lang-on' : ''} onClick={() => setLang('en')}>EN</button>
+        </div>
+      ) : (
+        <span className="zkgl-topspacer" aria-hidden="true" />
+      )}
     </div>
   );
 }
