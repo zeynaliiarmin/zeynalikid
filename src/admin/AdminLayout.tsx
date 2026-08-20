@@ -9,7 +9,8 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { applyZkTheme, getZkThemePref, resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './adminTheme';
-import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkMoonIcon, ZkSunIcon, ZkCloseIcon, ZkStaffIcon } from './adminIcons';
+import AdminThemeToggle from './AdminThemeToggle';
+import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkCloseIcon, ZkStaffIcon } from './adminIcons';
 
 export interface AdminNavLeaf { id: string; label: string; icon?: React.ReactNode; }
 export interface AdminNavGroup { id: string; label: string; icon?: React.ReactNode; items?: AdminNavLeaf[]; }
@@ -333,15 +334,7 @@ export default function AdminLayout({ lang, groups, active, onNavigate, onLogout
             <span className="zkad-crumb-cur">{breadcrumb.cur}</span>
           </div>
 
-          <button
-            type="button"
-            className="zkad-hbtn"
-            onClick={toggleTheme}
-            aria-label={dark ? (rtl ? 'تغییر به حالت روشن' : 'Switch to light mode') : (rtl ? 'تغییر به حالت تیره' : 'Switch to dark mode')}
-            title={dark ? (rtl ? 'حالت روشن' : 'Light mode') : (rtl ? 'حالت تیره' : 'Dark mode')}
-          >
-            {dark ? <ZkSunIcon size={18} /> : <ZkMoonIcon size={18} />}
-          </button>
+          <AdminThemeToggle dark={dark} onToggle={toggleTheme} rtl={rtl} />
 
           <div style={{ position: 'relative' }} ref={notifRef}>
             <button

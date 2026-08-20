@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import StarRatingInput from './StarRatingInput';
 import { ReviewItem, fetchReviews, submitReview } from '../lib/supabase';
 import { defaultCountries } from '../config/defaultSettings';
 import {
@@ -358,13 +359,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
           <>
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', fontSize: 12, color: T.mut, marginBottom: 5, fontWeight: 700 }}>{isFa ? 'امتیاز شما:' : 'Your Rating:'}</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button type="button" key={star} onClick={() => setRating(star)} style={{ border: 0, background: 'transparent', padding: 4, cursor: 'pointer' }}>
-                    <StarSvg filled={star <= rating} color="#F59E0B" size={24} />
-                  </button>
-                ))}
-              </div>
+              <StarRatingInput value={rating} onChange={setRating} lang={lang} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
