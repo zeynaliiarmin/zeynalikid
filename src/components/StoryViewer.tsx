@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { detectVpnOn } from '../utils/vpn';
 import { extractDirectMediaUrl } from '../utils/mediaInput';
 import { markStorySeen, getResumeIndex, hasSeenStoryHint, markStoryHintSeen } from '../utils/storyProgress';
+import CoverImage from './CoverImage';
 
 export type StorySlide = { id: string; imageCodeExternal?: string; imageCodeInternal?: string; title?: string; order?: number; active?: boolean };
 export type Highlight = { id: string; title: string; coverUrl?: string; coverPosition?: string; coverZoom?: number; stories: StorySlide[]; active?: boolean; order?: number };
@@ -379,7 +380,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
         {/* هدر */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
-            {highlightCover && <img src={highlightCover} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} />}
+            {highlightCover && <CoverImage src={highlightCover} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} />}
           </div>
           <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
           <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
@@ -495,7 +496,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
               <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : '#fff' }}>
                 {!seen && <span className="zk-hl-spin" aria-hidden="true" />}
                 <div className="zk-hl-inner" style={{ background: T.card }}>
-                  {previewUrl ? <img src={previewUrl} alt="" referrerPolicy="no-referrer" draggable={false} onContextMenu={(e) => e.preventDefault()} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (hl as any).coverPosition || 'center', transform: (hl as any).coverZoom ? `scale(${(hl as any).coverZoom})` : undefined, WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }} /> : <span style={{ fontSize: 18, color: T.acc }}>✦</span>}
+                  {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <span style={{ fontSize: 18, color: T.acc }}>✦</span>}
                 </div>
               </div>
               <span style={{ fontSize: 10, color: seen ? T.mut : T.ttl, fontWeight: seen ? 500 : 700, maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hl.title}</span>

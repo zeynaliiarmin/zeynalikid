@@ -40,6 +40,7 @@ import CoursesEditor from './CoursesEditor';
 import { canonicalizeMediaInput, extractDirectMediaUrl, extractImageLinkList } from '../utils/mediaInput';
 import BulkStoryAdder from './BulkStoryAdder';
 import CoverCropModal from './CoverCropModal';
+import CoverImage from '../components/CoverImage';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -1448,7 +1449,7 @@ function ThemeManagerEditor(){
       <Field label="عنوان هایلایت" value={it.title||''} onChange={(v:string)=>chg(i,'title',v)} ph=""/>
       <label style={S.lbl}>آدرس کاور (اختیاری)</label>
       <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.coverUrl||''} onCommit={(v:string)=>chg(i,'coverUrl',canonicalizeMediaInput(v,'image'))} placeholder="لینک دانلود مستقیم ImgURL"/>
-      {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); const cpos=it.coverPosition||'50% 50%'; const czoom=Number(it.coverZoom)||1; return <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:8}}>{coverSrc?<><span style={{width:58,height:58,borderRadius:'50%',overflow:'hidden',background:'#111827',border:`2px solid ${T.acc}`,flexShrink:0,display:'inline-block'}}><img src={coverSrc} alt="" referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:cpos,transform:`scale(${czoom})`}}/></span><button type="button" style={AdminBtn()} onClick={()=>setCoverCropFor(i)}>تنظیم کادر کاور</button></>:<span style={{fontSize:11,color:T.mut}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</span>}</div>;})()}
+      {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); const cpos=it.coverPosition||'50% 50%'; const czoom=Number(it.coverZoom)||1; return <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:8}}>{coverSrc?<><span style={{width:58,height:58,borderRadius:'50%',overflow:'hidden',background:'#111827',border:`2px solid ${T.acc}`,flexShrink:0,display:'inline-block'}}><CoverImage src={coverSrc} position={cpos} zoom={czoom}/></span><button type="button" style={AdminBtn()} onClick={()=>setCoverCropFor(i)}>تنظیم کادر کاور</button></>:<span style={{fontSize:11,color:T.mut}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</span>}</div>;})()}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
        <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
        <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
