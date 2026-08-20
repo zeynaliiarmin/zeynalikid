@@ -193,21 +193,22 @@ export default function TrackPage({app}:{app:any}){
    return products.map((p:any)=>`${p.name}: ${p.description||''}`).filter(Boolean).join('\n\n') || (lang==='en'?'Usage instructions have not been added yet.':'طریقه مصرف هنوز ثبت نشده است.');
  };
 
- return <div style={S.page}><Helmet><title>پیگیری ثبت‌نام | زینالیکید</title><meta name="description" content="وارد کردن کد پیگیری و مشاهده وضعیت ثبت‌نام دوره یا فرم مشاوره زینالیکید" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><div style={{...S.card,maxWidth:460}}><h2 style={{color:T.ttl,fontSize:18,marginTop:0}}>{lang==='en'?'Track your registration':'پیگیری ثبت‌نام'}</h2><p style={{color:T.mut,fontSize:12,lineHeight:1.9}}>{lang==='en'?'Enter your tracking code and the phone number used at registration.':'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'}</p>
-  <label style={S.lbl}>{lang==='en'?'Tracking code':'کد پیگیری'}</label>
-  <div dir="ltr" style={{display:'flex',alignItems:'stretch',marginBottom:12}}>
-   <span style={{display:'flex',alignItems:'center',padding:'0 12px',background:T.soft,border:`1px solid ${T.brd}`,borderInlineEnd:'none',borderRadius:'10px 0 0 10px',color:T.acc,fontWeight:800,fontFamily:'monospace,-apple-system,"Courier New"',fontSize:16,letterSpacing:'1px',userSelect:'none'}}>ZK</span>
-   <input dir="ltr" inputMode="numeric" style={{...S.inp,borderRadius:'0 10px 10px 0',textAlign:'center',letterSpacing:'3px',fontFamily:'monospace,-apple-system,"Courier New"'}} value={num} onChange={e=>onNumChange(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} placeholder={"1234567890".slice(0,digitCount)} maxLength={8}/>
+ const mem=T.memphis||[T.soft,T.soft,T.soft];
+ return <div className="zkgl-root" dir={lang==='fa'?'rtl':'ltr'} style={{['--zkgl-acc' as any]:T.acc||'#0F766E'}}><Helmet><title>پیگیری ثبت‌نام | زینالیکید</title><meta name="description" content="وارد کردن کد پیگیری و مشاهده وضعیت ثبت‌نام دوره یا فرم مشاوره زینالیکید" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><div className="zkgl-bg" style={{background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})`}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice"><circle cx="8%" cy="14%" r="80" fill={mem[0]} opacity=".3"/><circle cx="92%" cy="20%" r="52" fill={mem[1]} opacity=".24"/><circle cx="86%" cy="84%" r="96" fill={mem[2]} opacity=".22"/><circle cx="12%" cy="90%" r="40" fill={mem[0]} opacity=".24"/><path d="M -5 60 Q 25 44 50 60 T 105 60" stroke={mem[1]} strokeWidth="3" fill="none" opacity=".26"/><circle cx="50%" cy="8%" r="4" fill={mem[2]} opacity=".4"/><circle cx="24%" cy="48%" r="3" fill={mem[0]} opacity=".35"/></svg><div style={{position:'absolute',inset:0,backgroundImage:'url(/images/hero-default.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(7px)',opacity:.4}}/><div style={{position:'absolute',inset:0,background:'linear-gradient(160deg, rgba(15,23,42,.72), rgba(15,23,42,.5))'}}/></div><div className="zkgl-col"><div className="zkgl-card"><h2 className="zkgl-title">{lang==='en'?'Track your registration':'پیگیری ثبت‌نام'}</h2><p className="zkgl-sub">{lang==='en'?'Enter your tracking code and the phone number used at registration.':'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'}</p>
+  <div className="zkgl-field" dir="ltr">
+   <span className="zkgl-prefix">ZK</span>
+   <input className="zkgl-input zkgl-has-prefix" id="zkgl-track-num" dir="ltr" inputMode="numeric" placeholder=" " value={num} onChange={e=>onNumChange(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} maxLength={8} style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'3px'}}/>
+   <label className="zkgl-label" htmlFor="zkgl-track-num" style={{insetInlineStart:34}}>{lang==='en'?'Tracking code':'کد پیگیری'}</label>
   </div>
-  <label style={S.lbl}>{lang==='en'?'Phone number':'شماره تماس'}</label>
-  <div style={{display:'flex',gap:6,direction:'ltr',marginBottom:4}}><input dir="ltr" inputMode="tel" style={{...S.inp,flex:1}} value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} placeholder="09123456789"/><button onClick={search} disabled={loading} style={{padding:'0 18px',border:0,borderRadius:10,background:T.grad,color:'#fff',fontWeight:800,cursor:'pointer',fontFamily:'inherit',fontSize:14,opacity:loading?.6:1}}>{loading?'...':(lang==='en'?'Track':'پیگیری')}</button></div>
-  <div style={{textAlign:'center',marginBottom:12}}>
-    <button onClick={enterGuest} style={{padding:'8px 16px',border:`1px dashed ${T.acc}`,borderRadius:10,background:'transparent',color:T.acc,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700}}>
-      {lang==='en'?'Guest login':'ورود مهمان'}
-    </button>
+  <div className="zkgl-field" dir="ltr">
+   <input className="zkgl-input" id="zkgl-track-phone" dir="ltr" inputMode="tel" placeholder=" " value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}}/>
+   <label className="zkgl-label" htmlFor="zkgl-track-phone">{lang==='en'?'Phone number':'شماره تماس'}</label>
   </div>
   {/* اصلاح ۳ (مرحله ۵): پیام خطا دیگر شماره خام واردشده کاربر (تأییدنشده) را نمایش نمی‌دهد */}
-  {err&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:11,padding:11,color:T.err,fontSize:12,marginBottom:12}}>{err}</div>}
+  {err&&<div className="zkgl-err">{err}</div>}
+  <button className="zkgl-btn" onClick={search} disabled={loading}>{loading?'...':(lang==='en'?'Track':'پیگیری')}</button>
+  <button className="zkgl-ghost" onClick={enterGuest}>{lang==='en'?'Guest login':'ورود مهمان'}</button>
+  </div>
   {result&&<div style={{animation:'fadeSlide .65s ease both'}}>
    {/* اصلاح ۳ (مرحله ۵): پیش‌نمایش شماره اکنون فقط پس از جستجوی موفق و از result.maskedPhone (شماره واقعی ثبت‌شده) ساخته می‌شود */}
    {!isGuest && resultPhonePreview(result)&&<div style={{position:'sticky',top:8,zIndex:10,background:T.pop,border:`1px solid ${T.acc}`,borderRadius:12,padding:'9px 12px',marginBottom:12,display:'flex',alignItems:'center',gap:8,boxShadow:'0 10px 26px rgba(0,0,0,.22)'}}><span style={{display:'flex',alignItems:'center'}}><PhoneIcon size={15} color={T.acc} /></span><span style={{fontSize:11,color:T.mut}}>{lang==='en'?'Registered phone:':'شماره ثبت‌شده:'}</span><b dir="ltr" style={{fontSize:13,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"',letterSpacing:'1px'}}>{resultPhonePreview(result)}</b></div>}
@@ -254,5 +255,5 @@ export default function TrackPage({app}:{app:any}){
   </div>}
   {/* اصلاح ۴-۴ (مرحله ۴): افزودن ContactPanel به این صفحه (طبق تنظیمات نمایش) */}
   {showContactOn('track')&&<ContactPanel cfg={cfg} T={T} lang={lang}/>}
-  <button style={{...S.btn,marginTop:14,background:T.soft,color:T.acc,boxShadow:'none',border:`1px solid ${T.brd}`}} onClick={()=>setView('home')}>{publicText('backBtn','بازگشت')}</button></div></div>
+  <button className="zkgl-ghost" style={{marginTop:14}} onClick={()=>setView('home')}>{publicText('backBtn','بازگشت')}</button></div></div>
 }

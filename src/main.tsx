@@ -7,6 +7,8 @@ import AppLaunchSplash from './components/AppLaunchSplash';
 import './index.css';
 // keyframes/استایل دکمه‌های CTA و آکاردئون مشاوره — به‌صورت سراسری در همهٔ صفحات در دسترس
 import './components/zkCta.css';
+// گلسمورفیسم (کارت شیشه‌ای + لیبل شناور) برای ورود ادمین و صفحهٔ پیگیری
+import './components/zkGlass.css';
 
 // ─── PWA: dynamic manifest & service worker based on route ──────────────
 // مسیرهای /admin/* از manifest و SW مستقل مدیریت استفاده می‌کنند تا
