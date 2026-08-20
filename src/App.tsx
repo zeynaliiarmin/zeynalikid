@@ -54,6 +54,8 @@ const setLS=(k:string,v:any)=>{try{localStorage.setItem(k,JSON.stringify(v))}cat
 const emptyFd=()=>({topics:[],pName:'',cc:'+98',pPhone:'',gender:'',age:'',height:'',weight:'',digest:[],appetite:'',disease:'',specials:[],notes:''});
 const emptyCourse=()=>({selected:null,dest:'',shippingMethod:'',childInfo:null,tonguePhotos:[] as string[],form:{country:'ایران',city:'',address:'',postalCode:'',receiver:'',phoneCc:'+98',phone:'',whatsappCc:'+98',whatsapp:''},payment:{bankId:'',receipt:'',receiptText:'',receiptMethod:null},optionalSendDate:'',errors:{},editedHistory:[]});
 const clearPublicFormDrafts=()=>{try{const keep=new Set([SK.settings,SK.subs,'zkid_lang']); const patterns=['draft','courseForm','consultForm','shippingForm','paymentForm','publicForm','zkid_course','zkid_form']; [localStorage,sessionStorage].forEach(store=>{for(let i=store.length-1;i>=0;i--){const k=store.key(i)||''; if(!keep.has(k)&&patterns.some(p=>k.toLowerCase().includes(p.toLowerCase()))) store.removeItem(k);}})}catch{}};
+// اسکرول نرم (rAF) به یک عنصر — مستقل از پشتیبانی مرورگر از behavior:smooth؛ با احترام به کاهش حرکت
+const smoothScrollToEl=(el:any,duration=520)=>{try{const doc=document.documentElement;const startY=window.pageYOffset||doc.scrollTop||0;const targetY=Math.max(0,el.getBoundingClientRect().top+startY-96);const dist=targetY-startY;if(Math.abs(dist)<2)return;try{if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){window.scrollTo(0,targetY);return}}catch{}const t0=performance.now();const ease=(t:number)=>1-Math.pow(1-t,3);const step=(now:number)=>{const p=Math.min(1,(now-t0)/duration);window.scrollTo(0,Math.round(startY+dist*ease(p)));if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)}catch{try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch{}}};
 let imageCompressionKB=500; // از تنظیمات پنل مدیریت به‌روزرسانی می‌شود (۱۰۰ تا ۱۰۰۰)
 const IMAGE_BUCKET='images';
 // اصلاح ۶: باکت اختصاصی برای فایل‌های PDF (طریقه مصرف / برنامه غذایی)
@@ -1195,9 +1197,9 @@ function App(){
      try {
        const el=document.getElementById('zk-home-consult-cta');
        if (el) {
-         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-         setConsultPulse(Date.now());
-         window.setTimeout(()=>setConsultPulse(0), 3200);
+         smoothScrollToEl(el);
+         window.setTimeout(()=>{ setConsultPulse(0); requestAnimationFrame(()=>requestAnimationFrame(()=>setConsultPulse(Date.now()))); }, 540);
+         window.setTimeout(()=>setConsultPulse(0), 3800);
          return;
        }
      } catch {}
