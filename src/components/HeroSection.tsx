@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import SwapCta from './SwapCta';
 
 interface HeroSectionProps {
   title: string;
@@ -86,18 +87,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
 
         <div style={{display:'flex', flexWrap:'wrap', gap:'9px', alignItems:'center'}}>
           {ctaText && (
-            <button 
-              type="button" 
-              onClick={()=>go(ctaLink)} 
-              className="zk-btn zk-btn-primary"
+            <SwapCta
+              variant="consult"
+              labelA={ctaText}
+              labelB={isRtl ? 'همین حالا شروع کن' : 'Start right now'}
+              onClick={()=>go(ctaLink)}
+              pulse={!!animateConsultCta}
               style={animateConsultCta ? {
-                minHeight:52, padding:'13px 28px', fontSize:15, fontWeight:800,
-                animation:'zk-hero-pulse 1.6s ease-in-out infinite',
-                WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite',
+                minHeight:52, padding:'13px 28px', fontSize:15,
               } : (animateCoursesCta ? {minHeight:40, padding:'9px 16px', fontSize:12.5} : {minHeight:48, padding:'13px 26px', fontSize:15})}
-            >
-              {ctaText}
-            </button>
+            />
           )}
           {secondaryCtaText && (
             <button

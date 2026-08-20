@@ -6,6 +6,7 @@ import AskQuestionForm from './AskQuestionForm';
 import MediaCard from './MediaCard';
 import MediaDetailSheet from './MediaDetailSheet';
 import CourseCard from './CourseCard';
+import SwapCta from './SwapCta';
 import { submitUserQuestion } from '../lib/supabase';
 import { balancedRandomMix, mediaTypeOf } from '../utils/mediaPlacement';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
@@ -366,7 +367,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       )}
 
       {/* Header info */}
-      <div style={{ padding: '16px 16px 8px' }}>
+      <div style={{ padding: '16px 16px 12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 999, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontWeight: 700 }}>{isFa ? 'دوره تخصصی' : 'Specialized Course'}</span>
           {course.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{course.duration}</span>}
@@ -383,7 +384,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>
 
         {/* Price + CTA row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 0 }}>
           <div>
             {hasActiveDiscount ? (
               <>
@@ -395,44 +396,53 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             )}
           </div>
 
-          <button ref={enrollTopRef} onClick={onRegister} style={{ background: 'var(--zk-primary)', color: '#fff', border: 0, padding: '11px 24px', borderRadius: 999, fontWeight: 800, fontSize: 14, minHeight: 48, animation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: (hasReferral || pulseTarget === 'enroll') ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
-            {isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
-          </button>
+          <SwapCta
+            ref={enrollTopRef}
+            variant="enroll"
+            labelA={isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
+            labelB={isFa ? 'همین الان ثبت‌نام می‌کنم' : 'Enroll me now'}
+            onClick={onRegister}
+            pulse={(hasReferral || pulseTarget === 'enroll')}
+            style={{ padding: '11px 24px', fontSize: 14, minHeight: 48 }}
+          />
         </div>
-        {!hasReferral && onConsult && (
-          <div style={{ margin: '0 0 14px' }}>
-            <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(124,58,237,.32)', background: 'linear-gradient(135deg, rgba(124,58,237,.10), rgba(168,85,247,.05))' }}>
-              <button
-                type="button"
-                onClick={() => setConsultOpen((v) => !v)}
-                aria-expanded={consultOpen}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: 'transparent', border: 0, cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', minHeight: 40 }}
-              >
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#6D28D9', textAlign: isFa ? 'right' : 'left', flex: 1, lineHeight: 1.6 }}>
-                  {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
-                </span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: consultOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .25s ease', flexShrink: 0 }}>
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-              {consultOpen && (
-                <div style={{ padding: '4px 12px 12px', animation: 'fadeSlide .28s ease both', WebkitAnimation: 'fadeSlide .28s ease both' }}>
-                  <button
-                    ref={consultTopRef}
-                    onClick={onConsult}
-                    style={{ width: '100%', minHeight: 44, padding: '10px 14px', borderRadius: 12, border: 0, background: 'linear-gradient(135deg,#7C3AED,#A78BFA)', color: '#fff', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 18px rgba(124,58,237,.28)', animation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: pulseTarget === 'consult' ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}
-                  >
-                    {isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
-                  </button>
-                  <p style={{ margin: '8px 2px 0', fontSize: 11.5, lineHeight: 1.8, color: '#5B21B6' }}>
-                    {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* تب باز/بستهٔ مشاورهٔ رایگان — نازک و بدون کادر، چسبیده به پایین کادر اطلاعات.
+          با باز شدن، یک کادر باز می‌شود و بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد. */}
+      {!hasReferral && onConsult && (
+        <div className="zk-consult-accordion">
+          <button
+            type="button"
+            className="zk-consult-trigger"
+            onClick={() => setConsultOpen((v) => !v)}
+            aria-expanded={consultOpen}
+          >
+            <span>
+              {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
+            </span>
+            <svg className="zk-consult-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {consultOpen && (
+            <div className="zk-consult-panel">
+              <SwapCta
+                ref={consultTopRef}
+                variant="consult"
+                labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
+                labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
+                onClick={onConsult}
+                pulse={pulseTarget === 'consult'}
+                style={{ width: '100%', minHeight: 44, padding: '10px 14px', fontSize: 13.5 }}
+              />
+              <p className="zk-consult-note">
+                {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <StickyAnchorNav
         items={anchorItems}

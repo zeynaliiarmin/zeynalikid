@@ -1,0 +1,218 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Zeynalikid — CTA با تعویض نرم متن (هاور/لمسی) + آکاردئون مشاورهٔ رایگان
+   تمام رنگ‌ها از توکن‌های --zk-* می‌آیند → هماهنگ خودکار با تم‌ها و حالت تیره
+   ═══════════════════════════════════════════════════════════════════ */
+
+.zk-swap-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  color: #fff;
+  border-radius: var(--zk-radius-pill, 999px);
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)),
+    background 0.28s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.zk-swap-viewport {
+  display: inline-block;
+  overflow: hidden;
+  pointer-events: none;
+  line-height: 1.5;
+}
+
+.zk-swap-stack {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0);
+  transition: transform 0.38s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+.zk-swap-line {
+  display: block;
+  height: 1.5em;
+  line-height: 1.5em;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* دسکتاپ: هاور → تعویض متن */
+@media (hover: hover) {
+  .zk-swap-cta:hover .zk-swap-stack { transform: translateY(-50%); }
+}
+
+/* موبایل/لمسی: تعویض خودکار با کلاس zk-swap-on */
+.zk-swap-cta.zk-swap-on .zk-swap-stack { transform: translateY(-50%); }
+
+/* تپش (حالت ارجاع / تپش بعد از کلیک CTA پایین) */
+.zk-swap-cta.zk-swap-pulse {
+  animation: zk-hero-pulse 1.6s ease-in-out infinite;
+  -webkit-animation: zk-hero-pulse 1.6s ease-in-out infinite;
+}
+
+/* ─── طرح «مشاوره» — گرم و دعوت‌گر ─── */
+.zk-swap-consult {
+  background: var(--zk-primary);
+  box-shadow: var(--zk-shadow-light);
+}
+
+/* بارقهٔ نرم عبوری */
+.zk-swap-consult::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 34%;
+  left: -40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .zk-swap-consult:hover {
+    background: var(--zk-primary-hover);
+    box-shadow: 0 0 0 4px var(--zk-primary-light, rgba(15, 118, 110, 0.18)), var(--zk-shadow-medium);
+  }
+  .zk-swap-consult:hover::after {
+    opacity: 1;
+    animation: zk-sheen 0.9s ease;
+    -webkit-animation: zk-sheen 0.9s ease;
+  }
+}
+
+/* هالهٔ نرم در حالت تعویض خودکار (لمسی) */
+.zk-swap-consult.zk-swap-on {
+  box-shadow: 0 0 0 4px var(--zk-primary-light, rgba(15, 118, 110, 0.18)), var(--zk-shadow-light);
+}
+
+/* ─── طرح «ثبت‌نام دوره» — اقدام و پیشرفت ─── */
+.zk-swap-enroll {
+  background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
+  box-shadow: var(--zk-shadow-light);
+}
+
+/* پر شدن رنگ از پایین به بالا */
+.zk-swap-enroll::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, var(--zk-accent, var(--zk-primary)), var(--zk-primary-hover));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.32s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+}
+
+@media (hover: hover) {
+  .zk-swap-enroll:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--zk-shadow-medium);
+  }
+  .zk-swap-enroll:hover::before { transform: scaleY(1); }
+}
+
+.zk-swap-enroll.zk-swap-on::before { transform: scaleY(1); }
+.zk-swap-enroll.zk-swap-on {
+  transform: translateY(-1px);
+  box-shadow: var(--zk-shadow-medium);
+}
+
+/* ─── آکاردئون مشاورهٔ رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات) ─── */
+.zk-consult-accordion {
+  border-top: 1px solid var(--zk-border);
+  background: transparent;
+}
+
+.zk-consult-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 10px 16px;
+  min-height: 38px;
+  color: var(--zk-text-muted);
+  transition: color 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1)), background 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.zk-consult-trigger > span {
+  font-size: 12.5px;
+  font-weight: 700;
+  flex: 1;
+  line-height: 1.6;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zk-consult-chev {
+  color: var(--zk-primary);
+  transition: transform 0.25s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
+  flex-shrink: 0;
+}
+
+.zk-consult-trigger[aria-expanded='true'] .zk-consult-chev { transform: rotate(180deg); }
+
+@media (hover: hover) {
+  .zk-consult-trigger:hover {
+    color: var(--zk-primary);
+    background: var(--zk-primary-light, rgba(15, 118, 110, 0.08));
+  }
+}
+
+/* باکس بازشدهٔ مشاوره — بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد */
+.zk-consult-panel {
+  padding: 4px 16px 16px;
+  background: var(--zk-surface-muted, #F8F4EF);
+  border-top: 1px solid var(--zk-border);
+  animation: fadeSlide 0.28s ease both;
+  -webkit-animation: fadeSlide 0.28s ease both;
+}
+
+.zk-consult-panel .zk-consult-note {
+  margin: 10px 2px 0;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: var(--zk-text-muted);
+}
+
+/* ─── keyframes ─── */
+@keyframes zk-sheen {
+  0% { left: -40%; }
+  60%, 100% { left: 120%; }
+}
+@-webkit-keyframes zk-sheen {
+  0% { left: -40%; }
+  60%, 100% { left: 120%; }
+}
+
+/* احترام به کاهش حرکت */
+@media (prefers-reduced-motion: reduce) {
+  .zk-swap-cta,
+  .zk-swap-stack,
+  .zk-swap-cta::before,
+  .zk-swap-cta::after {
+    transition: none !important;
+    animation: none !important;
+    -webkit-animation: none !important;
+  }
+  .zk-swap-stack { transform: translateY(0) !important; }
+}
