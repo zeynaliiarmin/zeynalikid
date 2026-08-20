@@ -1482,7 +1482,7 @@ function ThemeManagerEditor(){
     <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
    </Box>
    <button style={S.btn} onClick={saveHighlights}>ذخیره هایلایت‌ها</button>
-   {coverCropFor!==null&&(()=>{const cit=items[coverCropFor]; const csrc=extractDirectMediaUrl(cit?.coverUrl,'image'); return csrc?<CoverCropModal T={T} src={csrc} position={cit?.coverPosition||'50% 50%'} zoom={Number(cit?.coverZoom)||1} onClose={()=>setCoverCropFor(null)} onApply={(pos:any,zo:any)=>{chg(coverCropFor,'coverPosition',pos);chg(coverCropFor,'coverZoom',zo);}}/>:null;})()}
+   {coverCropFor!==null&&(()=>{const cit=items[coverCropFor]; const csrc=extractDirectMediaUrl(cit?.coverUrl,'image'); return csrc?<CoverCropModal T={T} src={csrc} position={cit?.coverPosition||'50% 50%'} zoom={Number(cit?.coverZoom)||1} onClose={()=>setCoverCropFor(null)} onApply={(pos:any,zo:any)=>{const a=[...items];a[coverCropFor]={...a[coverCropFor],coverPosition:pos,coverZoom:zo};upd(a);}}/>:null;})()}
   </>}
 
  function LicensesTabEditor(){
