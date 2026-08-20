@@ -196,7 +196,87 @@
   margin-top: 16px;
 }
 
+/* ─── نوار بالای شیشه‌ای (جایگزین هدر در ورود ادمین و پیگیری) ─── */
+.zkgl-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.zkgl-topbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+.zkgl-topbtn:hover { background: rgba(255, 255, 255, 0.22); }
+
+.zkgl-topspacer { width: 92px; flex-shrink: 0; }
+
+.zkgl-topbrand {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zkgl-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.zkgl-lang button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 9px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+.zkgl-lang button.zkgl-lang-on { background: #fff; color: var(--zkgl-acc, #0F766E); }
+.zkgl-langsep { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+
+/* وقتی نوار بالا وجود دارد، محتوا از زیر آن شروع می‌شود */
+.zkgl-root.zkgl-has-topbar { padding-top: 88px; }
+
 /* احترام به کاهش حرکت */
 @media (prefers-reduced-motion: reduce) {
-  .zkgl-btn, .zkgl-ghost, .zkgl-label { transition: none !important; }
+  .zkgl-btn, .zkgl-ghost, .zkgl-label, .zkgl-topbtn, .zkgl-lang button { transition: none !important; }
 }

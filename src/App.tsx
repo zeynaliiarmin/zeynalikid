@@ -1383,12 +1383,15 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
  </Routes></Suspense>;
  // هدر اصلی در فهرست و جزئیات دوره نمایش داده می‌شود؛ فقط مراحل حساس ثبت/پرداخت هدر ندارند.
  const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
- const showLangSwitcher=view!=='admin'&&!courseFlowViews.includes(view);
+ // صفحات ورود ادمین و پیگیری دارای طراحی گلسمورفیسم تمام‌صفحه با نوار شیشه‌ای اختصاصی هستند؛
+ // هدر/منو/سوییچر زبان سراسری سایت در این دو صفحه نمایش داده نمی‌شود تا ظاهر به‌هم نریزد.
+ const glassFullViews=['admin-login','track'];
+ const showLangSwitcher=view!=='admin'&&!glassFullViews.includes(view)&&!courseFlowViews.includes(view);
  // اصلاح ۵: نمایش منوی همبرگری اکنون از تنظیمات پنل مدیریت (cfg.menuVisibility) خوانده می‌شود؛
  // در صورت نبود مقدار برای یک view (تنظیمات قدیمی/نامعتبر)، به رفتار پیش‌فرض قبلی (noMenuViews) بازمی‌گردیم.
  const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','admin-login','admin'];
- const showMenu=view==='courses'||(!['child-info','course-shipping','course-payment','course-confirm'].includes(view)&&(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)));
- const showHeader=view!=='admin'&&!courseFlowViews.includes(view);
+ const showMenu=!glassFullViews.includes(view)&&(view==='courses'||(!['child-info','course-shipping','course-payment','course-confirm'].includes(view)&&(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view))));
+ const showHeader=view!=='admin'&&!glassFullViews.includes(view)&&!courseFlowViews.includes(view);
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
  // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحهٔ عمومی را نشان نده ───
  if(!referralReady && view!=='admin' && view!=='admin-login'){
