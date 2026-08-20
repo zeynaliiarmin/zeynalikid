@@ -9,7 +9,7 @@ import enDict from './locales/en';
 import { defaultCountries, defaultSettings as configDefaultSettings, migrateSettings, CURRENT_SETTINGS_VERSION } from './config/defaultSettings';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/trustFont';
 import { flagToEmoji, getCountryFlag } from './utils/phone';
-import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, findTabByCode, fillReferralText, type ParsedReferral } from './utils/referral';
+import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, parseReferralRaw, findTabByCode, fillReferralText, type ParsedReferral } from './utils/referral';
 
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { optimizeForUpload } from './utils/imageOptimizer';
@@ -1196,20 +1196,19 @@ function App(){
    if (c) {
      setReferralConsultant(c);
      setReferralTarget(target);
-     try { sessionStorage.setItem('zk_referral_code', code); } catch {}
-   }
- }, []);
- useEffect(()=>{
-   const parsed = parseReferral([], []);
-   if (parsed) {
-     try { sessionStorage.setItem('zk_referral_code', parsed.code); } catch {}
      try {
-       const path = (window.location.pathname || '');
-       if (path && path !== '/' && new RegExp(`/${parsed.raw}/?$`, 'i').test(path)) {
-         if (!parsed.tabCode) navigate('/', { replace: true });
-       }
+       sessionStorage.setItem('zk_referral_code', code);
+       if (target?.raw) sessionStorage.setItem('zk_referral_raw', target.raw);
      } catch {}
    }
+ }, []);
+ // ذخیرهٔ زودهنگام رشتهٔ خام ارجاع از URL (مستقل از لود شدن consultants)
+ // تا اگر کاربر قبل از لود کامل settings رفرش کند هم کد ارجاع قابل بازیابی باشد.
+ useEffect(()=>{
+   try {
+     const code = getReferralCodeFromUrl();
+     if (code) sessionStorage.setItem('zk_referral_raw', code);
+   } catch {}
    // eslint-disable-next-line react-hooks/exhaustive-deps
  }, []);
  useEffect(()=>{
@@ -1225,6 +1224,41 @@ function App(){
        applyReferral(code, { code, raw: code }, consultants);
        if (consultants.length > 0) setReferralReady(true);
      } else {
+       // ─── بازیابی لینک ارجاع بعد از رفرش/ناوبری SPA ───
+       // وقتی کاربر با لینک ارجاع وارد شده و در هر صفحه‌ای رفرش کند، کد مشاور دیگر در URL نیست؛
+       // آن را از sessionStorage می‌خوانیم و دوباره بر اساس مشاورین فعلی (پویا از پنل) حل می‌کنیم،
+       // بنابراین با افزودن/ویرایش مشاور جدید در پنل هم هماهنگ می‌ماند و به هم نمی‌ریزد.
+       let storedRaw = '';
+       try {
+         storedRaw = (sessionStorage.getItem('zk_referral_raw') || sessionStorage.getItem('zk_referral_code') || '').trim();
+       } catch {}
+       if (storedRaw && referralHandledRef.current !== storedRaw) {
+         let restored = parseReferralRaw(storedRaw, consultants, tabs);
+         let restoredConsultant = restored ? findConsultantByCode(consultants, restored.code) : null;
+         // fallback: اگر پسوند تب/دوره قدیمی/ناشناخته بود، حداقل کد پایهٔ مشاور بازیابی شود
+         if (!restoredConsultant && consultants.length > 0) {
+           const rawLower = storedRaw.toLowerCase();
+           restoredConsultant = consultants
+             .filter((x:any) => {
+               const rc = String(x?.referralCode || '').trim().toLowerCase();
+               return rc && rawLower.startsWith(rc);
+             })
+             .sort((a:any,b:any)=>String(b?.referralCode||'').trim().length - String(a?.referralCode||'').trim().length)[0] || null;
+           if (restoredConsultant) {
+             restored = { code: String(restoredConsultant.referralCode).trim().toLowerCase(), raw: storedRaw };
+           }
+         }
+         if (restoredConsultant) {
+           // جلوگیری از هدایت مجدد به هوم هنگام بازیابی: کاربر در همان صفحه می‌ماند
+           referralHandledRef.current = restored!.raw;
+           setReferralConsultant(restoredConsultant);
+           setReferralTarget(restored);
+           if (restored!.tabCode) {
+             const tab = findTabByCode(tabs, restored!.tabCode);
+             if (tab) setCourseTab((prev:string) => prev === tab.id ? prev : tab.id);
+           }
+         }
+       }
        setReferralReady(true);
      }
    }

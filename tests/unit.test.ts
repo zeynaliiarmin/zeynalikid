@@ -16,6 +16,7 @@ import fa from '../src/locales/fa';
 import en from '../src/locales/en';
 import { PaymentService, SUPPORTED_GATEWAYS } from '../src/services/payment/PaymentService';
 import type { PaymentMetadata } from '../src/services/payment/drivers';
+import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 
 let passed = 0;
 let failed = 0;
@@ -156,6 +157,33 @@ assert(service.getActiveGateway() === 'blubank', 'getActiveGateway اولین د
   let threw = false;
   try { await s2.createPaymentForGateway('zarinpal', 100, {} as PaymentMetadata); } catch { threw = true; }
   assert(threw, 'درگاه غیرفعال خطا می‌دهد');
+}
+
+// ── referral: parseReferralRaw (بازیابی بعد از رفرش) ─────────────────────
+{
+  const consultants = [
+    { id: 'c1', name: 'آرمین زینالی', referralCode: 'az' },
+    { id: 'c2', name: 'مشاور دیگر', referralCode: 'mhi' },
+  ];
+  const tabs = [
+    { id: 'height', title: 'رشد قد', shortCode: 'h' },
+    { id: 'mind', title: 'هوش و ذهن', shortCode: 'm' },
+  ];
+  assert(JSON.stringify(parseReferralRaw('mhi', consultants, tabs)) === JSON.stringify({ code: 'mhi', raw: 'mhi' }), 'parseReferralRaw کد پایه');
+  assert(JSON.stringify(parseReferralRaw('mhih', consultants, tabs)) === JSON.stringify({ code: 'mhi', raw: 'mhih', tabCode: 'h' }), 'parseReferralRaw کد + تب');
+  assert(JSON.stringify(parseReferralRaw('mhih2', consultants, tabs)) === JSON.stringify({ code: 'mhi', raw: 'mhih2', tabCode: 'h', courseIndex: 2 }), 'parseReferralRaw کد + تب + دوره');
+  assert(parseReferralRaw('mhi', consultants, [])!.code === 'mhi', 'parseReferralRaw بدون تب (فقط کد)');
+  assert(parseReferralRaw('xx', consultants, tabs) === null, 'parseReferralRaw کد ناشناخته → null');
+  assert(parseReferralRaw('', consultants, tabs) === null, 'parseReferralRaw خالی → null');
+  // طولانی‌ترین کد برنده باشد (مشاور جدید اضافه شده با کد طولانی‌تر، هماهنگ با پنل)
+  const withNew = [
+    { id: 'c1', name: 'آرمین زینالی', referralCode: 'az' },
+    { id: 'c2', name: 'مشاور جدید', referralCode: 'az2' },
+  ];
+  assert(parseReferralRaw('az2h', withNew, tabs)!.code === 'az2', 'parseReferralRaw طولانی‌ترین کد برنده (مشاور جدید)');
+  assert(findConsultantByCode(withNew, 'az2')?.id === 'c2', 'findConsultantByCode کد مشاور جدید');
+  assert(findTabByCode(tabs, 'h')?.id === 'height', 'findTabByCode مخفف سفارشی');
+  assert(findTabByCode(tabs, 'mind')?.id === 'mind', 'findTabByCode با id');
 }
 
 console.log(`\n═══════════════════════════════════`);

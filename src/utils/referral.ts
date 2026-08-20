@@ -42,25 +42,14 @@ function rawPath(): string {
  * ورودی: consultants و courseTabs برای تطبیق معکوس کد پایه و مخفف تب.
  * خروجی: ParsedReferral یا null.
  */
-export function parseReferral(consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
-  // ۱) پارامتر URL (?ad=CODE یا ?ref=CODE)
-  let raw = '';
-  try {
-    const q = new URLSearchParams(window.location.search);
-    raw = (q.get('ad') || q.get('ref') || '').trim();
-  } catch {}
-
-  // ۲) مسیر مستقیم
-  if (!raw) {
-    const p = rawPath();
-    if (p && !p.includes('/')) {
-      const first = p.split('?')[0].trim();
-      if (first && !SYSTEM_PATHS.has(first.toLowerCase()) && !isLikelyFile(first)) {
-        raw = first;
-      }
-    }
-  }
-
+/**
+ * تجزیهٔ یک رشتهٔ خام (بدون وابستگی به URL) به کد مشاور/تب/دوره.
+ * برای بازیابی لینک ارجاع بعد از رفرش/ناوبری SPA از sessionStorage استفاده می‌شود،
+ * بنابراین باید صرفاً بر اساس consultants و courseTabs فعلی (پویا) حل شود تا
+ * با افزودن/ویرایش مشاورین در پنل همیشه هماهنگ بماند.
+ */
+export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
+  const raw = String(rawIn || '').trim();
   if (!raw) return null;
 
   const list = Array.isArray(consultants) ? consultants : [];
@@ -98,6 +87,29 @@ export function parseReferral(consultants?: any[], courseTabs?: any[]): ParsedRe
   }
 
   return null;
+}
+
+export function parseReferral(consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
+  // ۱) پارامتر URL (?ad=CODE یا ?ref=CODE)
+  let raw = '';
+  try {
+    const q = new URLSearchParams(window.location.search);
+    raw = (q.get('ad') || q.get('ref') || '').trim();
+  } catch {}
+
+  // ۲) مسیر مستقیم
+  if (!raw) {
+    const p = rawPath();
+    if (p && !p.includes('/')) {
+      const first = p.split('?')[0].trim();
+      if (first && !SYSTEM_PATHS.has(first.toLowerCase()) && !isLikelyFile(first)) {
+        raw = first;
+      }
+    }
+  }
+
+  if (!raw) return null;
+  return parseReferralRaw(raw, consultants, courseTabs);
 }
 
 /** پیدا کردن مشاور بر اساس کد ارجاع (case-insensitive) - ساده، برای سازگاری */
