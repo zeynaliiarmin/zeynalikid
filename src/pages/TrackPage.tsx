@@ -14,7 +14,9 @@ const digitsOnly=(v:any)=>String(v??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷�
 const readSessionOnce=(key:string)=>{try{return sessionStorage.getItem(key)||''}catch{return ''}};
 
 // اصلاح ۳ (مرحله ۵): پیش‌نمایش شماره اکنون فقط بر اساس نتیجه واقعی (result.maskedPhone) ساخته می‌شود، نه ورودی خام کاربر.
-const resultPhonePreview=(result:any)=>{if(!result)return ''; if(result.maskedPhone)return result.maskedPhone; const d=digitsOnly(result.fullPhone||''); if(d.length<7)return ''; const head=d.startsWith('98')?d.slice(0,5):d.slice(0,4); const tail=d.slice(-3); return `${head}xxxx${tail}`};
+// ماسک شمارهٔ تماس: ۰۹۱۹xxxx۵۴۶ (ایران) یا +CC123xxxx456 (بین‌المللی) — فقط بخش ابتدایی و ۳ رقم آخر
+const maskPhonePreview=(stored:string)=>{const d=digitsOnly(stored);if(!d||d.length<7)return '';const last3=d.slice(-3);if(d.startsWith('98')){const local='0'+d.slice(2);return local.slice(0,4)+'xxxx'+last3;}if(d.startsWith('09')){return d.slice(0,4)+'xxxx'+last3;}const prefix=String(stored||'').match(/^(\+\d{1,3})/)?.[0]||'';if(prefix){const rest=d.slice(prefix.replace('+','').length);return prefix+rest.slice(0,3)+'xxxx'+last3;}return d.slice(0,4)+'xxxx'+last3;};
+const resultPhonePreview=(result:any)=>{if(!result)return ''; if(result.maskedPhone)return result.maskedPhone; return maskPhonePreview(String(result.fullPhone||''));};
 
 export default function TrackPage({app}:{app:any}){
  const {cfg,T,S,css,lang,setLang,setView,APP_A_URL,publicText,p2e,showContactOn,ContactPanel}=app;
@@ -29,6 +31,8 @@ export default function TrackPage({app}:{app:any}){
  const [correctiveSaving,setCorrectiveSaving]=useState(false);
  const [correctiveMsg,setCorrectiveMsg]=useState('');
  const [isGuest,setIsGuest]=useState(false);
+ // پیش‌نمایش ماسک‌شدهٔ شمارهٔ ثبت‌نام، به‌محض کامل شدن کد پیگیری (قبل از زدن دکمهٔ پیگیری)
+ const [previewPhone,setPreviewPhone]=useState('');
  // ورودی: فقط اعداد بعد از ZK (ZK ثابت و غیرقابل حذف) — کد قدیمی هگز هم پذیرفته می‌شود
  // اصلاح ۳ (مرحله ۶): ورود مخفی به پنل مدیریت — اگر کاربر دقیقاً «639» را در فیلد کد پیگیری وارد کند، مستقیماً به صفحه ورود ادمین هدایت می‌شود.
  const onNumChange=(v:string)=>{const clean=p2e(v).toUpperCase().replace(/^ZK-?/,'').replace(/[^A-F0-9]/g,'').slice(0,8); if(clean==='639'){setNum('');setView('admin-login');return} setNum(clean)};
@@ -65,8 +69,7 @@ export default function TrackPage({app}:{app:any}){
   const match=sd.length>=7&&id.length>=7&&(sd.endsWith(id)||id.endsWith(sd)||sd.slice(-10)===id.slice(-10));
   if(!match)return {error:lang==='en'?'Phone number or tracking code is incorrect. Please try again.':'شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید.'};
   const stored=String(found.fullPhone||'');
-  const last3=sd.slice(-3);
-  const maskedPhone=stored.startsWith('+98')||stored.startsWith('0098')?`09(xxxxxx)${last3}`:`${stored.match(/^(\+\d{1,3})/)?.[0]||''}(xxxxxx)${last3}`;
+  const maskedPhone=maskPhonePreview(stored);
   const eh=found.editHistory||[];
   return {trackingCode:found.trackingCode,status:found.orderStatus||(found.payment?.receipt?'پرداخت‌شده':found.course?'در انتظار پرداخت':'جدید'),date:`${found.date||''} ${found.time||''}`.trim(),course:found.course?{title:found.course.title,titleEn:found.course.titleEn}:null,usage:found.usageInstructions||'',mealPlan:found.mealPlan||'',showMealPlan:found.showMealPlan===true,usagePdfUrl:found.usagePdfUrl||'',mealPdfUrl:found.mealPdfUrl||'',userNotes:found.userNotes||'',productUsage:found.productUsage||{},lastEdit:eh.length?`${eh[eh.length-1].date||''} ${eh[eh.length-1].time||''}`.trim():'',maskedPhone,canEdit:true, corrective: found.corrective||null, showCorrectiveTab: !!found.showCorrectiveTab, correctiveData: found.correctiveData||{}, _trackingCodeRaw:c, _phoneRaw:ph};
 };
@@ -91,6 +94,30 @@ export default function TrackPage({app}:{app:any}){
    }
    const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')}
   }finally{setLoading(false)}};
+ // تشخیص خودکار کد پیگیری: به‌محض اینکه کد کامل و معتبر شد، شمارهٔ ثبت‌نام (ماسک‌شده) نمایش داده می‌شود
+ // تا کاربر بداند ثبت دوره با کدام شماره انجام شده است؛ بدون نیاز به زدن دکمهٔ پیگیری.
+ useEffect(()=>{
+  const c=buildCode();
+  const valid=/^ZK\d{4,8}$/.test(c)||/^ZK-[A-F0-9]{6}$/.test(c);
+  if(!valid){setPreviewPhone('');return;}
+  let alive=true;
+  const t=window.setTimeout(async()=>{
+   try{
+    if(isSupabaseConfigured&&SUPABASE_URL&&SUPABASE_ANON_KEY){
+     const response=await fetch(`${SUPABASE_URL}/functions/v1/track-submission`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({trackingCode:c,preview:true})});
+     if(!alive)return;
+     if(response.ok){const data=await response.json().catch(()=>({}));setPreviewPhone(data?.previewPhone||'');}
+     else setPreviewPhone('');
+     return;
+    }
+    const list:any[]=getLS('zkid_submissions_v2',[]);
+    const found=list.find((x:any)=>String(x.trackingCode||'').toUpperCase()===c);
+    if(!alive)return;
+    setPreviewPhone(found?maskPhonePreview(String(found.fullPhone||'')):'');
+   }catch{ if(alive)setPreviewPhone(''); }
+  },450);
+  return()=>{alive=false;window.clearTimeout(t)};
+ },[num]);
 
  const enterGuest=()=>{
    // ورود مهمان — محتوای عمومی برنامه غذایی برای مهمان همیشه نمایش داده می‌شود (کنترل ادمین فقط برای فرم‌های ثبت‌شده واقعی است)
@@ -205,12 +232,19 @@ export default function TrackPage({app}:{app:any}){
  const glassCard:any={background:'rgba(15,23,42,0.45)',border:`1px solid ${hexTint(acc,0.32)}`,borderRadius:14,backdropFilter:'blur(14px) saturate(140%)',WebkitBackdropFilter:'blur(14px) saturate(140%)',boxShadow:'0 10px 30px rgba(0,0,0,.28)'};
  const lightLabel='rgba(255,255,255,.72)';
  const lightText='rgba(255,255,255,.92)';
- return <div className="zkgl-root zkgl-has-topbar" dir={lang==='fa'?'rtl':'ltr'} style={{['--zkgl-acc' as any]:acc}}><Helmet><title>پیگیری ثبت‌نام | زینالیکید</title><meta name="description" content="وارد کردن کد پیگیری و مشاهده وضعیت ثبت‌نام دوره یا فرم مشاوره زینالیکید" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><GlassTopBar brand={lang==='en'?'Zeynalikid':'زینالیکید'} lang={lang} setLang={setLang} onBack={()=>setView('home')} backLabel={lang==='en'?'Back':'بازگشت'} /><div className="zkgl-bg" style={{background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})`}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice"><circle cx="8%" cy="14%" r="80" fill={mem[0]} opacity=".3"/><circle cx="92%" cy="20%" r="52" fill={mem[1]} opacity=".24"/><circle cx="86%" cy="84%" r="96" fill={mem[2]} opacity=".22"/><circle cx="12%" cy="90%" r="40" fill={mem[0]} opacity=".24"/><path d="M -5 60 Q 25 44 50 60 T 105 60" stroke={mem[1]} strokeWidth="3" fill="none" opacity=".26"/><circle cx="50%" cy="8%" r="4" fill={mem[2]} opacity=".4"/><circle cx="24%" cy="48%" r="3" fill={mem[0]} opacity=".35"/></svg><div style={{position:'absolute',inset:0,backgroundImage:'url(/images/hero-default.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(7px)',opacity:.4}}/><div style={{position:'absolute',inset:0,background:'linear-gradient(160deg, rgba(15,23,42,.72), rgba(15,23,42,.5))'}}/></div><div className="zkgl-col"><div style={{background:glassFormBg,border:`1.5px solid ${glassFormBorder}`,borderRadius:20,padding:'26px 20px',backdropFilter:'blur(18px) saturate(160%)',WebkitBackdropFilter:'blur(18px) saturate(160%)',boxShadow:'0 22px 60px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.25)',position:'relative',overflow:'hidden'}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}} preserveAspectRatio="xMidYMid slice"><circle cx="94%" cy="4%" r="46" fill={mem[0]} opacity=".25"/><circle cx="4%" cy="96%" r="30" fill={mem[1]} opacity=".2"/><circle cx="10%" cy="10%" r="10" fill={mem[2]} opacity=".28"/></svg><div style={{position:'relative'}}><span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:10.5,fontWeight:800,color:'#fff',background:hexTint(acc,.34),border:`1px solid ${glassFormBorder}`,borderRadius:999,padding:'2px 10px',marginBottom:10}}>{lang==='en'?'TRACK ORDER':'پیگیری سفارش'}</span><h2 style={{color:'#fff',fontSize:20,fontWeight:900,margin:'0 0 6px'}}>{lang==='en'?'Track your registration':'پیگیری ثبت‌نام'}</h2><p style={{color:'rgba(255,255,255,.85)',fontSize:12.5,lineHeight:1.9,margin:'0 0 20px'}}>{lang==='en'?'Enter your tracking code and the phone number used at registration.':'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'}</p>
+ return <div className="zkgl-root zkgl-has-topbar" dir={lang==='fa'?'rtl':'ltr'} style={{['--zkgl-acc' as any]:acc}}><Helmet><title>پیگیری ثبت‌نام | زینالیکید</title><meta name="description" content="وارد کردن کد پیگیری و مشاهده وضعیت ثبت‌نام دوره یا فرم مشاوره زینالیکید" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><GlassTopBar brand={lang==='en'?'Zeynalikid':'زینالیکید'} lang={lang} setLang={setLang} T={T} onBack={()=>setView('home')} backLabel={lang==='en'?'Back':'بازگشت'} /><div className="zkgl-bg" style={{background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})`}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice"><circle cx="8%" cy="14%" r="80" fill={mem[0]} opacity=".3"/><circle cx="92%" cy="20%" r="52" fill={mem[1]} opacity=".24"/><circle cx="86%" cy="84%" r="96" fill={mem[2]} opacity=".22"/><circle cx="12%" cy="90%" r="40" fill={mem[0]} opacity=".24"/><path d="M -5 60 Q 25 44 50 60 T 105 60" stroke={mem[1]} strokeWidth="3" fill="none" opacity=".26"/><circle cx="50%" cy="8%" r="4" fill={mem[2]} opacity=".4"/><circle cx="24%" cy="48%" r="3" fill={mem[0]} opacity=".35"/></svg><div style={{position:'absolute',inset:0,backgroundImage:'url(/images/hero-default.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(7px)',opacity:.4}}/><div style={{position:'absolute',inset:0,background:'linear-gradient(160deg, rgba(15,23,42,.72), rgba(15,23,42,.5))'}}/></div><div className="zkgl-col"><div style={{background:glassFormBg,border:`1.5px solid ${glassFormBorder}`,borderRadius:20,padding:'26px 20px',backdropFilter:'blur(18px) saturate(160%)',WebkitBackdropFilter:'blur(18px) saturate(160%)',boxShadow:'0 22px 60px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.25)',position:'relative',overflow:'hidden'}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}} preserveAspectRatio="xMidYMid slice"><circle cx="94%" cy="4%" r="46" fill={mem[0]} opacity=".25"/><circle cx="4%" cy="96%" r="30" fill={mem[1]} opacity=".2"/><circle cx="10%" cy="10%" r="10" fill={mem[2]} opacity=".28"/></svg><div style={{position:'relative'}}><span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:10.5,fontWeight:800,color:'#fff',background:hexTint(acc,.34),border:`1px solid ${glassFormBorder}`,borderRadius:999,padding:'2px 10px',marginBottom:10}}>{lang==='en'?'TRACK ORDER':'پیگیری سفارش'}</span><h2 style={{color:'#fff',fontSize:20,fontWeight:900,margin:'0 0 6px'}}>{lang==='en'?'Track your registration':'پیگیری ثبت‌نام'}</h2><p style={{color:'rgba(255,255,255,.85)',fontSize:12.5,lineHeight:1.9,margin:'0 0 20px'}}>{lang==='en'?'Enter your tracking code and the phone number used at registration.':'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'}</p>
   <div className="zkgl-field" dir="ltr">
    <span className="zkgl-prefix" style={{color:accLight}}>ZK</span>
    <input className="zkgl-input zkgl-has-prefix" id="zkgl-track-num" dir="ltr" inputMode="numeric" placeholder=" " value={num} onChange={e=>onNumChange(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} maxLength={8} style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'3px'}}/>
    <label className="zkgl-label" htmlFor="zkgl-track-num" style={{insetInlineStart:34}}>{lang==='en'?'Tracking code':'کد پیگیری'}</label>
   </div>
+  {previewPhone && (
+   <div style={{display:'flex',alignItems:'center',gap:7,padding:'7px 11px',marginBottom:12,borderRadius:10,background:'rgba(255,255,255,.08)',border:'1px dashed rgba(255,255,255,.28)',fontSize:11.5,color:'rgba(255,255,255,.85)'}}>
+    <span style={{display:'flex',alignItems:'center',flexShrink:0}}><PhoneIcon size={13} color={accLight} /></span>
+    <span style={{flexShrink:0}}>{lang==='en'?'Registered phone':'شماره ثبت‌نام'}:</span>
+    <b dir="ltr" style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'1px',color:'#fff'}}>{previewPhone}</b>
+   </div>
+  )}
   <div className="zkgl-field" dir="ltr">
    <input className="zkgl-input" id="zkgl-track-phone" dir="ltr" inputMode="tel" placeholder=" " value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}}/>
    <label className="zkgl-label" htmlFor="zkgl-track-phone">{lang==='en'?'Phone number':'شماره تماس'}</label>
@@ -221,8 +255,7 @@ export default function TrackPage({app}:{app:any}){
   <button onClick={enterGuest} style={{width:'100%',marginTop:10,minHeight:46,padding:'12px',borderRadius:14,background:hexTint(acc,.2),border:`1.5px solid ${glassFormBorder}`,color:'#fff',cursor:'pointer',fontFamily:'inherit',fontSize:13.5,fontWeight:700}}>{lang==='en'?'Guest login':'ورود مهمان'}</button>
   </div></div>
   {result&&<div style={{animation:'fadeSlide .65s ease both',marginTop:16}}>
-   {/* اصلاح ۳ (مرحله ۵): پیش‌نمایش شماره اکنون فقط پس از جستجوی موفق و از result.maskedPhone (شماره واقعی ثبت‌شده) ساخته می‌شود */}
-   {!isGuest && resultPhonePreview(result)&&<div style={{position:'sticky',top:8,zIndex:10,display:'flex',alignItems:'center',gap:8,padding:'9px 12px',marginBottom:12,borderRadius:12,...glassCard,border:`1px solid ${hexTint(acc,.55)}`}}><span style={{display:'flex',alignItems:'center'}}><PhoneIcon size={15} color={accLight} /></span><span style={{fontSize:11,color:lightLabel}}>{lang==='en'?'Registered phone:':'شماره ثبت‌شده:'}</span><b dir="ltr" style={{fontSize:13,color:accLight,fontFamily:'monospace,-apple-system,"Courier New"',letterSpacing:'1px'}}>{resultPhonePreview(result)}</b></div>}
+   {/* اصلاح: شمارهٔ ثبت‌نام اکنون به‌محض کامل شدن کد پیگیری (قبل از جستجو) نمایش داده می‌شود؛ نمایش تکراری بعد از جستجو حذف شد. */}
    {/* کارت‌های شیشه‌ای هم‌خانواده با تم */}
    {!isGuest && <div style={{display:'grid',gap:9,fontSize:12,lineHeight:1.9,marginBottom:12}}>{[[lang==='en'?'Tracking code':'کد پیگیری',result.trackingCode],[lang==='en'?'Status':'وضعیت سفارش',result.status],[lang==='en'?'Registration date':'تاریخ ثبت',result.date],...(result.course?[[lang==='en'?'Course':'دوره ثبت‌شده',lang==='en'?(result.course.titleEn||result.course.title):result.course.title]]:[])].map(([k,v]:any)=><div key={k} style={{...glassCard,padding:'10px 13px'}}><span style={{color:lightLabel}}>{k}: </span><b style={{whiteSpace:'pre-wrap',color:lightText}}>{v||'—'}</b></div>)}</div>}
 
@@ -265,6 +298,6 @@ export default function TrackPage({app}:{app:any}){
    {!isGuest && result.corrective && <div style={{...glassCard,padding:'9px 11px',fontSize:12,lineHeight:1.9,marginTop:10,color:lightText}}><b style={{color:'#fff',marginBottom:4,display:'block'}}>{lang==='en'?'Corrective info':'اطلاعات اصلاحی'}</b><pre style={{whiteSpace:'pre-wrap',margin:0,fontFamily:'inherit',fontSize:11}}>{typeof result.corrective==='string'?result.corrective:JSON.stringify(result.corrective,null,2)}</pre></div>}
   </div>}
   {/* اصلاح ۴-۴ (مرحله ۴): افزودن ContactPanel به این صفحه (طبق تنظیمات نمایش) */}
-  {showContactOn('track')&&<ContactPanel cfg={cfg} T={T} lang={lang}/>}
+  {showContactOn('track')&&<ContactPanel cfg={cfg} T={T} lang={lang} glass />}
   <button style={{width:'100%',marginTop:14,minHeight:46,borderRadius:14,background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.28)',color:'#fff',cursor:'pointer',fontFamily:'inherit',fontSize:13.5,fontWeight:700,backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)'}} onClick={()=>setView('home')}>{publicText('backBtn','بازگشت')}</button></div></div>
 }

@@ -84,6 +84,14 @@
 
 .zkgl-field .zkgl-input::placeholder { color: transparent; }
 
+/* حذف کادر/هالهٔ آبی فوکوس سراسری (--zk-border-focus) از فیلدهای شیشه‌ای */
+.zkgl-field .zkgl-input:focus,
+.zkgl-field .zkgl-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-bottom-color: #fff;
+}
+
 .zkgl-label {
   position: absolute;
   inset-inline-start: 2px;

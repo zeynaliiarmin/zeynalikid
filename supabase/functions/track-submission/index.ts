@@ -50,10 +50,10 @@ serve(async (req) => {
   }
 
   try {
-    const { trackingCode, fullPhone } = await req.json();
+    const { trackingCode, fullPhone, preview } = await req.json();
 
-    if (!trackingCode || !fullPhone) {
-      return jsonResponse({ error: "کد پیگیری و شماره تماس الزامی است" }, 400, origin);
+    if (!trackingCode) {
+      return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);
     }
 
     const code = String(trackingCode).trim().toUpperCase();
@@ -79,9 +79,38 @@ serve(async (req) => {
       );
     }
 
-    // احراز هویت: شماره واردشده باید با شماره ثبت‌شده مطابقت داشته باشد
     const storedPhone = String(data.full_phone ?? data.payload?.fullPhone ?? "");
     const storedDigits = digitsOnly(storedPhone);
+
+    // ماسک شمارهٔ تماس: ۰۹۱۹xxxx۵۴۶ (ایران) یا +CC123xxxx456 (بین‌المللی)
+    const maskPhonePreview = (stored: string): string => {
+      const d = digitsOnly(stored);
+      if (!d || d.length < 7) return "";
+      const last3 = d.slice(-3);
+      if (d.startsWith("98")) {
+        const local = "0" + d.slice(2);
+        return local.slice(0, 4) + "xxxx" + last3;
+      }
+      if (d.startsWith("09")) return d.slice(0, 4) + "xxxx" + last3;
+      const prefix = stored.match(/^(\+\d{1,3})/)?.[0] || "";
+      if (prefix) {
+        const rest = d.slice(prefix.replace("+", "").length);
+        return prefix + rest.slice(0, 3) + "xxxx" + last3;
+      }
+      return d.slice(0, 4) + "xxxx" + last3;
+    };
+
+    // حالت پیش‌نمایش (فقط با کد پیگیری، بدون شماره تماس):
+    // فقط شمارهٔ ماسک‌شده برمی‌گردد تا کاربر بداند ثبت با کدام شماره انجام شده است.
+    if (preview === true) {
+      return jsonResponse({ previewPhone: maskPhonePreview(storedPhone) }, 200, origin);
+    }
+
+    if (!fullPhone) {
+      return jsonResponse({ error: "شماره تماس الزامی است" }, 400, origin);
+    }
+
+    // احراز هویت: شماره واردشده باید با شماره ثبت‌شده مطابقت داشته باشد
     const inputDigits = digitsOnly(String(fullPhone));
     const match =
       storedDigits.length >= 7 &&
@@ -101,14 +130,7 @@ serve(async (req) => {
     const p = data.payload ?? {};
 
     // ماسک کردن شماره تماس (فقط ۳ رقم آخر)
-    let maskedPhone = "";
-    const lastThree = storedDigits.slice(-3);
-    if (storedPhone.startsWith("+98") || storedPhone.startsWith("0098")) {
-      maskedPhone = `09(xxxxxx)${lastThree}`;
-    } else {
-      const prefix = storedPhone.match(/^(\+\d{1,3})/)?.[0] || "";
-      maskedPhone = `${prefix}(xxxxxx)${lastThree}`;
-    }
+    let maskedPhone = maskPhonePreview(storedPhone);
 
     const status =
       p.orderStatus ||
