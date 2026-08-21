@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
@@ -140,6 +140,17 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
  const [progress,setProgress]=useState<number|null>(null);
  const [err,setErr]=useState('');
  const [cameraModalOpen,setCameraModalOpen]=useState(false);
+ const camPushedRef=useRef(false);
+ // باز کردن دوربین هوشمند: یک entry در تاریخچه می‌گذاریم تا دکمهٔ بک گوشی فقط دوربین را ببندد (نه رفتن به صفحهٔ دوره)
+ const openCam=()=>{
+  if(!camPushedRef.current){try{window.history.pushState({zkSmartCam:true},'')}catch{}camPushedRef.current=true;}
+  openCam();
+ };
+ const closeCam=()=>{
+  if(camPushedRef.current){camPushedRef.current=false;try{window.history.back()}catch{}}
+  setCameraModalOpen(false);
+ };
+ useEffect(()=>{const onPop=()=>{setCameraModalOpen(false);camPushedRef.current=false;};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop);},[]);
  const filesRef=useRef<HTMLInputElement|null>(null);
  const cameraDirectRef=useRef<HTMLInputElement|null>(null);
  const maxCount=cfg.maxTonguePhotoCount||3;
@@ -287,7 +298,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
        T={T}
        lang={lang}
        onCapture={(file)=>doUpload(file)}
-       onClose={()=>setCameraModalOpen(false)}
+       onClose={closeCam}
      />
    )}
   </div>
