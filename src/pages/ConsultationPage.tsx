@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
 import { isSupabaseConfigured, supabase, createSubmission, trackPageView } from '../lib/supabase';
+import { reportError } from '../utils/errorLog';
 import { generateTrackingCode, generateUniqueTrackingCode } from '../utils/tracking';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
@@ -326,6 +327,7 @@ export default function ConsultationPage({ app }: { app: any }) {
             }
           } catch (e) {
             console.warn('update-submission-public error:', e);
+            reportError('consult_update', 'update-submission-public error', String((e as any)?.message||e));
           }
           // Also update localStorage for immediate UI feedback
           const subs = getLS(SK.subs, []);
@@ -366,6 +368,7 @@ export default function ConsultationPage({ app }: { app: any }) {
               } else { voiceUploadFailed = true; }
             } catch (e) {
               console.warn('voice upload fail', e);
+              reportError('consult_voice', 'voice upload fail', String((e as any)?.message||e));
               voiceUploadFailed = true;
             }
           }
@@ -401,6 +404,7 @@ export default function ConsultationPage({ app }: { app: any }) {
             setLastId(entry.id);
           } catch (e) {
             console.warn('Could not save submission to Supabase, falling back to localStorage', e);
+            reportError('consult_submit', 'Could not save submission to Supabase', String((e as any)?.message||e));
             setLastId(entry.id);
           }
         } else {
@@ -417,6 +421,7 @@ export default function ConsultationPage({ app }: { app: any }) {
       setFormView('success');
     } catch (e) {
       console.error('submit failed', e);
+      reportError('consult_submit_fatal', 'submit failed', String((e as any)?.message||e));
       setEmergencyModalOpen(true);
     } finally {
       setSubmitting(false);

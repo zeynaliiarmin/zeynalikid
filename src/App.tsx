@@ -10,6 +10,7 @@ import { defaultCountries, defaultSettings as configDefaultSettings, migrateSett
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/trustFont';
 import { flagToEmoji, getCountryFlag } from './utils/phone';
 import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, parseReferralRaw, findTabByCode, fillReferralText, type ParsedReferral } from './utils/referral';
+import { reportError } from './utils/errorLog';
 
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { optimizeForUpload } from './utils/imageOptimizer';
@@ -116,6 +117,7 @@ const uploadFileWithProgress=async(f:File,bucket:string,folder:string,onProgress
   try{
    await uploadBlobWithProgress(uploadUrl,compressed,{'Authorization':`Bearer ${SUPABASE_ANON_KEY_RAW}`,'apikey':SUPABASE_ANON_KEY_RAW,'Content-Type':compressed.type},onProgress);
   }catch(e:any){
+   reportError('upload_file', `${bucketLabel||bucket}: ${String(e?.message||'upload failed')}`);
    const msg=String(e?.message||'').toLowerCase();
    const label=bucketLabel||bucket;
    if(msg.includes('bucket not found')||msg.includes('not found'))throw new Error(`باکت «${label}» در Supabase Storage ساخته نشده است. لطفاً طبق راهنمای supabase/README-setup.sql آن را بسازید.`);
@@ -153,12 +155,14 @@ const uploadVoiceNote = async (blob: Blob): Promise<string | null> => {
       .upload(path, blob, { contentType: blob.type, upsert: false });
     if (error) {
       console.warn('Voice note upload failed:', error.message);
+      reportError('voice_upload', 'Voice note upload failed', String(error.message||''));
       return null;
     }
     const { data } = supabase.storage.from(VOICE_BUCKET).getPublicUrl(path);
     return data.publicUrl;
   } catch (e) {
     console.warn('Voice note upload error:', e);
+    reportError('voice_upload', 'Voice note upload error', String((e as any)?.message||e));
     return null;
   }
 };
@@ -1341,7 +1345,7 @@ function App(){
  async function finalizeCourseRegistration(paymentOverride?:any){const pay=paymentOverride||course.payment; const fp=fullPhone(course.form.phoneCc,course.form.phone); const data={...fd,pName:course.form.receiver||fd.pName,cc:course.form.phoneCc,pPhone:course.form.phone,fullPhone:fp}; let trackingCode=''; let existingCodes:string[]=[]; let existingList:any[]=[]; try{let list:any[]=getLS(SK.subs,[]); existingList=list; existingCodes=list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean); const prevSame=list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&x.trackingCode); if(prevSame)trackingCode=prevSame.trackingCode}catch{} if(!trackingCode)trackingCode=generateUniqueTrackingCode(existingCodes,cfg.trackingDigitCount||5);
 // اصلاح ۳-ج: اولویت زیاد خودکار اگر همین شماره تماس هم فرم مشاوره و هم ثبت‌نام دوره داشته باشد، یا بیش از یک فرم مشاوره/بیش از یک ثبت‌نام دوره ثبت کرده باشد؛ در غیر این صورت اولویت عادی (قابل تغییر دستی توسط ادمین)
 const sameNumberAll=existingList.filter((x:any)=>digits(x.fullPhone||'')===digits(fp)); const hasConsultPrev=sameNumberAll.some((x:any)=>x.type==='consultation'); const consultCountPrev=sameNumberAll.filter((x:any)=>x.type==='consultation').length; const courseCountPrev=sameNumberAll.filter((x:any)=>x.type==='course').length; const autoPriority=(hasConsultPrev||consultCountPrev>=1||courseCountPrev>=1)?'high':'normal';
-const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data,category:'ثبتی',consultationStatus:'ثبتی',orderStatus:'جدید',priority:autoPriority,unread:true,isNew:true,followReminder:true,followUps:[null,null,null,null,null],adminNotes:'',usageInstructions:'',timeSlot:'',course:course.selected,shipping:{dest:course.dest,method:course.shippingMethod,...course.form,estimatedDelivery:deliveryText(),optionalSendDate:course.optionalSendDate},payment:{...pay,receipt_image:pay.receipt||'',receipt_text:pay.receiptText||'',bank:(cfg.banks||[]).find((b:any)=>b.id===pay.bankId)},childInfo:course.childInfo||null,tonguePhotos:course.tonguePhotos||[],editHistory:course.editedHistory||[],advisor:(()=>{const refC=referralConsultant||(course.advisorId?(cfg.consultants||[]).find((cn:any)=>String(cn.id)===String(course.advisorId)):null);return refC?{id:refC.id,name:refC.name,nameEn:refC.nameEn,referralCode:refC.referralCode}:null;})()}; if(isSupabaseConfigured){try{await createSubmission(entry as any)}catch(e){console.warn('Could not save submission to Supabase, falling back to localStorage',e);const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])}}else{const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])} setCourseResult(entry); clearPublicFormDrafts(); setFd(emptyFd()); setCourse(emptyCourse()); setEditChild(false); setShipModal(null); setView('course-confirm')}
+const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data,category:'ثبتی',consultationStatus:'ثبتی',orderStatus:'جدید',priority:autoPriority,unread:true,isNew:true,followReminder:true,followUps:[null,null,null,null,null],adminNotes:'',usageInstructions:'',timeSlot:'',course:course.selected,shipping:{dest:course.dest,method:course.shippingMethod,...course.form,estimatedDelivery:deliveryText(),optionalSendDate:course.optionalSendDate},payment:{...pay,receipt_image:pay.receipt||'',receipt_text:pay.receiptText||'',bank:(cfg.banks||[]).find((b:any)=>b.id===pay.bankId)},childInfo:course.childInfo||null,tonguePhotos:course.tonguePhotos||[],editHistory:course.editedHistory||[],advisor:(()=>{const refC=referralConsultant||(course.advisorId?(cfg.consultants||[]).find((cn:any)=>String(cn.id)===String(course.advisorId)):null);return refC?{id:refC.id,name:refC.name,nameEn:refC.nameEn,referralCode:refC.referralCode}:null;})()}; if(isSupabaseConfigured){try{await createSubmission(entry as any)}catch(e){console.warn('Could not save submission to Supabase, falling back to localStorage',e);reportError('course_register','Could not save submission to Supabase',String((e as any)?.message||e));const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])}}else{const subs=getLS(SK.subs,[]);setLS(SK.subs,[...subs,entry])} setCourseResult(entry); clearPublicFormDrafts(); setFd(emptyFd()); setCourse(emptyCourse()); setEditChild(false); setShipModal(null); setView('course-confirm')}
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
  const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:any[],code:string)=>findTabByCode(tabs,code))};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)

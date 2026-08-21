@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassTopBar from '../components/GlassTopBar';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { reportError } from '../utils/errorLog';
 import { PhoneIcon, PinIcon, ChatIcon, productVectorIcon } from '../components/Icons';
 
 const getLS=(k:string,f:any)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}};
@@ -58,6 +59,7 @@ export default function TrackPage({app}:{app:any}){
       }
     } catch (e) {
       console.error('Supabase lookup failed:', e);
+      reportError('track_lookup', 'Supabase lookup failed', String((e as any)?.message||e));
     }
   }
   
@@ -88,7 +90,8 @@ export default function TrackPage({app}:{app:any}){
      const data=await response.json().catch(()=>({error:'خطای سرور. لطفاً مجدداً تلاش کنید.'}));
      if(!response.ok){setErr(data?.error||(lang==='en'?'Not found.':'یافت نشد.'));return}
      setResult({...data,_trackingCodeRaw:c,_phoneRaw:ph});setIsGuest(false);setRtab('edit');return
-    }catch{
+    }catch(e){
+     reportError('track_search', 'track-submission failed, falling back to local', String((e as any)?.message||e));
      const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')} return
     }
    }
@@ -183,7 +186,8 @@ export default function TrackPage({app}:{app:any}){
     setResult((r:any)=>({...r,correctiveData:{...(r.correctiveData||{}),...correctiveDraft}}));
     setCorrectiveMsg(lang==='en'?'Saved successfully':'با موفقیت ذخیره شد');
    }
-  }catch{
+  }catch(e){
+   reportError('track_corrective', 'Could not save corrective info', String((e as any)?.message||e));
    setCorrectiveMsg(lang==='en'?'Could not save.':'ذخیره انجام نشد.');
   }finally{
    setCorrectiveSaving(false);

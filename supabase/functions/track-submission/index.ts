@@ -149,9 +149,17 @@ serve(async (req) => {
       }
       try {
         const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
-        if (error || !data) return url;
+        if (error || !data) {
+          try {
+            await supabase.from("error_logs").insert({ kind: "track_pdf_sign", message: `createSignedUrl failed: ${String(error?.message || "no data")}`, page_path: code });
+          } catch { /* نادیده بگیر */ }
+          return url;
+        }
         return data.signedUrl;
-      } catch {
+      } catch (e) {
+        try {
+          await supabase.from("error_logs").insert({ kind: "track_pdf_sign", message: String((e as any)?.message || e), page_path: code });
+        } catch { /* نادیده بگیر */ }
         return url;
       }
     };
