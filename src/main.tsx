@@ -4,11 +4,16 @@ import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import AppLaunchSplash from './components/AppLaunchSplash';
+import ErrorBoundary from './components/ErrorBoundary';
+import { initErrorLogging } from './utils/errorLog';
 import './index.css';
 // keyframes/استایل دکمه‌های CTA و آکاردئون مشاوره — به‌صورت سراسری در همهٔ صفحات در دسترس
 import './components/zkCta.css';
 // گلسمورفیسم (کارت شیشه‌ای + لیبل شناور) برای ورود ادمین و صفحهٔ پیگیری
 import './components/zkGlass.css';
+
+// ثبت سراسری خطاهای فرانت‌اند (بی‌صدا — تجربهٔ کاربر را مختل نمی‌کند)
+initErrorLogging();
 
 // ─── PWA: dynamic manifest & service worker based on route ──────────────
 // مسیرهای /admin/* از manifest و SW مستقل مدیریت استفاده می‌کنند تا
@@ -201,7 +206,9 @@ createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HelmetProvider>
       <AppLaunchSplash><BrowserRouter>
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </BrowserRouter></AppLaunchSplash>
     </HelmetProvider>
   </React.StrictMode>
