@@ -5,83 +5,99 @@
 export type ErrorAlertContext =
   | 'registration'   // ثبت دوره / ثبت مشاوره
   | 'receipt'        // آپلود فیش واریزی
-  | 'tongue'         // آپلود عکس زبان
+  | 'tongue'         // آپلود عکس زبان (اجباری از پنل مدیریت)
+  | 'tongueOptional' // آپلود عکس زبان (اختیاری — بدون نمایش شماره تماس)
   | 'review'         // ثبت نظر
   | 'question'       // سوالات متداول / سوال دارم
   | 'track'          // صفحه پیگیری
   | 'pdf';           // دانلود PDF
 
-interface Copy { title: string; message: string; }
+interface Copy { title: string; message: string; showPhone?: boolean; }
+
+const PREVENT = 'برای جلوگیری از خطاهای بیشتر، لطفاً با پشتیبانی تماس بگیرید و این خطا را گزارش دهید.';
+const PREVENT_EN = 'To help prevent further issues, please contact support and report this error.';
 
 export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy }> = {
   registration: {
     fa: {
       title: 'خطا در ثبت اطلاعات',
-      message: 'والدین زیادی روزانه ثبت درخواست مشاوره می‌دهند، لطفاً با گزارش این خطا به پشتیبانی از خطاهای بیشتر جلوگیری کنید.',
+      message: `والدین زیادی روزانه ثبت درخواست مشاوره می‌دهند. ${PREVENT}`,
     },
     en: {
       title: 'Registration error',
-      message: 'Many parents register every day. Please report this error to our support team to help prevent further issues.',
+      message: `Many parents register every day. ${PREVENT_EN}`,
     },
   },
   receipt: {
     fa: {
       title: 'خطا در بارگذاری فیش',
-      message: 'ثبت‌نام شما بدون فیش واریزی نهایی نمی‌شود و جایگاهتان در دوره ممکن است از دست برود؛ همین حالا فیش را از طریق پیامک یا واتساپ برای پشتیبانی ارسال کنید تا ثبت‌نامتان کامل شود.',
+      message: `ثبت‌نام شما بدون فیش واریزی نهایی نمی‌شود و جایگاهتان در دوره ممکن است از دست برود. ${PREVENT}`,
     },
     en: {
       title: 'Receipt upload error',
-      message: "Your enrollment can't be finalized without the payment receipt and you may lose your spot. Send the receipt to our support number via SMS or WhatsApp right away to complete your registration.",
+      message: `Your enrollment can't be finalized without the payment receipt and you may lose your spot. ${PREVENT_EN}`,
     },
   },
   tongue: {
     fa: {
       title: 'خطا در بارگذاری عکس',
-      message: 'بدون عکس زبان، ارزیابی فرزندتان شروع نمی‌شود و برنامهٔ اختصاصی او به تأخیر می‌افتد؛ با یک تماس کوتاه با پشتیبانی، ثبت عکس را کامل کنید.',
+      message: `بدون عکس زبان، ارزیابی فرزندتان شروع نمی‌شود و برنامهٔ اختصاصی او به تأخیر می‌افتد. ${PREVENT}`,
     },
     en: {
       title: 'Photo upload error',
-      message: "Without the tongue photo, your child's assessment can't begin and their personalized plan will be delayed. Call support to complete the photo upload.",
+      message: `Without the tongue photo, your child's assessment can't begin and their personalized plan will be delayed. ${PREVENT_EN}`,
+    },
+  },
+  tongueOptional: {
+    fa: {
+      title: 'خطا در بارگذاری عکس',
+      message: 'عکس زبان را می‌توانید از طریق واتساپ یا روبیکا برای ما ارسال کنید؛ پس از اتمام مراحل ثبت‌نام دوره، برای جلوگیری از خطاهای بیشتر، لطفاً با پشتیبانی تماس بگیرید و این خطا را گزارش دهید.',
+      showPhone: false,
+    },
+    en: {
+      title: 'Photo upload error',
+      message: "You can send the tongue photo to us via WhatsApp or Rubika. After completing your course registration, please contact support and report this error to help prevent further issues.",
+      showPhone: false,
     },
   },
   review: {
     fa: {
       title: 'خطا در ثبت نظر',
-      message: 'نظر شما راهنمای صدها والد دیگر برای انتخاب درست است؛ برای اینکه تجربهٔ شما به آن‌ها کمک کند، همین حالا با پشتیبانی تماس بگیرید.',
+      message: `نظر شما راهنمای صدها والد دیگر برای انتخاب درست است. ${PREVENT}`,
     },
     en: {
       title: 'Review error',
-      message: 'Your review guides hundreds of other parents toward the right choice. Call support so your experience can help them too.',
+      message: `Your review guides hundreds of other parents toward the right choice. ${PREVENT_EN}`,
     },
   },
   question: {
     fa: {
       title: 'خطا در ثبت سوال',
-      message: 'کارشناسان ما هر روز به ده‌ها سوال والدین پاسخ می‌دهند؛ نگذارید سوال شما بی‌پاسخ بماند — همین حالا با پشتیبانی تماس بگیرید.',
+      message: `کارشناسان ما هر روز به ده‌ها سوال والدین پاسخ می‌دهند؛ نگذارید سوال شما بی‌پاسخ بماند. ${PREVENT}`,
     },
     en: {
       title: 'Question error',
-      message: "Our specialists answer dozens of parent questions every day. Don't let yours go unanswered — call support now.",
+      message: `Our specialists answer dozens of parent questions every day — don't let yours go unanswered. ${PREVENT_EN}`,
     },
   },
   track: {
     fa: {
       title: 'مشکل در صفحه پیگیری',
-      message: 'وضعیت ثبت‌نام یا دورهٔ فرزندتان در چند ثانیه قابل بررسی است؛ همین حالا با پشتیبانی تماس بگیرید تا کارشناس وضعیت را برایتان اعلام کند.',
+      message: `وضعیت ثبت‌نام یا دورهٔ فرزندتان در چند ثانیه قابل بررسی است. ${PREVENT}`,
     },
     en: {
       title: 'Tracking error',
-      message: "Your registration status can be checked in seconds. Call support and our specialist will confirm it for you right away.",
+      message: `Your registration status can be checked in seconds. ${PREVENT_EN}`,
     },
   },
   pdf: {
     fa: {
       title: 'خطا در دانلود فایل',
-      message: 'این فایل برنامهٔ اختصاصی فرزند شماست و نباید از دست برود؛ برای دریافت فوری و جلوگیری از تأخیر در شروع برنامه، با پشتیبانی تماس بگیرید.',
+      message: `این فایل برنامهٔ اختصاصی فرزند شماست و نباید از دست برود. ${PREVENT}`,
     },
     en: {
       title: 'Download error',
-      message: "This file contains your child's personalized plan and shouldn't be missed. Call support to receive it immediately and avoid any delay.",
+      message: `This file contains your child's personalized plan and shouldn't be missed. ${PREVENT_EN}`,
     },
   },
 };

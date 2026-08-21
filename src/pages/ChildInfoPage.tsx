@@ -161,7 +161,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
    setPreviewMap(m=>({...m,[url]:blobUrl}));
    onChange([...tonguePhotos,url]);
   }catch(e:any){
-   triggerErrorAlert('tongue');
+   triggerErrorAlert(cfg.isTonguePhotoRequired ? 'tongue' : 'tongueOptional');
    setErr(e?.message||(lang==='en'?'Upload failed.':'آپلود انجام نشد.'));
   }finally{
    setTimeout(()=>setProgress(null),400);
