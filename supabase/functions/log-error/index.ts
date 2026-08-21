@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     const supabase = getSupabaseAdmin();
-    await supabase.from("error_logs").insert({
+    const { error: insErr } = await supabase.from("error_logs").insert({
       kind,
       message,
       stack: stack || null,
@@ -71,6 +71,9 @@ serve(async (req) => {
       user_agent: ua || null,
       lang: lang || null,
     });
+    if (insErr) {
+      console.error("log-error insert failed:", insErr.message);
+    }
 
     // پاکسازی خودکار: خطاهای قدیمی‌تر از ۳۰ روز (هر ~۵۰ گزارش یک‌بار اجرا می‌شود)
     cleanupCounter++;
@@ -85,6 +88,7 @@ serve(async (req) => {
 
     return jsonResponse({ ok: true }, 200, origin);
   } catch (_e) {
+    console.error("log-error failed:", _e);
     return jsonResponse({ ok: true }, 200, origin);
   }
 });
