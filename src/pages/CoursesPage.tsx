@@ -53,6 +53,7 @@ export default function CoursesPage({ app }: { app: any }) {
   const location = useLocation();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [expiredNotice, setExpiredNotice] = useState(false);
   // اگر از طریق لینک ارجاع با تعیین تب آمده، همان تب به‌صورت پیش‌فرض باز شود
   const initialFilter = (() => {
     if (referralTarget?.tabCode && findTabByCode) {
@@ -64,6 +65,16 @@ export default function CoursesPage({ app }: { app: any }) {
   const [filter, setFilter] = useState<string>(initialFilter);
   // ردیابی ورود به جزئیات دوره برای دکمه back گوشی (در پایین هم استفاده می‌شود)
   const detailPushedRef = React.useRef(false);
+  // نمایش پیام انقضای تایمر وقتی کاربر بعد از اتمام زمان به جزئیات دوره برگشته است
+  React.useEffect(() => {
+    if (!selectedCourse) return;
+    try {
+      if (sessionStorage.getItem('zk_flow_expired_notice') === '1') {
+        setExpiredNotice(true);
+        sessionStorage.removeItem('zk_flow_expired_notice');
+      }
+    } catch {}
+  }, [selectedCourse?.id]);
 
   const activeTab = cfg.courseTabs?.find((t: any) => t.id === courseTab) || cfg.courseTabs?.[0];
   const allCourses = (activeTab?.courses || []).filter((c: any) => c.active !== false).map((c: any) => ({ ...c, tabId: activeTab?.id }));
@@ -281,6 +292,13 @@ export default function CoursesPage({ app }: { app: any }) {
           <title>{(lang === 'en' ? (selectedCourse.titleEn || selectedCourse.title) : selectedCourse.title)} | {lang === 'en' ? 'Farzandman' : 'فرزند من'}</title>
         </Helmet>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 14px 80px' }}>
+          {expiredNotice && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 960, margin: '0 auto 12px', padding: '11px 13px', background: '#FEF3C7', border: '1.5px solid #F59E0B', borderRadius: 14, color: '#92400E', fontSize: 12.5, lineHeight: 1.9 }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>
+              <span style={{ flex: 1 }}>{lang === 'en' ? "Your time to complete the registration has expired. Please plan your time more carefully before trying again to avoid any restrictions in the process." : 'مدت زمان شما برای ثبت دوره به اتمام رسید؛ برای ثبت مجدد دوره، لطفاً روی زمان‌بندی خود دقت کنید تا محدودیتی برای شما در روند ثبت دوره ایجاد نشود.'}</span>
+              <button type="button" onClick={() => setExpiredNotice(false)} aria-label={lang === 'en' ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#92400E', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '2px 4px', fontFamily: 'inherit' }}>×</button>
+            </div>
+          )}
           <CourseDetailView
             course={selectedCourse}
             T={T}

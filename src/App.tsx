@@ -1375,13 +1375,28 @@ const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data
   if(flowExpiredRef.current)return;
   markIncomplete('User left the course registration incomplete (15-minute timer expired).','کاربر روند ثبت دوره را نیمه‌کاره رها کرد (اتمام تایمر ۱۵ دقیقه‌ای).');
   try{if(course.selected?.id)sessionStorage.setItem('zk_course_detail',String(course.selected.id));}catch{}
+  try{sessionStorage.setItem('zk_flow_expired_notice','1');}catch{}
   setView('courses');
   try{navigate('/courses');}catch{}
  };
  expireCourseFlowRef.current=expireCourseFlow;
  useEffect(()=>{if(!flowDeadline)return;const iv=window.setInterval(()=>{if(Date.now()>=flowDeadline)expireCourseFlowRef.current();},1000);return()=>window.clearInterval(iv);},[flowDeadline]);
- // رها کردن زودهنگام: اگر کاربر بدون تکمیل از روند خارج شد (دکمه بازگشت/منو)، فرم ناقص ثبت شود
- useEffect(()=>{if(!flowDeadline)return;if(timerViews.includes(view))return;if(view==='course-done'||view==='payment-verify')return;markIncomplete('User left the course registration before completing it.','کاربر پیش از تکمیل، روند ثبت دوره را ترک کرد.');},[view,flowDeadline]);
+ // رها کردن زودهنگام: با تأخیر و چک مجدد location تا ناوبری SPA جا بیفتد (باگ پاک شدن لحظه‌ای تایمر)
+ useEffect(()=>{
+  if(!flowDeadline)return;
+  if(timerViews.includes(view))return;
+  if(view==='course-done'||view==='payment-verify')return;
+  const t=window.setTimeout(()=>{
+   try{
+    const p=(window.location.pathname||'').replace(/\/+$/,'')||'/';
+    const v=pathToView[p]||'home';
+    if(!timerViews.includes(v)&&v!=='course-done'&&v!=='payment-verify'){
+     markIncomplete('User left the course registration before completing it.','کاربر پیش از تکمیل، روند ثبت دوره را ترک کرد.');
+    }
+   }catch{}
+  },800);
+  return()=>window.clearTimeout(t);
+ },[view,flowDeadline]);
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
  const app:any={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:any[],code:string)=>findTabByCode(tabs,code))};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
