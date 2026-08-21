@@ -303,6 +303,45 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const exportExcel=()=>{const keys=Object.keys(rows[0]||{نام:'',شماره:'',موضوع:'',کشور:'',دوره:'',پرداخت:'',وضعیت:'',تاریخ:''});const html=`<html><meta charset="utf-8"><body><table border="1"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${String((r as any)[k]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`;download('zeynalikid-export.xls',html,'application/vnd.ms-excel;charset=utf-8')};
   const exportPhones=()=>download('phones.txt',filtered.map(s=>s.fullPhone).filter(Boolean).join('\n'));
   const exportWhatsApp=()=>{const links=filtered.map(s=>digits(s.fullPhone||'')).filter(Boolean).map(n=>`<p><a href="https://wa.me/${n}">${n}</a></p>`).join('');download('whatsapp-links.html',`<html><meta charset="utf-8"><body>${links}</body></html>`,'text/html;charset=utf-8')};
+  // ─── بکاپ کامل: دانلود ZIP شامل تمام بخش‌ها و فایل‌های رسانه‌ای ───
+  const downloadFullBackup=async()=>{
+   try{
+    const JSZip=(await import('jszip')).default;
+    const zip=new JSZip();
+    zip.file('settings.json', JSON.stringify(cfg, null, 2));
+    zip.file('submissions.json', JSON.stringify(subs, null, 2));
+    try{
+     const { adminFetchReviews, adminFetchUserQuestions } = await import('../lib/adminApi');
+     const [rv, qs] = await Promise.all([
+      adminFetchReviews({ limit: 1000 }).catch(()=>null),
+      adminFetchUserQuestions({ limit: 1000 }).catch(()=>null),
+     ]);
+     zip.file('reviews.json', JSON.stringify(rv?.reviews || rv || [], null, 2));
+     zip.file('questions.json', JSON.stringify(qs?.questions || qs || [], null, 2));
+    }catch{}
+    const seen=new Set<string>(); const urls:string[]=[];
+    const isMedia=(s:string)=>/^https?:\/\//i.test(s)&&(/\.(png|jpe?g|webp|gif|svg|avif|pdf|mp4|mp3|webm|ogg|wav)(\?.*)?$/i.test(s)||/\/storage\/v1\/object\/public\//i.test(s));
+    const walk=(v:any)=>{ if(!v)return; if(typeof v==='string'){ if(isMedia(v)&&!seen.has(v)){seen.add(v);urls.push(v);} return;} if(Array.isArray(v)){v.forEach(walk);return;} if(typeof v==='object'){for(const k of Object.keys(v)){try{walk((v as any)[k]);}catch{}}} };
+    walk(cfg); subs.forEach(walk);
+    const media=zip.folder('media'); const list:any[]=[]; let saved=0;
+    for(let i=0;i<urls.length;i++){
+     const u=urls[i];
+     try{
+      const res=await fetch(u,{mode:'cors'});
+      if(res.ok){ const blob=await res.blob(); if(blob&&blob.size>0){ const nm=(u.split('/').pop()||('file'+i)).split('?')[0].slice(0,80)||('file'+i); media&&media.file(i+'-'+nm, blob); saved++; list.push({url:u,saved:true}); continue; } }
+     }catch{}
+     list.push({url:u,saved:false});
+    }
+    zip.file('images-list.json', JSON.stringify({total:urls.length, saved, items:list}, null, 2));
+    const blob=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a'); const url=URL.createObjectURL(blob);
+    a.href=url; a.download='backup-'+new Date().toISOString().slice(0,10)+'.zip';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    alert('بکاپ کامل ساخته شد.\nبخش‌ها: تنظیمات / فرم‌ها و سفارشات / نظرات / سوالات / فایل‌های رسانه‌ای\nفایل‌های دانلودشده: '+saved+' — آدرس‌های دانلودنشده در images-list.json ذخیره شد.');
+   }catch(e:any){ alert('خطا در ساخت بکاپ: '+(e?.message||e)); }
+  };
+
   const changeStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:logChange(x,`تغییر وضعیت به ${status}`)}:x)),[setSubs]);
   // باز/بستن کارت فرم — callback پایدار تا React.memo کارت‌ها بی‌دلیل رندر نشود
   const toggleOpenForm=useCallback((id:any)=>{setExpId(expIdRef.current===id?null:id)},[]);
@@ -371,12 +410,19 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   .admin-main input[type="color"]:focus{scroll-margin-top:120px;scroll-margin-bottom:24px}
   .admin-main table{max-width:100%;overflow-x:auto;display:block}
   .admin-main .filter-group{min-width:0}
+  .zkad-storage-banner h3{word-break:break-word;line-height:1.7}
+  .zkad-storage-actions button{white-space:normal;min-width:0}
+  @media(max-width:640px){
+    .zkad-storage-actions{width:100%;display:grid!important;grid-template-columns:1fr 1fr;gap:6px}
+    .zkad-storage-actions button{width:100%}
+    .zkad-storage-banner{padding:12px 14px}
+  }
   `}</style><AdminLayout lang={lang} groups={navGroups} active={aTab} onNavigate={(id:string)=>{setATab(id);setEditCfg(JSON.parse(JSON.stringify(cfg)))}} onLogout={onLogout} onHome={goHome} version="1.0.0">
   <div className="admin-main"><div style={{maxWidth:1100,margin:'0 auto'}}>{aTab!=='dashboard'&&aTab!=='data'&&<div className="zkad-page-head"><div><h2>{(navGroups.find(g=>g.id===aTab||(g.items||[]).some(i=>i.id===aTab))||{}).label||''}</h2><p>{({userQuestions:'مدیریت سوالات و درخواست‌های تماس مخاطبین (بخش سوال دارم) همراه با شماره تماس، ویس و متن سوال',settings:'پیکربندی فرم‌ها، فیلدها و رفتار سایت',content:'متن‌های صفحات، سوالات متداول و ترجمه‌ها',consultants:'مدیریت مشاورین، لینک‌های ارجاع اختصاصی، اطلاعات بانکی/کیف پول و نمایش در صفحه درباره ما و صفحه هوم',contacts:'شماره‌ها، شبکه‌های اجتماعی و راه‌های ارتباطی',courses:'تب‌ها، دوره‌ها و واحد پول',featured:'بخش دوره‌های ویژه صفحه اصلی',tagged:'دوره‌های ویژه با تگ',trustbox:'جملات اعتمادساز باکس صفحه اصلی',trust:'جملات صفحات موفقیت',shipping:'روش‌های ارسال، حساب‌های بانکی و درگاه‌ها',analytics:'بازدید صفحات به تفکیک زمان',security:'شماره تماس و رمز عبور پنل',products:'محصولات فروشگاه',highlights:'هایلایت استوری‌ها',licenses:'مجوزها و گواهی‌ها',services:'خدمات و کاروسل صفحه اصلی',images:'تصاویر صفحه اصلی و فرم مشاوره',design:'دیزاین هر بخش از سایت',themes:'تم‌های پیش‌فرض و overrides',trash:'موارد حذف‌شده قابل بازیابی'} as any)[aTab]||''}</p></div></div>}
   {aTab==='dashboard'&&<><div className="zkad-page-head"><div><h2>داشبورد</h2><p>نمای کلی عملکرد و درخواست‌های امروز</p></div><button type="button" className="zkad-head-btn" onClick={goHome}><ZkHomeIcon size={14}/> بازدید از سایت</button></div>
 
 {/* بنر هوشمند پایش و هشدار ظرفیت دیتابیس و استوریج (هایلایت قرمز بولد در صورت کمبود فضا) */}
-<div style={{
+<div className="zkad-storage-banner" style={{
   background: isStorageWarning ? '#fef2f2' : 'var(--zkad-card)',
   border: `2px solid ${isStorageWarning ? '#dc2626' : 'var(--zkad-brd)'}`,
   borderRadius: 16,
@@ -385,8 +431,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   boxShadow: isStorageWarning ? '0 0 20px rgba(220, 38, 38, 0.22)' : 'var(--zkad-neu-out)',
   transition: 'all .3s ease'
 }}>
-  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:8}}>
-    <div style={{display:'flex', alignItems:'center', gap:8}}>
+  <div className="zkad-storage-head" style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10, marginBottom:8}}>
+    <div style={{display:'flex', alignItems:'center', gap:8, minWidth:0, flex:'1 1 200px'}}>
       <span style={{fontSize:20}}>{isStorageWarning ? '⚠️' : '💾'}</span>
       <div>
         <h3 style={{margin:0, fontSize:14.5, fontWeight:800, color: isStorageWarning ? '#b91c1c' : 'var(--zkad-ttl)'}}>
@@ -401,7 +447,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
         </p>
       </div>
     </div>
-    <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+    <div className="zkad-storage-actions" style={{display:'flex', gap:6, flexWrap:'wrap'}}>
       <button
         type="button"
         className="zkad-toolbtn"
@@ -433,7 +479,10 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
         🧹 پاک‌سازی فیش‌های قدیمی
       </button>
       <button type="button" className="zkad-toolbtn" onClick={exportExcel}>
-        📥 دانلود بک‌آپ Excel
+        📥 بک‌آپ Excel
+      </button>
+      <button type="button" className="zkad-toolbtn" style={{background:'#e0f2fe', color:'#0369a1', borderColor:'#7dd3fc', fontWeight:800}} onClick={downloadFullBackup}>
+        🗜️ بک‌آپ کامل (ZIP)
       </button>
     </div>
   </div>

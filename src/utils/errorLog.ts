@@ -61,13 +61,33 @@ export function reportError(kind: string, message: string, stack?: string): void
 
 export function initErrorLogging(): void {
   try {
-    const onError = (e: ErrorEvent) => reportError('error', e.message || '', e.error?.stack || '');
+    // ─── رفع خطای «Failed to fetch dynamically imported module» ───
+    // بعد از هر دیپلوی، هش نام چانک‌های lazy تغییر می‌کند؛ مرورگری که نسخهٔ قدیمی را
+    // در حافظه دارد، چانک قدیمی را درخواست می‌کند که دیگر روی سرور نیست → این خطا.
+    // راه‌حل استاندارد: یک‌بار reload تا HTML/چانک‌های تازه بارگذاری شوند.
+    let chunkReloaded = false;
+    const reloadOnce = () => {
+      if (chunkReloaded) return;
+      chunkReloaded = true;
+      try { window.setTimeout(() => { try { location.reload(); } catch { /* بی‌صدا */ } }, 400); } catch { /* بی‌صدا */ }
+    };
+    const isChunkError = (m?: string) => /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|dynamically imported module/i.test(String(m || ''));
+
+    const onError = (e: ErrorEvent) => {
+      if (isChunkError(e.message)) { reloadOnce(); return; }
+      reportError('error', e.message || '', e.error?.stack || '');
+    };
     const onRejection = (e: PromiseRejectionEvent) => {
       const r: any = e.reason;
-      reportError('unhandledrejection', String(r?.message || r || ''), r?.stack || '');
+      const msg = String(r?.message || r || '');
+      if (isChunkError(msg)) { reloadOnce(); return; }
+      reportError('unhandledrejection', msg, r?.stack || '');
     };
     window.addEventListener('error', onError);
     window.addEventListener('unhandledrejection', onRejection);
+    try {
+      window.addEventListener('vite:preloadError', ((ev: any) => { try { ev?.preventDefault?.(); } catch {} reloadOnce(); }) as EventListener);
+    } catch { /* نادیده بگیر */ }
   } catch {
     /* کاملاً بی‌صدا */
   }

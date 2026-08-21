@@ -9,7 +9,7 @@
  *  - POST/PUT/DELETE: NEVER intercepted.
  */
 
-const VERSION = 'zkid-admin-v6-2026-08-13-compact-checkboxes';
+const VERSION = 'zkid-admin-v7-2026-08-21-chunk-reload';
 const STATIC_CACHE = 'admin-static-' + VERSION;
 const NAV_CACHE = 'admin-nav-' + VERSION;
 

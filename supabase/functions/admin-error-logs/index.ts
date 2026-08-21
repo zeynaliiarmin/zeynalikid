@@ -33,6 +33,16 @@ serve(async (req) => {
 
   try {
     const supabase = getSupabaseAdmin();
+
+    // پاک‌سازی همهٔ خطاها (فقط ادمین)
+    if (body?.action === 'clear') {
+      const { error: delErr } = await supabase.from("error_logs").delete().neq("id", -1);
+      if (delErr) {
+        return jsonResponse({ error: "خطا در پاک‌سازی لاگ‌ها" }, 500, origin);
+      }
+      return jsonResponse({ ok: true, cleared: true }, 200, origin);
+    }
+
     const limit = Math.min(100, Math.max(1, Number(body?.limit) || 50));
     const { data, error } = await supabase
       .from("error_logs")
