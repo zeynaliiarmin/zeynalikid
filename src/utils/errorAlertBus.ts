@@ -27,61 +27,61 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
   receipt: {
     fa: {
       title: 'خطا در بارگذاری فیش',
-      message: 'فیش واریزی شما بارگذاری نشد. لطفاً تصویر فیش را از طریق پیامک یا واتساپ به شماره پشتیبانی ارسال کنید و موضوع را گزارش دهید.',
+      message: 'ثبت‌نام شما بدون فیش واریزی نهایی نمی‌شود و جایگاهتان در دوره ممکن است از دست برود؛ همین حالا فیش را از طریق پیامک یا واتساپ برای پشتیبانی ارسال کنید تا ثبت‌نامتان کامل شود.',
     },
     en: {
       title: 'Receipt upload error',
-      message: 'Your payment receipt could not be uploaded. Please send the receipt image to our support number via SMS or WhatsApp and report the issue.',
+      message: "Your enrollment can't be finalized without the payment receipt and you may lose your spot. Send the receipt to our support number via SMS or WhatsApp right away to complete your registration.",
     },
   },
   tongue: {
     fa: {
       title: 'خطا در بارگذاری عکس',
-      message: 'عکس زبان فرزند شما بارگذاری نشد. برای تکمیل ثبت، لطفاً با پشتیبانی تماس بگیرید و مشکل را گزارش دهید.',
+      message: 'بدون عکس زبان، ارزیابی فرزندتان شروع نمی‌شود و برنامهٔ اختصاصی او به تأخیر می‌افتد؛ با یک تماس کوتاه با پشتیبانی، ثبت عکس را کامل کنید.',
     },
     en: {
       title: 'Photo upload error',
-      message: "Your child's tongue photo could not be uploaded. Please contact support to complete your registration and report the issue.",
+      message: "Without the tongue photo, your child's assessment can't begin and their personalized plan will be delayed. Call support to complete the photo upload.",
     },
   },
   review: {
     fa: {
       title: 'خطا در ثبت نظر',
-      message: 'نظر شما ثبت نشد. لطفاً با پشتیبانی تماس بگیرید و مشکل را گزارش دهید.',
+      message: 'نظر شما راهنمای صدها والد دیگر برای انتخاب درست است؛ برای اینکه تجربهٔ شما به آن‌ها کمک کند، همین حالا با پشتیبانی تماس بگیرید.',
     },
     en: {
       title: 'Review error',
-      message: 'Your review could not be submitted. Please contact support and report the issue.',
+      message: 'Your review guides hundreds of other parents toward the right choice. Call support so your experience can help them too.',
     },
   },
   question: {
     fa: {
       title: 'خطا در ثبت سوال',
-      message: 'سوال شما ثبت نشد. لطفاً با پشتیبانی تماس بگیرید و مشکل را گزارش دهید.',
+      message: 'کارشناسان ما هر روز به ده‌ها سوال والدین پاسخ می‌دهند؛ نگذارید سوال شما بی‌پاسخ بماند — همین حالا با پشتیبانی تماس بگیرید.',
     },
     en: {
       title: 'Question error',
-      message: 'Your question could not be submitted. Please contact support and report the issue.',
+      message: "Our specialists answer dozens of parent questions every day. Don't let yours go unanswered — call support now.",
     },
   },
   track: {
     fa: {
       title: 'مشکل در صفحه پیگیری',
-      message: 'در ورود به صفحه پیگیری مشکلی پیش آمد. لطفاً با پشتیبانی تماس بگیرید و مشکل را گزارش دهید.',
+      message: 'وضعیت ثبت‌نام یا دورهٔ فرزندتان در چند ثانیه قابل بررسی است؛ همین حالا با پشتیبانی تماس بگیرید تا کارشناس وضعیت را برایتان اعلام کند.',
     },
     en: {
       title: 'Tracking error',
-      message: 'Something went wrong while opening the tracking page. Please contact support and report the issue.',
+      message: "Your registration status can be checked in seconds. Call support and our specialist will confirm it for you right away.",
     },
   },
   pdf: {
     fa: {
       title: 'خطا در دانلود فایل',
-      message: 'دانلود فایل انجام نشد. لطفاً با پشتیبانی تماس بگیرید تا فایل برای شما ارسال شود.',
+      message: 'این فایل برنامهٔ اختصاصی فرزند شماست و نباید از دست برود؛ برای دریافت فوری و جلوگیری از تأخیر در شروع برنامه، با پشتیبانی تماس بگیرید.',
     },
     en: {
       title: 'Download error',
-      message: 'The file download failed. Please contact support and we will send the file to you.',
+      message: "This file contains your child's personalized plan and shouldn't be missed. Call support to receive it immediately and avoid any delay.",
     },
   },
 };
