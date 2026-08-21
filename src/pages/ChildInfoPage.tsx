@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
+import { triggerErrorAlert } from '../utils/errorAlertBus';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -160,6 +161,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
    setPreviewMap(m=>({...m,[url]:blobUrl}));
    onChange([...tonguePhotos,url]);
   }catch(e:any){
+   triggerErrorAlert('tongue');
    setErr(e?.message||(lang==='en'?'Upload failed.':'آپلود انجام نشد.'));
   }finally{
    setTimeout(()=>setProgress(null),400);

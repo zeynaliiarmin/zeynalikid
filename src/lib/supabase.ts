@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAdminSessionToken } from '../utils/adminSession';
 import { maskReviewPhone } from '../utils/reviewPresentation';
 import { reportError } from '../utils/errorLog';
+import { triggerErrorAlert } from '../utils/errorAlertBus';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -430,7 +431,7 @@ export const submitUserQuestion = async (
     return newQ;
   } catch (err) {
     console.warn('Could not insert question to Supabase, saving to localStorage:', err);
-    reportError('ask_question', 'Could not insert question to Supabase', String((err as any)?.message||err));
+    reportError('ask_question', 'Could not insert question to Supabase', String((err as any)?.message||err));triggerErrorAlert('question');
     const list = getLSQuestions();
     setLSQuestions([newQ, ...list]);
     return newQ;
@@ -648,7 +649,7 @@ export const submitReview = async (
     if (error) throw error;
     return newR;
   } catch (err) {
-    reportError('submit_review', 'Could not insert review to Supabase', String((err as any)?.message||err));
+    reportError('submit_review', 'Could not insert review to Supabase', String((err as any)?.message||err));triggerErrorAlert('review');
     const list = getLSReviews();
     setLSReviews([newR, ...list]);
     return newR;

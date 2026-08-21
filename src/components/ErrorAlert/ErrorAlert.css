@@ -1,0 +1,170 @@
+/* کادر هشدار خطا — قرمز مناسب، موبایل‌فرست، RTL/LTR، با انیمیشن ورود ملایم */
+.zk-err-alert {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(430px, calc(100% - 28px));
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 44px 14px 14px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #DC2626 0%, #B91C1C 100%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 20px 55px rgba(185, 28, 28, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-family: var(--zk-font, 'Vazirmatn', 'Tahoma', Arial, sans-serif);
+  box-sizing: border-box;
+  animation: zk-err-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  -webkit-animation: zk-err-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.zk-err-alert--out {
+  animation: zk-err-out 0.26s ease both;
+  -webkit-animation: zk-err-out 0.26s ease both;
+}
+
+.zk-err-icon {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: zk-err-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+  -webkit-animation: zk-err-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
+.zk-err-close {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s ease;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.zk-err-close:hover { background: rgba(255, 255, 255, 0.28); }
+
+.zk-err-body {
+  padding-inline-start: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.zk-err-title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.zk-err-message {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.zk-err-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.zk-err-support-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.zk-err-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: #B91C1C;
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: none;
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.zk-err-phone:active { transform: scale(0.97); }
+
+.zk-err-phone--muted {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: none;
+}
+
+@keyframes zk-err-in {
+  from { opacity: 0; transform: translate(-50%, -18px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@-webkit-keyframes zk-err-in {
+  from { opacity: 0; -webkit-transform: translate(-50%, -18px) scale(0.96); }
+  to { opacity: 1; -webkit-transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes zk-err-out {
+  from { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -14px) scale(0.97); }
+}
+@-webkit-keyframes zk-err-out {
+  from { opacity: 1; -webkit-transform: translate(-50%, 0) scale(1); }
+  to { opacity: 0; -webkit-transform: translate(-50%, -14px) scale(0.97); }
+}
+
+@keyframes zk-err-pop {
+  0% { transform: scale(0); }
+  55% { transform: scale(1.22); }
+  75% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+@-webkit-keyframes zk-err-pop {
+  0% { -webkit-transform: scale(0); }
+  55% { -webkit-transform: scale(1.22); }
+  75% { -webkit-transform: scale(0.92); }
+  100% { -webkit-transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zk-err-alert,
+  .zk-err-icon {
+    animation: none !important;
+    -webkit-animation: none !important;
+  }
+}

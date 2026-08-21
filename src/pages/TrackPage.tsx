@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import GlassTopBar from '../components/GlassTopBar';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { reportError } from '../utils/errorLog';
+import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { PhoneIcon, PinIcon, ChatIcon, productVectorIcon } from '../components/Icons';
 
 const getLS=(k:string,f:any)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}};
@@ -59,7 +60,7 @@ export default function TrackPage({app}:{app:any}){
       }
     } catch (e) {
       console.error('Supabase lookup failed:', e);
-      reportError('track_lookup', 'Supabase lookup failed', String((e as any)?.message||e));
+      reportError('track_lookup', 'Supabase lookup failed', String((e as any)?.message||e));triggerErrorAlert('track');
     }
   }
   
@@ -91,7 +92,7 @@ export default function TrackPage({app}:{app:any}){
      if(!response.ok){setErr(data?.error||(lang==='en'?'Not found.':'یافت نشد.'));return}
      setResult({...data,_trackingCodeRaw:c,_phoneRaw:ph});setIsGuest(false);setRtab('edit');return
     }catch(e){
-     reportError('track_search', 'track-submission failed, falling back to local', String((e as any)?.message||e));
+     reportError('track_search', 'track-submission failed, falling back to local', String((e as any)?.message||e));triggerErrorAlert('track');
      const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')} return
     }
    }
@@ -187,7 +188,7 @@ export default function TrackPage({app}:{app:any}){
     setCorrectiveMsg(lang==='en'?'Saved successfully':'با موفقیت ذخیره شد');
    }
   }catch(e){
-   reportError('track_corrective', 'Could not save corrective info', String((e as any)?.message||e));
+   reportError('track_corrective', 'Could not save corrective info', String((e as any)?.message||e));triggerErrorAlert('track');
    setCorrectiveMsg(lang==='en'?'Could not save.':'ذخیره انجام نشد.');
   }finally{
    setCorrectiveSaving(false);
@@ -295,8 +296,8 @@ export default function TrackPage({app}:{app:any}){
    </div>
    {/* اصلاح ۶: لینک دانلود فایل PDF طریقه مصرف/برنامه غذایی — فقط برای همان کاربر (نتیجه استعلام‌شده) نمایش داده می‌شود */}
    {!isGuest && (result.usagePdfUrl||result.mealPdfUrl)&&<div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
-    {result.usagePdfUrl&&<a href={result.usagePdfUrl} target="_blank" rel="noreferrer" style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:hexTint(acc,.2),color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download usage PDF':'دانلود PDF طریقه مصرف'}</a>}
-    {result.mealPdfUrl&&<a href={result.mealPdfUrl} target="_blank" rel="noreferrer" style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:hexTint(acc,.2),color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download meal plan PDF':'دانلود PDF برنامه غذایی'}</a>}
+    {result.usagePdfUrl&&<a href={result.usagePdfUrl} target="_blank" rel="noreferrer" onClick={(e:any)=>{const u=result.usagePdfUrl;try{fetch(u,{method:"HEAD"}).then((rr)=>{if(rr.status>=400){e.preventDefault();triggerErrorAlert("pdf")}}).catch(()=>{})}catch{}}} style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:hexTint(acc,.2),color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download usage PDF':'دانلود PDF طریقه مصرف'}</a>}
+    {result.mealPdfUrl&&<a href={result.mealPdfUrl} target="_blank" rel="noreferrer" onClick={(e:any)=>{const u=result.mealPdfUrl;try{fetch(u,{method:"HEAD"}).then((rr)=>{if(rr.status>=400){e.preventDefault();triggerErrorAlert("pdf")}}).catch(()=>{})}catch{}}} style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:hexTint(acc,.2),color:'#fff',fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download meal plan PDF':'دانلود PDF برنامه غذایی'}</a>}
    </div>}
    {!isGuest && result.userNotes&&<div style={{...glassCard,padding:'9px 11px',fontSize:12,lineHeight:2,whiteSpace:'pre-wrap',marginTop:10,color:lightText}}><b style={{fontSize:11.5,color:'#fff',marginBottom:3,display:'flex',alignItems:'center',gap:6}}><PinIcon size={14} color={accLight} /> {lang==='en'?'Notes from the specialist':'نکات کارشناس برای شما'}</b>{result.userNotes}</div>}
    {!isGuest && result.corrective && <div style={{...glassCard,padding:'9px 11px',fontSize:12,lineHeight:1.9,marginTop:10,color:lightText}}><b style={{color:'#fff',marginBottom:4,display:'block'}}>{lang==='en'?'Corrective info':'اطلاعات اصلاحی'}</b><pre style={{whiteSpace:'pre-wrap',margin:0,fontFamily:'inherit',fontSize:11}}>{typeof result.corrective==='string'?result.corrective:JSON.stringify(result.corrective,null,2)}</pre></div>}

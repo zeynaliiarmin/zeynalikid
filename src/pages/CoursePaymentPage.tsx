@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import useExitGuard from '../hooks/useExitGuard';
 import { reportError } from '../utils/errorLog';
+import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { PaymentService } from '../services/payment/PaymentService';
 import { defaultSettings } from '../config/defaultSettings';
 
@@ -67,7 +68,7 @@ export default function CoursePaymentPage({app}:{app:any}){
    if(result.paymentUrl){window.location.href=result.paymentUrl}
   }catch(error:any){
    console.error('Gateway payment error:',error);
-   reportError('payment_gateway', 'Gateway payment error', String(error?.message||error));
+   reportError('payment_gateway', 'Gateway payment error', String(error?.message||error));triggerErrorAlert('registration');
    setToast(error?.message||'خطا در اتصال به درگاه پرداخت. لطفاً مجدداً تلاش کنید.');
    setTimeout(()=>setToast(''),5000);
   }finally{
@@ -82,7 +83,7 @@ export default function CoursePaymentPage({app}:{app:any}){
  useEffect(()=>{if(!course.payment?.bankId&&chosen)setCourse((c:any)=>({...c,payment:{...(c.payment||{}),bankId:chosen.id}}))},[chosen?.id]);
  const fallbackCopy=(value:string)=>{const ta=document.createElement('textarea');ta.value=value;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.top='-1000px';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');document.body.removeChild(ta);if(!ok)throw new Error('copy failed')};
  const copy=async(key:string,value:string,msg:string)=>{try{try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else fallbackCopy(value)}catch{fallbackCopy(value)}setCopied((c:any)=>({...c,[key]:true}));setToast(msg);setTimeout(()=>{setCopied((c:any)=>({...c,[key]:false}));setToast('')},3000)}catch{setToast('کپی انجام نشد؛ لطفاً شماره را دستی کپی کنید');setTimeout(()=>setToast(''),3000)}};
- const submitPayment=()=>{const pay=course.payment||{};const receiptText=receiptTextRef.current?.value||pay.receiptText||''; if(!pay.receipt&&!String(receiptText).trim()){setToast('لطفاً فیش واریزی را آپلود کنید یا متن پیامک را وارد کنید.');setTimeout(()=>setToast(''),3000);return}Promise.resolve(finalizeCourseRegistration({...pay,bankId:chosen?.id||pay.bankId,receiptText,receiptMethod:pay.receipt?'image':String(receiptText).trim()?'text':null})).catch((e:any)=>{console.error('finalize failed',e);reportError('payment_finalize','finalize failed',String(e?.message||e));setToast(lang==='en'?'An error occurred while submitting your information. Please contact support.':'خطایی در ثبت اطلاعات رخ داده است. لطفاً با پشتیبانی تماس بگیرید.');setTimeout(()=>setToast(''),6000)})};
+ const submitPayment=()=>{const pay=course.payment||{};const receiptText=receiptTextRef.current?.value||pay.receiptText||''; if(!pay.receipt&&!String(receiptText).trim()){setToast('لطفاً فیش واریزی را آپلود کنید یا متن پیامک را وارد کنید.');setTimeout(()=>setToast(''),3000);return}Promise.resolve(finalizeCourseRegistration({...pay,bankId:chosen?.id||pay.bankId,receiptText,receiptMethod:pay.receipt?'image':String(receiptText).trim()?'text':null})).catch((e:any)=>{console.error('finalize failed',e);reportError('payment_finalize','finalize failed',String(e?.message||e));triggerErrorAlert('registration');setToast(lang==='en'?'An error occurred while submitting your information. Please contact support.':'خطایی در ثبت اطلاعات رخ داده است. لطفاً با پشتیبانی تماس بگیرید.');setTimeout(()=>setToast(''),6000)})};
  const formatCard=(v:any)=>String(v||'').replace(/\s+/g,'').replace(/(.{4})/g,'$1 ').trim(); const formatIban=(v:any)=>{let s=String(v||'').replace(/\s+/g,''); const ir=/^IR/i.test(s); s=s.replace(/^IR/i,''); const d=s.replace(/[^0-9]/g,''); return (ir?'IR ':'')+d.replace(/([0-9]{2})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{2})/, '$1 $2 $3 $4 $5 $6 $7').trim();};
  // اصلاح ۶: رنگ کارت بانکی اکنون از b.color (مقدار انتخاب‌شده در پنل مدیریت — ShippingBankEditor) خوانده می‌شود؛
  // نام بانک دیگر برای تشخیص رنگ استفاده نمی‌شود تا با تغییر رنگ در تنظیمات، صفحه پرداخت هم‌زمان به‌روزرسانی شود.
@@ -146,7 +147,7 @@ export default function CoursePaymentPage({app}:{app:any}){
               setToast('عکس فیش با موفقیت ثبت شد');
               setTimeout(()=>setToast(''),2500);
             }catch(err:any){
-              reportError('receipt_upload', 'Receipt upload failed', String(err?.message||err));
+              reportError('receipt_upload', 'Receipt upload failed', String(err?.message||err));triggerErrorAlert('receipt');
               setToast(err?.message||'آپلود انجام نشد');
               setTimeout(()=>setToast(''),3500);
             }finally{
