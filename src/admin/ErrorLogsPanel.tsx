@@ -48,7 +48,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.9, margin: 0 }}>
-          خطاهای ثبت‌شدهٔ کاربران در سایت (به‌صورت خودکار، بدون هیچ دادهٔ حساس مثل شماره یا کارت). خطاهای قدیمی‌تر از ۳۰ روز خودکار پاک می‌شوند.
+          خطاهای ثبت‌شدهٔ کاربران در سایت (به‌صورت خودکار، بدون هیچ دادهٔ حساس مثل شماره یا کارت). خطاهای قدیمی‌تر از ۱۵ روز خودکار پاک می‌شوند.
         </p>
         <button type="button" onClick={load} disabled={loading} style={{ minHeight: 40, padding: '0 14px', borderRadius: 10, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>{loading ? 'در حال دریافت...' : 'به‌روزرسانی'}</button>
       </div>

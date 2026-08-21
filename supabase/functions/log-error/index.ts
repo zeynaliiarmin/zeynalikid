@@ -4,7 +4,7 @@
 //   • فیلتر دادهٔ حساس (شماره موبایل/کارت/شبا/ایمیل/توکن) قبل از ذخیره
 //   • محدودیت طول هر فیلد
 //   • فقط سرویس‌رول می‌تواند جدول error_logs را بخواند (RLS)
-//   • پاکسازی خودکار خطاهای قدیمی‌تر از ۳۰ روز
+//   • پاکسازی خودکار خطاهای قدیمی‌تر از ۱۵ روز
 // هرگز خطا را به کلاینت برنمی‌گرداند (همیشه ok:true) تا تجربهٔ کاربر مختل نشود.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -75,11 +75,11 @@ serve(async (req) => {
       console.error("log-error insert failed:", insErr.message);
     }
 
-    // پاکسازی خودکار: خطاهای قدیمی‌تر از ۳۰ روز (هر ~۵۰ گزارش یک‌بار اجرا می‌شود)
+    // پاکسازی خودکار: خطاهای قدیمی‌تر از ۱۵ روز (هر ~۵۰ گزارش یک‌بار اجرا می‌شود)
     cleanupCounter++;
     if (cleanupCounter % 50 === 0) {
       try {
-        const cutoff = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+        const cutoff = new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString();
         await supabase.from("error_logs").delete().lt("created_at", cutoff);
       } catch {
         /* نادیده بگیر — پاکسازی نباید ثبت خطا را بشکند */
