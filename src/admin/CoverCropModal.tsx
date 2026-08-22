@@ -1,17 +1,15 @@
 // تنظیم کادر کاور هایلایت (شبیه کراپ کاور اینستاگرام) — در یک مودال تمام‌صفحه
 //
-// مدل رندر: object-fit: cover + object-position: 50% 50% + transform: translate(dx,dy) scale(z)
-// مقدار ذخیره‌شده: coverPosition = "cx% cy%" (نقطهٔ تصویر در مرکز کادر) + coverZoom = z.
-// این دقیقاً همان چیزی است که CoverImage (سایت + پیش‌نمایش پنل) رندر می‌کند.
+// مدل رندر: تصویر با ابعاد صریح (cover × zoom) + جابه‌جایی به‌اندازهٔ «سرریز».
+// این مدل کادر را همیشه پُر نگه می‌دارد و هرگز ناحیهٔ سیاه ایجاد نمی‌کند
+// (برخلاف object-fit:cover + scale که تصویر را پیش از transform کراپ می‌کرد).
 //
-// رفتار حرکت (مهم):
-//   • درگ با یک انگشت = حرکت ۱:۱ و مطلق (بر اساس نقطهٔ شروع درگ، نه مقدار فعلی) → بدون پرش.
-//   • پینچ دو انگشت = زوم حول نقطهٔ وسط انگشت‌ها + جابه‌جایی هم‌زمان وسط → بدون پرش.
-//   • اسلایدر/اسکرول ماوس = زوم حول مرکز کادر.
-//   • محوری که سرریز ندارد، در زوم فعلی ثابت می‌ماند؛ با کمی زوم آزاد می‌شود تا به هر گوشه برسید.
+// مقدار ذخیره‌شده: coverPosition = "cx% cy%" (0..100) + coverZoom = z (1..3).
+// دقیقاً همان چیزی که CoverImage (سایت + پیش‌نمایش پنل) رندر می‌کند.
 //
 // ⚠️ این کامپوننت باید در ماژول مستقل (خارج از بدنهٔ AdminPanel) بماند تا remount نشود.
 import { useEffect, useRef, useState } from 'react';
+import { coverGeometry } from '../components/CoverImage';
 
 const COVER_FRAME = 280;
 const MAX_ZOOM = 3;
@@ -40,12 +38,12 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
   const H = img?.naturalHeight || 1;
   const coverScale = Math.max(COVER_FRAME / W, COVER_FRAME / H);
 
-  // بازهٔ مجاز مرکز تصویر (درصد) در زوم داده‌شده، تا کادر همیشه پر بماند
+  // بازهٔ مجاز مرکز تصویر: اگر در آن محور سرریز وجود دارد، 0..100 آزاد است؛
+  // در غیر این صورت (تصویر دقیقاً منطبق) فقط ۵۰.
   const rangeFor = (size: number, zv: number): { lo: number; hi: number } => {
     const scaled = size * coverScale * zv;
     if (scaled <= COVER_FRAME) return { lo: 50, hi: 50 };
-    const lo = 100 * (COVER_FRAME / 2) / scaled;
-    return { lo, hi: 100 - lo };
+    return { lo: 0, hi: 100 };
   };
 
   useEffect(() => {
@@ -90,17 +88,15 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
    commit(cxRef.current, cyRef.current, zv);
   };
 
-  // درگ مطلق: از نقطهٔ شروع (startCx/startCy) با جابه‌جایی کل (dx,dy) — بدون جمع تصاعدی
+  // درگ مطلق: از نقطهٔ شروع با جابه‌جایی کل — حساسیت بر اساس سرریز (۱ پیکسل انگشت = ۱ پیکسل تصویر)
   const applyDrag = (startCx: number, startCy: number, dx: number, dy: number) => {
-   const scaledW = W * coverScale * zRef.current;
-   const scaledH = H * coverScale * zRef.current;
-   commit(startCx - (dx * 100) / scaledW, startCy - (dy * 100) / scaledH, zRef.current);
+   const g = coverGeometry(W, H, 50, 50, zRef.current, COVER_FRAME);
+   const nx = g.overflowX > 0 ? startCx - (dx * 100) / g.overflowX : startCx;
+   const ny = g.overflowY > 0 ? startCy - (dy * 100) / g.overflowY : startCy;
+   commit(nx, ny, zRef.current);
   };
 
-  const reset = () => {
-   const rx = rangeFor(W, 1); const ry = rangeFor(H, 1);
-   commit(50, 50, 1);
-  };
+  const reset = () => commit(50, 50, 1);
 
   const onPointerDown = (e: React.PointerEvent) => {
    if (!img || !frameRef.current) return;
@@ -134,14 +130,14 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
     const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
     const midX = (pts[0].x + pts[1].x) / 2;
     const midY = (pts[0].y + pts[1].y) / 2;
-    const nz = pinch.current.z * (dist / pinch.current.dist);
-    // زوم + جابه‌جایی وسط انگشت‌ها به‌صورت مطلق (از مقادیر شروع پینچ)
-    zRef.current = clamp(nz, 1, MAX_ZOOM);
-    const scaledW = W * coverScale * zRef.current;
-    const scaledH = H * coverScale * zRef.current;
-    const rx = rangeFor(W, zRef.current); const ry = rangeFor(H, zRef.current);
-    cxRef.current = clamp(pinch.current.cx - ((midX - pinch.current.midX) * 100) / scaledW, rx.lo, rx.hi);
-    cyRef.current = clamp(pinch.current.cy - ((midY - pinch.current.midY) * 100) / scaledH, ry.lo, ry.hi);
+    const nz = clamp(pinch.current.z * (dist / pinch.current.dist), 1, MAX_ZOOM);
+    zRef.current = nz;
+    const g = coverGeometry(W, H, 50, 50, nz, COVER_FRAME);
+    const rx = rangeFor(W, nz); const ry = rangeFor(H, nz);
+    const nx = g.overflowX > 0 ? pinch.current.cx - ((midX - pinch.current.midX) * 100) / g.overflowX : pinch.current.cx;
+    const ny = g.overflowY > 0 ? pinch.current.cy - ((midY - pinch.current.midY) * 100) / g.overflowY : pinch.current.cy;
+    cxRef.current = clamp(nx, rx.lo, rx.hi);
+    cyRef.current = clamp(ny, ry.lo, ry.hi);
     setZ(zRef.current); setCx(cxRef.current); setCy(cyRef.current);
     return;
    }
@@ -172,8 +168,7 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
    onClose();
   };
 
-  const dx = (0.5 - cx / 100) * W * coverScale * z;
-  const dy = (0.5 - cy / 100) * H * coverScale * z;
+  const g = coverGeometry(W, H, cx, cy, z, COVER_FRAME);
 
   return (
    <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9800, background: 'rgba(15,23,42,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
@@ -193,7 +188,7 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
      >
       {img ? (
        <img src={src} alt="" referrerPolicy="no-referrer" draggable={false}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 50%', transform: `translate(${dx}px, ${dy}px) scale(${z})`, transformOrigin: '50% 50%', pointerEvents: 'none', display: 'block' }} />
+        style={{ position: 'absolute', left: '50%', top: '50%', width: `${g.contentW}px`, height: `${g.contentH}px`, maxWidth: 'none', maxHeight: 'none', objectFit: 'cover', objectPosition: '50% 50%', transform: `translate(-50%, -50%) translate(${g.shiftX}px, ${g.shiftY}px)`, transformOrigin: '0 0', pointerEvents: 'none', display: 'block' }} />
       ) : loadError ? (
        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', fontSize: 12, padding: 12, textAlign: 'center' }}>تصویر بارگذاری نشد — لینک کاور را بررسی کنید</div>
       ) : (

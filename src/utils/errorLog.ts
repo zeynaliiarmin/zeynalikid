@@ -71,7 +71,7 @@ export function initErrorLogging(): void {
       chunkReloaded = true;
       try { window.setTimeout(() => { try { location.reload(); } catch { /* بی‌صدا */ } }, 400); } catch { /* بی‌صدا */ }
     };
-    const isChunkError = (m?: string) => /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|dynamically imported module/i.test(String(m || ''));
+    const isChunkError = (m?: string) => /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|dynamically imported module|reading 'default'|cannot read properties of undefined/i.test(String(m || ''));
 
     const onError = (e: ErrorEvent) => {
       if (isChunkError(e.message)) { reloadOnce(); return; }
