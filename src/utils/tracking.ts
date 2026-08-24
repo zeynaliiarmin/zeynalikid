@@ -21,6 +21,17 @@ export const generateTrackingCode = (digitCount: number = 5): string => {
   return `ZK${num}`;
 };
 
+const SECURE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const generateSecureTrackingCode=(existingCodes:string[]=[],length=16):string=>{
+  const seen=new Set(existingCodes.map(code=>String(code).toUpperCase()));
+  for(let attempt=0;attempt<20;attempt++){
+    const bytes=crypto.getRandomValues(new Uint8Array(Math.max(12,Math.min(20,length))));
+    const code=`ZK-${Array.from(bytes,b=>SECURE_ALPHABET[b%SECURE_ALPHABET.length]).join('')}`;
+    if(!seen.has(code))return code;
+  }
+  throw new Error('Could not generate a unique tracking code');
+};
+
 /** استخراج بخش عددی/بدنه از کد پیگیری */
 export const extractTrackingNumber = (code: string): string => {
   return String(code || '').replace(/^ZK-?/i, '');
@@ -35,8 +46,7 @@ export const isValidTrackingCode = (code: string, digitCount: number = 5): boole
 };
 
 /** اعتبارسنجی همه فرمت‌های پشتیبانی‌شده: ZK + ۴ تا ۸ رقم یا فرمت قدیمی ZK-XXXXXX */
-export const isAnyValidTrackingCode = (code: string): boolean =>
-  /^ZK\d{4,8}$/.test(code) || /^ZK-[A-F0-9]{6}$/.test(code);
+export const isAnyValidTrackingCode=(code:string):boolean=>/^ZK\d{4,8}$/.test(code)||/^ZK-[A-F0-9]{6}$/.test(code)||/^ZK-[A-Z0-9]{12,20}$/.test(code);
 
 /** نرمال‌سازی ورودی کاربر — کد استاندارد */
 export const normalizeTrackingCode = (input: string): string => {

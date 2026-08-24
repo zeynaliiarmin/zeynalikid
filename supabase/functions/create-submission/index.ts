@@ -1,0 +1,37 @@
+// Validated public submission creation with server-generated high-entropy codes.
+
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
+import { handleOptions,jsonResponse,getOrigin } from "../_shared/cors.ts";
+import { centralRateLimit } from "../_shared/rateLimit.ts";
+
+const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const randomCode=()=>{const bytes=crypto.getRandomValues(new Uint8Array(16));return `ZK-${Array.from(bytes,b=>alphabet[b%alphabet.length]).join('')}`};
+const phoneDigits=(value:string)=>String(value||"").replace(/[^0-9+]/g,"").slice(0,32);
+
+serve(async(req)=>{
+ const options=handleOptions(req);if(options)return options;const origin=getOrigin(req);
+ if(req.method!=="POST")return jsonResponse({error:"Method not allowed"},405,origin);
+ const rl=await centralRateLimit(req,"create-submission",{maxRequests:20,windowMs:60*60_000,blockMs:60*60_000});
+ if(!rl.ok)return jsonResponse({error:"تعداد ثبت‌ها بیش از حد مجاز است. لطفاً بعداً تلاش کنید."},429,origin);
+ let body:any={};try{body=await req.json()}catch{return jsonResponse({error:"درخواست نامعتبر است"},400,origin)}
+ const input=body?.submission;
+ if(!input||typeof input!=="object"||Array.isArray(input))return jsonResponse({error:"اطلاعات فرم نامعتبر است"},400,origin);
+ if(JSON.stringify(input).length>250000)return jsonResponse({error:"حجم اطلاعات فرم بیش از حد مجاز است"},413,origin);
+ const fullPhone=phoneDigits(input.fullPhone||input.full_phone||"");
+ if(fullPhone.replace(/\D/g,"").length<7)return jsonResponse({error:"شماره تماس معتبر نیست"},400,origin);
+ const type=input.type==="course"?"course":"consultation";
+ const payload={...input};
+ for(const key of ["id","created_at","updated_at","deleted_at","full_phone","tracking_code","edit_token","service_role","adminPassword"]){delete payload[key]}
+ payload.type=type;payload.unread=true;payload.isNew=true;payload.editHistory=[];payload.deleted_at=undefined;
+ if(type==="consultation"){payload.orderStatus=undefined;payload.consultationStatus=payload.consultationStatus==="ناقص"?"ناقص":"مشاوره اولیه"}
+ else{payload.orderStatus=payload.incomplete===true?"ناقص":"جدید";payload.consultationStatus=payload.incomplete===true?"ناقص":"ثبتی"}
+ const supabase=getSupabaseAdmin();
+ for(let attempt=0;attempt<5;attempt++){
+  payload.trackingCode=randomCode();
+  const {data,error}=await supabase.from("submissions").insert({full_phone:fullPhone,payload,deleted_at:null}).select("id,full_phone,payload,created_at,updated_at,deleted_at").single();
+  if(!error&&data)return jsonResponse({ok:true,submission:data},201,origin);
+  if(error?.code!=="23505"){console.error("create-submission insert error:",error?.message||error);return jsonResponse({error:"ثبت فرم انجام نشد"},500,origin)}
+ }
+ return jsonResponse({error:"ساخت کد پیگیری انجام نشد؛ دوباره تلاش کنید"},503,origin);
+});

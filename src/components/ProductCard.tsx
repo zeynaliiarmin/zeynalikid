@@ -116,6 +116,7 @@ export default function ProductCard({
           src={imgSrc}
           alt={name}
           loading="lazy"
+          decoding="async"
           style={{
             maxWidth: hasDisplayFrame ? '100%' : '82%',
             maxHeight: hasDisplayFrame ? '100%' : (isSmall ? '68px' : '124px'),

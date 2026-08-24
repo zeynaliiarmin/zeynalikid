@@ -6,7 +6,7 @@ import useExitGuard from '../hooks/useExitGuard';
 import { isSupabaseConfigured, supabase, createSubmission, trackPageView } from '../lib/supabase';
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
-import { generateTrackingCode, generateUniqueTrackingCode } from '../utils/tracking';
+import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -305,7 +305,7 @@ export default function ConsultationPage({ app }: { app: any }) {
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       if (editId) {
         const prev = editEntryRef.current || {};
-        const trackingCode = prev.trackingCode || prevSame?.trackingCode || generateUniqueTrackingCode(list.map((x: any) => String(x.trackingCode || '')).filter(Boolean), cfg.trackingDigitCount || 5);
+        const trackingCode = prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean));
         const updated = {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
@@ -340,10 +340,10 @@ export default function ConsultationPage({ app }: { app: any }) {
         }
         if (subsCacheRef.current) subsCacheRef.current = subsCacheRef.current.map((x: any) => x.id === editId ? { ...x, ...updated } : x);
         setLastId(editId);
-        setLastTrack(trackingCode);
+        setLastTrack(String(trackingCode));
       } else {
         const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
-        const trackingCode = effectiveAllowNewChild ? generateUniqueTrackingCode(existingCodes, cfg.trackingDigitCount || 5) : (prevSame?.trackingCode || generateUniqueTrackingCode(existingCodes, cfg.trackingDigitCount || 5));
+        const trackingCode = effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes));
         let similarTo: any = null;
         if (effectiveAllowNewChild) {
           const sim = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && similarityScore(x, fd) >= 0.7);
@@ -393,11 +393,15 @@ export default function ConsultationPage({ app }: { app: any }) {
         };
 
         // نسخهٔ محلیِ کامل را پیش از ارسال شبکه ذخیره می‌کنیم؛ هیچ فرم تکمیل‌شده‌ای با خطای اتصال از دست نمی‌رود.
+        const clientId=entry.id;
         const localSubs = getLS(SK.subs, []);
         if (!localSubs.some((x: any) => String(x.id) === String(entry.id))) setLS(SK.subs, [...localSubs, entry]);
         if (isSupabaseConfigured) {
           try {
-            await createSubmission(entry as any);
+            const saved=await createSubmission(entry as any);
+            Object.assign(entry,saved);
+            const refreshed=getLS(SK.subs,[]).filter((x:any)=>String(x.id)!==String(clientId));
+            setLS(SK.subs,[...refreshed,entry]);
             setLastId(entry.id);
           } catch (e) {
             console.warn('Could not save submission to Supabase, falling back to localStorage', e);
@@ -408,7 +412,7 @@ export default function ConsultationPage({ app }: { app: any }) {
           setLastId(entry.id);
         }
         if (subsCacheRef.current) subsCacheRef.current = [...subsCacheRef.current, entry];
-        setLastTrack(trackingCode);
+        setLastTrack(String(entry.trackingCode||trackingCode));
       }
       setEditId(null);
       editEntryRef.current = null;

@@ -30,7 +30,7 @@ import {
   handleOptions, jsonResponse, getOrigin,
 } from "../_shared/cors.ts";
 import {
-  rateLimit, rateLimitKey, cleanupExpiredBuckets,
+  rateLimit, rateLimitKey, centralRateLimit, cleanupExpiredBuckets,
 } from "../_shared/rateLimit.ts";
 
 const digitsOnly = (v: string) =>
@@ -77,9 +77,12 @@ serve(async (req) => {
     }
 
     const code = String(trackingCode).trim().toUpperCase();
-    if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code)) {
+    if(!/^ZK\d{4,8}$/.test(code)&&!/^ZK-[A-F0-9]{6}$/.test(code)&&!/^ZK-[A-Z0-9]{12,20}$/.test(code)){
       return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست" }, 400, origin);
     }
+
+    const strictRl=await centralRateLimit(req,"update-public-central",{maxRequests:30,windowMs:10*60_000,blockMs:10*60_000});
+    if(!strictRl.ok)return jsonResponse({error:"تعداد درخواست‌ها بیش از حد مجاز است. لطفاً بعداً تلاش کنید."},429,origin);
 
     const supabase = getSupabaseAdmin();
 

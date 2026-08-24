@@ -92,7 +92,7 @@ export default function FeaturedCourses({
 
       {/* Mobile: horizontal swipe with new CourseCard (Stage 2) */}
       <div className="featured-mobile" style={{ display: 'none' }}>
-        <div style={{
+        <div tabIndex={0} role="region" aria-label={lang==='en'?'Featured courses':'دوره‌های منتخب'} style={{
           display: 'flex',
           gap: 12,
           overflowX: 'auto',

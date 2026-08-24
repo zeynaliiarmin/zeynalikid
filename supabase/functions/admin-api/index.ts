@@ -645,7 +645,8 @@ async function getSignedUrls(body: any, origin: string, _session: any): Promise<
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
-const ACTION_HANDLERS: Record<string, (body: any, origin: string, session: any) => Promise<Response>> = {
+const MUTATING_ACTIONS=new Set(['update_submission','soft_delete_submission','restore_submission','permanent_delete_submission','delete_storage_files','save_settings','update_question','delete_question','create_review','update_review','delete_review']);
+const ACTION_HANDLERS:Record<string,(body:any,origin:string,session:any)=>Promise<Response>>={
   list_submissions: listSubmissions,
   get_submission: getSubmission,
   update_submission: updateSubmission,
@@ -702,10 +703,15 @@ serve(async (req) => {
     return err(`action نامعتبر: ${body.action}`, origin, 400);
   }
 
-  try {
-    return await handler(body, origin, sessionResult.session);
-  } catch (e) {
-    console.error(`Unexpected error in action ${body.action}:`, e);
-    return err("خطای داخلی سرور", origin, 500);
+  try{
+    const response=await handler(body,origin,sessionResult.session);
+    if(MUTATING_ACTIONS.has(body.action)){
+      try{await getSupabaseAdmin().from('admin_audit_logs').insert({actor_phone:sessionResult.session.ownerPhone,session_id:String(sessionResult.session.sessionId),action:body.action,target_type:String(body.bucket||body.action),target_id:body.id!=null?String(body.id):null,metadata:{status:response.status,count:Array.isArray(body.ids)?body.ids.length:undefined},success:response.ok})}catch{}
+    }
+    return response;
+  }catch(e){
+    console.error(`Unexpected error in action ${body.action}:`,e);
+    if(MUTATING_ACTIONS.has(body.action)){try{await getSupabaseAdmin().from('admin_audit_logs').insert({actor_phone:sessionResult.session.ownerPhone,session_id:String(sessionResult.session.sessionId),action:body.action,target_type:String(body.action),target_id:body.id!=null?String(body.id):null,metadata:{unexpected:true},success:false})}catch{}}
+    return err("خطای داخلی سرور",origin,500);
   }
 });

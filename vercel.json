@@ -1,11 +1,107 @@
 {
   "rewrites": [
     {
-      "source": "/admin/(.*)",
+      "source": "/courses",
       "destination": "/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/track",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/experience",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/licenses",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/education",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/faq",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/products",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/growth",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin-login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/child-info",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/course-shipping",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/course-payment",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/course-payment/verify",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/course-confirm",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/course-done",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/form",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/consultation",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:refCode",
       "destination": "/index.html"
     }
   ],

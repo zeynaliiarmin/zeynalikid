@@ -1,18 +1,14 @@
 // --- مدیریت دیزاین (مرحله  - بازطراحی تدریجی) ---
 
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy,memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'react';
 import { isSupabaseConfigured,fetchSubmissions,fetchReviews,fetchUserQuestions,updateSubmission,softDeleteMultipleSubmissions,supabase } from '../lib/supabase';
 import { productVectorIcon, AdminIcon, MenuIcon, ProductsIcon, CoursesIcon, ContactIcon, EducationIcon, LicensesIcon, SearchIcon, ChatIcon, BoxIcon } from '../components/Icons';
-import TrashPanel from './TrashPanel';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 // Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
 import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials, isAdminPasswordUpgradeRequired } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
-import UserQuestionsEditor from './UserQuestionsEditor';
-import ReviewsEditor from './ReviewsEditor';
-import ConsultantsEditor from './ConsultantsEditor';
 import AdminSpeedDialFAB from './AdminSpeedDialFAB';
 import { ZkArrowUpIcon, ZkArrowDownIcon, ZkChevronUpIcon, ZkChevronDownIcon, ZkCheckIcon, ZkCloseIcon,
  ZkCheckCircleIcon, ZkXCircleIcon, ZkEyeIcon, ZkEyeOffIcon, ZkCameraIcon, ZkDocIcon,
@@ -28,8 +24,6 @@ import './zkadmin-forms.css';
 // جدید ساخته شود و React کل زیردرخت را unmount/remount کند (کیبورد بسته می‌شد،
 // تب داخلی ریست می‌شد، اسکرول می‌پرید، فرم باز بسته می‌شد).
 import SubCard, { LazySubCard } from './SubCard';
-import AnalyticsPanel from './AnalyticsPanel';
-import ErrorLogsPanel from './ErrorLogsPanel';
 // منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
@@ -43,6 +37,13 @@ import BulkStoryAdder from './BulkStoryAdder';
 import CoverCropModal from './CoverCropModal';
 import CoverImage from '../components/CoverImage';
 import { isGatewayProductionReady } from '../services/payment/PaymentService';
+
+const TrashPanel=lazy(()=>import('./TrashPanel'));
+const UserQuestionsEditor=lazy(()=>import('./UserQuestionsEditor'));
+const ReviewsEditor=lazy(()=>import('./ReviewsEditor'));
+const ConsultantsEditor=lazy(()=>import('./ConsultantsEditor'));
+const AnalyticsPanel=lazy(()=>import('./AnalyticsPanel'));
+const ErrorLogsPanel=lazy(()=>import('./ErrorLogsPanel'));
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.

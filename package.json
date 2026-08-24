@@ -11,7 +11,8 @@
     "test": "npm run test:unit",
     "build": "tsc -b && vite build",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:a11y": "node tests/accessibility.mjs"
   },
   "dependencies": {
     "@fontsource/vazirmatn": "5.3.0",
@@ -26,6 +27,7 @@
     "react-router-dom": "7.18.2"
   },
   "devDependencies": {
+    "@axe-core/puppeteer": "4.13.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.5",

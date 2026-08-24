@@ -50,27 +50,12 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const kind = sanitize(body?.kind || "error", 30);
-    const message = sanitize(body?.message || "", MAX_MESSAGE);
-    const stack = sanitize(body?.stack || "", MAX_STACK);
-    const page = sanitize(body?.page || "", MAX_PAGE);
-    const ua = sanitize(body?.user_agent || body?.ua || "", MAX_UA);
-    const lang = sanitize(body?.lang || "", 8);
-
-    if (!message && !stack) {
-      return jsonResponse({ ok: true }, 200, origin);
-    }
-
-    const supabase = getSupabaseAdmin();
-    const { error: insErr } = await supabase.from("error_logs").insert({
-      kind,
-      message,
-      stack: stack || null,
-      page_path: page || null,
-      user_agent: ua || null,
-      lang: lang || null,
-    });
+    const body=await req.json().catch(()=>({}));
+    const incoming=Array.isArray(body?.events)?body.events.slice(0,10):[body];
+    const rows=incoming.map((item:any)=>{const message=sanitize(item?.message||"",MAX_MESSAGE);const stack=sanitize(item?.stack||"",MAX_STACK);return{kind:sanitize(item?.kind||"error",30),message,stack:stack||null,page_path:sanitize(item?.page||"",MAX_PAGE)||null,user_agent:sanitize(item?.user_agent||item?.ua||"",MAX_UA)||null,lang:sanitize(item?.lang||"",8)||null}}).filter((row:any)=>row.message||row.stack);
+    if(!rows.length)return jsonResponse({ok:true,accepted:0},200,origin);
+    const supabase=getSupabaseAdmin();
+    const {error:insErr}=await supabase.from("error_logs").insert(rows);
     if (insErr) {
       console.error("log-error insert failed:", insErr.message);
     }
@@ -89,6 +74,6 @@ serve(async (req) => {
     return jsonResponse({ ok: true }, 200, origin);
   } catch (_e) {
     console.error("log-error failed:", _e);
-    return jsonResponse({ ok: true }, 200, origin);
+    return jsonResponse({ok:true,accepted:rows.length},200,origin);
   }
 });

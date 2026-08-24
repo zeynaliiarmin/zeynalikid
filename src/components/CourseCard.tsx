@@ -192,6 +192,7 @@ export default function CourseCard({
             src={imageSrc}
             alt={lang === 'en' ? (course.titleEn || course.title) : course.title}
             loading="lazy"
+          decoding="async"
             style={{
               width: '100%',
               height: '100%',
@@ -312,7 +313,7 @@ export default function CourseCard({
         {!showImage && !isSmall && (course.duration || course.ageBadge !== false) && (
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
             {course.duration && <span style={{ background: 'var(--zk-surface-muted)', color: 'var(--zk-text-muted)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{course.duration}</span>}
-            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
+            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: '#0B5D56', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
           </div>
         )}
 
@@ -384,7 +385,7 @@ export default function CourseCard({
         {/* CTA */}
         {!isSmall && (
           <div style={{
-            background: 'var(--zk-primary)',
+            background: '#0B5D56',
             color: '#fff',
             minHeight: 44,
             padding: '10px 16px',

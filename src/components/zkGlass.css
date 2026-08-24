@@ -145,9 +145,9 @@
   width: 100%;
   padding: 14px;
   border-radius: 12px;
-  border: 0;
+  border: 2px solid var(--zkgl-acc, #0F766E);
   background: #fff;
-  color: var(--zkgl-acc, #0F766E);
+  color: #0F172A;
   font-weight: 800;
   font-size: 15px;
   cursor: pointer;

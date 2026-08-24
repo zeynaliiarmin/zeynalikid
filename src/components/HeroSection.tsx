@@ -134,7 +134,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
         <img 
           src={heroImageSrc} 
           alt={imageAlt || (isRtl ? 'مادر و کودک' : 'Mother and child')} 
-          loading="eager" 
+          loading="eager"
+          decoding="async"
           fetchPriority="high" 
           style={{
             display:'block', width:'100%', height:'auto', 

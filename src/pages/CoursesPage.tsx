@@ -393,7 +393,7 @@ export default function CoursesPage({ app }: { app: any }) {
         })()}
 
         {/* Filter chips — horizontal scrollable */}
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 10, marginBottom: 16, scrollSnapType: 'x mandatory' }}>
+        <div tabIndex={0} role="region" aria-label={lang==='en'?'Course filters':'فیلتر دوره‌ها'} style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:10,marginBottom:16,scrollSnapType:'x mandatory'}}>
           {filters.map(f => (
             <button
               key={f.id}
@@ -524,7 +524,7 @@ export default function CoursesPage({ app }: { app: any }) {
                       {lang === 'en' ? 'View all' : 'مشاهده همه'} ({tabCourses.length})
                     </button>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+                  <div tabIndex={0} role="region" aria-label={lang==='en'?'Scrollable content':'محتوای پیمایشی'} style={{display:'flex',gap:12,overflowX:'auto',paddingBottom:12,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',direction:lang==='en'?'ltr':'rtl'}}>
                     {tabCourses.map((c: any, ci: number) => (
                       <div key={c.id} style={{ flex: '0 0 260px', scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: `${ci * 70}ms` }}>
                         <CourseCard course={{ ...c, tabId: tab.id }} size="normal" T={T} lang={lang} onCourseClick={openDetail} />
@@ -543,7 +543,7 @@ export default function CoursesPage({ app }: { app: any }) {
             <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
               {lang === 'en' ? 'Related parent experiences' : 'تجربه و رضایت والدین مرتبط'}
             </h2>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+            <div tabIndex={0} role="region" aria-label={lang==='en'?'Scrollable content':'محتوای پیمایشی'} style={{display:'flex',gap:12,overflowX:'auto',paddingBottom:10,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',direction:lang==='en'?'ltr':'rtl'}}>
               {previewExperience.map((item: any, index: number) => (
                 <div key={`${item._mediaSource || 'experience'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: `${index * 60}ms` }}>
                   <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure onMore={() => setSheetItem({ ...item, description: item.descriptionCourses || item.description })} />
@@ -570,7 +570,7 @@ export default function CoursesPage({ app }: { app: any }) {
             <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: '0 0 10px', fontWeight: 800 }}>
               {lang === 'en' ? 'Related educational media' : 'محتوای آموزشی مرتبط'}
             </h2>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory', direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+            <div tabIndex={0} role="region" aria-label={lang==='en'?'Scrollable content':'محتوای پیمایشی'} style={{display:'flex',gap:12,overflowX:'auto',paddingBottom:10,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',direction:lang==='en'?'ltr':'rtl'}}>
               {previewEducation.map((item: any, index: number) => (
                 <div key={`${item._mediaSource || 'education'}:${item.id || index}`} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: `${index * 60}ms` }}>
                   <MediaCard item={{ ...item, description: item.descriptionCourses || item.description }} T={T} lang={lang} vpnOn={mediaVpnOn} secure onMore={() => setSheetItem({ ...item, description: item.descriptionCourses || item.description })} />
@@ -597,7 +597,7 @@ export default function CoursesPage({ app }: { app: any }) {
         {filter !== 'all' && filteredCourses.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 14 }}>{lang === 'en' ? 'You may also like' : 'دوره‌های مشابه'}</div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, direction: lang === 'en' ? 'ltr' : 'rtl' }}>
+            <div tabIndex={0} role="region" aria-label={lang==='en'?'Scrollable content':'محتوای پیمایشی'} style={{display:'flex',gap:12,overflowX:'auto',paddingBottom:12,direction:lang==='en'?'ltr':'rtl'}}>
               {filteredCourses.slice(0, 4).map((c: any) => (
                 <div key={c.id} style={{ flex: '0 0 260px' }}>
                   <CourseCard course={c} size="normal" T={T} lang={lang} onCourseClick={openDetail} />
@@ -629,7 +629,7 @@ export default function CoursesPage({ app }: { app: any }) {
                 { id: 'audio', label: lang === 'en' ? 'Podcasts' : 'پادکست' },
               ].filter((t) => t.id === 'all' || baseList.some((x: any) => mediaTypeOf(x) === t.id));
               return (
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+                <div tabIndex={0} role="region" aria-label={lang==='en'?'Course tags':'برچسب‌های دوره'} style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:2}}>
                   {tabs.map((t) => (
                     <button key={t.id} type="button" onClick={() => setOverlayTab(t.id)} style={{ minHeight: 34, padding: '7px 14px', borderRadius: 999, border: `1px solid ${overlayTab === t.id ? 'var(--zk-primary)' : 'var(--zk-border)'}`, background: overlayTab === t.id ? 'var(--zk-primary-light)' : 'transparent', color: overlayTab === t.id ? 'var(--zk-primary)' : 'var(--zk-text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {t.label}

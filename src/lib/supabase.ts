@@ -205,19 +205,13 @@ export const permanentDeleteMultipleSubmissions = async (ids: Array<string | num
   await adminPermanentDeleteMultipleSubmissions(ids);
 };
 
-export const createSubmission = async (submission: Submission): Promise<Submission> => {
-  const client = requireSupabase();
-  const row = submissionToDbRow(submission);
-  // Keep the id (Date.now() + random) — submissions table has BIGINT PRIMARY KEY without auto-increment
-  // Phase 5: no `.select()` after insert — RLS allows anon INSERT only, so PostgREST
-  // cannot return the inserted row (would 401). The caller already has the full
-  // submission object; we simply return it on success.
-  const { error } = await client
-    .from(SUBMISSIONS_TABLE)
-    .insert(row);
-
-  if (error) throw error;
-  return submission;
+export const createSubmission=async(submission:Submission):Promise<Submission>=>{
+  requireSupabase();
+  const base=(import.meta.env.VITE_SUPABASE_URL as string||'').replace(/\/$/,'');
+  const response=await fetch(`${base}/functions/v1/create-submission`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({submission})});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok||!body?.submission)throw new Error(body?.error||'ثبت فرم انجام نشد');
+  return dbRowToSubmission(body.submission) as Submission;
 };
 
 export const updateSubmission = async (

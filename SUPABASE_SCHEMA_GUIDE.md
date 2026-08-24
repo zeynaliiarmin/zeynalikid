@@ -8,7 +8,7 @@ Files under `supabase/legacy/` are historical and must not be run.
 ## Current tables
 
 - `settings` — complete admin settings JSON; service-role only
-- `submissions` — consultation/course records; public creation, admin management
+- `submissions` — consultation/course records; creation only through `create-submission`, admin management through `admin-api`
 - `reviews` — pending public submissions and approved-only public reads
 - `user_questions` — pending public submissions, sanitized public answers
 - `page_views` — write-only public analytics events

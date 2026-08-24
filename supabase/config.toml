@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.storage-upload]
 verify_jwt = false
+
+[functions.create-submission]
+verify_jwt = false

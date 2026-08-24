@@ -5,7 +5,7 @@
 // اصول:
 //   • fire-and-forget و کاملاً بی‌صدا (هرگز تجربهٔ کاربر را مختل نمی‌کند)
 //   • فیلتر دادهٔ حساس (شماره موبایل/کارت/شبا/ایمیل/توکن) قبل از ارسال
-//   • ضد سیل: حداقل ۱۰ ثانیه فاصله بین هر گزارش از یک مرورگر
+//   • صف کوچک و ارسال دسته‌ای؛ خطاهای هم‌زمان دیگر دور ریخته نمی‌شوند
 //   • در صورت نبود Supabase، هیچ کاری نمی‌کند
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || '';
@@ -25,38 +25,27 @@ function sanitize(s: string, max: number): string {
   return out.slice(0, max);
 }
 
-let lastSent = 0;
-const MIN_INTERVAL_MS = 10000;
+type ErrorEventPayload={kind:string;message:string;stack:string;page:string;user_agent:string;lang:string};
+const queue:ErrorEventPayload[]=[];let timer:number|null=null;let lastSent=0;const MIN_INTERVAL_MS=10000;
 
-export function reportError(kind: string, message: string, stack?: string): void {
-  try {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
-    const now = Date.now();
-    if (now - lastSent < MIN_INTERVAL_MS) return; // جلوگیری از سیل گزارش
-    lastSent = now;
+const schedule=()=>{if(timer!==null)return;const delay=Math.max(2000,MIN_INTERVAL_MS-(Date.now()-lastSent));timer=window.setTimeout(()=>{timer=null;void flushErrors()},delay)};
+async function flushErrors(force=false):Promise<void>{
+ if(!queue.length||!SUPABASE_URL||!SUPABASE_ANON_KEY)return;
+ if(!force&&Date.now()-lastSent<MIN_INTERVAL_MS){schedule();return}
+ const events=queue.splice(0,10);lastSent=Date.now();
+ try{const response=await fetch(`${SUPABASE_URL}/functions/v1/log-error`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({events}),keepalive:true});if(!response.ok)throw new Error('log rejected')}
+ catch{queue.unshift(...events);if(queue.length>20)queue.length=20}
+ if(queue.length)schedule();
+}
 
-    const body = JSON.stringify({
-      kind: String(kind || 'error').slice(0, 30),
-      message: sanitize(message, 2000),
-      stack: sanitize(stack || '', 4000),
-      page: (typeof location !== 'undefined' ? location.pathname : '').slice(0, 500),
-      user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 500),
-      lang: (() => { try { return localStorage.getItem('zkid_lang') || ''; } catch { return ''; } })().slice(0, 8),
-    });
-
-    fetch(`${SUPABASE_URL}/functions/v1/log-error`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY,
-      },
-      body,
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    /* کاملاً بی‌صدا */
-  }
+export function reportError(kind:string,message:string,stack?:string):void{
+ try{
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY)return;
+  const event={kind:String(kind||'error').slice(0,30),message:sanitize(message,2000),stack:sanitize(stack||'',4000),page:(typeof location!=='undefined'?location.pathname:'').slice(0,500),user_agent:(typeof navigator!=='undefined'?navigator.userAgent:'').slice(0,500),lang:(()=>{try{return localStorage.getItem('zkid_lang')||''}catch{return''}})().slice(0,8)};
+  const fingerprint=`${event.kind}|${event.message}|${event.page}`;
+  if(!queue.some(item=>`${item.kind}|${item.message}|${item.page}`===fingerprint))queue.push(event);
+  if(queue.length>20)queue.shift();schedule();
+ }catch{}
 }
 
 export function initErrorLogging(): void {
@@ -84,7 +73,8 @@ export function initErrorLogging(): void {
       reportError('unhandledrejection', msg, r?.stack || '');
     };
     window.addEventListener('error', onError);
-    window.addEventListener('unhandledrejection', onRejection);
+    window.addEventListener('unhandledrejection',onRejection);
+    window.addEventListener('pagehide',()=>{void flushErrors(true)});
     try {
       window.addEventListener('vite:preloadError', ((ev: any) => { try { ev?.preventDefault?.(); } catch {} reloadOnce(); }) as EventListener);
     } catch { /* نادیده بگیر */ }

@@ -7,7 +7,7 @@
 import { p2e, digits, fullPhone, validPhone, flagToEmoji, getCountryFlag } from '../src/utils/phone';
 import {
   generateTrackingCode, extractTrackingNumber, isValidTrackingCode, isAnyValidTrackingCode,
-  normalizeTrackingCode, isTrackingCodeUnique, generateUniqueTrackingCode,
+  normalizeTrackingCode,isTrackingCodeUnique,generateUniqueTrackingCode,generateSecureTrackingCode,
 } from '../src/utils/tracking';
 import { growthStatusLabels } from '../src/utils/growth';
 import { isRequired } from '../src/utils/validation';
@@ -87,8 +87,12 @@ for (let i = 0; i < 2000; i++) {
 assert(!extractTrackingNumber(generateTrackingCode(3)).startsWith('639'), 'کد ۳رقمی هم با 639 شروع نشود');
 assert(isTrackingCodeUnique('ZK99999', ['ZK11111']) === true, 'isTrackingCodeUnique یکتا');
 assert(isTrackingCodeUnique('ZK11111', ['ZK11111']) === false, 'isTrackingCodeUnique تکراری');
-const uniq = generateUniqueTrackingCode(['ZK11111', 'ZK22222']);
-assert(/^ZK\d{5}$/.test(uniq), 'generateUniqueTrackingCode خروجی معتبر');
+const uniq=generateUniqueTrackingCode(['ZK11111','ZK22222']);
+assert(/^ZK\d{5}$/.test(uniq),'generateUniqueTrackingCode خروجی قدیمی معتبر');
+const secureCodes=new Set(Array.from({length:200},()=>generateSecureTrackingCode()));
+assert(secureCodes.size===200,'کدهای امن نمونه تکراری ندارند');
+assert([...secureCodes].every(code=>/^ZK-[A-Z0-9]{16}$/.test(code)),'فرمت کد امن معتبر است');
+assert(isAnyValidTrackingCode([...secureCodes][0])===true,'اعتبارسنجی کد امن');
 
 // ── growth ────────────────────────────────────────────────────────
 assert(growthStatusLabels.length === 6, 'growthStatusLabels ۶ برچسب');
