@@ -30,6 +30,10 @@ export interface EduItem {
   body?: string;        // متن مقاله (پاراگراف‌ها با \n\n)
   quote?: string;
   images?: ArticleImage[];
+  author?: string;
+  authorEn?: string;
+  sourceUrl?: string;
+  reviewedAt?: string;
 }
 
 export const isArticleType = (t: string): boolean => t === 'article' || t === 'text' || t === 'image';

@@ -112,7 +112,7 @@ const PUBLIC_SETTINGS_WHITELIST = [
 const PUBLIC_BANK_FIELDS = ["id", "name", "label", "logo", "color", "active", "order", "default"];
 
 // Crypto wallets: only return whether each is visible, never the address.
-const PUBLIC_CRYPTO_FIELDS = ["id", "name", "symbol", "logo", "color", "active", "network", "address"];
+const PUBLIC_CRYPTO_FIELDS=["id","name","symbol","logo","color","active","network"];
 
 const PUBLIC_MEDIA_ITEM_FIELDS = [
   "id", "type", "title", "titleEn", "description", "descriptionEn", "descriptionCourses",
@@ -218,10 +218,7 @@ function sanitizeConsultants(value: any): any[] {
       });
       // اطلاعات بانکی/کیف پول مشاور برای نمایش در روند پرداخت (فقط فیلدهای لازم)
       if (c?.bank) out.bank = { name: c.bank.name, card: c.bank.card, iban: c.bank.iban, holder: c.bank.holder || c.bank.accountName };
-      if (c?.banks && Array.isArray(c.banks)) out.banks = c.banks.map((b: any) => ({ name: b?.name, card: b?.card, iban: b?.iban, holder: b?.holder || b?.accountName, active: b?.active !== false })).filter((b: any) => b && (b.card || b.iban));
-      if (c?.wallet) out.wallet = { id: c.wallet.id, name: c.wallet.name, symbol: c.wallet.symbol, address: c.wallet.address, network: c.wallet.network, color: c.wallet.color };
       // آرایهٔ کیف پول‌های رمزارز مشاور (ساختار جدید) — قبلاً برگردانده نمی‌شد و پرداخت رمزارزی مشاور نمایش داده نمی‌شد
-      if (c?.wallets && Array.isArray(c.wallets)) out.wallets = c.wallets.map((w: any) => ({ id: String(w?.id || ""), name: String(w?.name || ""), symbol: String(w?.symbol || ""), address: String(w?.address || ""), network: String(w?.network || ""), color: w?.color, active: w?.active !== false })).filter((w: any) => w && w.address);
       return out;
     });
 }

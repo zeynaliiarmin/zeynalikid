@@ -56,9 +56,10 @@ serve(async (req) => {
     if(!rows.length)return jsonResponse({ok:true,accepted:0},200,origin);
     const supabase=getSupabaseAdmin();
     const {error:insErr}=await supabase.from("error_logs").insert(rows);
-    if (insErr) {
-      console.error("log-error insert failed:", insErr.message);
-    }
+    if(insErr)console.error("log-error insert failed:",insErr.message);
+    const webhook=Deno.env.get("ERROR_ALERT_WEBHOOK_URL")||"";
+    const urgent=rows.filter((row:any)=>/fatal|payment|registration|storage/i.test(String(row.kind)));
+    if(webhook&&urgent.length){try{await fetch(webhook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'frontend-error-monitor',count:urgent.length,kinds:[...new Set(urgent.map((row:any)=>row.kind))],timestamp:new Date().toISOString()})})}catch{}}
 
     // پاکسازی خودکار: خطاهای قدیمی‌تر از ۱۵ روز (هر ~۵۰ گزارش یک‌بار اجرا می‌شود)
     cleanupCounter++;

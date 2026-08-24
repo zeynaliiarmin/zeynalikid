@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.create-submission]
 verify_jwt = false
+
+[functions.payment-details]
+verify_jwt = false

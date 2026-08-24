@@ -21,6 +21,8 @@ export function CryptoLogo({id,color,size=22}:{id:string,color?:string,size?:num
 export default function CoursePaymentPage({app}:{app:any}){
  const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress,referralConsultant}=app;
  const siteBrand=String(cfg.browserTitle||cfg.siteTitle||'سامانه رشد کودک').replace(/[“”"]/g,'').trim();
+ const [paymentDetails,setPaymentDetails]=useState<any>({banks:[],wallets:[],loading:true});
+ useEffect(()=>{let alive=true;const base=(import.meta.env.VITE_SUPABASE_URL as string||'').replace(/\/$/,'');fetch(`${base}/functions/v1/payment-details`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referralCode:referralConsultant?.referralCode||''})}).then(async response=>{const data=await response.json().catch(()=>({}));if(alive)setPaymentDetails({banks:Array.isArray(data.banks)?data.banks:[],wallets:Array.isArray(data.wallets)?data.wallets:[],cryptoVisibility:data.cryptoVisibility,loading:false})}).catch(()=>{if(alive)setPaymentDetails({banks:[],wallets:[],loading:false})});return()=>{alive=false}},[referralConsultant?.referralCode]);
  // بازگشت امن: اگر مستقیماً به این صفحه آمده و course انتخاب نشده، به فهرست دوره‌ها برگردد (به‌جای صفحه سفید)
  useEffect(()=>{
    if(!course?.selected){
@@ -30,12 +32,7 @@ export default function CoursePaymentPage({app}:{app:any}){
  if(!course?.selected){
    return <div style={{padding:24,textAlign:'center',color:T?.mut||'#666',fontFamily:'Vazirmatn,Tahoma,Arial,sans-serif'}}>{lang==='en'?'No course selected. Redirecting…':'دوره‌ای انتخاب نشده است. در حال انتقال…'}</div>;
  }
- // اگر مخاطب با لینک اختصاصی مشاور آمده و آن مشاور اطلاعات بانکی ثبت کرده باشد، فقط همان حساب(های) مشاور نمایش داده می‌شود (حقِ مشاور حفظ می‌شود)
- const advisorBankArr: any[] = (referralConsultant?.banks && Array.isArray(referralConsultant.banks)) ? referralConsultant.banks : (referralConsultant?.bank ? [referralConsultant.bank] : []);
- const advisorBanks: any[] = advisorBankArr
-   .filter((b: any) => b && (b.card || b.iban))
-   .map((b: any, bi: number) => ({ id: 'advisor'+bi, name: b.name || (referralConsultant.name || 'مشاور'), card: b.card, iban: b.iban, holder: b.holder || b.accountName || referralConsultant.name || '', order: bi, active: true }));
- const banks=(advisorBanks.length?advisorBanks:(cfg.banks||[])).filter((b:any)=>b&&b.active!==false&&b.card&&b.iban).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const chosen=banks.find((b:any)=>b&&b.id===course.payment?.bankId)||banks[0]; const [copied,setCopied]=useState<any>({}); const [toast,setToast]=useState('');
+ const banks=(paymentDetails.banks||[]).filter((b:any)=>b&&b.active!==false&&(b.card||b.iban)).sort((a:any,b:any)=>(a.order||0)-(b.order||0));const chosen=banks.find((b:any)=>b.id===course.payment?.bankId)||banks[0];const [copied,setCopied]=useState<any>({});const [toast,setToast]=useState('');
  const pay = course.payment || {};
  const isDirty = Boolean(pay.receipt || pay.receiptText);
  useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?'); const receiptTextRef=useRef<HTMLTextAreaElement|null>(null);
@@ -76,9 +73,8 @@ export default function CoursePaymentPage({app}:{app:any}){
    setGatewayProcessing(false);
   }
  };
- const advisorWalletArr: any[] = (referralConsultant?.wallets && Array.isArray(referralConsultant.wallets)) ? referralConsultant.wallets : (referralConsultant?.wallet ? [referralConsultant.wallet] : []);
- const rawCryptoWallets:any[]=Array.isArray(cfg.cryptoWallets)?cfg.cryptoWallets:(typeof cfg.cryptoWallets==='string'?(()=>{try{const p=JSON.parse(cfg.cryptoWallets);return Array.isArray(p)?p:[]}catch{return []}})():[]); const cryptoWallets=(advisorWalletArr.length ? advisorWalletArr.map((w:any,wi:number)=>({ id:'aw'+wi, name:w.name||'کیف پول', symbol:w.symbol||'USDT', address:w.address, color:w.color, network:w.network, active:true, order:wi })) : rawCryptoWallets).filter((w:any)=>w&&w.active!==false&&w.address).sort((a:any,b:any)=>(a.order||0)-(b.order||0));
- const cryptoVisible=cfg.cryptoVisibility!=='off'&&cryptoWallets.length>0&&(cfg.cryptoVisibility==='all'||course.dest==='intl');
+ const cryptoWallets=(paymentDetails.wallets||[]).filter((w:any)=>w&&w.active!==false&&w.address);
+ const cryptoMode=paymentDetails.cryptoVisibility||cfg.cryptoVisibility||'intl';const cryptoVisible=cryptoMode!=='off'&&cryptoWallets.length>0&&(cryptoMode==='all'||course.dest==='intl');
  const [cryptoId,setCryptoId]=useState('usdt');
  const crypto=cryptoWallets.find((w:any)=>w.id===cryptoId)||cryptoWallets[0];
  useEffect(()=>{if(!course.payment?.bankId&&chosen)setCourse((c:any)=>({...c,payment:{...(c.payment||{}),bankId:chosen.id}}))},[chosen?.id]);
