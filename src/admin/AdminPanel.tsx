@@ -1,7 +1,7 @@
 // --- مدیریت دیزاین (مرحله  - بازطراحی تدریجی) ---
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { isSupabaseConfigured, fetchSubmissions, updateSubmission, softDeleteMultipleSubmissions, supabase } from '../lib/supabase';
+import { isSupabaseConfigured,fetchSubmissions,fetchReviews,fetchUserQuestions,updateSubmission,softDeleteMultipleSubmissions,supabase } from '../lib/supabase';
 import { productVectorIcon, AdminIcon, MenuIcon, ProductsIcon, CoursesIcon, ContactIcon, EducationIcon, LicensesIcon, SearchIcon, ChatIcon, BoxIcon } from '../components/Icons';
 import TrashPanel from './TrashPanel';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
@@ -42,6 +42,7 @@ import { canonicalizeMediaInput, extractDirectMediaUrl, extractImageLinkList } f
 import BulkStoryAdder from './BulkStoryAdder';
 import CoverCropModal from './CoverCropModal';
 import CoverImage from '../components/CoverImage';
+import { isGatewayProductionReady } from '../services/payment/PaymentService';
 
 type Any=Record<string,any>;
 // Phase 3: VITE_ADMIN_PASSWORD removed — admin password lives only in Supabase Edge Function secrets.
@@ -171,7 +172,7 @@ export default function AdminPanel({app}:{app:any}){
  const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
  // تغییر رمز/شماره ورود (admin-credentials) — state ها در سطح بالای کامپوننت (قانون hooks)
  const [credBusy,setCredBusy]=useState(false); const [credMsg,setCredMsg]=useState(''); const [credErr,setCredErr]=useState(''); const [credPhoneMasked,setCredPhoneMasked]=useState('');
- const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{id?sessionStorage.setItem('zk_admin_open_form',String(id)):sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
+ const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{if(id)sessionStorage.setItem('zk_admin_open_form',String(id));else sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
  // Stage 7A-fix: هوک‌های سه ادیتور شرطی به سطح کامپوننت hoist شدند تا قوانین Hooks رعایت شود (بدون هیچ تغییر رفتاری/منطقی)
  const [trustCat,setTrustCat]=useState<string>('health');
  const [bankErr,setBankErr]=useState('');
@@ -312,13 +313,9 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     zip.file('settings.json', JSON.stringify(cfg, null, 2));
     zip.file('submissions.json', JSON.stringify(subs, null, 2));
     try{
-     const { adminFetchReviews, adminFetchUserQuestions } = await import('../lib/adminApi');
-     const [rv, qs] = await Promise.all([
-      adminFetchReviews({ limit: 1000 }).catch(()=>null),
-      adminFetchUserQuestions({ limit: 1000 }).catch(()=>null),
-     ]);
-     zip.file('reviews.json', JSON.stringify(rv?.reviews || rv || [], null, 2));
-     zip.file('questions.json', JSON.stringify(qs?.questions || qs || [], null, 2));
+     const [rv,qs]=await Promise.all([fetchReviews('all').catch(()=>[]),fetchUserQuestions('all').catch(()=>[])]);
+     zip.file('reviews.json',JSON.stringify(rv,null,2));
+     zip.file('questions.json',JSON.stringify(qs,null,2));
     }catch{}
     const seen=new Set<string>(); const urls:string[]=[];
     const isMedia=(s:string)=>/^https?:\/\//i.test(s)&&(/\.(png|jpe?g|webp|gif|svg|avif|pdf|mp4|mp3|webm|ogg|wav)(\?.*)?$/i.test(s)||/\/storage\/v1\/object\/public\//i.test(s));
@@ -329,7 +326,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
      const u=urls[i];
      try{
       const res=await fetch(u,{mode:'cors'});
-      if(res.ok){ const blob=await res.blob(); if(blob&&blob.size>0){ const nm=(u.split('/').pop()||('file'+i)).split('?')[0].slice(0,80)||('file'+i); media&&media.file(i+'-'+nm, blob); saved++; list.push({url:u,saved:true}); continue; } }
+      if(res.ok){ const blob=await res.blob(); if(blob&&blob.size>0){ const nm=(u.split('/').pop()||('file'+i)).split('?')[0].slice(0,80)||('file'+i); if(media)media.file(i+'-'+nm,blob); saved++; list.push({url:u,saved:true}); continue; } }
      }catch{}
      list.push({url:u,saved:false});
     }
@@ -1051,17 +1048,17 @@ function TaggedCoursesEditor(){
    <Box title={<><ZkCardIcon size={16} color={T.ttl}/> درگاه‌های پرداخت</>}>
     <p style={{fontSize:11,color:T.mut,margin:'0 0 14px',lineHeight:1.8}}>درگاه‌های فعال در صفحه پرداخت به کاربر نمایش داده می‌شوند.</p>
     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16}}>
-     {gateways.map((gw:any,gi:number)=>(<div key={gw.id} style={{borderRadius:14,border:'1px solid '+(gw.enabled?T.acc+'44':T.brd),background:gw.enabled?T.acc+'06':T.card,padding:'14px 16px',transition:'all .25s ease'}}>
-      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:gw.enabled?14:0}}>
-       <div style={{flex:1,minWidth:0}}><b style={{fontSize:13,fontWeight:800,color:T.txt}}>{gw.label||gw.id}</b></div>
-       <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',flexShrink:0}}>
-        <span style={{fontSize:11,fontWeight:700,color:gw.enabled?T.ok:T.mut}}>{gw.enabled?'فعال':'غیرفعال'}</span>
-        <div onClick={()=>upGw(gi,{enabled:!gw.enabled})} style={{width:44,height:24,borderRadius:12,cursor:'pointer',background:gw.enabled?T.ok:'#ccc',position:'relative',transition:'background .25s'}}>
-         <div style={{width:20,height:20,borderRadius:'50%',background:'#fff',position:'absolute',top:2,left:gw.enabled?22:2,transition:'left .25s',boxShadow:'0 1px 4px rgba(0,0,0,.2)'}}/>
+     {gateways.map((gw:any,gi:number)=>(<div key={gw.id} style={{borderRadius:14,border:'1px solid '+(gw.enabled&&isGatewayProductionReady(gw.id)?T.acc+'44':T.brd),background:gw.enabled&&isGatewayProductionReady(gw.id)?T.acc+'06':T.card,padding:'14px 16px',transition:'all .25s ease',opacity:isGatewayProductionReady(gw.id)?1:.72}}>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:gw.enabled&&isGatewayProductionReady(gw.id)?14:0}}>
+       <div style={{flex:1,minWidth:0}}><b style={{fontSize:13,fontWeight:800,color:T.txt}}>{gw.label||gw.id}</b>{!isGatewayProductionReady(gw.id)&&<small style={{display:'block',marginTop:3,color:T.warn||'#b45309'}}>در حال توسعه — تا تکمیل اتصال امن سمت سرور قابل فعال‌سازی نیست</small>}</div>
+       <label style={{display:'flex',alignItems:'center',gap:8,cursor:isGatewayProductionReady(gw.id)?'pointer':'not-allowed',flexShrink:0}}>
+        <span style={{fontSize:11,fontWeight:700,color:gw.enabled&&isGatewayProductionReady(gw.id)?T.ok:T.mut}}>{gw.enabled&&isGatewayProductionReady(gw.id)?'فعال':'غیرفعال'}</span>
+        <div onClick={()=>{if(isGatewayProductionReady(gw.id))upGw(gi,{enabled:!gw.enabled})}} style={{width:44,height:24,borderRadius:12,cursor:isGatewayProductionReady(gw.id)?'pointer':'not-allowed',background:gw.enabled&&isGatewayProductionReady(gw.id)?T.ok:'#ccc',position:'relative',transition:'background .25s'}}>
+         <div style={{width:20,height:20,borderRadius:'50%',background:'#fff',position:'absolute',top:2,left:gw.enabled&&isGatewayProductionReady(gw.id)?22:2,transition:'left .25s',boxShadow:'0 1px 4px rgba(0,0,0,.2)'}}/>
         </div>
        </label>
       </div>
-      {gw.enabled&&<div style={{padding:'12px',borderRadius:10,background:T.soft,border:'1px solid '+T.brd}}>{renderGatewayConfig(gi)}</div>}
+      {gw.enabled&&isGatewayProductionReady(gw.id)&&<div style={{padding:'12px',borderRadius:10,background:T.soft,border:'1px solid '+T.brd}}>{renderGatewayConfig(gi)}</div>}
      </div>))}
     </div>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>

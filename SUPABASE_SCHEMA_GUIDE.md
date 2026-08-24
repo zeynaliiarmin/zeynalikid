@@ -1,77 +1,44 @@
-# 🏛️ راهنمای جامع اسکیمای پایگاه داده Supabase برای پلتفرم زینالیکید (Zeynalikid)
-### اختصاصی برای استقرار توسط ایجنت GLM و تیم فنی
+# Supabase schema guide
 
-این سند و اسکریپت SQL همراه آن (`supabase_schema_master.sql`)، شامل تمامی جداول، باکت‌های ذخیره‌سازی Storage، کلیدهای خارجی، ایندکس‌ها، سیاست‌های امنیتی RLS و ساختار هماهنگی بین دوره‌ها و پرونده کودک برای پلتفرم زینالیکید (v5.0 Final Release) می‌باشد.
+## Source of truth
 
----
+Only `supabase/migrations/` is executable schema. Apply files in timestamp order.
+Files under `supabase/legacy/` are historical and must not be run.
 
-## 🗂️ ۱. باکت‌های ذخیره‌سازی فایل (Supabase Storage Buckets)
+## Current tables
 
-| نام باکت (Bucket ID) | دسترسی (Public) | کاربرد و نوع فایل‌ها |
-| :--- | :---: | :--- |
-| `voice-notes` | ✅ بله | ضبط صوت ۹۰ ثانیه‌ای والدین و سوالات صوتی کاربران (`webm`, `mp4`, `ogg`) |
-| `tongue-photos` | ✅ بله | تصاویر ارسالی زبان کودکان جهت ارزیابی طبع و اشتها (`webp`, `jpg`, `png`) |
-| `images` | ✅ بله | فیش‌های واریزی، بنرهای سایت، عکس کارشناس و دوره‌ها (`webp`, `jpg`, `png`) |
-| `files` | ✅ بله | فایل‌های PDF طریقه مصرف و برنامه‌های غذایی اختصاصی (`pdf`) |
+- `settings` — complete admin settings JSON; service-role only
+- `submissions` — consultation/course records; public creation, admin management
+- `reviews` — pending public submissions and approved-only public reads
+- `user_questions` — pending public submissions, sanitized public answers
+- `page_views` — write-only public analytics events
+- `error_logs` — service-role only technical errors
+- `admin_devices` / `admin_sessions` — service-role only admin security state
+- `admin_credentials` — PBKDF2 password hashes
+- `admin_audit_logs` — security/admin audit events
+- `security_rate_limits` — centralized abuse counters
 
----
+## Storage
 
-## 📊 ۲. ساختار جداول پایگاه داده
+Public read: `images`, `media`.
+Private: `files`, `voice-notes`, `tongue-photos`, `receipts`.
+All writes use short-lived tokens from the `storage-upload` Edge Function. Direct
+anonymous insert/update/delete policies are forbidden.
 
-### ۲.۱. جدول پرونده‌ها و ثبت‌نام‌ها (`public.submissions`)
-جدول مرکزی سامانه که اطلاعات فرم مشاوره و ثبت دوره را با کلید یکتای شماره تلفن و کد رهگیری تجمیع می‌کند:
-* `id` (BIGINT): شناسه یکتای عددی
-* `tracking_code` (VARCHAR): کد پیگیری یکتا (مانند `ZK12345` یا `ZK-A1B2C3`)
-* `type` (VARCHAR): نوع رکورد (`consultation` برای فرم مشاوره یا `course` برای خرید دوره)
-* `parent_name` / `parent_phone` / `full_phone`: اطلاعات هویتی و تماس والد
-* `gender` / `age` / `height` / `weight`: مشخصات فیزیکی و سن کودک (۲ تا ۱۷ سال)
-* `topics` / `digestive_issues` / `appetite_status` / `special_disease` / `special_conditions`: وضعیت سلامت، گوارش و اشتها
-* `voice_note_url` / `tongue_photo_urls`: پیوند فایل‌های صوتی و عکس‌های زبان
-* `category` / `consultation_status` / `order_status` / `priority` / `follow_ups`: دسته‌بندی و ۵ مرحله پیگیری ادمین
-* `meal_plan` / `usage_instructions` / `usage_pdf_url` / `meal_pdf_url`: دستورالعمل‌های اختصاصی مصرف
-* `course` / `shipping` / `payment` / `corrective_data`: اطلاعات کامل دوره، آدرس پستی، فیش واریز و اصلاحی
+## Access model
 
-### ۲.۲. جدول تراکنش‌های آنلاین (`public.transactions`)
-* `id` (UUID): شناسه تراکنش
-* `order_id` / `submission_id`: پیوند به پرونده سفارش
-* `gateway`: درگاه پرداخت (`zarinpal`, `idpay`, `payping`, `blubank`, `stripe`, `paypal`, `crypto`)
-* `amount` / `currency` / `status` / `ref_id` / `authority`: مشخصات مالی و بانکی
+- Browser: anon/publishable key only
+- Public writes: narrow RLS policy or validated Edge Function
+- Admin reads/writes: validated admin session + Edge Function + service role
+- `service_role`: Edge Function environment only
 
-### ۲.۳. جدول نظرات و تجربیات والدین (`public.reviews`)
-* `id` (BIGINT): شناسه نظر
-* `course_id`: دوره یا بخش مربوطه
-* `reviewer_name` / `rating` / `comment`: نام، امتیاز ۱ تا ۵ ستاره و متن نظر
-* `status`: وضعیت انتشار (`pending`, `approved`, `rejected`)
-* `placements`: آرایه محل‌های مجاز نمایش در سایت (`home`, `courses`, `course_detail`, `consultation`, `faq`, `about`, `track`, `all_places`)
+## Deployment order
 
-### ۲.۴. جدول سوالات کاربران (`public.user_questions`)
-* `id` / `phone` / `question` / `question_en` / `voice_note_url` / `answer` / `answer_en`
-* `status`: (`pending`, `answered`, `archived`)
-* `is_published_to_faq`: نشانگر تبدیل سوال به FAQ عمومی
+1. Back up data, policy metadata and Storage objects.
+2. Apply the new migration to a staging project first.
+3. Deploy affected Edge Functions with `--no-verify-jwt` only when they perform
+   their own documented validation.
+4. Run anonymous-access, build, unit and browser smoke tests.
+5. Apply production migration and verify row/object counts.
 
-### ۲.۵. جدول کاتالوگ دوره‌ها و هماهنگی چند دوره‌ای (`public.courses` و `public.course_tabs`)
-* `id` / `tab_id` / `title` / `price` / `discounted_price` / `features`
-* `prerequisites` (TEXT[]): پیش‌نیازها و هماهنگی بین دوره‌ها
-* `related_courses` (TEXT[]): دوره‌های مکمل پیشنهادی برای رشد همزمان قد، اشتها و هوش
-
-### ۲.۶. جدول مقالات و ویدیوهای علمی متد TC (`public.edu_articles`)
-* `id` / `title` / `summary` / `content` / `media_type` (`video`, `audio`, `article`) / `aparat_id` / `youtube_id` / `audio_url`
-
-### ۲.۷. جدول جملات اعتمادساز متحرک (`public.trust_sentences`)
-* `id` / `title` / `description` / `category` / `tabs` (آرایه تب‌های نمایش)
-
-### ۲.۸. سایر جداول زیرساختی
-* `bank_accounts`: کارت‌ها و شماره‌های شبا
-* `products`: انبار مکمل‌ها و طریقه مصرف
-* `settings`: تنظیمات سراسری سیستم
-* `deleted_submissions`: سطل بازیافت با امکان بازیابی
-* `tracking_logs` و `admin_logs`: لاگ‌های امنیتی و پیگیری
-
----
-
-## 🚀 ۳. نحوه اجرا توسط ایجنت GLM
-
-1. وارد داشبورد **Supabase** شوید.
-2. به بخش **SQL Editor** بروید.
-3. محتوای فایل `supabase_schema_master.sql` را کپی و اجرا (Run) نمایید.
-4. تمامی جداول، کلیدها، باکت‌ها و قوانین RLS با موفقیت ساخته می‌شوند.
+Never run a legacy setup script to “repair” production.

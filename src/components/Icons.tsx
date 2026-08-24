@@ -224,18 +224,18 @@ export const BoxIcon = ({size=18,color='currentColor',style}:IconProps)=>( // پ
 );
 
 // اصلاح ۸: نگاشت ایموجی محصول به وکتور مرتبط — در صورت نبود مورد مشابه، مقدار null برمی‌گردد (ایموجی اصلی باقی می‌ماند)
-export function productVectorIcon(icon?: string): React.ComponentType<IconProps> | null {
-  switch (icon) {
-    case 'drink': return DrinkIcon;
-    case '': return ProteinBarIcon;
-    case '': return DateFruitIcon;
-    case '': return CandyIcon;
-    case '': return TeaIcon;
-    case '': return HoneyIcon;
-    case '': return CoffeeIcon;
-    case '': return BranIcon;
-    case '': return BoxIcon;
-    default: return null;
+export function productVectorIcon(icon?:string):React.ComponentType<IconProps>|null{
+  switch(String(icon||'').trim().toLowerCase()){
+    case 'drink':return DrinkIcon;
+    case 'protein':case 'protein-bar':return ProteinBarIcon;
+    case 'date':return DateFruitIcon;
+    case 'candy':return CandyIcon;
+    case 'tea':return TeaIcon;
+    case 'honey':return HoneyIcon;
+    case 'coffee':return CoffeeIcon;
+    case 'bran':return BranIcon;
+    case 'box':case '':return BoxIcon;
+    default:return null;
   }
 }
 

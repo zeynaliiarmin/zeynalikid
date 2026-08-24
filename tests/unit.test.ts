@@ -14,7 +14,7 @@ import { isRequired } from '../src/utils/validation';
 import { courseSuccessMessages, formSuccessMessages, getRandomMessageTracked } from '../src/config/successMessages';
 import fa from '../src/locales/fa';
 import en from '../src/locales/en';
-import { PaymentService, SUPPORTED_GATEWAYS } from '../src/services/payment/PaymentService';
+import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../src/services/payment/PaymentService';
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 
@@ -125,7 +125,7 @@ for (const [k, v] of Object.entries(en)) {
   assert(typeof v === 'string' && v.length > 0, `en ترجمه برای کلید ${k}`);
 }
 
-// ── Payment drivers (all 7 via PaymentService) ────────────────────
+// ── Payment drivers: unfinished gateways fail closed ─────────────
 const allGateways = SUPPORTED_GATEWAYS.map(id => ({
   id,
   label: id,
@@ -140,16 +140,13 @@ const allGateways = SUPPORTED_GATEWAYS.map(id => ({
   },
 }));
 const service = new PaymentService({ gateways: allGateways, defaultCurrency: 'IRR', callbackUrl: 'https://zeynalikid.vercel.app/callback' });
-const enabled = service.getEnabledDrivers();
-assert(enabled.length === SUPPORTED_GATEWAYS.length, 'همه ۷ درگاه فعال ثبت شدند');
-for (const id of SUPPORTED_GATEWAYS) {
-  const info = enabled.find(d => d.id === id);
-  assert(!!info, `درگاه ${id} در list فعال حاضر است`);
-  assert(typeof info!.driver.createPayment === 'function', `درایور ${id} createPayment دارد`);
-  assert(typeof info!.driver.verifyPayment === 'function', `درایور ${id} verifyPayment دارد`);
-}
-assert(service.getCurrency() === 'IRR', 'getCurrency پیش‌فرض');
-assert(service.getActiveGateway() === 'blubank', 'getActiveGateway اولین درگاه');
+const enabled=service.getEnabledDrivers();
+const readyIds=SUPPORTED_GATEWAYS.filter(isGatewayProductionReady);
+assert(enabled.length===readyIds.length,'فقط درگاه‌های غیرنمایشی فعال می‌شوند');
+for(const id of readyIds){const info=enabled.find(d=>d.id===id);assert(!!info,`درگاه ${id} در فهرست فعال حاضر است`);assert(typeof info!.driver.createPayment==='function',`درایور ${id} createPayment دارد`);assert(typeof info!.driver.verifyPayment==='function',`درایور ${id} verifyPayment دارد`)}
+for(const id of SUPPORTED_GATEWAYS.filter(id=>!isGatewayProductionReady(id)))assert(!enabled.some(d=>d.id===id),`درگاه نمایشی ${id} در پرداخت عمومی غیرفعال است`);
+assert(service.getCurrency()==='IRR','getCurrency پیش‌فرض');
+assert(service.getActiveGateway()===readyIds[0],'getActiveGateway اولین درگاه آماده');
 
 // Crypto createPayment — no network needed
 {
@@ -157,6 +154,9 @@ assert(service.getActiveGateway() === 'blubank', 'getActiveGateway اولین د
   assert(res.gateway === 'crypto', 'crypto createPayment gateway');
   assert(typeof res.transactionId === 'string' && res.transactionId.startsWith('crypto_'), 'crypto transactionId');
 }
+
+// placeholder gateways can never return a fake success URL
+for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service.createPaymentForGateway(id,100,{} as PaymentMetadata)}catch{threw=true}assert(threw,`درگاه نمایشی ${id} با خطا متوقف می‌شود`)}
 
 // unknown/disabled gateway throws
 {

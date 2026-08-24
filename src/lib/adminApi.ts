@@ -84,7 +84,7 @@ async function callAdminApi(action: string, payload: Record<string, any> = {}, o
 
 export async function adminFetchSubmissions(opts: {
   page?: number; limit?: number; search?: string; type?: string; status?: string;
-  includeDeleted?: boolean; sortBy?: string; sortOrder?: 'asc' | 'desc';
+  includeDeleted?:boolean;deletedOnly?:boolean;sortBy?:string;sortOrder?:'asc'|'desc';
 } = {}): Promise<{ submissions: Submission[]; total: number; page: number; limit: number }> {
   const body = await callAdminApi('list_submissions', opts);
   return {
@@ -98,19 +98,11 @@ export async function adminFetchSubmissions(opts: {
 export async function adminFetchDeletedSubmissions(opts: {
   page?: number; limit?: number;
 } = {}): Promise<{ submissions: Submission[]; total: number; page: number; limit: number }> {
-  // Fetch deleted submissions by setting includeDeleted=true and filtering in client
-  // (admin-api returns all + deleted_at if includeDeleted=true)
-  // For now we fetch with includeDeleted and filter client-side; could be optimized later
-  const body = await callAdminApi('list_submissions', {
-    ...opts,
-    includeDeleted: true,
-    // We can't filter "deleted_at IS NOT NULL" server-side via current API, so client-filter
-  });
-  const all = (body.submissions || []).map((row: any) => dbRowToSubmission(row)).filter(Boolean);
-  const deleted = all.filter((s: any) => s.deleted_at);
-  return {
-    submissions: deleted,
-    total: deleted.length,
+  const body=await callAdminApi('list_submissions',{...opts,includeDeleted:true,deletedOnly:true});
+  const deleted=(body.submissions||[]).map((row:any)=>dbRowToSubmission(row)).filter(Boolean);
+  return{
+    submissions:deleted,
+    total:body.total??deleted.length,
     page: body.page ?? 1,
     limit: body.limit ?? 50,
   };

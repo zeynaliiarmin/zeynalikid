@@ -56,9 +56,8 @@ async function listSubmissions(body: any, origin: string): Promise<Response> {
     );
   }
 
-  if (body.includeDeleted !== true) {
-    query = query.is("deleted_at", null);
-  }
+  if(body.deletedOnly===true)query=query.not("deleted_at","is",null);
+  else if(body.includeDeleted!==true)query=query.is("deleted_at",null);
 
   query = query.order(sortBy, { ascending: sortOrder === "asc" })
     .range(offset, offset + limit - 1);
@@ -86,7 +85,7 @@ async function getSubmission(body: any, origin: string): Promise<Response> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("submissions")
-    .select("*")
+    .select("id,full_phone,payload,tracking_code,created_at,updated_at,deleted_at")
     .eq("id", body.id)
     .limit(1)
     .maybeSingle();
@@ -388,7 +387,7 @@ async function listQuestions(body: any, origin: string): Promise<Response> {
 
   let query = supabase
     .from("user_questions")
-    .select("*", { count: "exact" });
+    .select("id,phone,question,question_en,voice_note_url,answer,answer_en,page_source,status,created_at,answered_at", { count: "exact" });
 
   if (status) query = query.eq("status", status);
 
@@ -459,7 +458,7 @@ async function listReviews(body: any, origin: string): Promise<Response> {
 
   let query = supabase
     .from("reviews")
-    .select("*", { count: "exact" });
+    .select("id,course_id,reviewer_name,rating,comment,status,placements,created_at,updated_at,phone,course_ids,phone_country,public_phone", { count: "exact" });
 
   if (status) query = query.eq("status", status);
 
@@ -498,7 +497,7 @@ async function createReview(body: any, origin: string): Promise<Response> {
     created_at: createdAt,
   };
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from("reviews").insert(row).select("*").single();
+  const { data, error } = await supabase.from("reviews").insert(row).select("id,course_id,reviewer_name,rating,comment,status,placements,created_at,updated_at,phone,course_ids,phone_country,public_phone").single();
   if (error) {
     console.error("create_review error:", error);
     return err("خطا در ثبت نظر", origin, 500);
@@ -564,59 +563,13 @@ async function deleteReview(body: any, origin: string): Promise<Response> {
 // Page View Stats
 // ──────────────────────────────────────────────────────────────────────────
 
-async function listPageViewStats(body: any, origin: string): Promise<Response> {
-  const supabase = getSupabaseAdmin();
-  const days = Math.min(90, Math.max(1, parseInt(body.days ?? "30", 10) || 30));
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-  // بهینه‌سازی سرعت: aggregation سمت دیتابیس به‌جای fetch همهٔ ردیف‌ها
-  const [pageRes, dayRes, totalRes] = await Promise.all([
-    supabase
-      .from("page_views")
-      .select("page_path")
-      .gte("created_at", since)
-      .order("page_path"),
-    supabase
-      .from("page_views")
-      .select("created_at")
-      .gte("created_at", since),
-    supabase
-      .from("page_views")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since),
-  ]);
-
-  const pages = pageRes.data ?? [];
-  const daysArr = dayRes.data ?? [];
-  const totalViews = totalRes.count ?? 0;
-
-  const byPage: Record<string, number> = {};
-  for (const row of pages) {
-    const path = row.page_path || "/";
-    byPage[path] = (byPage[path] ?? 0) + 1;
-  }
-
-  const byDay: Record<string, number> = {};
-  for (const row of daysArr) {
-    const day = (row.created_at as string).slice(0, 10);
-    byDay[day] = (byDay[day] ?? 0) + 1;
-  }
-
-  const topPages = Object.entries(byPage)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 50)
-    .map(([path, count]) => ({ page_path: path, views: count }));
-
-  const dailyCounts = Object.entries(byDay)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([day, count]) => ({ date: day, views: count }));
-
-  return ok({
-    totalViews,
-    days,
-    topPages,
-    dailyCounts,
-  }, origin);
+async function listPageViewStats(body:any,origin:string):Promise<Response>{
+  const days=Math.min(90,Math.max(1,parseInt(body.days??"30",10)||30));
+  const since=new Date(Date.now()-days*24*60*60*1000).toISOString();
+  const {data,error}=await getSupabaseAdmin().rpc("admin_page_view_stats",{p_since:since});
+  if(error){console.error("page view aggregation error:",error.message);return err("خطا در دریافت آمار بازدید",origin,500)}
+  const stats=(data&&typeof data==="object"?data:{}) as any;
+  return ok({totalViews:Number(stats.totalViews||0),days,topPages:Array.isArray(stats.topPages)?stats.topPages:[],dailyCounts:Array.isArray(stats.dailyCounts)?stats.dailyCounts:[]},origin);
 }
 
 // ──────────────────────────────────────────────────────────────────────────

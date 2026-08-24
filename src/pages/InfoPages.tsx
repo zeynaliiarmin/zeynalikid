@@ -173,7 +173,7 @@ export function EducationPage({app}:{app:any}){
  const faqReal=(en?cfg.faqItemsEn:cfg.faqItems)||[];
  const faqItems=faqReal.length?faqReal.map((x:any)=>({id:String(x.id),question:x.question,answer:x.answer})):FAQ_SAMPLES.map(x=>({id:x.id,question:(en&&x.qEn)?x.qEn:x.q,answer:(en&&x.aEn)?x.aEn:x.a}));
  const related=useMemo(()=>openItem?source.filter((x:any)=>x.id!==openItem.id&&x.type===openItem.type).slice(0,3):[],[openItem,source]);
- const consult=()=>{try{goToAppA&&goToAppA()}catch{}};
+ const consult=()=>{try{goToAppA?.()}catch{}};
  const goBack=()=>{try{if(window.history.length>1){window.history.back();return}}catch{} setView('home')};
  const title=en?'Learning & parent companionship':'آموزش و همراهی والدین';
  const introText=en?(cfg.educationIntroTextEn||''):(cfg.educationIntroText||'');

@@ -167,7 +167,7 @@ function setupPwaForCurrentRoute() {
       navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
         .catch(() => {});
       navigator.serviceWorker.ready.then((reg) => {
-        try { reg.active && reg.active.postMessage('zk-clean-caches'); } catch {}
+        try { reg.active?.postMessage('zk-clean-caches'); } catch {}
       }).catch(() => {});
     }
   });

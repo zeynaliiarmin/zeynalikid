@@ -127,18 +127,23 @@ export const settingsToDbRow = (settings: AppSettings): Record<string, any> => (
   updated_at: new Date().toISOString(),
 });
 
-export const fetchSubmissions = async (): Promise<Submission[]> => {
-  // Phase 3: route through admin-api (no direct Supabase access from admin panel)
-  const { adminFetchSubmissions } = await import('./adminApi');
-  const result = await adminFetchSubmissions({ limit: 1000 });
-  return result.submissions;
+async function collectAdminPages<T>(load:(page:number,limit:number)=>Promise<{items:T[];total:number}>):Promise<T[]>{
+  const limit=100;const all:T[]=[];
+  for(let page=1;page<=100;page++){
+    const result=await load(page,limit);all.push(...result.items);
+    if(all.length>=result.total||result.items.length<limit)break;
+  }
+  return all;
+}
+
+export const fetchSubmissions=async():Promise<Submission[]>=>{
+  const {adminFetchSubmissions}=await import('./adminApi');
+  return collectAdminPages(async(page,limit)=>{const r=await adminFetchSubmissions({page,limit});return{items:r.submissions,total:r.total}});
 };
 
-export const fetchDeletedSubmissions = async (): Promise<Submission[]> => {
-  // Phase 3: route through admin-api
-  const { adminFetchDeletedSubmissions } = await import('./adminApi');
-  const result = await adminFetchDeletedSubmissions({ limit: 1000 });
-  return result.submissions;
+export const fetchDeletedSubmissions=async():Promise<Submission[]>=>{
+  const {adminFetchDeletedSubmissions}=await import('./adminApi');
+  return collectAdminPages(async(page,limit)=>{const r=await adminFetchDeletedSubmissions({page,limit});return{items:r.submissions,total:r.total}});
 };
 
 export const softDeleteSubmission = async (id: string | number): Promise<void> => {
@@ -251,7 +256,12 @@ export const updateMultipleSubmissions = async (
 // ConsultationPage now uses localStorage cache only, and the server-side duplicate prevention
 // happens via the unique trackingCode generation + createSubmission's insert-or-fail behavior.
 
-export const fetchSettings = async (): Promise<AppSettings | null> => {
+const PUBLIC_SETTINGS_CACHE_KEY='zk_public_settings_cache_v1';
+const PUBLIC_SETTINGS_TTL_MS=5*60*1000;
+let publicSettingsMemory:{at:number;value:AppSettings}|null=null;
+let publicSettingsInFlight:Promise<AppSettings|null>|null=null;
+
+export const fetchSettings=async():Promise<AppSettings|null>=>{
   // Phase 4.5: split settings fetching by context:
   // - Admin context (has sessionToken): use admin-api (returns full settings with sensitive keys masked)
   // - Public context (no sessionToken): use public-settings edge function (returns only whitelisted keys)
@@ -263,29 +273,29 @@ export const fetchSettings = async (): Promise<AppSettings | null> => {
     }
   } catch { /* fall through to public-settings */ }
 
-  // Public context: use public-settings edge function (sanitized, no sensitive data)
-  const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
-  try {
-    const resp = await fetch(`${base}/functions/v1/public-settings?t=${Date.now()}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (resp.ok) {
-      const body = await resp.json();
-      if (body.settings) return body.settings;
-    }
-  } catch { /* public-settings unavailable — fall through to null (caller uses defaults) */ }
-
-  // Phase 5: direct anon read of settings REMOVED (RLS blocks anon on settings).
-  // Public context receives settings ONLY via the sanitized public-settings edge function.
-  return null;
+  const now=Date.now();
+  if(publicSettingsMemory&&now-publicSettingsMemory.at<PUBLIC_SETTINGS_TTL_MS)return publicSettingsMemory.value;
+  try{
+    const cached=sessionStorage.getItem(PUBLIC_SETTINGS_CACHE_KEY);
+    if(cached){const parsed=JSON.parse(cached);if(parsed?.value&&now-Number(parsed.at||0)<PUBLIC_SETTINGS_TTL_MS){publicSettingsMemory={at:Number(parsed.at),value:parsed.value};return parsed.value}}
+  }catch{}
+  if(publicSettingsInFlight)return publicSettingsInFlight;
+  const base=(import.meta.env.VITE_SUPABASE_URL as string||'').replace(/\/$/,'');
+  publicSettingsInFlight=(async()=>{
+    try{
+      const resp=await fetch(`${base}/functions/v1/public-settings`,{method:'GET',headers:{'Content-Type':'application/json'}});
+      if(resp.ok){const body=await resp.json();if(body.settings){const entry={at:Date.now(),value:body.settings as AppSettings};publicSettingsMemory=entry;try{sessionStorage.setItem(PUBLIC_SETTINGS_CACHE_KEY,JSON.stringify(entry))}catch{}return entry.value}}
+    }catch{}
+    return null;
+  })();
+  try{return await publicSettingsInFlight}finally{publicSettingsInFlight=null}
 };
 
 export const saveSettings = async (settings: AppSettings): Promise<AppSettings> => {
   // Phase 3: route through admin-api (blocklist prevents saving adminPassword etc.)
   const { adminSaveSettings } = await import('./adminApi');
   await adminSaveSettings(settings);
-  // Return the input settings (caller doesn't use the return value beyond success/failure)
+  publicSettingsMemory=null;try{sessionStorage.removeItem(PUBLIC_SETTINGS_CACHE_KEY)}catch{}
   return settings;
 };
 
@@ -444,11 +454,7 @@ export const fetchUserQuestions = async (status?: string): Promise<UserQuestion[
   if (getAdminSessionToken()) {
     try {
       const { adminFetchUserQuestions } = await import('./adminApi');
-      const result = await adminFetchUserQuestions({
-        status: status && status !== 'all' ? status : undefined,
-        limit: 1000,
-      });
-      return result.questions;
+      return await collectAdminPages(async(page,limit)=>{const r=await adminFetchUserQuestions({status:status&&status!=='all'?status:undefined,page,limit});return{items:r.questions,total:r.total}});
     } catch { /* fall through to public read below */ }
   }
 
@@ -643,11 +649,7 @@ export const fetchReviews = async (status?: string): Promise<ReviewItem[]> => {
   if (getAdminSessionToken()) {
     try {
       const { adminFetchReviews } = await import('./adminApi');
-      const result = await adminFetchReviews({
-        status: status && status !== 'all' ? status : undefined,
-        limit: 1000,
-      });
-      return result.reviews;
+      return await collectAdminPages(async(page,limit)=>{const r=await adminFetchReviews({status:status&&status!=='all'?status:undefined,page,limit});return{items:r.reviews,total:r.total}});
     } catch { /* fall through to public read below */ }
   }
 

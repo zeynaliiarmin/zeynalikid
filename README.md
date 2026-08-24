@@ -1,36 +1,32 @@
-# زینالیکید (Zeynalikid)  
-> همراهی والدین در رشد و تغذیه کودک  
-  
-## معرفی  
-زینالیکید پلتفرم مشاوره و آموزش آنلاین برای والدین  
-کودکان ۲ تا ۱۷ سال است. شامل دو اپلیکیشن:  
-  
-- **zeynalikid-main**: سایت اصلی (صفحات عمومی، دوره‌ها، پنل مدیریت)  
-- **zeynalikid-form**: فرم مشاوره (ثبت‌نام و اطلاعات فرزند)  
-  
-## فیچرهای اصلی  
-- سیستم تم چندگانه (light, cream, ocean, dark, wellness, kidlearn, navystack)  
-- دوزبانه فارسی/انگلیسی با RTL/LTR واقعی  
-- موبایل‌فرست (320-480px)  
-- تشخیص هوشمند VPN برای منابع محتوا (یوتیوب/آپارات)  
-- یادداشت صوتی در فرم مشاوره  
-- تبدیل خودکار عکس‌ها به WebP  
-- سیستم FAQ تعاملی با فرم سؤال و زنگ اعلان  
-- سیستم نظرات با تأیید ادمین  
-- تایمر تخفیف زنده  
-- نکات روزانه (Daily Tips)  
-- محافظ خروج با اطلاعات ذخیره‌نشده (Exit Guard)  
-- PWA با Service Worker  
-- FAB پنل ادمین با Speed Dial  
-- پرچم‌های ایموجی در انتخابگر کشور  
-  
-## تکنولوژی‌ها  
-- React 19 + TypeScript + Vite  
-- Supabase (DB + Auth + Storage)  
-- Vazirmatn font  
-  
-## راه‌اندازی  
-```bash  
-npm install  
+# زینالیکید (Zeynalikid)
+
+پلتفرم مستقل مشاوره، آموزش، دوره‌ها و پیگیری رشد و تغذیه کودک و نوجوان.
+
+## Stack
+
+- React 19 + TypeScript + Vite 8
+- Supabase Postgres, Storage and Edge Functions
+- Vercel
+- PWA عمومی و پنل مدیریت
+
+## Local development
+
+```bash
+npm ci
 npm run dev
 ```
+
+## Required verification
+
+```bash
+npm run check
+```
+
+## Security model
+
+- مرورگر فقط کلید publishable/anon را دریافت می‌کند.
+- فایل‌های حساس private و فقط با Signed URL کوتاه‌مدت قابل دسترسی‌اند.
+- عملیات مدیریت فقط از Edge Function و نشست معتبر انجام می‌شود.
+- منبع رسمی دیتابیس `supabase/migrations/` است.
+
+راهنمای استقرار: `DEPLOYMENT.md`

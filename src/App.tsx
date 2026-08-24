@@ -7,7 +7,8 @@ import Header from './components/Header';
 import HamburgerMenu from './components/HamburgerMenu';
 import faDict from './locales/fa';
 import enDict from './locales/en';
-import { defaultCountries, defaultSettings as configDefaultSettings, migrateSettings, CURRENT_SETTINGS_VERSION } from './config/defaultSettings';
+import { defaultCountries,defaultSettings as configDefaultSettings,migrateSettings,CURRENT_SETTINGS_VERSION } from './config/defaultSettings';
+import { PATH_TO_VIEW,VIEW_TO_PATH,SYSTEM_REFERRAL_PATHS } from './config/routes';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from './utils/trustFont';
 import { flagToEmoji, getCountryFlag } from './utils/phone';
 import { getReferralCodeFromUrl, findConsultantByCode, parseReferral, parseReferralRaw, findTabByCode, fillReferralText, type ParsedReferral } from './utils/referral';
@@ -986,36 +987,8 @@ function TrustRotator({items,T,intervalMs=8000,tr=(s:string)=>s,center=false}:{i
  return <div className="trust-rotator-force" style={{background:T.card,border:`1px solid ${T.brd}`,borderRadius:12,marginBottom:14,marginInline:center?'auto':undefined,boxSizing:'border-box',textAlign:'center',boxShadow:T.neuOut,lineHeight:1.6}}><div style={{opacity:visible?1:0,transition:'opacity 0.4s ease',width:'100%',maxWidth:'min(90%, 800px)',margin:'0 auto',overflow:'hidden'}}><b style={{display:'block',fontSize:`clamp(16px, 2vw, ${ttlSize}px)`,color:T.ttl,lineHeight:1.4,marginBottom:descText?'0.5rem':0,transition:'font-size .3s ease',overflowWrap:'break-word'}}>{ttlText}</b>{descText&&<p style={{fontSize:`clamp(14px, 1.6vw, ${descSize}px)`,color:T.mut,lineHeight:1.6,margin:'0.25rem auto 0',transition:'font-size .3s ease',overflowWrap:'break-word'}}>{descText}</p>}</div></div>
 }
 
-// ===== نگاشت view به مسیر مرورگر (URL Routing با react-router-dom) =====
-const pathToView: Record<string, string> = {
-  '/': 'home',
-  '/courses': 'courses',
-  '/track': 'track',
-  '/experience': 'experience',
-  '/licenses': 'licenses',
-  '/education': 'education',
-  '/about': 'about',
-  '/faq': 'faq',
-  '/contact':'contact',
-  '/products':'products',
-  '/profile':'profile',
-  '/growth':'growth',
-  '/settings':'settings',
-  '/privacy':'privacy',
-  '/admin-login': 'admin-login',
-  '/admin/login': 'admin-login',
-  '/admin': 'admin',
-  '/admin/app': 'admin',
-  '/child-info': 'child-info',
-  '/course-shipping': 'course-shipping',
-  '/course-payment': 'course-payment',
-  '/course-payment/verify': 'payment-verify',
-  '/course-confirm': 'course-confirm',
-  '/course-done': 'course-done',
-  '/form': 'form',
-  '/consultation': 'form',
-};
-const viewToPath: Record<string, string> = Object.fromEntries(Object.entries(pathToView).map(([p, v]) => [v, p]));
+const pathToView=PATH_TO_VIEW;
+const viewToPath=VIEW_TO_PATH;
 
 function App(){
  const [cfg,setCfg]=useState(()=>mergeSettings(getLS(SK.settings,null)));
@@ -1120,7 +1093,7 @@ function App(){
  useEffect(()=>{let alive=true; if(isSupabaseConfigured){fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(e=>console.warn('Could not load settings from Supabase',e))} return()=>{alive=false}},[]);
  // اصلاح: تازه‌سازی دوره‌ای تنظیمات عمومی در صفحات عمومی تا تغییرات (سوالات متداول، محتوا و…)
  // بدون نیاز به رفرش/ذخیرهٔ دستی هر چند ساعت در سایت نمایان شود.
- useEffect(()=>{if(!isSupabaseConfigured||view==='admin'||view==='admin-login')return;let alive=true;const refresh=()=>{fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(()=>{})};const iv=setInterval(refresh,60000);return()=>{alive=false;clearInterval(iv)}},[view,isSupabaseConfigured]);
+ useEffect(()=>{if(!isSupabaseConfigured||view==='admin'||view==='admin-login')return;let alive=true;const refresh=()=>{fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(()=>{})};const iv=setInterval(refresh,300000);return()=>{alive=false;clearInterval(iv)}},[view,isSupabaseConfigured]);
  // پس از ورود مدیر، تنظیمات کامل و احرازهویت‌شده دوباره بارگذاری می‌شود. تا پایان این مرحله
  // پنل قابل ویرایش نیست تا پاسخ عمومیِ فیلترشده هرگز محصولات یا تصاویر را با پیش‌فرض بازنویسی نکند.
  useEffect(()=>{if(!adminAuthed||!isSupabaseConfigured)return;let alive=true;fetchSettings().then(s=>{if(alive&&s)setCfg((current:any)=>mergeSettings({...current,...s,products:s.products??current.products}))}).catch(e=>console.warn('Could not load full admin settings',e)).finally(()=>{if(alive)setAdminSettingsLoading(false)});return()=>{alive=false}},[adminAuthed]);
@@ -1140,8 +1113,7 @@ function App(){
      const path=(window.location.pathname||'').replace(/\/+$/,'').replace(/^\//,'').split('?')[0];
      const q=new URLSearchParams(window.location.search);
      const raw=(q.get('ad')||q.get('ref')||path||'').trim();
-     const SYSTEM=['admin','admin-login','courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','privacy','licenses','child-info','course-shipping','course-payment','course-confirm','course-done','payment-verify'];
-     if(!raw||raw.includes('/')||SYSTEM.includes(raw.toLowerCase())||/\.(js|css|png|jpe?g|webp|svg|ico|json|html?|pdf|mp[34]|webm|txt|xml|webmanifest)$/i.test(raw)) return true;
+     if(!raw||raw.includes('/')||SYSTEM_REFERRAL_PATHS.has(raw.toLowerCase())||/\.(js|css|png|jpe?g|webp|svg|ico|json|html?|pdf|mp[34]|webm|txt|xml|webmanifest)$/i.test(raw)) return true;
      return false;
    } catch { return true; }
  });

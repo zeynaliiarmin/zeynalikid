@@ -21,9 +21,6 @@ import {
   ZarinpalDriver,
   IDPayDriver,
   PayPingDriver,
-  BlubankDriver,
-  StripeDriver,
-  PayPalDriver,
   CryptoDriver,
 } from './drivers';
 
@@ -69,6 +66,10 @@ export const SUPPORTED_GATEWAYS = [
 
 export type SupportedGateway = typeof SUPPORTED_GATEWAYS[number];
 
+/** Gateways whose current drivers are only placeholders and must never be offered. */
+export const UNAVAILABLE_GATEWAYS=new Set(['blubank','stripe','paypal']);
+export const isGatewayProductionReady=(id:string)=>!UNAVAILABLE_GATEWAYS.has(String(id||'').toLowerCase());
+
 // ─── سرویس پرداخت چنددرگاهی ───
 export class PaymentService {
   private config: PaymentConfig;
@@ -83,8 +84,8 @@ export class PaymentService {
   private buildDrivers(config: PaymentConfig): Map<string, PaymentDriver> {
     const map = new Map<string, PaymentDriver>();
 
-    for (const gw of config.gateways || []) {
-      if (!gw.enabled) continue;
+    for(const gw of config.gateways||[]){
+      if(!gw.enabled||!isGatewayProductionReady(gw.id))continue;
 
       const driver = this.createDriverForGateway(gw);
       if (driver) {
@@ -111,13 +112,10 @@ export class PaymentService {
           return new PayPingDriver(c.apiKey || '', c.clientId || '');
 
         case 'blubank':
-          return new BlubankDriver(c.merchantCode || '', c.terminalCode || '');
-
         case 'stripe':
-          return new StripeDriver(c.secretKey || '', c.publishableKey || '');
-
         case 'paypal':
-          return new PayPalDriver(c.clientId || '', c.clientSecret || '', c.sandbox !== false);
+          console.warn(`درگاه "${gw.id}" تا تکمیل اتصال امن سمت سرور غیرفعال است.`);
+          return null;
 
         case 'crypto':
           return new CryptoDriver(Array.isArray(c.wallets) ? c.wallets : []);
@@ -138,7 +136,7 @@ export class PaymentService {
 
   /** دریافت لیست درگاه‌های فعال (enabled: true) */
   getEnabledGateways(): GatewayConfig[] {
-    return (this.config.gateways || []).filter(gw => gw.enabled);
+    return (this.config.gateways||[]).filter(gw=>gw.enabled&&isGatewayProductionReady(gw.id));
   }
 
   /** دریافت لیست درگاه‌های فعال همراه با درایورهایشان */

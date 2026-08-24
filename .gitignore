@@ -9,3 +9,5 @@ test-output/
 
 node_modules
 zeynalikid-main/
+!.env.example
+supabase/.temp/
