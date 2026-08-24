@@ -12,7 +12,8 @@
     "build": "tsc -b && vite build",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
-    "test:a11y": "node tests/accessibility.mjs"
+    "test:a11y": "node tests/accessibility.mjs",
+    "test:e2e:readonly": "node tests/critical-paths.mjs"
   },
   "dependencies": {
     "@fontsource/vazirmatn": "5.3.0",

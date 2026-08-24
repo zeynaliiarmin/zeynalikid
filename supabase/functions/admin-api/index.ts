@@ -38,21 +38,21 @@ async function listSubmissions(body: any, origin: string): Promise<Response> {
 
   let query = supabase
     .from("submissions")
-    .select("id, full_phone, payload, created_at, updated_at, deleted_at", { count: "exact" });
+    .select("id,full_phone,payload,tracking_code,submission_type,order_status,consultation_status,course_id,advisor_code,created_at,updated_at,deleted_at", { count: "exact" });
 
   if (type === "consultation" || type === "course") {
-    query = query.eq("payload->>type", type);
+    query = query.eq("submission_type", type);
   }
 
   if (typeof body.status === "string" && body.status) {
     query = query.or(
-      `payload->>orderStatus.eq.${body.status},payload->>consultationStatus.eq.${body.status}`,
+      `order_status.eq.${body.status},consultation_status.eq.${body.status}`,
     );
   }
 
   if (search) {
     query = query.or(
-      `payload->>trackingCode.ilike.%${search}%,full_phone.ilike.%${search}%`,
+      `tracking_code.ilike.%${search}%,full_phone.ilike.%${search}%`,
     );
   }
 
@@ -85,7 +85,7 @@ async function getSubmission(body: any, origin: string): Promise<Response> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("submissions")
-    .select("id,full_phone,payload,tracking_code,created_at,updated_at,deleted_at")
+    .select("id,full_phone,payload,tracking_code,submission_type,order_status,consultation_status,course_id,advisor_code,created_at,updated_at,deleted_at")
     .eq("id", body.id)
     .limit(1)
     .maybeSingle();
@@ -641,11 +641,13 @@ async function getSignedUrls(body: any, origin: string, _session: any): Promise<
   return ok({ urls: result }, origin);
 }
 
+async function runMaintenance(_body:any,origin:string):Promise<Response>{const {data,error}=await getSupabaseAdmin().rpc("admin_run_maintenance");if(error)return err("اجرای نگهداری انجام نشد",origin,500);return ok({maintenance:data},origin)}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
-const MUTATING_ACTIONS=new Set(['update_submission','soft_delete_submission','restore_submission','permanent_delete_submission','delete_storage_files','save_settings','update_question','delete_question','create_review','update_review','delete_review']);
+const MUTATING_ACTIONS=new Set(['update_submission','soft_delete_submission','restore_submission','permanent_delete_submission','delete_storage_files','save_settings','update_question','delete_question','create_review','update_review','delete_review','run_maintenance']);
 const ACTION_HANDLERS:Record<string,(body:any,origin:string,session:any)=>Promise<Response>>={
   list_submissions: listSubmissions,
   get_submission: getSubmission,
@@ -664,7 +666,8 @@ const ACTION_HANDLERS:Record<string,(body:any,origin:string,session:any)=>Promis
   create_review: createReview,
   update_review: updateReview,
   delete_review: deleteReview,
-  list_page_view_stats: listPageViewStats,
+  list_page_view_stats:listPageViewStats,
+  run_maintenance:runMaintenance,
 };
 
 serve(async (req) => {
