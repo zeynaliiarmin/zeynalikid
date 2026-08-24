@@ -154,7 +154,8 @@ export default function ConsultationPage({ app }: { app: any }) {
   const [editId, setEditId] = useState<any>(null);
   const editEntryRef = useRef<any>(null);
   const [allowNewChild, setAllowNewChild] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting,setSubmitting]=useState(false);
+  const [privacyAccepted,setPrivacyAccepted]=useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const subsCacheRef = useRef<any[] | null>(null);
@@ -604,11 +605,12 @@ export default function ConsultationPage({ app }: { app: any }) {
           {voiceBlob && <div style={{ fontSize: 11, color: '#059669', marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
+        <label style={{display:'flex',alignItems:'flex-start',gap:8,margin:'14px 0 8px',fontSize:11.5,lineHeight:1.8,color:T.mut,cursor:'pointer'}}><input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} style={{marginTop:5,accentColor:T.acc}}/><span>{lang==='en'?'I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service.':'اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم.'} <button type="button" onClick={e=>{e.preventDefault();setView('privacy')}} style={{border:0,background:'transparent',padding:0,color:T.acc,fontFamily:'inherit',fontWeight:700,cursor:'pointer'}}>{lang==='en'?'Privacy notice':'متن حریم خصوصی'}</button></span></label>
         <p style={{ fontSize: 10, color: T.mut, textAlign: 'center' }}>{publicText('required', 'فیلدهای دارای * الزامی هستند')}</p>
         {Object.keys(errs).length > 0 && <div style={{ background: `${T.err}12`, border: `1px solid ${T.err}`, borderRadius: 12, padding: 12, marginBottom: 12, color: T.err, fontSize: 12 }}>
           {Object.values(errs).map((x: any, i) => <div key={i}>- {x}</div>)}
         </div>}
-        <button style={S.btn} onClick={() => doSubmit()}>{publicText('submitBtnText')}</button>
+        <button style={{...S.btn,opacity:privacyAccepted?1:.55,cursor:privacyAccepted?'pointer':'not-allowed'}} disabled={!privacyAccepted||submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</button>
       </div>
 
       {/* Duplicate modal */}

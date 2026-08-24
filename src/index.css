@@ -8,8 +8,7 @@
    No Emoji. 3 shadows. Pill buttons.
    ═══════════════════════════════════════════════ */
 
-/* Vazirmatn from Google Fonts CDN */
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap');
+/* Vazirmatn self-hosted via @fontsource */
 
 html, body {
   min-height: 100%;

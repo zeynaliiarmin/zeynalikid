@@ -4,14 +4,14 @@
 // IMPORTANT: This function MUST be deployed with `--no-verify-jwt` so the
 // `login` action can be reached WITHOUT a prior JWT. It performs its OWN
 // validation internally:
-//   1. login          -> validates phone (ADMIN_PHONE) + password (ADMIN_PASSWORD)
+//   1. login          -> validates a PBKDF2 password hash in admin_credentials
 //   2. validate_session-> validates the session token (hash + expiry + revoked)
 //   3. revoke_all     -> revokes every session/device of the owner
 //   4. list_devices   -> lists active devices of the owner
 //   5. revoke_device  -> revokes a single device (+ its sessions)
 //
-// ADMIN_PHONE and ADMIN_PASSWORD are stored ONLY in Edge Function secrets,
-// never in the frontend. Service role key never leaves this function.
+// Legacy Edge secrets are read only once for a backward-compatible migration to
+// the database hash. No plaintext credential or service_role reaches the browser.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
@@ -22,6 +22,7 @@ import {
   validateAdminSession, extractSessionToken, sha256,
 } from "../_shared/adminAuth.ts";
 import { rateLimit, rateLimitKey, centralRateLimit, cleanupExpiredBuckets } from "../_shared/rateLimit.ts";
+import { verifyAdminCredentials } from "../_shared/adminCredentials.ts";
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours — limits exposure if a device token is stolen
 
@@ -124,17 +125,16 @@ serve(async (req) => {
       );
     }
 
-    const storedPhone = Deno.env.get("ADMIN_PHONE") || "";
-    const storedPwd = Deno.env.get("ADMIN_PASSWORD") || "";
-    const invalidLogin = { error: "شماره تماس یا رمز عبور صحیح نیست" };
-
-    if (!phone || !storedPhone || !storedPwd) {
-      await writeSecurityAudit(supabase, "admin_login_failed", phone, false, { reason: "invalid_input_or_configuration" });
-      return jsonResponse(invalidLogin, 401, origin);
+    const invalidLogin={error:"شماره تماس یا رمز عبور صحیح نیست"};
+    let credentialCheck:{ok:boolean;phone:string;mustChangePassword:boolean};
+    try{credentialCheck=await verifyAdminCredentials(phone,password)}catch(error){
+      console.error("admin credential verification failed:",String((error as Error)?.message||error));
+      await writeSecurityAudit(supabase,"admin_login_failed",phone,false,{reason:"credential_store_error"});
+      return jsonResponse({error:"سرویس ورود موقتاً در دسترس نیست"},503,origin);
     }
-    if (normalizeIranianMobile(storedPhone) !== phone || password !== storedPwd) {
-      await writeSecurityAudit(supabase, "admin_login_failed", phone, false, { reason: "invalid_credentials" });
-      return jsonResponse(invalidLogin, 401, origin);
+    if(!credentialCheck.ok){
+      await writeSecurityAudit(supabase,"admin_login_failed",phone,false,{reason:"invalid_credentials"});
+      return jsonResponse(invalidLogin,401,origin);
     }
 
     const info = deviceInfoFromBody(body);
@@ -153,7 +153,8 @@ serve(async (req) => {
       info.browser,
       info.user_agent,
     ].join("|");
-    let deviceId = randomToken();
+    // UUID works with Zeynalikid's uuid column and Farzandman's text column.
+    let deviceId=crypto.randomUUID();
     let deviceExists = false;
     try {
       const { data: existing, error: existingErr } = await supabase
@@ -235,6 +236,7 @@ serve(async (req) => {
       deviceId,
       expiresAt,
       ownerPhone: phone,
+      mustChangePassword: credentialCheck.mustChangePassword,
     }, 200, origin);
   }
 

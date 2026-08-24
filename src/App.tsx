@@ -1,6 +1,7 @@
 import { memo, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import EnrollmentStepper from './components/EnrollmentStepper';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes,Route,Navigate,useLocation,useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import Header from './components/Header';
 import HamburgerMenu from './components/HamburgerMenu';
@@ -31,7 +32,9 @@ const CoursePaymentPage = lazy(() => import('./pages/CoursePaymentPage'));
 const PaymentVerifyPage = lazy(() => import('./pages/PaymentVerifyPage'));
 const CourseConfirmPage = lazy(() => import('./pages/CourseConfirmPage'));
 const CourseDonePage = lazy(() => import('./pages/CourseDonePage'));
-const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const AdminLoginPage=lazy(()=>import('./pages/AdminLoginPage'));
+const NotFoundPage=lazy(()=>import('./pages/NotFoundPage'));
+const PrivacyPage=lazy(()=>import('./pages/PrivacyPage'));
 const AdminPanel = lazy(() => import('./admin/AdminPanel'));
 const ExperiencePage = lazy(() => import('./pages/InfoPages').then(m => ({ default: m.ExperiencePage })));
 const LicensesPage = lazy(() => import('./pages/InfoPages').then(m => ({ default: m.LicensesPage })));
@@ -493,7 +496,7 @@ const defaultSettings:Any={
    {id:'h2',title:'پشتیبانت هستیم، نه فروشنده‌ای که ناپدید بشه.',description:'از روز اول تا آخرین روز دوره، کنارتیم. هفتگی پیگیر وضعیت رشد، اشتها و خواب فرزندت هستیم.',order:2},
    {id:'h3',title:'اگر نتیجه نگیریم، صریح میگیم.',description:'تعهد ما فقط وقتی معنا داره که تو هم همراهیمون کنی. روراست و متعهد، درست مثل خودت.',order:3},
    {id:'h4',title:'زیر لیسانس آلمان بودن، یعنی پاسپورت سلامت اروپا تو جیب محصول ماست.',description:'ما این افتخار رو با فرمولاسیون کاملاً بومی و مناسب طبع بچه‌های ایران ترکیب کردیم.',order:4},
-   {id:'h5',title:'۱۰,۰۰۰+ مادری که نتیجه گرفتن، پشتوانه حرف ماست.',description:'آمار رضایت‌ها رو ببین، ویس‌ها رو بشنو. این بهترین پشتوانهٔ کیفیت ماست.',order:5},
+   {id:'h5',title:'تجربه‌های منتشرشده والدین، راهنمای انتخاب آگاهانه‌تر است.',description:'بازخوردها و تجربه‌های منتشرشده را ببینید و با آگاهی بیشتری تصمیم بگیرید.',order:5},
    {id:'h6',title:'بچت قهرمان نمیشه چون مکمل می‌خوره؛ قهرمان میشه چون بدنش از درون ترمیم میشه.',description:'تفاوت بین یه کودک خسته، بدغذا و کم‌حوصله با یه کودک پرانرژی و سرزنده، ریشه‌اش تو ترمیم سلولیه.',order:6},
    {id:'h7',title:'سلامتی یه مقصد نیست، یه مسیر شخصی‌سازیه.',description:'ما با ۱۷۰۰ محصول، مسیر سلامت فرزند تو رو منحصربه‌فرد طراحی می‌کنیم.',order:7},
    {id:'h8',title:'پیشگیری، ریشه‌ای‌ترین کار ماست.',description:'نمی‌ذاریم ضعف ایمنی، کوتاهی قد یا کاهش تمرکز، فرزندت رو غافلگیر کنه.',order:8},
@@ -513,7 +516,7 @@ const defaultSettings:Any={
    {id:'ht10',title:'مکمل رشد قد، وقتی با طبع فرزندت هماهنگ باشه، بهتر جواب می‌ده.',description:'ما با تحلیل تخصصی عکس زبان، مسیر جذب و رشد رو بهتر می‌شناسیم.',order:10},
    {id:'ht11',title:'عکس زبون بچهات، نقشه گنج سلامتی و قد بلندشه.',description:'ما به جای حدس زدن، نقشه می‌خونیم. ریشه کندرشدی رو دقیقاً همونجا پیدا می‌کنیم.',order:11},
    {id:'ht12',title:'نسخهٔ منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.',description:'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.',order:12},
-   {id:'ht13',title:'۱۰,۰۰۰+ مادری که نتیجه گرفتن، پشتوانه رشد قد فرزندت.',description:'آمار رضایت‌ها رو ببین، ویس‌ها رو بشنو، تغییرات قدی رو ببین، بعد تصمیم بگیر.',order:13},
+   {id:'ht13',title:'تجربه‌های والدین می‌تواند به انتخاب آگاهانه‌تر مسیر رشد کمک کند.',description:'بازخوردها را ببینید و سپس متناسب با شرایط فرزندتان تصمیم بگیرید.',order:13},
    {id:'ht14',title:'هر هفته که بگذره و اقدام نکنی، یه قدم از هم‌سن و سالاش عقب‌تر میفته.',description:'کمبود وزن موندگار میشه و قد از دست میره. تصمیم سخت امروز، حسرت آسون فردا رو حذف می‌کنه.',order:14},
    {id:'ht15',title:'بچت قهرمان قدی میشه چون بدنش از درون ترمیم میشه.',description:'تفاوت بین یه کودک خسته و کم‌قد، با یه کودک پرانرژی و بلندقامت، ریشه‌اش تو ترمیم سلولیه.',order:15},
    {id:'ht16',title:'۱۷۰۰ محصول داریم، اما فقط ۴ تاش مال بچه توئه.',description:'این یعنی ما یه سوزن رو از انبار کاه پیدا می‌کنیم. نسخه عمومی ممنوع، فقط شفای اختصاصی برای رشد.',order:16}
@@ -578,7 +581,7 @@ const defaultSettings:Any={
   "ما اینجام تا دیگه مجبور نباشی با گریه و التماس به بچه‌ات غذا بدی. دوران جنگ با غذا تموم شد.",
   "عکس زبانش رو آماده کن. همون جا راز بی‌اشتهایی و کندرشدی فرزندت رو بهت می‌گیم.",
   "ما به دنبال فروش نیستیم؛ به دنبال همراهی ریشه‌اییم. تو تماس اول، خودت اینو حس می‌کنی.",
-  "۱۰,۰۰۰+ مادر مسیر مشاوره با ما رو رفتن و حالا نتیجه‌ش رو توی ویس‌هاشون جیغ می‌زنن!",
+  "تجربه‌های منتشرشده والدین را ببینید و با آگاهی بیشتری تصمیم بگیرید.",
   "کارشناسایی که باهات تماس می‌گیرن، خودشون دوره‌های تخصصی رشد و تغذیه رو دیدن. حرف دلت رو می‌فهمن.",
   "نگران این نباش که چی بگی. ما سوالای درست رو ازت می‌پرسیم تا به ریشه برسیم.",
   "این مشاوره فقط یه تماس ساده نیست؛ یه نقشه راه کامل برای نجات رشد و اشتهای فرزندته.",
@@ -595,7 +598,7 @@ const defaultSettings:Any={
   "We’re here so you no longer have to force-feed your child with tears and pleading. The food battle is over.",
   "Have your child’s tongue photo ready. We’ll reveal the secret of appetite loss and slow growth right there.",
   "We’re not after selling; we’re after root cause support. You’ll feel it on the first call.",
-  "10,000+ mothers have walked this path and now shout their results in voice messages!",
+  "Read published parent experiences and make a more informed choice.",
   "The experts who call you have themselves completed specialized growth and nutrition training. They understand you.",
   "Don’t worry about what to say. We’ll ask the right questions to get to the root.",
   "This consultation is not just a call; it’s a complete roadmap to rescue your child’s growth and appetite.",
@@ -917,7 +920,7 @@ function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onStartCon
             <div style={{fontWeight:900,fontSize:19,color:T.ttl}}>{siteName}</div>
           </div>
           <p style={{fontSize:13,color:T.mut,lineHeight:1.75,margin:0}}>{lang==='en'?'Specialized child growth & nutrition consultations using the TC method. Warm, human, science-backed support for every parent.':'مشاوره رشد و تغذیه کودک با روش TC. همراهی گرم، انسانی و علمی برای هر والد.'}</p>
-          <div style={{marginTop:14,fontSize:12,color:T.mut}}>{lang==='en'?'Since 2018 • Trusted by 10,000+ families':'از ۱۳۹۷ • مورد اعتماد بیش از ۱۰٬۰۰۰ خانواده'}</div>
+          <div style={{marginTop:14,fontSize:12,color:T.mut}}>{lang==='en'?'Specialized guidance for parents and children':'راهنمایی تخصصی برای والدین و کودکان'}</div>
         </div>
         <div className="zk-footer-col">
           <button className="zk-footer-acc-head" data-open={openAcc==='links'} onClick={()=>toggleAcc('links')} aria-expanded={openAcc==='links'}>{lang==='en'?'Quick Links':'دسترسی سریع'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -993,7 +996,12 @@ const pathToView: Record<string, string> = {
   '/education': 'education',
   '/about': 'about',
   '/faq': 'faq',
-  '/contact': 'contact',
+  '/contact':'contact',
+  '/products':'products',
+  '/profile':'profile',
+  '/growth':'growth',
+  '/settings':'settings',
+  '/privacy':'privacy',
   '/admin-login': 'admin-login',
   '/admin/login': 'admin-login',
   '/admin': 'admin',
@@ -1132,12 +1140,13 @@ function App(){
      const path=(window.location.pathname||'').replace(/\/+$/,'').replace(/^\//,'').split('?')[0];
      const q=new URLSearchParams(window.location.search);
      const raw=(q.get('ad')||q.get('ref')||path||'').trim();
-     const SYSTEM=['admin','admin-login','courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done','payment-verify'];
+     const SYSTEM=['admin','admin-login','courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','privacy','licenses','child-info','course-shipping','course-payment','course-confirm','course-done','payment-verify'];
      if(!raw||raw.includes('/')||SYSTEM.includes(raw.toLowerCase())||/\.(js|css|png|jpe?g|webp|svg|ico|json|html?|pdf|mp[34]|webm|txt|xml|webmanifest)$/i.test(raw)) return true;
      return false;
    } catch { return true; }
  });
  // ─── آپدیت لینک ارجاع: پاپ‌آپ «درخواست مشاوره مجدد» در حالت ارجاع ───
+ useEffect(()=>{if(referralReady)return;const timer=window.setTimeout(()=>setReferralReady(true),3000);return()=>window.clearTimeout(timer)},[referralReady,location.pathname,location.search]);
  const [referralConsultOpen,setReferralConsultOpen]=useState(false);
  const [referralConsultReason,setReferralConsultReason]=useState('');
  const [referralConsultShowReason,setReferralConsultShowReason]=useState(false);
@@ -1376,7 +1385,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'60vh',color:'#888',fontSize:14}}>در حال بارگذاری...</div>}><Routes>
   <Route path="/" element={<HomePage app={app}/>}/>
   {/* مسیر مستقیم کد ارجاع: /mhi */}
-  <Route path="/:refCode" element={<HomePage app={app}/>}/>
+  <Route path="/:refCode" element={!referralReady?null:(referralConsultant?<HomePage app={app}/>:<NotFoundPage app={app}/>)}/>
   <Route path="/courses" element={<CoursesPage app={app}/>}/>
   <Route path="/child-info" element={<ChildInfoPage app={app}/>}/>
   <Route path="/course-shipping" element={<CourseShippingPage app={app}/>}/>
@@ -1395,13 +1404,14 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
   <Route path="/faq" element={<FAQPage app={app}/>}/>
   <Route path="/products" element={<ProductsPage app={app}/>}/>
   <Route path="/contact" element={<ContactPage app={app}/>}/>
+  <Route path="/privacy" element={<PrivacyPage app={app}/>}/>
   <Route path="/form" element={<ConsultationPage app={app}/>}/>
   <Route path="/consultation" element={<ConsultationPage app={app}/>}/>
   <Route path="/admin-login" element={<AdminLoginPage app={app}/>}/>
   <Route path="/admin/login" element={<AdminLoginPage app={app}/>}/>
   <Route path="/admin" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
   <Route path="/admin/app" element={adminAuthed?<AdminPanel app={app}/>:<Navigate to="/admin/login" replace/>}/>
-  <Route path="*" element={<Navigate to="/" replace/>}/>
+  <Route path="*" element={<NotFoundPage app={app}/>}/>
  </Routes></Suspense>;
  // هدر اصلی در فهرست و جزئیات دوره نمایش داده می‌شود؛ فقط مراحل حساس ثبت/پرداخت هدر ندارند.
  const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
@@ -1419,7 +1429,9 @@ const page=<Suspense fallback={<div style={{display:'flex',justifyContent:'cente
  if(!referralReady && view!=='admin' && view!=='admin-login'){
    return <div style={{minHeight:'100dvh',background:'var(--zk-bg, #FDF8F3)'}}/>;
  }
- return <>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
+ const canonicalPath=location.pathname==='/'?'/':location.pathname.replace(/\/+$/,'');
+ const canonicalUrl=`${window.location.origin}${canonicalPath}`;
+ return <><Helmet><link rel="canonical" href={canonicalUrl}/><meta property="og:url" content={canonicalUrl}/></Helmet>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
   if (referralTarget?.tabCode) {
     const tab = findTabByCode((cfg as any).courseTabs||[], referralTarget.tabCode);
     if (tab) {

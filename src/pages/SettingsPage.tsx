@@ -192,7 +192,7 @@ export default function SettingsPage({ app }: { app: any }) {
           {[
             { label: lang === 'en' ? 'About Zeynalikid' : 'درباره زینالیکید', view: 'about' },
             { label: lang === 'en' ? 'Contact & Support' : 'تماس و پشتیبانی', view: 'contact' },
-            { label: lang === 'en' ? 'Terms & Privacy' : 'قوانین و حریم خصوصی', view: 'licenses' },
+            { label: lang === 'en' ? 'Terms & Privacy' : 'قوانین و حریم خصوصی', view: 'privacy' },
           ].map((l, i) => (
             <button key={i} onClick={() => setView(l.view)} style={{
               padding: '12px 14px', borderRadius: btnRad, background: T.card, border: `1px solid ${T.brd}`,

@@ -8,7 +8,7 @@ import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 // Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
-import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials } from '../utils/adminSession';
+import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials, isAdminPasswordUpgradeRequired } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import UserQuestionsEditor from './UserQuestionsEditor';
 import ReviewsEditor from './ReviewsEditor';
@@ -158,7 +158,8 @@ export default function AdminPanel({app}:{app:any}){
  // حذف handler مشکل‌ساز که کلیک روی دکمه‌های افزودن/حذف داخل details را می‌شکست
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
- const [aTab,setATab]=useState(app.adminTab || 'dashboard'); useEffect(()=>{ if(app.adminTab) setATab(app.adminTab) }, [app.adminTab]);
+ const [aTab,setATab]=useState(app.adminTab||'dashboard');useEffect(()=>{if(app.adminTab)setATab(app.adminTab)},[app.adminTab]);
+ useEffect(()=>{if(isAdminPasswordUpgradeRequired()){setATab('security');setMsgType('info');setMsg('برای امنیت پنل، رمز کوتاه فعلی را به رمزی با حداقل ۱۲ کاراکتر تغییر دهید.')}},[]);
  const [productHomeCrop,setProductHomeCrop]=useState<any>(null);
  const [productHomeCropBusy,setProductHomeCropBusy]=useState(false);
  // state کادر کاور هایلایت — باید اینجا (سطح AdminPanel) تعریف شود، نه داخل HighlightsTabEditor،
@@ -1261,7 +1262,7 @@ function ThemeManagerEditor(){
     if(np!==rp){setCredErr('شماره جدید با تکرار آن مطابقت ندارد.');return;}
    }
    if(nw){
-    if(nw.length<4){setCredErr('رمز جدید باید حداقل ۴ کاراکتر باشد.');return;}
+    if(nw.length<12){setCredErr('رمز جدید باید حداقل ۱۲ کاراکتر باشد.');return;}
     if(nw!==rw){setCredErr('رمز جدید با تکرار آن مطابقت ندارد.');return;}
    }
    setCredBusy(true);
@@ -1291,7 +1292,7 @@ function ThemeManagerEditor(){
       <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شمارهٔ جدید</span><input ref={credRepPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="تکرار شماره"/></label>
      </div>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۴ کاراکتر"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۱۲ کاراکتر"/></label>
       <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار رمز جدید</span><input ref={credRepPwdRef} type="password" style={S.inp} placeholder="تکرار رمز جدید"/></label>
      </div>
      <div><button type="button" style={{...AdminBtn(),background:T.acc||'#0F766E',color:'#fff',border:0,fontWeight:800}} disabled={credBusy} onClick={doChangeCreds}>{credBusy?'در حال ذخیره…':'ذخیره تغییرات ورود'}</button></div>

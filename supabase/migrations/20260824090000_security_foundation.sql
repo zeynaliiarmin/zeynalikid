@@ -61,6 +61,11 @@ alter table public.admin_sessions enable row level security;
 alter table public.admin_devices enable row level security;
 alter table public.error_logs enable row level security;
 
+-- Normalize the two historical admin-device schemas so one Edge Function works
+-- safely in both projects. Existing columns/data are preserved.
+alter table public.admin_devices add column if not exists user_agent text not null default '';
+alter table public.admin_devices add column if not exists is_revoked boolean not null default false;
+
 do $$
 declare p record;
 begin
@@ -200,6 +205,11 @@ revoke all on table public.admin_audit_logs from anon, authenticated;
 drop policy if exists admin_audit_logs_service_role on public.admin_audit_logs;
 create policy admin_audit_logs_service_role on public.admin_audit_logs
   for all to service_role using (true) with check (true);
+
+grant all on table public.security_rate_limits to service_role;
+grant all on table public.admin_credentials to service_role;
+grant all on table public.admin_audit_logs to service_role;
+grant usage, select on all sequences in schema public to service_role;
 
 create or replace function public.consume_rate_limit(
   p_key text,

@@ -3,6 +3,7 @@ const endpoint = `${base}/functions/v1/admin-session`;
 const TOKEN_KEY = 'zk_admin_session_token';
 const DEVICE_KEY = 'zk_admin_device_id';
 const AUTHED_KEY = 'zk_admin_authed';
+const PASSWORD_UPGRADE_KEY='zk_admin_password_upgrade_required';
 // نشست ادمین در localStorage ذخیره می‌شود (نه sessionStorage) تا هنگام ورود با
 // Face ID / اثر انگشت یا پس از رفرش، نشست معتبر حفظ شود و به صفحهٔ لاگین برنگردد.
 const STORE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = typeof localStorage !== 'undefined' ? localStorage : (typeof sessionStorage !== 'undefined' ? sessionStorage : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as any));
@@ -22,14 +23,16 @@ export async function loginAdminSession(phone: string, password: string) {
   const data = await adminSessionAction('login', { phone, password, ...deviceInfo() });
   STORE.setItem(TOKEN_KEY, data.sessionToken);
   STORE.setItem(DEVICE_KEY, data.deviceId);
-  STORE.setItem(AUTHED_KEY, 'true');
+  STORE.setItem(AUTHED_KEY,'true');
+  if(data?.mustChangePassword===true)STORE.setItem(PASSWORD_UPGRADE_KEY,'true');else STORE.removeItem(PASSWORD_UPGRADE_KEY);
   // زمان لاگین برای رد شدن از validate مجدد بلافاصله پس از ورود (کاهش تأخیر ورود به پنل)
   try { (typeof localStorage!=='undefined'?localStorage:STORE).setItem('zk_admin_login_at', String(Date.now())); } catch {}
   return data;
 }
 export const getAdminSessionToken = () => STORE.getItem(TOKEN_KEY) || '';
 export const getAdminDeviceId = () => STORE.getItem(DEVICE_KEY) || '';
-export const clearAdminSession = () => { STORE.removeItem(TOKEN_KEY); STORE.removeItem(DEVICE_KEY); STORE.removeItem(AUTHED_KEY); };
+export const clearAdminSession=()=>{STORE.removeItem(TOKEN_KEY);STORE.removeItem(DEVICE_KEY);STORE.removeItem(AUTHED_KEY)};
+export const isAdminPasswordUpgradeRequired=()=>STORE.getItem(PASSWORD_UPGRADE_KEY)==='true';
 
 /**
  * Revoke ALL admin sessions (every device) via admin-session revoke_all action.
@@ -106,9 +109,8 @@ export async function changeAdminCredentials(opts: {
     ...(opts.newPhone ? { newPhone: opts.newPhone } : {}),
     ...(opts.newPassword ? { newPassword: opts.newPassword } : {}),
   });
-  if (data?.ok !== true) {
-    throw new Error(data?.error || 'تغییر اطلاعات ورود انجام نشد');
-  }
+  if(data?.ok!==true)throw new Error(data?.error||'تغییر اطلاعات ورود انجام نشد');
+  STORE.removeItem(PASSWORD_UPGRADE_KEY);
 }
 
 /**

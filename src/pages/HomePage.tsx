@@ -18,6 +18,7 @@ import { fillReferralText } from '../utils/referral';
 export default function HomePage({app}:{app:any}){
  const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view,consultPulse,startConsult,requestConsult}=app;
  const isRtl=lang==='fa';
+ const brand=cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک');
  // انیمیشن دکمه «مشاهده دوره‌ها» تا وقتی کاربر وارد روند ثبت‌نام دوره نشده فعال می‌ماند.
  const inCourseFlow = ['child-info','course-shipping','course-payment','course-confirm','course-done'].includes(view);
  const animateCta = !!referralConsultant && !inCourseFlow;
@@ -65,14 +66,14 @@ export default function HomePage({app}:{app:any}){
   .filter((product:any)=>product.isVisible!==false&&product.active!==false&&product.showOnHome!==false)
   .sort((a:any,b:any)=>(a.order||0)-(b.order||0));
  return <main className="zk-home-page" dir={isRtl?'rtl':'ltr'} style={{...app.S?.page,paddingBottom:92,flexDirection:'column',alignItems:'center',background:T.bg,color:T.txt,overflowX:'hidden'}}>
-  <Helmet><title>فرزند من | مشاوره رشد قد و تغذیه کودک و نوجوان</title><meta name="description" content="مشاوره و آموزش والدین درباره رشد، تغذیه، اشتها، قد، وزن و تمرکز کودک و نوجوان."/><meta name="keywords" content="رشد قد کودک, تغذیه کودک, بی‌اشتهایی کودک, بدغذایی, مشاوره رشد کودک"/><meta property="og:title" content="فرزند من | رشد و تغذیه کودک و نوجوان"/><meta property="og:description" content="مسیر آرام‌تر و آگاهانه‌تر برای همراهی با رشد و تغذیه فرزند شما"/></Helmet>
+  <Helmet><title>{`${brand} | مشاوره رشد قد و تغذیه کودک و نوجوان`}</title><meta name="description" content="مشاوره و آموزش والدین درباره رشد، تغذیه، اشتها، قد، وزن و تمرکز کودک و نوجوان."/><meta name="keywords" content="رشد قد کودک, تغذیه کودک, بی‌اشتهایی کودک, بدغذایی, مشاوره رشد کودک"/><meta property="og:title" content={`${brand} | رشد و تغذیه کودک و نوجوان`}/><meta property="og:description" content="مسیر آرام‌تر و آگاهانه‌تر برای همراهی با رشد و تغذیه فرزند شما"/></Helmet>
   <style>{css}{` .zk-home-page{width:100%;}.zk-home-container{width:100%;max-width:680px;margin-inline:auto;padding-inline:16px}.zk-home-section{width:100%;margin-top:26px}.zk-home-section-title{font-size:20px;color:var(--zk-text-primary);margin:0 0 12px;font-weight:800}.zk-home-section-heading{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:12px}.zk-home-section-link{color:var(--zk-action-primary);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}@media(min-width:481px){.zk-home-container{padding-inline:20px}}`}</style>
   <div className="zk-home-container" style={{paddingTop:8}}>
    {/* در حالت لینک ارجاع، کادر متخصص پیش‌فرض پنهان و فقط کارت مشاور ارجاع‌دهنده نمایش داده می‌شود */}
    {!referralConsultant && (
    <section className="zk-home-specialist-note" style={{display:'flex',flexDirection:isRtl?'row-reverse':'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'var(--zk-surface)',border:'1px solid var(--zk-border)',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)'}}>
     {cfg.showSpecialistPhoto!==false&&cfg.images?.homeAvatar?.enabled!==false&&<img src={(()=>{const raw=String(cfg.images?.homeAvatar?.url||'/images/specialist/specialist-about.webp').trim(); const ok=raw.startsWith('/images/')||/^https:\/\//i.test(raw); return ok?raw:'/images/specialist/specialist-about.webp';})()} alt={cfg.specialistName||'امیر افرادی'} style={{width:62,height:62,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid var(--zk-primary-light)',flexShrink:0}}/>}
-    <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}><strong style={{display:'block',fontSize:14.5,color:'var(--zk-text)',fontWeight:700,lineHeight:1.5}}>{(cfg.siteTitle||'فرزند من')+' — '+(lang==='en'?(cfg.specialistTitleEn||'Child Growth & Nutrition Specialist'):(cfg.specialistTitle||'کارشناس رشد و تغذیه کودک و نوجوان'))}</strong><span style={{fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.6}}>{lang==='en'?'A calmer, evidence-based path for your child’s growth' : 'مسیر آرام و مبتنی بر شواهد برای رشد فرزند شما'}</span></div>
+    <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}><strong style={{display:'block',fontSize:14.5,color:'var(--zk-text)',fontWeight:700,lineHeight:1.5}}>{brand+' — '+(lang==='en'?(cfg.specialistTitleEn||'Child Growth & Nutrition Specialist'):(cfg.specialistTitle||'کارشناس رشد و تغذیه کودک و نوجوان'))}</strong><span style={{fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.6}}>{lang==='en'?'A calmer, evidence-based path for your child’s growth' : 'مسیر آرام و مبتنی بر شواهد برای رشد فرزند شما'}</span></div>
    </section>
    )}
 
@@ -99,7 +100,7 @@ export default function HomePage({app}:{app:any}){
        <div style={{marginBottom:10}}>
          {(cfg.referral?.texts?.homeBase || (lang==='en'
            ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
-           : 'والد عزیز، برای بهبود و درمان مشکل فرزندتان روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
+           : 'والد عزیز، برای شناخت بهتر شرایط فرزندتان و انتخاب مسیر مناسب روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
        </div>
        <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
