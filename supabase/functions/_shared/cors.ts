@@ -6,14 +6,17 @@
 //   - Local dev: http://localhost:5173 (Vite default)
 // Other projects' *.vercel.app origins are intentionally rejected.
 
-const ALLOWED_PRIMARY_ORIGIN = "https://zeynalikid.vercel.app";
-const ALLOWED_PREVIEW_PREFIX = "zeynalikid-";
-const ALLOWED_LOCAL = "http://localhost:5173";
+const ALLOWED_PRIMARY_ORIGIN="https://zeynalikid.vercel.app";
+const ALLOWED_PREVIEW_PREFIX="zeynalikid-";
+const ALLOWED_LOCAL="http://localhost:5173";
+// Custom domains can be added at runtime through the comma-separated
+// ALLOWED_ORIGINS Edge secret; no code change or cross-project wildcard is needed.
+const CONFIGURED_ORIGINS=new Set(String(Deno.env.get("ALLOWED_ORIGINS")||"").split(",").map(v=>v.trim().replace(/\/$/,"")).filter(Boolean));
 
 export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
-  if (origin === ALLOWED_PRIMARY_ORIGIN) return true;
-  if (origin === ALLOWED_LOCAL) return true;
+  const normalized=origin.replace(/\/$/,"");
+  if(normalized===ALLOWED_PRIMARY_ORIGIN||normalized===ALLOWED_LOCAL||CONFIGURED_ORIGINS.has(normalized))return true;
   try {
     const u = new URL(origin);
     if (u.protocol === "https:" && u.hostname.startsWith(ALLOWED_PREVIEW_PREFIX) && u.hostname.endsWith(".vercel.app")) return true;
