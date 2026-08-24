@@ -4,4 +4,6 @@
 begin;
 drop policy if exists submissions_public_insert on public.submissions;
 revoke insert on table public.submissions from anon,authenticated;
+drop policy if exists submissions_service_role on public.submissions;
+create policy submissions_service_role on public.submissions for all to service_role using(true) with check(true);
 commit;
