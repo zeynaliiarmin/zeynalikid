@@ -21,20 +21,23 @@ export const generateTrackingCode = (digitCount: number = 5): string => {
   return `ZK${num}`;
 };
 
-const SECURE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export const generateSecureTrackingCode=(existingCodes:string[]=[],length=16):string=>{
-  const seen=new Set(existingCodes.map(code=>String(code).toUpperCase()));
+const SECURE_ALPHABET='abcdefghijklmnopqrstuvwxyz0123456789';
+export const generateSecureTrackingCode=(existingCodes:string[]=[],prefix='ZK',requestedLength?:number):string=>{
+  const seen=new Set(existingCodes.map(code=>String(code).toLowerCase()));
   for(let attempt=0;attempt<20;attempt++){
-    const bytes=crypto.getRandomValues(new Uint8Array(Math.max(12,Math.min(20,length))));
-    const code=`ZK-${Array.from(bytes,b=>SECURE_ALPHABET[b%SECURE_ALPHABET.length]).join('')}`;
-    if(!seen.has(code))return code;
+    const length=requestedLength==null?7+crypto.getRandomValues(new Uint8Array(1))[0]%3:Math.max(7,Math.min(9,requestedLength));
+    const bytes=crypto.getRandomValues(new Uint8Array(length));
+    const first=String(1+(bytes[0]%9));
+    const body=first+Array.from(bytes.slice(1),b=>SECURE_ALPHABET[b%SECURE_ALPHABET.length]).join('');
+    const code=`${String(prefix||'ZK').toUpperCase()}-${body}`;
+    if(!seen.has(code.toLowerCase()))return code;
   }
   throw new Error('Could not generate a unique tracking code');
 };
 
 /** استخراج بخش عددی/بدنه از کد پیگیری */
 export const extractTrackingNumber = (code: string): string => {
-  return String(code || '').replace(/^ZK-?/i, '');
+  return String(code||'').replace(/^(ZK|FM)-?/i,'');
 };
 
 /** اعتبارسنجی کد پیگیری با تعداد ارقام مشخص */
@@ -46,15 +49,19 @@ export const isValidTrackingCode = (code: string, digitCount: number = 5): boole
 };
 
 /** اعتبارسنجی همه فرمت‌های پشتیبانی‌شده: ZK + ۴ تا ۸ رقم یا فرمت قدیمی ZK-XXXXXX */
-export const isAnyValidTrackingCode=(code:string):boolean=>/^ZK\d{4,8}$/.test(code)||/^ZK-[A-F0-9]{6}$/.test(code)||/^ZK-[A-Z0-9]{12,20}$/.test(code);
+export const isAnyValidTrackingCode=(code:string):boolean=>/^(ZK|FM)\d{4,8}$/i.test(code)||/^(ZK|FM)-[A-F0-9]{6}$/i.test(code)||/^(ZK|FM)-[0-9][a-z0-9]{6,8}$/i.test(code)||/^(ZK|FM)-[A-Z0-9]{12,20}$/i.test(code);
 
-/** نرمال‌سازی ورودی کاربر — کد استاندارد */
-export const normalizeTrackingCode = (input: string): string => {
-  const raw = String(input || '').trim().toUpperCase().replace(/\s+/g, '');
-  const body = raw.replace(/^ZK-?/, '');
-  if (/^\d{4,8}$/.test(body)) return `ZK${body}`;
-  if (/^[A-F0-9]{6}$/.test(body)) return `ZK-${body}`;
-  return raw;
+/** نرمال‌سازی بدون حساسیت به کوچکی/بزرگی حروف. */
+export const normalizeTrackingCode=(input:string,preferredPrefix='ZK'):string=>{
+  const raw=String(input||'').trim().replace(/\s+/g,'');
+  const match=raw.match(/^(ZK|FM)-?(.*)$/i);
+  const prefix=(match?.[1]||preferredPrefix||'ZK').toUpperCase();
+  const body=String(match?.[2]??raw).replace(/[^a-z0-9]/gi,'');
+  if(/^\d{4,8}$/.test(body))return `${prefix}${body}`;
+  if(/^[A-F0-9]{6}$/i.test(body))return `${prefix}-${body.toUpperCase()}`;
+  if(/^[0-9][a-z0-9]{6,8}$/i.test(body))return `${prefix}-${body.toLowerCase()}`;
+  if(/^[a-z0-9]{12,20}$/i.test(body))return `${prefix}-${body.toLowerCase()}`;
+  return `${prefix}-${body.toLowerCase()}`;
 };
 
 /** بررسی یکتایی کد پیگیری در لیست کدهای موجود */

@@ -7,6 +7,7 @@ import { isSupabaseConfigured, supabase, createSubmission, trackPageView } from 
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
+import { TRACKING_PREFIX } from '../config/project';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -305,7 +306,7 @@ export default function ConsultationPage({ app }: { app: any }) {
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       if (editId) {
         const prev = editEntryRef.current || {};
-        const trackingCode = prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean));
+        const trackingCode = prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean),TRACKING_PREFIX);
         const updated = {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
@@ -343,7 +344,7 @@ export default function ConsultationPage({ app }: { app: any }) {
         setLastTrack(String(trackingCode));
       } else {
         const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
-        const trackingCode = effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes));
+        const trackingCode = effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes,TRACKING_PREFIX) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes,TRACKING_PREFIX));
         let similarTo: any = null;
         if (effectiveAllowNewChild) {
           const sim = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && similarityScore(x, fd) >= 0.7);

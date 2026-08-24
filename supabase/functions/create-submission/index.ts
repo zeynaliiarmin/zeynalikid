@@ -5,8 +5,9 @@ import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions,jsonResponse,getOrigin } from "../_shared/cors.ts";
 import { centralRateLimit } from "../_shared/rateLimit.ts";
 
-const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const randomCode=()=>{const bytes=crypto.getRandomValues(new Uint8Array(16));return `ZK-${Array.from(bytes,b=>alphabet[b%alphabet.length]).join('')}`};
+const alphabet="abcdefghijklmnopqrstuvwxyz0123456789";
+const trackingPrefix=()=>{const value=String(Deno.env.get("TRACKING_PREFIX")||"ZK").toUpperCase();return value==="FM"?"FM":"ZK"};
+const randomCode=()=>{const length=7+crypto.getRandomValues(new Uint8Array(1))[0]%3;const bytes=crypto.getRandomValues(new Uint8Array(length));const first=String(1+bytes[0]%9);const body=first+Array.from(bytes.slice(1),b=>alphabet[b%alphabet.length]).join('');return `${trackingPrefix()}-${body}`};
 const phoneDigits=(value:string)=>String(value||"").replace(/[^0-9+]/g,"").slice(0,32);
 
 serve(async(req)=>{

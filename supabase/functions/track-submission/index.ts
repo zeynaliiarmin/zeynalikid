@@ -56,8 +56,10 @@ serve(async (req) => {
       return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);
     }
 
-    const code = String(trackingCode).trim().toUpperCase();
-    if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code) && !/^ZK-[A-Z0-9]{12,20}$/.test(code)) {
+    const rawCode=String(trackingCode).trim().replace(/\s+/g,"");
+    const matchCode=rawCode.match(/^(ZK|FM)-?(.*)$/i);const prefix=String(matchCode?.[1]||"ZK").toUpperCase();const bodyCode=String(matchCode?.[2]||"");
+    const code=/^\d{4,8}$/.test(bodyCode)?`${prefix}${bodyCode}`:`${prefix}-${bodyCode.toLowerCase()}`;
+    if(!/^(ZK|FM)\d{4,8}$/i.test(code)&&!/^(ZK|FM)-[A-F0-9]{6}$/i.test(code)&&!/^(ZK|FM)-[0-9][a-z0-9]{6,8}$/i.test(code)&&!/^(ZK|FM)-[A-Z0-9]{12,20}$/i.test(code)){
       return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست" }, 400, origin);
     }
 
@@ -83,15 +85,12 @@ serve(async (req) => {
 
     const supabase = getSupabaseAdmin();
 
-    // جستجو با کد پیگیری (داخل payload)
-    const { data, error } = await supabase
-      .from("submissions")
-      .select("full_phone, payload, created_at")
-      .eq("payload->>trackingCode", code)
-      .limit(1)
-      .maybeSingle();
+    const findByCode=(candidate:string)=>supabase.from("submissions").select("full_phone,payload,created_at").ilike("payload->>trackingCode",candidate).limit(1).maybeSingle();
+    let lookup=await findByCode(code);
+    if((lookup.error||!lookup.data)&&code.toUpperCase().startsWith("FM"))lookup=await findByCode(`ZK${code.slice(2)}`);
+    const {data,error}=lookup;
 
-    if (error || !data) {
+    if(error||!data){
       return jsonResponse(
         { error: "شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید." },
         404,
@@ -180,7 +179,7 @@ serve(async (req) => {
 
     // فقط اطلاعات عمومی — بدون نام و شماره کامل
     const publicData = {
-      trackingCode: code,
+      trackingCode:String(p.trackingCode||code),
       status,
       date: [p.date, p.time].filter(Boolean).join(" ") || data.created_at,
       course: p.course

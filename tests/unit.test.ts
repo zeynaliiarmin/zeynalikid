@@ -91,8 +91,11 @@ const uniq=generateUniqueTrackingCode(['ZK11111','ZK22222']);
 assert(/^ZK\d{5}$/.test(uniq),'generateUniqueTrackingCode خروجی قدیمی معتبر');
 const secureCodes=new Set(Array.from({length:200},()=>generateSecureTrackingCode()));
 assert(secureCodes.size===200,'کدهای امن نمونه تکراری ندارند');
-assert([...secureCodes].every(code=>/^ZK-[A-Z0-9]{16}$/.test(code)),'فرمت کد امن معتبر است');
-assert(isAnyValidTrackingCode([...secureCodes][0])===true,'اعتبارسنجی کد امن');
+assert([...secureCodes].every(code=>/^ZK-[1-9][a-z0-9]{6,8}$/.test(code)),'کد امن ۷ تا ۹ کاراکتر، عدد اول و حروف کوچک دارد');
+assert(isAnyValidTrackingCode([...secureCodes][0].toUpperCase())===true,'اعتبارسنجی کد امن به بزرگی حروف حساس نیست');
+const fmSecure=generateSecureTrackingCode([],'FM',8);
+assert(/^FM-[1-9][a-z0-9]{7}$/.test(fmSecure),'پیشوند FM و طول هشت‌کاراکتری');
+assert(normalizeTrackingCode('fm-3AbC9xY','FM')==='FM-3abc9xy','نرمال‌سازی FM بدون حساسیت حروف');
 
 // ── growth ────────────────────────────────────────────────────────
 assert(growthStatusLabels.length === 6, 'growthStatusLabels ۶ برچسب');
