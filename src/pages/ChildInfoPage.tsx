@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
 import useExitGuard from '../hooks/useExitGuard';
@@ -35,7 +36,8 @@ function ReadonlyRow({ label, value, theme: T }: ReadonlyRowProps) {
 }
 
 // ─── کامپوننت اصلی صفحه ───
-export default function ChildInfoPage({ app }: { app: any }) {
+export default function ChildInfoPage(){
+ const app=useAppContext();
  const { cfg, T, S, css, lang, setView, fd, setFd, course, setCourse, publicText, trVal, Field, SelectBox, MiniIcon, Stepper, p2e, editChild, setEditChild, Modal, uploadTonguePhoto, deleteStoredTonguePhoto } = app;
  const [draft, setDraft] = useState<any>({ ...fd });
  const [errs, setErrs] = useState<any>({});

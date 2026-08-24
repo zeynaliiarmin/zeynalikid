@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
@@ -6,7 +7,8 @@ import { Helmet } from 'react-helmet-async';
  * must not invent profile/order data. It provides an honest gateway to the
  * secure tracking flow until a real customer identity model is implemented.
  */
-export default function ProfilePage({ app }: { app: any }) {
+export default function ProfilePage(){
+ const app=useAppContext();
   const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
   const en = lang === 'en';
   const brand=String(cfg.browserTitle||cfg.siteTitle||(en?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();

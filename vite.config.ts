@@ -6,6 +6,8 @@ export default defineConfig({
   // base باید مطلق (/) باشد تا asset ها از هر مسیر عمیق هم درست بارگذاری شوند.
   base: '/',
   plugins: [react()],
+  ssr: { noExternal: ['react-helmet-async'] },
+  preview: { allowedHosts: true },
   build: {
     minify: 'esbuild',
     sourcemap: false,

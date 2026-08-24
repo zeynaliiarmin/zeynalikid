@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Navigate } from 'react-router-dom';
@@ -6,7 +7,8 @@ import JsonLd from '../components/JsonLd';
 import ProductCard from '../components/ProductCard';
 import ProductDetailView from '../components/ProductDetailView';
 
-export default function ProductsPage({ app }: { app: any }) {
+export default function ProductsPage(){
+ const app=useAppContext();
   const { cfg, T, lang, APP_A_URL, Footer, showContactOn, ContactPanel, referralConsultant, requestConsult, startConsult } = app;
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);

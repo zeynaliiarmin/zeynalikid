@@ -207,7 +207,8 @@ history.replaceState = function (...args) {
   return r;
 };
 
-createRoot(document.getElementById('root')!).render(
+const rootElement=document.getElementById('root')!;
+const application=(
   <React.StrictMode>
     <HelmetProvider>
       <AppLaunchSplash><BrowserRouter>
@@ -218,3 +219,8 @@ createRoot(document.getElementById('root')!).render(
     </HelmetProvider>
   </React.StrictMode>
 );
+// The pre-rendered document is a crawler/first-paint snapshot. Several legacy public
+// widgets intentionally randomize their initial item, so hydrating that snapshot would create
+// mismatches. Activate the SPA from a clean root while keeping the full no-JS HTML response.
+if(rootElement.hasChildNodes())rootElement.replaceChildren();
+createRoot(rootElement).render(application);

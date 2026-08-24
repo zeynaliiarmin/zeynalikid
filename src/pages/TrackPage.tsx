@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassTopBar from '../components/GlassTopBar';
@@ -22,7 +23,8 @@ const readSessionOnce=(key:string)=>{try{return sessionStorage.getItem(key)||''}
 const maskPhonePreview=(stored:string)=>{const d=digitsOnly(stored);if(!d||d.length<7)return '';const last3=d.slice(-3);if(d.startsWith('98')){const local='0'+d.slice(2);return local.slice(0,4)+'xxxx'+last3;}if(d.startsWith('09')){return d.slice(0,4)+'xxxx'+last3;}const prefix=String(stored||'').match(/^(\+\d{1,3})/)?.[0]||'';if(prefix){const rest=d.slice(prefix.replace('+','').length);return prefix+rest.slice(0,3)+'xxxx'+last3;}return d.slice(0,4)+'xxxx'+last3;};
 const resultPhonePreview=(result:any)=>{if(!result)return ''; if(result.maskedPhone)return result.maskedPhone; return maskPhonePreview(String(result.fullPhone||''));};
 
-export default function TrackPage({app}:{app:any}){
+export default function TrackPage(){
+ const app=useAppContext();
  const {cfg,T,S,css,lang,setLang,setView,APP_A_URL,publicText,p2e,showContactOn,ContactPanel}=app;
  // اصلاح ۳ (مرحله ۵): failCountRef/failMsg مبتنی بر ورودی خام کاربر حذف شد (نمایش شماره تأییدنشده روی خطا گمراه‌کننده بود)
  // رفع باگ ورود به صفحه پیگیری: initializer های useState قبلی هم می‌خواندند و هم بلافاصله sessionStorage را پاک می‌کردند؛

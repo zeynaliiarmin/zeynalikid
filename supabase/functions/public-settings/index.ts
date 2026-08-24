@@ -121,6 +121,7 @@ const PUBLIC_MEDIA_ITEM_FIELDS = [
   "youtubeCode", "aparatCode", "youtubeUrl", "aparatUrl", "externalCode", "internalCode",
   "imageUrl", "audioUrl", "url", "phone",
   "viewsSeed", "minutes", "durationSec", "images",
+  "author", "authorEn", "sourceUrl", "reviewedAt", "quote",
 ];
 
 function maskPublicPhone(value: unknown): string {
@@ -216,9 +217,8 @@ function sanitizeConsultants(value: any): any[] {
       (["id", "name", "nameEn", "title", "titleEn", "desc", "descEn", "photoUrl", "aboutPhotoUrl", "useAboutPhoto", "showPhoto", "referralCode"] as const).forEach((field) => {
         if (field in (c || {})) out[field] = c[field];
       });
-      // اطلاعات بانکی/کیف پول مشاور برای نمایش در روند پرداخت (فقط فیلدهای لازم)
-      if (c?.bank) out.bank = { name: c.bank.name, card: c.bank.card, iban: c.bank.iban, holder: c.bank.holder || c.bank.accountName };
-      // آرایهٔ کیف پول‌های رمزارز مشاور (ساختار جدید) — قبلاً برگردانده نمی‌شد و پرداخت رمزارزی مشاور نمایش داده نمی‌شد
+      // Payment destinations are intentionally excluded here. They are available only through
+      // the short-lived checkout-token protected payment-details function.
       return out;
     });
 }

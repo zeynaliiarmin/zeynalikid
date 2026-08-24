@@ -1,6 +1,8 @@
+import { useAppContext } from '../app/AppContext';
 import React, { useState, useEffect } from 'react';
 
-export default function SettingsPage({ app }: { app: any }) {
+export default function SettingsPage(){
+ const app=useAppContext();
   const { T, S, css, lang, setLang, setView, publicText } = app;
 
   const currentDesign = (() => {

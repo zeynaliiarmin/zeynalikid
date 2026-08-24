@@ -15,18 +15,54 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.12.0
           cache: npm
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
-      - name: Lint, type-check, unit tests and production build
+      - name: Lint, type-check, unit tests, client build and SSG
         run: npm run check
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies
+        run: npm audit --audit-level=high
+
+  browser-readonly:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Install stable Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+      - name: Build application and pre-render routes
+        run: npm run build
+      - name: Start read-only preview
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/app-preview.log 2>&1 &
+          echo $! > /tmp/app-preview.pid
+          curl --fail --silent --show-error --retry 20 --retry-delay 1 --retry-connrefused http://127.0.0.1:4173/ > /dev/null
+      - name: Critical read-only browser paths
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run test:e2e:readonly
+      - name: WCAG accessibility smoke
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run test:a11y
+      - name: Show preview log on failure
+        if: failure()
+        run: cat /tmp/app-preview.log || true

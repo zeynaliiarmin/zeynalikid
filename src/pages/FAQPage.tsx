@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import JsonLd from '../components/JsonLd';
@@ -7,7 +8,8 @@ import { submitUserQuestion } from '../lib/supabase';
 
 type FAQItem = { id: string; question: string; answer: string; answerTitle?: string };
 
-export default function FAQPage({ app }: { app: any }) {
+export default function FAQPage(){
+ const app=useAppContext();
   const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
   const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => !Array.isArray(item.placements) || item.placements.includes('faq'));
   const [openIndex, setOpenIndex] = useState<number | null>(null);

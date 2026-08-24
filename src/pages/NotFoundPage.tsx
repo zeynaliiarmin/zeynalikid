@@ -1,7 +1,9 @@
+import { useAppContext } from '../app/AppContext';
 import { Helmet } from 'react-helmet-async';
 import { ConsultIcon,CoursesIcon,VideoIcon,LicensesIcon,ContactIcon } from '../components/Icons';
 
-export default function NotFoundPage({app}:{app:any}){
+export default function NotFoundPage(){
+ const app=useAppContext();
  const {cfg,T,S,css,lang,setView,requestConsult}=app;const en=lang==='en';
  const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
  const all:any={

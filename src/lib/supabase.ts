@@ -16,7 +16,7 @@ const isPlaceholder = (value?: string) =>
 
 export const isSupabaseConfigured = !isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey);
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
+export const supabase: SupabaseClient | null = isSupabaseConfigured && typeof window !== 'undefined'
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         persistSession: true,

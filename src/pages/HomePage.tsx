@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
@@ -15,7 +16,8 @@ import TrustBoxNew from '../components/TrustBoxNew';
 import ProductCard from '../components/ProductCard';
 import { fillReferralText } from '../utils/referral';
 
-export default function HomePage({app}:{app:any}){
+export default function HomePage(){
+ const app=useAppContext();
  const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view,consultPulse,startConsult,requestConsult}=app;
  const isRtl=lang==='fa';
  const brand=String(cfg.browserTitle||cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();

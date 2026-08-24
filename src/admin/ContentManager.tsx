@@ -459,7 +459,7 @@ function MediaLibraryManager(props: any) {
       };
     }));
   }, [setItems, sourceDestination]);
-  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination, isEdu]);
+  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, author: isEdu ? '' : undefined, authorEn: isEdu ? '' : undefined, sourceUrl: isEdu ? '' : undefined, reviewedAt: isEdu ? '' : undefined, quote: isEdu ? '' : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination, isEdu]);
   const remove = useCallback((i: number) => setItems((prev: any[]) => prev.filter((_, j) => j !== i)), [setItems]);
   const move = useCallback((i: number, dir: -1 | 1) => setItems((prev: any[]) => {
     const a = [...prev]; const j = i + dir; if (j < 0 || j >= a.length) return prev;
@@ -531,6 +531,20 @@ function MediaLibraryManager(props: any) {
           )}
           {(isEdu ? normType(it.type) === 'article' : (it.type || 'video') === 'text') ? (
             <>
+              {isEdu && (
+                <fieldset style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: '10px', margin: '0 0 10px' }}>
+                  <legend style={{ fontSize: 12, fontWeight: 800, padding: '0 5px' }}>اعتبار و منبع مقاله</legend>
+                  <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.8, margin: '0 0 8px' }}>اطلاعات واقعی نویسنده/بازبین و لینک مستقیم منبع علمی را وارد کنید. خالی‌ماندن این فیلدها، محتوای فعلی را تغییر نمی‌دهد.</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 8 }}>
+                    <div><label style={S.lbl}>نویسنده یا بازبین (فارسی)</label><StableAdminInput style={S.inp} defaultValue={it.author || ''} onCommit={(v: string) => chg(i, 'author', v.trim())} placeholder="نام و عنوان حرفه‌ای" /></div>
+                    <div><label style={S.lbl}>Author / reviewer (English)</label><StableAdminInput dir="ltr" style={S.inp} defaultValue={it.authorEn || ''} onCommit={(v: string) => chg(i, 'authorEn', v.trim())} placeholder="Name and credentials" /></div>
+                    <div><label style={S.lbl}>تاریخ آخرین بازبینی</label><input type="date" dir="ltr" style={S.inp} defaultValue={it.reviewedAt || ''} onBlur={(event) => chg(i, 'reviewedAt', event.target.value)} /></div>
+                    <div><label style={S.lbl}>لینک منبع علمی</label><StableAdminInput dir="ltr" type="url" style={S.inp} defaultValue={it.sourceUrl || ''} onCommit={(v: string) => chg(i, 'sourceUrl', v.trim())} placeholder="https://..." /></div>
+                  </div>
+                  <label style={{ ...S.lbl, marginTop: 8 }}>نقل‌قول برجسته (اختیاری)</label>
+                  <StableAdminTextarea style={{ ...S.ta, minHeight: 58 }} defaultValue={it.quote || ''} onCommit={(v: string) => chg(i, 'quote', v.trim())} rows={2} />
+                </fieldset>
+              )}
               <label style={S.lbl}>متن کامل مقاله (هر پاراگراف را با یک خط خالی جدا کنید)</label>
               <StableAdminTextarea style={{ ...S.ta, marginBottom: 8, minHeight: 140 }} defaultValue={it.body || ''} onCommit={(v: string) => chg(i, 'body', v)} rows={7} placeholder={'پاراگراف اول\n\nپاراگراف دوم\n\n...'} />
               {isEdu && (

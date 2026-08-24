@@ -1,10 +1,12 @@
+import { useAppContext } from '../app/AppContext';
 import { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import GlassTopBar from '../components/GlassTopBar';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, verifyAdminBiometric } from '../utils/adminBiometric';
 import { loginAdminSession, getAdminSessionToken, validateAdminSession } from '../utils/adminSession';
 
-export default function AdminLoginPage({app}:{app:any}){
+export default function AdminLoginPage(){
+ const app=useAppContext();
  const {T,css,setView,goHome,p2e,lang,setLang,cfg}=app;
  const en=lang==='en';
  const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Admin':'مدیریت')).replace(/[“”"]/g,'').trim();

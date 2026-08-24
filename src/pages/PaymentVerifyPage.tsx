@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 /**
  * PaymentVerifyPage — صفحه تأیید پرداخت
  *
@@ -14,7 +15,8 @@ const SK = { settings: 'zkid_settings_v2' };
 
 type VerifyStatus = 'loading' | 'success' | 'failed' | 'canceled';
 
-export default function PaymentVerifyPage({ app }: { app: any }) {
+export default function PaymentVerifyPage(){
+ const app=useAppContext();
   const { T, S, css, lang, setView } = app;
   const [status, setStatus] = useState<VerifyStatus>('loading');
   const [message, setMessage] = useState('');

@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
@@ -17,7 +18,8 @@ function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=
 const CountrySelect = memo(function CountrySelectCmp({value,onChange,countries,T,lang,small=true}:{value:string,onChange:(v:string)=>void,countries:any[],T:any,lang:'fa'|'en',small?:boolean}){const [open,setOpen]=useState(false);const choose=useCallback((v:string)=>{onChange(v);setOpen(false)},[onChange]);return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button onClick={()=>setOpen((v:boolean)=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,color:T.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountry(countries.find((x:any)=>x.code===value)||countries[0])}</button>}>{countries.map((c:any)=><button key={c.id} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountry(c,lang)}</button>)}</Popup>});
 // --- پایان انتقال ---
 
-export default function CourseShippingPage({app}:{app:any}){
+export default function CourseShippingPage(){
+ const app=useAppContext();
  const {cfg,T,S,css,lang,setView,fd,course,setCourse,countries,publicText,trVal,showContactOn,Field,Err,Stepper,ContactPanel,deliveryText}=app;
  const methods=(cfg.shippingMethods[course.dest]||[]).filter((m:any)=>m.active).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const method=methods.find((m:any)=>m.id===course.shippingMethod)||methods[0];
  // اصلاح ۲۴: اگر نام/شماره والد از فرم مشاوره موجود باشد، به‌صورت خودکار در این صفحه پر می‌شود.

@@ -1,3 +1,5 @@
+import { PUBLIC_SITE_URL } from '../config/project';
+import { useAppContext } from '../app/AppContext';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
@@ -48,7 +50,8 @@ function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
 }
 
 // Simplified CoursesPage with Stage 2 redesign + Stage 11 UX improvements
-export default function CoursesPage({ app }: { app: any }) {
+export default function CoursesPage(){
+ const app=useAppContext();
   const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode, referralConsultant, requestConsult, startConsult } = app;
   const location=useLocation();
   const brand=String(cfg.browserTitle||cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();
@@ -335,7 +338,7 @@ export default function CoursesPage({ app }: { app: any }) {
 
   return (
     <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
-      <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?`${brand} growth & nutrition courses`:`دوره‌های رشد و تغذیه ${brand}`,itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:brand,url:window.location.origin+'/'}})))})} />
+      <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?`${brand} growth & nutrition courses`:`دوره‌های رشد و تغذیه ${brand}`,itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:brand,url:PUBLIC_SITE_URL+'/'}})))})} />
       <Helmet>
         <title>{lang==='en'?`Courses | ${brand}`:`دوره‌های تخصصی | ${brand}`}</title>
       </Helmet>

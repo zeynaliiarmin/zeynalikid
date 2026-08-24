@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { courseSuccessMessages, getRandomMessageTracked } from '../config/successMessages';
@@ -8,7 +9,8 @@ import { HomeIcon } from '../components/Icons';
 // بازطراحی: هماهنگ‌سازی کامل با CourseConfirmPage — تیک بزرگ گرادیانی (مطابق SuccessPage)
 // و کادرهای نئومورفیک نرم (بدون بردر تیز) به‌جای رنگ‌های ساده قبلی.
 // اصلاح ۴۸: تفکیک جملات موفقیت دوره و مشاوره
-export default function CourseDonePage({app}:{app:any}){
+export default function CourseDonePage(){
+ const app=useAppContext();
  const {cfg,T,S,css,lang,publicText,showContactOn,resetForm,setView,ContactPanel}=app;
  const trackingCode=app.courseResult?.trackingCode;
  // اصلاح ۴۸: استفاده از courseSuccessSentences (مجزا)، fallback به successTrustSentences و سپس courseSuccessMessages

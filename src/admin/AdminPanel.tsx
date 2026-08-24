@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 // --- مدیریت دیزاین (مرحله  - بازطراحی تدریجی) ---
 
 import { lazy,memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'react';
@@ -102,7 +103,8 @@ const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',o
 });
 
 
-export default function AdminPanel({app}:{app:any}){
+export default function AdminPanel(){
+ const app=useAppContext();
  const {cfg,saveCfg,mergeSettings,T,S,css,lang,goToAppA,onLogout,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,deleteStoredTonguePhoto,PROFILE_PHOTO,TH,Modal}=app;
  // FIX: حذف کامل preserve اسکرول/فوکوس قدیمی که باعث fg (دوبار کلیک) و sj (پرش صفحه) می‌شد
  // علت: ذخیره/بازیابی scrollTop و focus به المنت قبلی، باعث می‌شد کلیک روی فیلد B ابتدا focus به A برگردد

@@ -2,107 +2,107 @@
   "rewrites": [
     {
       "source": "/courses",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/track",
-      "destination": "/index.html"
+      "destination": "/courses/index.html"
     },
     {
       "source": "/experience",
-      "destination": "/index.html"
+      "destination": "/experience/index.html"
     },
     {
       "source": "/licenses",
-      "destination": "/index.html"
+      "destination": "/licenses/index.html"
     },
     {
       "source": "/education",
-      "destination": "/index.html"
+      "destination": "/education/index.html"
     },
     {
       "source": "/about",
-      "destination": "/index.html"
+      "destination": "/about/index.html"
     },
     {
       "source": "/faq",
-      "destination": "/index.html"
+      "destination": "/faq/index.html"
     },
     {
       "source": "/contact",
-      "destination": "/index.html"
+      "destination": "/contact/index.html"
     },
     {
       "source": "/products",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/profile",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/growth",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/settings",
-      "destination": "/index.html"
+      "destination": "/products/index.html"
     },
     {
       "source": "/privacy",
-      "destination": "/index.html"
+      "destination": "/privacy/index.html"
+    },
+    {
+      "source": "/track",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/growth",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/spa.html"
     },
     {
       "source": "/admin-login",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/admin/login",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/admin",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/admin/app",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/child-info",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/course-shipping",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/course-payment",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/course-payment/verify",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/course-confirm",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/course-done",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/form",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/consultation",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     },
     {
       "source": "/:refCode",
-      "destination": "/index.html"
+      "destination": "/api/referral/:refCode"
     }
   ],
   "headers": [

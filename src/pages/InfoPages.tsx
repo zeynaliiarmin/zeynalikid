@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 // صفحات اطلاعاتی: تجربه والدین / مجوزها / آموزش‌ها / درباره ما / ارتباط با ما
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
@@ -96,7 +97,8 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
 }
 
 // ===== تجربه والدین =====
-export function ExperiencePage({app}:{app:any}){
+export function ExperiencePage(){
+ const app=useAppContext();
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  const withText = !!cfg.experienceTabs?.text;
  const title = lang==='en'?'Parents’ Experience':'تجربه والدین';
@@ -143,7 +145,8 @@ export function ExperiencePage({app}:{app:any}){
 }
 
 // ===== آموزش‌ها (با جستجوی شناور) =====
-export function EducationPage({app}:{app:any}){
+export function EducationPage(){
+ const app=useAppContext();
  const {cfg,T,lang,setView,showContactOn,ContactPanel,goToAppA}=app;
  const en=lang==='en';
  const [q,setQ]=useState(''); const [askOpen,setAskOpen]=useState(false);
@@ -248,7 +251,8 @@ export function EducationPage({app}:{app:any}){
 }
 
 // ===== مجوزها / درباره ما / ارتباط با ما =====
-export function LicensesPage({app}:{app:any}){
+export function LicensesPage(){
+ const app=useAppContext();
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  // زوم، انتخاب متن و ناوبری صفحه عمداً برای دسترسی‌پذیری آزاد است.
  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک مستقیم به صفحهٔ اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
@@ -292,7 +296,8 @@ export function LicensesPage({app}:{app:any}){
    </>
  );
 }
-export function AboutPage({app}:{app:any}){
+export function AboutPage(){
+ const app=useAppContext();
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  const aboutText=lang==="en"
   ?(cfg.aboutTextEn||cfg.aboutText||`${siteBrand(cfg,'Child Growth')} provides specialized educational guidance for child and adolescent growth and nutrition.`)
@@ -368,7 +373,8 @@ export function AboutPage({app}:{app:any}){
    </PageShell>
   </>
  );
-}export function ContactPage({app}:{app:any}){
+}export function ContactPage(){
+ const app=useAppContext();
 
  const {cfg,T,lang,ContactPanel}=app;
  return <><Helmet><title>{`ارتباط با ما | ${siteBrand(cfg)}`}</title><meta name="description" content={`راه‌های ارتباط با تیم ${siteBrand(cfg,'مجموعه')}`} /></Helmet><PageShell app={app} title={lang==='en'?'Contact Us':'ارتباط با ما'} variant="trust"><ContactPanel cfg={cfg} T={T} lang={lang}/>{/* اصلاح ۵۲: بخش خدمات در ارتباط با ما */}{cfg.servicesVisibility?.contact!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}</PageShell></>

@@ -1,7 +1,9 @@
+import { useAppContext } from '../app/AppContext';
 import React from 'react';
 import GrowthChart from '../components/GrowthChart';
 
-export default function GrowthChartPage({ app }: { app: any }) {
+export default function GrowthChartPage(){
+ const app=useAppContext();
   const { T, S, css, lang, setView, course, fd } = app;
 
   const childAge = +(course?.childInfo?.age || fd?.age || 2);

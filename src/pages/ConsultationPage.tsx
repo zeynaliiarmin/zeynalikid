@@ -1,3 +1,4 @@
+import { useAppContext } from '../app/AppContext';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -85,7 +86,8 @@ const StableCountrySelectLocal = memo(function StableCountrySelectLocal({value,o
 });
 
 
-export default function ConsultationPage({ app }: { app: any }) {
+export default function ConsultationPage(){
+ const app=useAppContext();
   const {
     cfg, T, S, css, lang, setLang, view, setView,
     countries, APP_B_URL, publicText, trVal,

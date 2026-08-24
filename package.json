@@ -6,14 +6,16 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b --pretty false",
-    "lint": "oxlint src tests --deny-warnings",
+    "lint": "oxlint src tests api scripts --deny-warnings",
     "test:unit": "esbuild tests/unit.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-unit.test.mjs && node /tmp/zeynalikid-unit.test.mjs",
     "test": "npm run test:unit",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build:ssg",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
     "test:a11y": "node tests/accessibility.mjs",
-    "test:e2e:readonly": "node tests/critical-paths.mjs"
+    "test:e2e:readonly": "node tests/critical-paths.mjs",
+    "build:ssg": "vite build --ssr src/entry-server.tsx --outDir .ssr && node scripts/prerender.mjs && npm run test:ssg",
+    "test:ssg": "node tests/ssg-output.mjs"
   },
   "dependencies": {
     "@fontsource/vazirmatn": "5.3.0",
@@ -34,8 +36,11 @@
     "@vitejs/plugin-react": "6.0.5",
     "esbuild": "0.25.12",
     "oxlint": "1.79.0",
-    "puppeteer": "24.43.1",
+    "puppeteer": "^25.8.0",
     "typescript": "7.0.2",
     "vite": "8.2.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
