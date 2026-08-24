@@ -125,14 +125,14 @@ export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'vi
 function MediaCardInfo({item,type,masked,T,secure=true,lang,expanded=false,onMore}:{item:any,type:string,masked:string,T:any,secure?:boolean,lang:string,expanded?:boolean,onMore?:()=>void}){
  const desc=String(type==='text'?(item.body||item.description||''):(item.description||''));
  return <div style={{padding:'10px 12px 12px',userSelect:secure?'none':undefined,display:'flex',flexDirection:'column',flex:1}}>
-  <b style={{display:'block',minHeight:25.2,fontSize:14,lineHeight:1.8,color:T.ttl,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title||'\u00a0'}</b>
+  <b style={{display:'block',minHeight:25.2,fontSize:14,lineHeight:1.8,color:'var(--zk-text,#334155)',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title||'\u00a0'}</b>
   {expanded ? (
-   <div style={{fontSize:12,lineHeight:1.9,color:T.mut,whiteSpace:'pre-wrap',overflowWrap:'break-word'}}>{desc}</div>
+   <div style={{fontSize:12,lineHeight:1.9,color:'var(--zk-text,#334155)',whiteSpace:'pre-wrap',overflowWrap:'break-word'}}>{desc}</div>
   ) : (
    <CollapsibleCardText
     text={desc}
-    color={T.mut}
-    accentColor={T.acc}
+    color="var(--zk-text,#334155)"
+    accentColor="var(--zk-action-primary,#0B5D56)"
     background={T.badge||T.card||'var(--zk-surface)'}
     fontSize={12}
     lineHeight={1.8}
