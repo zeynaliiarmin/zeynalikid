@@ -1106,7 +1106,7 @@ function App(){
  const flowExpiredRef=useRef(false);
  const expireCourseFlowRef=useRef<()=>void>(()=>{});
  useEffect(()=>{ try{ setLS('zkid_course_draft',course); }catch{} },[course]);
- useEffect(()=>{setLS(SK.settings,cfg); document.title=cfg.browserTitle||cfg.siteTitle; imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
+ useEffect(()=>{setLS(SK.settings,cfg); imageCompressionKB=Math.min(1000,Math.max(100,+cfg.imageCompressionKB||500)); document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
  // Stage 9: lang/dir پویا روی <html> برای SEO/RTL-LTR واقعی
  useEffect(()=>{document.documentElement.lang=lang==='fa'?'fa':'en';document.documentElement.dir=lang==='fa'?'rtl':'ltr';},[lang]);
  // تم عمومی از پنل کنترل می‌شود و به تنظیم محلی ادمین وابسته نیست.

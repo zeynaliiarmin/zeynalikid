@@ -7,7 +7,7 @@ import { loginAdminSession, getAdminSessionToken, validateAdminSession } from '.
 export default function AdminLoginPage({app}:{app:any}){
  const {T,css,setView,goHome,p2e,lang,setLang,cfg}=app;
  const en=lang==='en';
- const brand=cfg?.siteTitle||(en?'Admin':'مدیریت');
+ const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Admin':'مدیریت')).replace(/[“”"]/g,'').trim();
  const [aPhone,setAPhone]=useState(''); const [aPwd,setAPwd]=useState(''); const [aErr,setAErr]=useState(''); const [showPwd,setShowPwd]=useState(false); const [bioBusy,setBioBusy]=useState(false);
  const phoneRef=useRef<HTMLInputElement>(null); const pwdRef=useRef<HTMLInputElement>(null);
  const done=()=>setView('admin');

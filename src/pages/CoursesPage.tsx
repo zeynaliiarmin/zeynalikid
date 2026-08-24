@@ -51,7 +51,7 @@ function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
 export default function CoursesPage({ app }: { app: any }) {
   const { cfg, T, lang, courseTab, setCourseTab, publicText, APP_A_URL, Footer, showContactOn, ContactPanel, chooseDest, referralTarget, findTabByCode, referralConsultant, requestConsult, startConsult } = app;
   const location=useLocation();
-  const brand=cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک');
+  const brand=String(cfg.browserTitle||cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [expiredNotice, setExpiredNotice] = useState(false);

@@ -18,7 +18,7 @@ import { fillReferralText } from '../utils/referral';
 export default function HomePage({app}:{app:any}){
  const {cfg,T,css,lang,setView,APP_A_URL,publicText,Footer,showContactOn,ContactPanel,referralConsultant,referralTarget,view,consultPulse,startConsult,requestConsult}=app;
  const isRtl=lang==='fa';
- const brand=cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک');
+ const brand=String(cfg.browserTitle||cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();
  // انیمیشن دکمه «مشاهده دوره‌ها» تا وقتی کاربر وارد روند ثبت‌نام دوره نشده فعال می‌ماند.
  const inCourseFlow = ['child-info','course-shipping','course-payment','course-confirm','course-done'].includes(view);
  const animateCta = !!referralConsultant && !inCourseFlow;

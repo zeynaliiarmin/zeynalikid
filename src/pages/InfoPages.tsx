@@ -22,6 +22,8 @@ import ServicesSection from '../components/ServicesSection';
 import { getMediaItemsForDestination, prioritizeRotatingExperienceVideo, toEducationMediaItem } from '../utils/mediaPlacement';
 import { loadRealViews, recordView, totalViews } from '../utils/eduViews';
 
+const siteBrand=(cfg:any,fallback='سامانه رشد کودک')=>String(cfg?.browserTitle||cfg?.siteTitle||fallback).replace(/[“”"]/g,'').trim();
+
 // اصلاح ۲۹ (مرحله ۷): پارامتر اختیاری topSlot برای نمایش هایلایت استوری در بالای صفحه (قبل از عنوان اصلی)
 function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title:string,children:any,topSlot?:any,variant?:'default'|'trust'|'education'}){
  const {cfg,T,S,css,lang,setView}=app;
@@ -119,7 +121,7 @@ export function ExperiencePage({app}:{app:any}){
  );
  return (
    <>
-   <Helmet><title>{`${title} | ${cfg.siteTitle||'سامانه رشد کودک'}`}</title><meta name="description" content={`تجربه‌های منتشرشده والدین از خدمات ${cfg.siteTitle||'مجموعه'}`} /></Helmet>
+   <Helmet><title>{`${title} | ${siteBrand(cfg)}`}</title><meta name="description" content={`تجربه‌های منتشرشده والدین از خدمات ${siteBrand(cfg,'مجموعه')}`} /></Helmet>
      <SecurePage pageTitle={title} T={T} warningMessage={warningMessage}>
        <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}>
          {/* اصلاح ۱ (مرحله ۵): متن راهنمای رضایت والدین در بالای صفحه */}
@@ -189,14 +191,14 @@ export function EducationPage({app}:{app:any}){
  return (
   <>
      <JsonLd id="ld-edu-faq" data={JSON.stringify({'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqItems.map((it:any)=>({'@type':'Question',name:it.question,acceptedAnswer:{'@type':'Answer',text:it.answer}}))})} />
-   <Helmet><title>{en?`Education | ${cfg.siteTitle||'Child Growth'}`:`آموزش و همراهی والدین | ${cfg.siteTitle||'سامانه رشد کودک'}`}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — growth, nutrition, appetite and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ همراهی در مسیر رشد، اشتها، تغذیه و تمرکز.'}/></Helmet>
+   <Helmet><title>{en?`Education | ${siteBrand(cfg,'Child Growth')}`:`آموزش و همراهی والدین | ${siteBrand(cfg)}`}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — growth, nutrition, appetite and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ همراهی در مسیر رشد، اشتها، تغذیه و تمرکز.'}/></Helmet>
    <main className="zke-root" dir={en?'ltr':'rtl'}>
     <div className="zke-container">
      <header className="zke-hero"><div className="zke-hero-inner">
       <button type="button" className="zke-back" onClick={goBack}><svg className="zk-ic-dir" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>{en?'Back':'بازگشت'}</button>
       {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}
       <h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1>
-      <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':`این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ${cfg.siteTitle||'مجموعه'} برای همراهی والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری است.`}</p>
+      <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':`این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ${siteBrand(cfg,'مجموعه')} برای همراهی والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری است.`}</p>
       <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاورهٔ تخصصی نمی‌شود.'}</span></div>
      </div></header>
 
@@ -255,7 +257,7 @@ export function LicensesPage({app}:{app:any}){
  const title = lang==='en'?'Licenses':'مجوزها';
  return (
    <>
-     <Helmet><title>{`مجوزها | ${cfg.siteTitle||'سامانه رشد کودک'}`}</title><meta name="description" content={`مجوزها و گواهینامه‌های منتشرشده ${cfg.siteTitle||'مجموعه'}`} /></Helmet>
+     <Helmet><title>{`مجوزها | ${siteBrand(cfg)}`}</title><meta name="description" content={`مجوزها و گواهینامه‌های منتشرشده ${siteBrand(cfg,'مجموعه')}`} /></Helmet>
      <SecurePage pageTitle={title} T={T}>
        <PageShell app={app} title={title} variant="trust">
          <p style={{fontSize:13,color:T.mut,lineHeight:2,whiteSpace:'pre-wrap'}}>{cfg.licensesText||(lang==='en'?'Licenses and certificates will be published here soon.':'مجوزها و گواهینامه‌ها به‌زودی در این بخش منتشر می‌شوند.')}</p>
@@ -293,8 +295,8 @@ export function LicensesPage({app}:{app:any}){
 export function AboutPage({app}:{app:any}){
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  const aboutText=lang==="en"
-  ?(cfg.aboutTextEn||cfg.aboutText||`${cfg.siteTitle||'Child Growth'} provides specialized educational guidance for child and adolescent growth and nutrition.`)
-  :(cfg.aboutText||`مرکز مشاوره ${cfg.siteTitle||'رشد کودک'} با هدف همراهی علمی والدین در زمینه رشد و تغذیه کودک و نوجوان فعالیت می‌کند.`);
+  ?(cfg.aboutTextEn||cfg.aboutText||`${siteBrand(cfg,'Child Growth')} provides specialized educational guidance for child and adolescent growth and nutrition.`)
+  :(cfg.aboutText||`مرکز مشاوره ${siteBrand(cfg,'رشد کودک')} با هدف همراهی علمی والدین در زمینه رشد و تغذیه کودک و نوجوان فعالیت می‌کند.`);
  const introText=lang==="en"?(cfg.aboutIntroTextEn||""):(cfg.aboutIntroText||"");
  const showIntro=cfg.pageContentOrder?.about?.showIntro!==false&&!!introText;
  const contactFirst=cfg.pageContentOrder?.about?.order==="contactFirst";
@@ -305,11 +307,11 @@ export function AboutPage({app}:{app:any}){
 
  return (
   <>
-   <Helmet><title>{`درباره ما | ${cfg.siteTitle||'سامانه رشد کودک'}`}</title><meta name="description" content={`آشنایی با تیم ${cfg.siteTitle||'مجموعه'} در حوزه رشد و تغذیه کودک و نوجوان`} /></Helmet>
+   <Helmet><title>{`درباره ما | ${siteBrand(cfg)}`}</title><meta name="description" content={`آشنایی با تیم ${siteBrand(cfg,'مجموعه')} در حوزه رشد و تغذیه کودک و نوجوان`} /></Helmet>
    <PageShell app={app} title={lang==="en"?"About Us":"درباره ما"} variant="trust">
      {/* Hero with specialist-hero-master.webp */}
      <div style={{marginBottom:26,borderRadius:20,overflow:"hidden",border:`1px solid ${T.brd}`,position:"relative"}}>
-       <img src={cfg.images?.aboutHero?.url || "/images/specialist/specialist-hero-master.webp"} alt={lang==="en"?`${cfg.siteTitle||"Child Growth"} specialist`:`کارشناس ${cfg.siteTitle||"رشد کودک"}`} style={{width:"100%",height:220,objectFit:"cover"}}/>
+       <img src={cfg.images?.aboutHero?.url || "/images/specialist/specialist-hero-master.webp"} alt={lang==="en"?`${siteBrand(cfg,'Child Growth')} specialist`:`کارشناس ${siteBrand(cfg,'رشد کودک')}`} style={{width:"100%",height:220,objectFit:"cover"}}/>
        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent, rgba(0,0,0,.65))",padding:"48px 18px 18px"}}>
          <div style={{color:"#fff",fontSize:20,fontWeight:900,lineHeight:1.15}}>{cfg.specialistName||""}</div>
          <div style={{color:"rgba(255,255,255,.92)",fontSize:13.5,marginTop:2}}>{lang==="en"?"Child & Adolescent Growth & Nutrition Specialist":"کارشناس رشد و تغذیه کودک و نوجوان"}</div>
@@ -369,6 +371,6 @@ export function AboutPage({app}:{app:any}){
 }export function ContactPage({app}:{app:any}){
 
  const {cfg,T,lang,ContactPanel}=app;
- return <><Helmet><title>{`ارتباط با ما | ${cfg.siteTitle||'سامانه رشد کودک'}`}</title><meta name="description" content={`راه‌های ارتباط با تیم ${cfg.siteTitle||'مجموعه'}`} /></Helmet><PageShell app={app} title={lang==='en'?'Contact Us':'ارتباط با ما'} variant="trust"><ContactPanel cfg={cfg} T={T} lang={lang}/>{/* اصلاح ۵۲: بخش خدمات در ارتباط با ما */}{cfg.servicesVisibility?.contact!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}</PageShell></>
+ return <><Helmet><title>{`ارتباط با ما | ${siteBrand(cfg)}`}</title><meta name="description" content={`راه‌های ارتباط با تیم ${siteBrand(cfg,'مجموعه')}`} /></Helmet><PageShell app={app} title={lang==='en'?'Contact Us':'ارتباط با ما'} variant="trust"><ContactPanel cfg={cfg} T={T} lang={lang}/>{/* اصلاح ۵۲: بخش خدمات در ارتباط با ما */}{cfg.servicesVisibility?.contact!==false&&<div style={{marginTop:18}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{lang==='en'?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>lang==='en'?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}</PageShell></>
 }
 

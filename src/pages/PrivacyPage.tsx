@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 export default function PrivacyPage({app}:{app:any}){
- const {cfg,T,S,css,lang,setView}=app;const en=lang==='en';const brand=cfg?.siteTitle||(en?'Website':'سایت');
+ const {cfg,T,S,css,lang,setView}=app;const en=lang==='en';const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
  const sections=en?[
   ['Data we receive','Contact details, consultation answers, child growth and nutrition information, optional voice/photo attachments, delivery details and payment receipts.'],
   ['Why we use it','To provide the requested consultation or course, follow up an order, deliver files, prevent abuse and resolve technical errors.'],

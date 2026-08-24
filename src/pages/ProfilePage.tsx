@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 export default function ProfilePage({ app }: { app: any }) {
   const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
   const en = lang === 'en';
-  const brand = cfg.siteTitle || (en ? 'Child Growth' : 'سامانه رشد کودک');
+  const brand=String(cfg.browserTitle||cfg.siteTitle||(en?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();
 
   return (
     <main style={S.page} aria-labelledby="profile-page-title">
