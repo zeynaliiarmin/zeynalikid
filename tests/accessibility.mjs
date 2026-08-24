@@ -9,7 +9,7 @@ const blocking=[];
 for(const route of routes){
  const page=await browser.newPage();await page.setViewport({width:390,height:844});await page.setRequestInterception(true);
  page.on('request',request=>{const method=request.method();if(request.url().includes('.supabase.co')&&!['GET','HEAD','OPTIONS'].includes(method))request.abort();else request.continue()});
- await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});await new Promise(resolve=>setTimeout(resolve,route.includes('not-found')?3400:700));
+ await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});await new Promise(resolve=>setTimeout(resolve,route.includes('not-found')?3400:1400));
  const result=await new AxePuppeteer(page).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
  for(const violation of result.violations.filter(item=>item.impact==='critical'||item.impact==='serious'))blocking.push({route,id:violation.id,impact:violation.impact,nodes:violation.nodes.length,help:violation.help});
  await page.close();
