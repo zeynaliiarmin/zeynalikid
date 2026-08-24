@@ -3,6 +3,7 @@ import { getAdminSessionToken } from '../utils/adminSession';
 import { maskReviewPhone } from '../utils/reviewPresentation';
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
+import { uploadPublicFile } from './storageUpload';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -532,28 +533,9 @@ export const deleteUserQuestion = async (id: number): Promise<boolean> => {
 };
 
 
-const VOICE_BUCKET = 'voice-notes';
-export const uploadVoiceNote = async (blob: Blob): Promise<string | null> => {
-  if (!isSupabaseConfigured || !supabase) return null;
-  try {
-    const ext = blob.type.includes('webm') ? 'webm'
-              : blob.type.includes('mp4') ? 'mp4'
-              : blob.type.includes('ogg') ? 'ogg'
-              : 'webm';
-    const path = `voice-notes/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage
-      .from(VOICE_BUCKET)
-      .upload(path, blob, { contentType: blob.type, upsert: false });
-    if (error) {
-      console.warn('Voice note upload failed:', error.message);
-      return null;
-    }
-    const { data } = supabase.storage.from(VOICE_BUCKET).getPublicUrl(path);
-    return data.publicUrl;
-  } catch (e) {
-    console.warn('Voice note upload error:', e);
-    return null;
-  }
+export const uploadVoiceNote=async(blob:Blob):Promise<string|null>=>{
+  if(!isSupabaseConfigured)return null;
+  try{return await uploadPublicFile('voice',blob)}catch(e){console.warn('Voice note upload error:',e);return null}
 };
 
 

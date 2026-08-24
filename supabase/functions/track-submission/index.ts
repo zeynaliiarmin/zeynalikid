@@ -16,7 +16,7 @@ import {
   handleOptions, jsonResponse, getOrigin,
 } from "../_shared/cors.ts";
 import {
-  rateLimit, rateLimitKey, cleanupExpiredBuckets,
+  rateLimit, rateLimitKey, centralRateLimit, cleanupExpiredBuckets,
 } from "../_shared/rateLimit.ts";
 
 const digitsOnly = (v: string) =>
@@ -57,8 +57,28 @@ serve(async (req) => {
     }
 
     const code = String(trackingCode).trim().toUpperCase();
-    if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code)) {
-      return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست (مثال: ZK12345)" }, 400, origin);
+    if (!/^ZK\d{4,8}$/.test(code) && !/^ZK-[A-F0-9]{6}$/.test(code) && !/^ZK-[A-Z0-9]{12,20}$/.test(code)) {
+      return jsonResponse({ error: "فرمت کد پیگیری معتبر نیست" }, 400, origin);
+    }
+
+    const strictRl = await centralRateLimit(req, "track-submission", {
+      maxRequests: 30,
+      windowMs: 10 * 60_000,
+      blockMs: 10 * 60_000,
+    });
+    if (!strictRl.ok) {
+      return jsonResponse(
+        { error: "تعداد درخواست‌های پیگیری بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید." },
+        429,
+        origin,
+      );
+    }
+
+    // The former preview mode exposed part of a registered phone number using
+    // only a short tracking code. It is intentionally disabled: a complete
+    // phone number is now always required before any record lookup.
+    if (preview === true) {
+      return jsonResponse({ error: "شماره تماس کامل برای پیگیری الزامی است" }, 400, origin);
     }
 
     const supabase = getSupabaseAdmin();
@@ -99,12 +119,6 @@ serve(async (req) => {
       }
       return d.slice(0, 4) + "xxxx" + last3;
     };
-
-    // حالت پیش‌نمایش (فقط با کد پیگیری، بدون شماره تماس):
-    // فقط شمارهٔ ماسک‌شده برمی‌گردد تا کاربر بداند ثبت با کدام شماره انجام شده است.
-    if (preview === true) {
-      return jsonResponse({ previewPhone: maskPhonePreview(storedPhone) }, 200, origin);
-    }
 
     if (!fullPhone) {
       return jsonResponse({ error: "شماره تماس الزامی است" }, 400, origin);

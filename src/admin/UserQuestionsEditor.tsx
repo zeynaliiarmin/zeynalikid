@@ -7,6 +7,7 @@ import {
   deleteUserQuestion,
 } from '../lib/supabase';
 import FAQManagementEditor from './FAQManagementEditor';
+import { adminGetSignedUrls } from '../lib/adminApi';
 
 // فیلد پاسخ — کامپوننت جدا با state محلی تا تایپ باعث re-render کل لیست نشود (رفع fg)
 const AnswerField = React.memo(function AnswerField({ initial, onCommit, T, S }: { initial: string; onCommit: (v: string) => void; T: any; S: any }) {
@@ -40,6 +41,16 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   const [loading, setLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [signedVoiceMap,setSignedVoiceMap]=useState<Record<string,string>>({});
+
+  // Private voice notes are rendered only through short-lived signed URLs.
+  useEffect(()=>{
+    const urls=questions.map(q=>q.voice_note_url).filter((u):u is string=>!!u&&u.startsWith('http'));
+    if(!urls.length){setSignedVoiceMap({});return}
+    let alive=true;
+    adminGetSignedUrls([...new Set(urls)]).then(map=>{if(alive)setSignedVoiceMap(map||{})}).catch(()=>{if(alive)setSignedVoiceMap({})});
+    return()=>{alive=false};
+  },[questions]);
 
   // Manual frequent questions (added manually by admin)
   const manualList: any[] = Array.isArray((cfg as any)?.manualUserQuestions) ? (cfg as any).manualUserQuestions : [];
@@ -564,7 +575,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                   {q.voice_note_url && (
                     <div style={{ margin: '8px 0 12px', background: T.soft || '#CCFBF1', padding: 10, borderRadius: 10 }}>
                       <div style={{ fontSize: 12, color: T.mut, marginBottom: 4, fontWeight: 700 }}>یادداشت صوتی ارسالی کاربر:</div>
-                      <audio controls src={q.voice_note_url} style={{ width: '100%' }} />
+                      <audio controls src={signedVoiceMap[q.voice_note_url]||''} style={{ width: '100%' }} />
                     </div>
                   )}
 

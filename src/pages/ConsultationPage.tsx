@@ -91,7 +91,7 @@ export default function ConsultationPage({ app }: { app: any }) {
     showContactOn, ContactPanel, Footer,
     CountrySelect, MiniIcon, MemphisBg,
     setFd: _setFd, fd: _fd,
-    referralConsultant,
+    referralConsultant, uploadVoiceNote,
   } = app;
 
   const navigate = useNavigate();
@@ -358,15 +358,10 @@ export default function ConsultationPage({ app }: { app: any }) {
         let voice_note_url = '';
         let voiceUploadFailed = false;
         if (voiceBlob) {
-          if (isSupabaseConfigured && supabase) {
+          if (isSupabaseConfigured && uploadVoiceNote) {
             try {
-              const ext = voiceBlob.type.includes('webm') ? 'webm' : voiceBlob.type.includes('mp4') ? 'mp4' : 'webm';
-              const vp = `voice-notes/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-              const { error: ve } = await supabase.storage.from('voice-notes').upload(vp, voiceBlob, { contentType: voiceBlob.type, upsert: false });
-              if (!ve) {
-                const { data: vu } = supabase.storage.from('voice-notes').getPublicUrl(vp);
-                voice_note_url = vu.publicUrl;
-              } else { voiceUploadFailed = true; }
+              voice_note_url = (await uploadVoiceNote(voiceBlob)) || '';
+              if (!voice_note_url) voiceUploadFailed = true;
             } catch (e) {
               console.warn('voice upload fail', e);
               reportError('consult_voice', 'voice upload fail', String((e as any)?.message||e));

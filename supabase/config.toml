@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.update-submission-public]
 verify_jwt = false
+
+[functions.storage-upload]
+verify_jwt = false

@@ -64,7 +64,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
     { name: isFa ? 'پدر علی' : 'Ali’s dad', rating: 4, text: isFa ? 'خیلی به ما کمک کرد.' : 'Helped us a lot.' },
   ];
 
-  const imgSrc = product.image || product.imageUrl || '/images/product-personalized-plan.webp';
+  const imgSrc = product.image || product.imageUrl || '/images/products/product-personalized-plan.webp';
 
   return (
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
@@ -74,7 +74,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
           src={imgSrc}
           alt={name}
           style={{ maxWidth: '78%', maxHeight: '158px', width: 'auto', height: 'auto', objectFit: 'contain', objectPosition: (product as any).objectPosition || 'center' }}
-          onError={(e: any) => { e.currentTarget.src = '/images/product-personalized-plan.webp'; }}
+          onError={(e: any) => { e.currentTarget.src = '/images/products/product-personalized-plan.webp'; }}
         />
 
         {/* Top actions — correct RTL: back in top-right (RTL), top-left (LTR) */}

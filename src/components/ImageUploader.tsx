@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { uploadAdminFile } from '../lib/storageUpload';
+import { adminDeleteStorageFiles } from '../lib/adminApi';
 
 interface ImageUploaderProps {
   currentImage: string;
@@ -87,34 +89,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     setUploading(true);
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        // Upload to Supabase Storage
-        
-        // Compress image first
-        const compressedBlob = await compressImage(file, 500);
-        
-        const fileExt = file.name.split('.').pop() || 'jpg';
-        const fileName = `images/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from('media')
-          .upload(fileName, compressedBlob, {
-            contentType: 'image/jpeg',
-            upsert: false,
-          });
-
-        if (error) {
-          console.error('Upload error:', error);
-          alert('خطا در آپلود تصویر: ' + error.message);
-          setUploading(false);
-          return;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('media')
-          .getPublicUrl(data.path);
-
-        onUpload(urlData.publicUrl);
+      if (isSupabaseConfigured) {
+        const compressedBlob=await compressImage(file,500);
+        const uploadBlob=new File([compressedBlob],file.name,{type:'image/jpeg'});
+        const url=await uploadAdminFile('media','images',uploadBlob);
+        onUpload(url);
       } else {
         // Fallback: convert to data URL
         const reader = new FileReader();
@@ -135,17 +114,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const handleRemove = async () => {
     // If it's a Supabase URL, try to delete the file
-    if (isSupabaseConfigured && supabase && currentImage && currentImage.includes('storage')) {
-      try {
-        // Extract path from URL
-        const urlParts = currentImage.split('/storage/v1/object/public/media/');
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1];
-          await supabase.storage.from('media').remove([filePath]);
-        }
-      } catch (e) {
-        console.warn('Could not delete file from storage:', e);
-      }
+    if(isSupabaseConfigured&&currentImage&&currentImage.includes('/storage/')){
+      try{await adminDeleteStorageFiles([currentImage])}catch(e){console.warn('Could not delete file from storage:',e)}
     }
     onRemove();
   };

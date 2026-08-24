@@ -34,7 +34,6 @@ export default function TrackPage({app}:{app:any}){
  const [correctiveMsg,setCorrectiveMsg]=useState('');
  const [isGuest,setIsGuest]=useState(false);
  // پیش‌نمایش ماسک‌شدهٔ شمارهٔ ثبت‌نام، به‌محض کامل شدن کد پیگیری (قبل از زدن دکمهٔ پیگیری)
- const [previewPhone,setPreviewPhone]=useState('');
  // ورودی: فقط اعداد بعد از ZK (ZK ثابت و غیرقابل حذف) — کد قدیمی هگز هم پذیرفته می‌شود
  // اصلاح ۳ (مرحله ۶): ورود مخفی به پنل مدیریت — اگر کاربر دقیقاً «639» را در فیلد کد پیگیری وارد کند، مستقیماً به صفحه ورود ادمین هدایت می‌شود.
  const onNumChange=(v:string)=>{const clean=p2e(v).toUpperCase().replace(/^ZK-?/,'').replace(/[^A-F0-9]/g,'').slice(0,8); if(clean==='639'){setNum('');setView('admin-login');return} setNum(clean)};
@@ -98,30 +97,8 @@ export default function TrackPage({app}:{app:any}){
    }
    const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')}
   }finally{setLoading(false)}};
- // تشخیص خودکار کد پیگیری: به‌محض اینکه کد کامل و معتبر شد، شمارهٔ ثبت‌نام (ماسک‌شده) نمایش داده می‌شود
- // تا کاربر بداند ثبت دوره با کدام شماره انجام شده است؛ بدون نیاز به زدن دکمهٔ پیگیری.
- useEffect(()=>{
-  const c=buildCode();
-  const valid=/^ZK\d{4,8}$/.test(c)||/^ZK-[A-F0-9]{6}$/.test(c);
-  if(!valid){setPreviewPhone('');return;}
-  let alive=true;
-  const t=window.setTimeout(async()=>{
-   try{
-    if(isSupabaseConfigured&&SUPABASE_URL&&SUPABASE_ANON_KEY){
-     const response=await fetch(`${SUPABASE_URL}/functions/v1/track-submission`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({trackingCode:c,preview:true})});
-     if(!alive)return;
-     if(response.ok){const data=await response.json().catch(()=>({}));setPreviewPhone(data?.previewPhone||'');}
-     else setPreviewPhone('');
-     return;
-    }
-    const list:any[]=getLS('zkid_submissions_v2',[]);
-    const found=list.find((x:any)=>String(x.trackingCode||'').toUpperCase()===c);
-    if(!alive)return;
-    setPreviewPhone(found?maskPhonePreview(String(found.fullPhone||'')):'');
-   }catch{ if(alive)setPreviewPhone(''); }
-  },450);
-  return()=>{alive=false;window.clearTimeout(t)};
- },[num]);
+ // برای جلوگیری از حدس‌زدن کدهای معتبر و افشای بخشی از شماره تماس،
+ // هیچ جستجوی خودکاری فقط با کد انجام نمی‌شود؛ جستجو همیشه کد + شماره کامل می‌خواهد.
 
  const enterGuest=()=>{
    // ورود مهمان — محتوای عمومی برنامه غذایی برای مهمان همیشه نمایش داده می‌شود (کنترل ادمین فقط برای فرم‌های ثبت‌شده واقعی است)
@@ -243,13 +220,6 @@ export default function TrackPage({app}:{app:any}){
    <input className="zkgl-input zkgl-has-prefix" id="zkgl-track-num" dir="ltr" inputMode="numeric" placeholder=" " value={num} onChange={e=>onNumChange(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} maxLength={8} style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'3px'}}/>
    <label className="zkgl-label" htmlFor="zkgl-track-num" style={{insetInlineStart:34}}>{lang==='en'?'Tracking code':'کد پیگیری'}</label>
   </div>
-  {previewPhone && (
-   <div style={{display:'flex',alignItems:'center',gap:7,padding:'7px 11px',marginBottom:12,borderRadius:10,background:'rgba(255,255,255,.08)',border:'1px dashed rgba(255,255,255,.28)',fontSize:11.5,color:'rgba(255,255,255,.85)'}}>
-    <span style={{display:'flex',alignItems:'center',flexShrink:0}}><PhoneIcon size={13} color={accLight} /></span>
-    <span style={{flexShrink:0}}>{lang==='en'?'Registered phone':'شماره ثبت‌نام'}:</span>
-    <b dir="ltr" style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'1px',color:'#fff'}}>{previewPhone}</b>
-   </div>
-  )}
   <div className="zkgl-field" dir="ltr">
    <input className="zkgl-input" id="zkgl-track-phone" dir="ltr" inputMode="tel" placeholder=" " value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}}/>
    <label className="zkgl-label" htmlFor="zkgl-track-phone">{lang==='en'?'Phone number':'شماره تماس'}</label>

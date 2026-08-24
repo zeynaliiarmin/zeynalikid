@@ -16,6 +16,7 @@ import { triggerErrorAlert } from './utils/errorAlertBus';
 import { generateTrackingCode, generateUniqueTrackingCode } from './utils/tracking';
 import { optimizeForUpload } from './utils/imageOptimizer';
 import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, saveSettings as saveSettingsRemote, trackPageView } from './lib/supabase';
+import { uploadAdminFile, uploadPublicFile } from './lib/storageUpload';
 import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
 import { resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
@@ -69,20 +70,9 @@ const FILES_BUCKET='files';
 const uploadPdfFile=async(f:File,folder='pdf-docs')=>{
  if(f.type!=='application/pdf'&&!/\.pdf$/i.test(f.name))throw new Error('فقط فایل PDF مجاز است.');
  if(f.size>10*1024*1024)throw new Error('حجم فایل نباید بیشتر از ۱۰ مگابایت باشد.');
- if(isSupabaseConfigured&&supabase){
-  const path=`${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`;
-  const {error}=await supabase.storage.from(FILES_BUCKET).upload(path,f,{contentType:'application/pdf',upsert:false});
-  if(error){
-   const msg=String((error as any)?.message||'').toLowerCase();
-   if(msg.includes('bucket not found')||msg.includes('not found'))throw new Error('باکت «files» در Supabase Storage ساخته نشده است. لطفاً طبق راهنمای supabase/README-setup.sql آن را بسازید.');
-   if(msg.includes('row-level security')||msg.includes('policy')||msg.includes('permission')||msg.includes('unauthorized'))throw new Error('دسترسی آپلود در باکت «files» مسدود است. لطفاً Policyهای Storage را طبق supabase/README-setup.sql تنظیم کنید.');
-   if(msg.includes('quota')||msg.includes('exceeded')||(error as any)?.statusCode===413||(error as any)?.status===413)throw new Error('فضای ذخیره‌سازی تکمیل شده است.');
-   throw error;
-  }
-  const {data}=supabase.storage.from(FILES_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+ if(isSupabaseConfigured){
+  return uploadAdminFile('files',folder,new File([f],f.name,{type:'application/pdf'}));
  }
- // بدون Supabase: تبدیل به data URL (فقط برای فایل‌های کوچک قابل استفاده است)
  return new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(f)});
 };
 const deleteStoredFile=async(u?:string)=>{try{if(!u)return; if(getAdminSessionToken()){const{adminDeleteStorageFiles}=await import('./lib/adminApi'); await adminDeleteStorageFiles([u]); return;} if(!isSupabaseConfigured||!supabase)return;const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/files\/(.+)$/);const path=m?decodeURIComponent(m[1]):null;if(path)await supabase.storage.from(FILES_BUCKET).remove([path])}catch(e){console.warn('Could not delete old file',e)}};
@@ -94,48 +84,38 @@ const deleteStoredImage=async(u?:string)=>{try{if(!u)return; if(getAdminSessionT
 // با خطای createImageBitmap مواجه می‌شوند؛ در این حالت فایل بدون تغییر اندازه (بدون فشرده‌سازی) آپلود می‌شود.
 const compressImage=async(file:File,maxBytes?:number):Promise<Blob>=>{maxBytes=maxBytes??imageCompressionKB*1024;return (async()=>{if(!allowedImageTypes.includes(file.type))throw new Error('فرمت تصویر مجاز نیست. فقط jpg، jpeg، png، webp، heic و heif پذیرفته می‌شود.'); if(file.size<=maxBytes!)return file; try{const bmp=await createImageBitmap(file); const canvas=document.createElement('canvas'); const scale=Math.min(1,Math.sqrt(maxBytes!/file.size)); canvas.width=Math.max(1,Math.round(bmp.width*scale)); canvas.height=Math.max(1,Math.round(bmp.height*scale)); const ctx=canvas.getContext('2d'); if(!ctx)return file; ctx.drawImage(bmp,0,0,canvas.width,canvas.height); let q=.82; const type=file.type==='image/png'?'image/webp':file.type; const toBlob=()=>new Promise<Blob>((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('compression failed')),type,q)); let out=await toBlob(); while(out.size>maxBytes!&&q>.3){q-=.1; out=await toBlob()} return out}catch{return file}})()};
 const blobToDataUrl=(blob:Blob)=>new Promise<string>((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.onerror=rej;r.readAsDataURL(blob)});
-const fileToData=async(f:File,oldUrl?:string,folder='uploads')=>{const optimized = await optimizeForUpload(f); const compressed=await compressImage(optimized instanceof File ? optimized : f); if(isSupabaseConfigured&&supabase){const ext=(compressed.type.split('/')[1]||'jpg').replace('jpeg','jpg'); const path=`${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`; const {error}=await supabase.storage.from(IMAGE_BUCKET).upload(path,compressed,{contentType:compressed.type,upsert:false}); if(error){const msg=String((error as any)?.message||'').toLowerCase(); if(msg.includes('quota')||msg.includes('storage')||msg.includes('exceeded')||(error as any)?.statusCode===413||(error as any)?.status===413)throw new Error('STORAGE_FULL'); throw error;} await deleteStoredImage(oldUrl); const {data}=supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path); return data.publicUrl} const dataUrl=await blobToDataUrl(compressed); if(dataUrl.length>1024*1024*1.4)throw new Error('حجم تصویر زیاد است. لطفاً تصویر کوچک‌تری انتخاب کنید.'); return dataUrl};
+const fileToData=async(f:File,oldUrl?:string,folder='uploads')=>{
+ const optimized=await optimizeForUpload(f);
+ const compressed=await compressImage(optimized instanceof File?optimized:f);
+ if(isSupabaseConfigured){
+  const url=await uploadAdminFile('images',folder,compressed);
+  await deleteStoredImage(oldUrl);
+  return url;
+ }
+ const dataUrl=await blobToDataUrl(compressed);
+ if(dataUrl.length>1024*1024*1.4)throw new Error('حجم تصویر زیاد است. لطفاً تصویر کوچک‌تری انتخاب کنید.');
+ return dataUrl;
+};
 
 // اصلاح ۳۰ (مرحله ۷): آپلود عکس زبان + بهبود آپلود فیش با نوار پیشرفت واقعی (XMLHttpRequest)
 const TONGUE_BUCKET='tongue-photos';
-const SUPABASE_URL_RAW=(import.meta.env.VITE_SUPABASE_URL as string|undefined)||'';
-const SUPABASE_ANON_KEY_RAW=(import.meta.env.VITE_SUPABASE_ANON_KEY as string|undefined)||'';
-const uploadBlobWithProgress=(url:string,blob:Blob,headers:Record<string,string>,onProgress?:(p:number)=>void)=>new Promise<void>((resolve,reject)=>{
- const xhr=new XMLHttpRequest();
- xhr.open('POST',url);
- Object.entries(headers).forEach(([k,v])=>xhr.setRequestHeader(k,v));
- xhr.upload.onprogress=(e)=>{ if(e.lengthComputable&&onProgress) onProgress(Math.round((e.loaded/e.total)*100)); };
- xhr.onload=()=>{ if(xhr.status>=200&&xhr.status<300){onProgress?.(100);resolve()} else reject(new Error(xhr.responseText||'آپلود انجام نشد.')) };
- xhr.onerror=()=>reject(new Error('خطای شبکه هنگام آپلود.'));
- xhr.send(blob);
-});
-// اصلاح ۳۰ (مرحله ۷): تابع عمومی آپلود عکس با نوار پیشرفت واقعی — هم برای عکس زبان (tongue-photos) و هم فیش واریزی (images) قابل استفاده است.
-const uploadFileWithProgress=async(f:File,bucket:string,folder:string,onProgress?:(p:number)=>void,maxBytes?:number,bucketLabel?:string)=>{
- const optimized = await optimizeForUpload(f);
- const compressed=await compressImage(optimized instanceof File ? optimized : f,maxBytes);
- if(isSupabaseConfigured&&supabase&&SUPABASE_URL_RAW){
-  const ext=(compressed.type.split('/')[1]||'jpg').replace('jpeg','jpg');
-  const path=`${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const uploadUrl=`${SUPABASE_URL_RAW.replace(/\/$/,'')}/storage/v1/object/${bucket}/${path}`;
+// Public user files are uploaded with short-lived, server-issued upload tokens.
+// The browser never receives service_role and cannot select, replace or delete objects.
+const uploadFileWithProgress=async(f:File,bucket:string,_folder:string,onProgress?:(p:number)=>void,maxBytes?:number,bucketLabel?:string)=>{
+ const optimized=await optimizeForUpload(f);
+ const compressed=await compressImage(optimized instanceof File?optimized:f,maxBytes);
+ if(isSupabaseConfigured){
   try{
-   await uploadBlobWithProgress(uploadUrl,compressed,{'Authorization':`Bearer ${SUPABASE_ANON_KEY_RAW}`,'apikey':SUPABASE_ANON_KEY_RAW,'Content-Type':compressed.type},onProgress);
+   const kind=bucket==='tongue-photos'?'tongue':bucket==='receipts'?'receipt':null;
+   if(!kind)throw new Error('نوع آپلود عمومی مجاز نیست.');
+   return await uploadPublicFile(kind,compressed,onProgress);
   }catch(e:any){
-   reportError('upload_file', `${bucketLabel||bucket}: ${String(e?.message||'upload failed')}`);
-   const msg=String(e?.message||'').toLowerCase();
-   const label=bucketLabel||bucket;
-   if(msg.includes('bucket not found')||msg.includes('not found'))throw new Error(`باکت «${label}» در Supabase Storage ساخته نشده است. لطفاً طبق راهنمای supabase/README-setup.sql آن را بسازید.`);
-   if(msg.includes('row-level security')||msg.includes('policy')||msg.includes('permission')||msg.includes('unauthorized'))throw new Error(`دسترسی آپلود در باکت «${label}» مسدود است. لطفاً Policyهای Storage را طبق supabase/README-setup.sql تنظیم کنید.`);
-   if(msg.includes('quota')||msg.includes('exceeded'))throw new Error('STORAGE_FULL');
-   throw new Error(e?.message||'آپلود فایل انجام نشد.');
+   reportError('upload_file',`${bucketLabel||bucket}: ${String(e?.message||'upload failed')}`);
+   throw e;
   }
-  const {data}=supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
  }
- // بدون Supabase: شبیه‌سازی نوار پیشرفت برای data URL محلی
- if(onProgress){ for(const p of [20,45,70,90]){ await new Promise(r=>setTimeout(r,60)); onProgress(p);} }
- const url=await blobToDataUrl(compressed);
- onProgress?.(100);
- return url;
+ if(onProgress){for(const p of [20,45,70,90]){await new Promise(r=>setTimeout(r,60));onProgress(p)}}
+ const url=await blobToDataUrl(compressed);onProgress?.(100);return url;
 };
 const uploadTonguePhoto=(f:File,onProgress?:(p:number)=>void,maxBytes?:number)=>uploadFileWithProgress(f,TONGUE_BUCKET,'tongue',onProgress,maxBytes,'tongue-photos');
 const deleteStoredTonguePhoto=async(u?:string)=>{try{if(!u)return; if(getAdminSessionToken()){const{adminDeleteStorageFiles}=await import('./lib/adminApi'); await adminDeleteStorageFiles([u]); return;} if(!isSupabaseConfigured||!supabase)return;const m=new URL(u).pathname.match(/\/storage\/v1\/object\/public\/tongue-photos\/(.+)$/);const path=m?decodeURIComponent(m[1]):null;if(path)await supabase.storage.from(TONGUE_BUCKET).remove([path])}catch(e){console.warn('Could not delete tongue photo',e)}};
@@ -144,30 +124,9 @@ const deleteStoredTonguePhoto=async(u?:string)=>{try{if(!u)return; if(getAdminSe
 const RECEIPTS_BUCKET='receipts';
 const uploadReceiptWithProgress=async(f:File,oldUrl:string|undefined,onProgress?:(p:number)=>void)=>{const optimized=await optimizeForUpload(f);const fileToUpload=optimized instanceof File?optimized:f;const url=await uploadFileWithProgress(fileToUpload,RECEIPTS_BUCKET,'receipts',onProgress,undefined,'receipts');await deleteStoredImage(oldUrl);return url;};
 
-const VOICE_BUCKET = 'voice-notes';
-const uploadVoiceNote = async (blob: Blob): Promise<string | null> => {
-  if (!isSupabaseConfigured || !supabase) return null;
-  try {
-    const ext = blob.type.includes('webm') ? 'webm'
-              : blob.type.includes('mp4') ? 'mp4'
-              : blob.type.includes('ogg') ? 'ogg'
-              : 'webm';
-    const path = `voice-notes/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage
-      .from(VOICE_BUCKET)
-      .upload(path, blob, { contentType: blob.type, upsert: false });
-    if (error) {
-      console.warn('Voice note upload failed:', error.message);
-      reportError('voice_upload', 'Voice note upload failed', String(error.message||''));
-      return null;
-    }
-    const { data } = supabase.storage.from(VOICE_BUCKET).getPublicUrl(path);
-    return data.publicUrl;
-  } catch (e) {
-    console.warn('Voice note upload error:', e);
-    reportError('voice_upload', 'Voice note upload error', String((e as any)?.message||e));
-    return null;
-  }
+const uploadVoiceNote=async(blob:Blob):Promise<string|null>=>{
+ if(!isSupabaseConfigured)return null;
+ try{return await uploadPublicFile('voice',blob)}catch(e){console.warn('Voice note upload error:',e);reportError('voice_upload','Voice note upload error',String((e as any)?.message||e));return null}
 };
 
 

@@ -21,9 +21,9 @@ import {
 import {
   validateAdminSession, extractSessionToken, sha256,
 } from "../_shared/adminAuth.ts";
-import { rateLimit, rateLimitKey, cleanupExpiredBuckets } from "../_shared/rateLimit.ts";
+import { rateLimit, rateLimitKey, centralRateLimit, cleanupExpiredBuckets } from "../_shared/rateLimit.ts";
 
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours — limits exposure if a device token is stolen
 
 const digitsOnly = (v: string) =>
   String(v ?? "")
@@ -53,6 +53,26 @@ function deviceInfoFromBody(body: any): { device_name: string; platform: string;
     browser: String(body?.browser || "").slice(0, 100),
     user_agent: String(body?.user_agent || "").slice(0, 300),
   };
+}
+
+async function writeSecurityAudit(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  action: string,
+  actorPhone: string,
+  success: boolean,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await supabase.from("admin_audit_logs").insert({
+      actor_phone: actorPhone || null,
+      action,
+      target_type: "admin_session",
+      metadata,
+      success,
+    });
+  } catch {
+    // Auditing must not make authentication unavailable.
+  }
 }
 
 serve(async (req) => {
@@ -88,14 +108,33 @@ serve(async (req) => {
     const phoneRaw = String(body.phone || "");
     const password = String(body.password || "");
     const phone = normalizeIranianMobile(phoneRaw);
+
+    // Cross-instance limiter: unlike the in-memory guard above, this counter is
+    // shared by every Edge instance and applies a 15-minute cooldown.
+    const strictRl = await centralRateLimit(req, "admin-login", {
+      maxRequests: 10,
+      windowMs: 15 * 60_000,
+      blockMs: 15 * 60_000,
+    }, phone);
+    if (!strictRl.ok) {
+      return jsonResponse(
+        { error: "تلاش‌های ورود بیش از حد مجاز است. لطفاً ۱۵ دقیقه بعد دوباره تلاش کنید." },
+        429,
+        origin,
+      );
+    }
+
     const storedPhone = Deno.env.get("ADMIN_PHONE") || "";
     const storedPwd = Deno.env.get("ADMIN_PASSWORD") || "";
+    const invalidLogin = { error: "شماره تماس یا رمز عبور صحیح نیست" };
 
     if (!phone || !storedPhone || !storedPwd) {
-      return jsonResponse({ error: "اطلاعات ورود معتبر نیست" }, 401, origin);
+      await writeSecurityAudit(supabase, "admin_login_failed", phone, false, { reason: "invalid_input_or_configuration" });
+      return jsonResponse(invalidLogin, 401, origin);
     }
     if (normalizeIranianMobile(storedPhone) !== phone || password !== storedPwd) {
-      return jsonResponse({ error: "شماره تماس یا رمز عبور اشتباه است" }, 401, origin);
+      await writeSecurityAudit(supabase, "admin_login_failed", phone, false, { reason: "invalid_credentials" });
+      return jsonResponse(invalidLogin, 401, origin);
     }
 
     const info = deviceInfoFromBody(body);
@@ -184,8 +223,11 @@ serve(async (req) => {
     });
     if (sessionErr) {
       console.error("admin-session login session insert error:", sessionErr);
+      await writeSecurityAudit(supabase, "admin_login_failed", phone, false, { reason: "session_insert_failed" });
       return jsonResponse({ error: "خطا در برقراری نشست" }, 500, origin);
     }
+
+    await writeSecurityAudit(supabase, "admin_login_success", phone, true, { deviceId });
 
     return jsonResponse({
       ok: true,

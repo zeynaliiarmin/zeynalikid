@@ -35,7 +35,7 @@ interface ProductCardProps {
   lang?: 'fa' | 'en';
 }
 
-const FALLBACK_PRODUCT = '/images/product-personalized-plan.webp';
+const FALLBACK_PRODUCT = '/images/products/product-personalized-plan.webp';
 
 const getCategoryBadge = (cat: string | undefined, lang: 'fa' | 'en') => {
   const c = (cat || '').toLowerCase();

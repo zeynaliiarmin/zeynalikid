@@ -20,6 +20,7 @@ import {
   ZkUploadIcon, ZkImageIcon, ZkPlusIcon, ZkTrashIcon, ZkCheckCircleIcon,
   ZkArrowUpIcon, ZkArrowDownIcon, ZkDownloadIcon,
 } from './adminIcons';import ImageCropper from './ImageCropper';
+import { uploadAdminFile } from '../lib/storageUpload';
 
 // ─── بخش‌ها و پوشهٔ هر بخش ──────────────────────────────────────────
 export const IMAGE_SECTIONS: { id: string; label: string; folder: string; target: string; hint: string }[] = [
@@ -273,14 +274,10 @@ export default function ImagesManager(props: Props) {
       let url = '';
       let storagePath = '';
 
-      if (isSupabaseConfigured && supabase) {
-        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
-        const { error } = await supabase.storage.from('images').upload(path, file, { contentType: 'image/webp', upsert: false });
-        if (error) throw new Error(error.message || 'آپلود انجام نشد');
-        const { data } = supabase.storage.from('images').getPublicUrl(path);
-        url = data.publicUrl;
-        storagePath = path;
-      } else {
+      if(isSupabaseConfigured){
+        url=await uploadAdminFile('images',folder,file);
+        try{storagePath=decodeURIComponent(new URL(url).pathname.split('/object/public/images/')[1]||'')}catch{storagePath=''}
+      }else{
         url = await blobToDataUrl(file);
       }
 
@@ -579,14 +576,10 @@ function SingleImageEditor({
     try {
       let url = '';
       let storagePath = '';
-      if (isSupabaseConfigured && supabase) {
-        const path = `general/${field}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
-        const { error } = await supabase.storage.from('images').upload(path, file, { contentType: 'image/webp', upsert: false });
-        if (error) throw new Error(error.message || 'آپلود انجام نشد');
-        const { data } = supabase.storage.from('images').getPublicUrl(path);
-        url = data.publicUrl;
-        storagePath = path;
-      } else {
+      if(isSupabaseConfigured){
+        url=await uploadAdminFile('images',`general/${field}`,file);
+        try{storagePath=decodeURIComponent(new URL(url).pathname.split('/object/public/images/')[1]||'')}catch{storagePath=''}
+      }else{
         url = await blobToDataUrl(file);
       }
 

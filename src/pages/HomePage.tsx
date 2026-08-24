@@ -195,7 +195,7 @@ export default function HomePage({app}:{app:any}){
          {key:'appetite', title: lang==='en'?'Appetite & Nutrition':'اشتها و تغذیه', img:'/images/asset13c-topic-appetite.webp', desc: lang==='en'?'Personalized plans':'برنامه‌های شخصی'},
          {key:'focus', title: lang==='en'?'Focus & Mind':'تمرکز و ذهن', img:'/images/asset13c-topic-focus.webp', desc: lang==='en'?'Daily support':'حمایت روزانه'},
          {key:'parenting', title: lang==='en'?'Parenting Guidance':'راهنمای والدین', img:'/images/asset13c-trust-parent-care.webp', desc: lang==='en'?'Expert accompaniment':'همراهی تخصصی'},
-         {key:'nutrition', title: lang==='en'?'Personalized Plans':'برنامه‌های شخصی', img:'/images/product-personalized-plan.webp', desc: lang==='en'?'Tailored for your child':'متناسب با فرزند شما'}
+         {key:'nutrition', title: lang==='en'?'Personalized Plans':'برنامه‌های شخصی', img:'/images/products/product-personalized-plan.webp', desc: lang==='en'?'Tailored for your child':'متناسب با فرزند شما'}
        ].map((t,i)=>(
          <div key={i} className="zk-card" style={{padding:'14px 12px', borderRadius:'20px', textAlign:'center', display:'flex', flexDirection:'column', gap:'6px'}}>
            <img src={t.img} alt={t.title} style={{width:'100%', height:96, objectFit:'cover', borderRadius:14, marginBottom:4}} onError={(e:any)=>{e.currentTarget.src='/images/asset13c-topic-growth.webp'}} />
