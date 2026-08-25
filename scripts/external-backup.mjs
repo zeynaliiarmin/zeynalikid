@@ -1,11 +1,16 @@
 import crypto from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
 import JSZip from 'jszip';
 import {S3Client,PutObjectCommand,ListObjectsV2Command,DeleteObjectsCommand,HeadBucketCommand} from '@aws-sdk/client-s3';
 
 const dryRun=process.env.BACKUP_DRY_RUN==='true';
+const target=String(process.env.BACKUP_TARGET||'r2').trim();
+if(!['r2','github-artifact'].includes(target))throw new Error(`Unsupported BACKUP_TARGET: ${target}`);
 const baseRequired=['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','SUPABASE_ACCESS_TOKEN','SUPABASE_PROJECT_REF','BACKUP_PROJECT_CODE'];
 const r2Required=['R2_ACCOUNT_ID','R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET'];
-const required=[...baseRequired,...(dryRun?[]:r2Required)];
+const githubRequired=['BACKUP_ENCRYPTION_KEY'];
+const targetRequired=target==='r2'?r2Required:githubRequired;
+const required=[...baseRequired,...(dryRun?[]:targetRequired)];
 const missing=required.filter(key=>!String(process.env[key]||'').trim());
 if(missing.length){console.log(`External backup is not configured yet. Missing GitHub secrets: ${missing.join(', ')}`);process.exit(0)}
 const env=Object.fromEntries(required.map(key=>[key,String(process.env[key]).trim()]));
@@ -26,8 +31,13 @@ const storageIndex=[];
 for(const bucketInfo of buckets){const bucket=String(bucketInfo.id||bucketInfo.name||'');if(!bucket)continue;for(const item of await listObjects(bucket)){const encoded=item.path.split('/').map(encodeURIComponent).join('/');const response=await checkedFetch(`${env.SUPABASE_URL}/storage/v1/object/${encodeURIComponent(bucket)}/${encoded}`,{headers:storageHeaders});const data=Buffer.from(await response.arrayBuffer());const archivePath=`storage/${bucket}/${item.path}`;addFile(archivePath,data);manifest.storage.objects++;manifest.storage.bytes+=data.length;storageIndex.push({bucket,path:item.path,bytes:data.length,sha256:sha(data),metadata:item.metadata})}}
 addFile('database/storage-objects.json',storageIndex);addFile('manifest.json',manifest);
 const archive=await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE',compressionOptions:{level:6}});
+const timestamp=new Date().toISOString().replace(/[:.]/g,'-');
 if(dryRun){console.log(JSON.stringify({dryRun:true,archiveBytes:archive.length,archiveSha256:sha(archive),tableCount:Object.keys(manifest.tables).length,storageObjects:manifest.storage.objects,retentionDays}));process.exit(0)}
-const timestamp=new Date().toISOString().replace(/[:.]/g,'-');const key=`backups/${env.BACKUP_PROJECT_CODE}/${timestamp}.zip`;
+if(target==='github-artifact'){
+ const salt=crypto.randomBytes(16);const iv=crypto.randomBytes(12);const key=crypto.scryptSync(env.BACKUP_ENCRYPTION_KEY,salt,32);const cipher=crypto.createCipheriv('aes-256-gcm',key,iv);const ciphertext=Buffer.concat([cipher.update(archive),cipher.final()]);const encrypted=Buffer.concat([Buffer.from('ZKBAK1'),salt,iv,cipher.getAuthTag(),ciphertext]);
+ await mkdir('backup-output',{recursive:true});const output=`backup-output/${env.BACKUP_PROJECT_CODE}-${timestamp}.zip.enc`;await writeFile(output,encrypted,{mode:0o600});console.log(JSON.stringify({target,output,encryptedBytes:encrypted.length,encryptedSha256:sha(encrypted),tableCount:Object.keys(manifest.tables).length,storageObjects:manifest.storage.objects,retentionDays}));process.exit(0)
+}
+const key=`backups/${env.BACKUP_PROJECT_CODE}/${timestamp}.zip`;
 const s3=new S3Client({region:'auto',endpoint:`https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,credentials:{accessKeyId:env.R2_ACCESS_KEY_ID,secretAccessKey:env.R2_SECRET_ACCESS_KEY}});
 await s3.send(new HeadBucketCommand({Bucket:env.R2_BUCKET}));await s3.send(new PutObjectCommand({Bucket:env.R2_BUCKET,Key:key,Body:archive,ContentType:'application/zip',Metadata:{project:env.BACKUP_PROJECT_CODE,sha256:sha(archive)}}));
 const cutoff=Date.now()-retentionDays*86400000;const expired=[];let token;

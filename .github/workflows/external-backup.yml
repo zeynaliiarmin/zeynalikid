@@ -1,4 +1,4 @@
-name: External R2 backup
+name: External encrypted backup
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: external-r2-backup-zeynalikid
+  group: external-encrypted-backup-zeynalikid
   cancel-in-progress: false
 
 jobs:
@@ -21,11 +21,9 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.BACKUP_SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.BACKUP_SUPABASE_PROJECT_REF }}
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      R2_BUCKET: ${{ secrets.R2_BUCKET }}
       BACKUP_PROJECT_CODE: zeynalikid
+      BACKUP_TARGET: github-artifact
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
       BACKUP_RETENTION_DAYS: "20"
     steps:
       - uses: actions/checkout@v4
@@ -35,5 +33,14 @@ jobs:
           cache: npm
       - name: Install locked backup dependencies
         run: npm ci --ignore-scripts
-      - name: Create encrypted-at-rest ZIP and upload to private R2
+      - name: Create client-side encrypted backup
         run: node scripts/external-backup.mjs
+      - name: Upload encrypted backup artifact
+        if: ${{ hashFiles('backup-output/*.zip.enc') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-backup-${{ env.BACKUP_PROJECT_CODE }}-${{ github.run_id }}
+          path: backup-output/*.zip.enc
+          retention-days: 20
+          compression-level: 0
+          if-no-files-found: error
