@@ -70,3 +70,12 @@ No item above should be guessed or activated with placeholder values.
 - Tablet expands quick access to three columns. Desktop uses a 1240px twelve-column layout, five-column quick access, balanced product grids, and paired services/core and parent/testimonial sections.
 - Themes, referral behavior, visibility/order settings, courses, products, contact content, and all uploaded media remain unchanged.
 - Mobile/desktop overflow, bento placement, keyboard focus, critical paths, and WCAG checks are covered by automated tests.
+
+
+## Dynamic referral routing and server 404 — 2026-08-25
+
+- The Vercel referral validator now uses the same live consultant/tab/course model as the React client. Compact links such as `BASE+t`, `BASE+b`, and `BASE+b1` are accepted without requiring a hyphen.
+- Consultant codes are matched longest-first. Tab aliases come from the current `shortCode`, id, id initial, or compatible title prefix.
+- A direct-course suffix is accepted only when that 1-based course index currently exists and is active in the selected tab. Newly added tabs/courses become routable from `public-settings` without a code deployment; server cache is limited to 15 seconds.
+- Hyphen/underscore legacy forms are canonicalized to the compact referral form before entering the SPA.
+- Unknown single-segment routes retain a real HTTP 404 but now render the full branded 404 number, responsive visual card, quick-access links, and Home action instead of the previous plain response.

@@ -181,8 +181,8 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
     { id: 'c2', name: 'مشاور دیگر', referralCode: 'mhi' },
   ];
   const tabs = [
-    { id: 'height', title: 'رشد قد', shortCode: 'h' },
-    { id: 'mind', title: 'هوش و ذهن', shortCode: 'm' },
+    { id: 'height', title: 'رشد قد', shortCode: 'h', courses: [{id:'h1',active:true},{id:'h2',active:true}] },
+    { id: 'mind', title: 'هوش و ذهن', shortCode: 'm', courses: [{id:'m1',active:true},{id:'m2',active:true}] },
   ];
   assert(JSON.stringify(parseReferralRaw('mhi', consultants, tabs)) === JSON.stringify({ code: 'mhi', raw: 'mhi' }), 'parseReferralRaw کد پایه');
   assert(JSON.stringify(parseReferralRaw('mhih', consultants, tabs)) === JSON.stringify({ code: 'mhi', raw: 'mhih', tabCode: 'h' }), 'parseReferralRaw کد + تب');

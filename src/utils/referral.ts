@@ -51,41 +51,33 @@ function rawPath(): string {
 export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
   const raw = String(rawIn || '').trim();
   if (!raw) return null;
-
   const list = Array.isArray(consultants) ? consultants : [];
-  const tabs = Array.isArray(courseTabs) ? courseTabs : [];
-
-  // کاندیدها به ترتیب طول نزولی تا طولانی‌ترین تطبیق برنده شود
+  const tabs = (Array.isArray(courseTabs) ? courseTabs : []).filter((tab:any)=>tab?.active!==false);
   const candidates = list
-    .map((c: any) => String(c?.referralCode || '').trim().toLowerCase())
+    .filter((consultant:any)=>consultant?.active!==false)
+    .map((consultant:any) => String(consultant?.referralCode || '').trim().toLowerCase())
     .filter(Boolean)
     .sort((a: string, b: string) => b.length - a.length);
-
   const lowerRaw = raw.toLowerCase();
   for (const code of candidates) {
     if (!lowerRaw.startsWith(code)) continue;
-    const tail = lowerRaw.slice(code.length);
+    const tail = lowerRaw.slice(code.length).replace(/^[-_]+/, '');
     if (!tail) return { code, raw };
-
-    // tail می‌تواند '<tabCode>' یا '<tabCode><digits>' باشد
-    const m = tail.match(/^([a-z]+)(\d*)$/);
-    if (!m) continue;
-    const tabCode = m[1];
-    const digits = m[2];
-
-    // بررسی این‌که tabCode واقعاً به یک تب موجود نگاشت می‌شود
-    const tab = findTabByCode(tabs, tabCode);
-    if (!tab) continue;
-
-    if (!digits) {
-      return { code, raw, tabCode };
-    }
-    const idx = parseInt(digits, 10);
-    if (idx >= 1) {
-      return { code, raw, tabCode, courseIndex: idx };
+    // Try the complete tail first so future alphanumeric tab short codes remain valid.
+    const exactTab = findTabByCode(tabs, tail);
+    if (exactTab) return { code, raw, tabCode: String(exactTab.shortCode || tail).trim().toLowerCase() };
+    // Try the longest tab prefix before the numeric course index.
+    for (let split = tail.length - 1; split >= 1; split--) {
+      const requestedTab = tail.slice(0, split);
+      const numericTail = tail.slice(split);
+      if (!/^\d+$/.test(numericTail)) continue;
+      const idx = Number(numericTail);
+      const tab = findTabByCode(tabs, requestedTab);
+      const activeCourses = (Array.isArray(tab?.courses) ? tab.courses : []).filter((course:any)=>course?.active!==false);
+      if (!tab || !Number.isSafeInteger(idx) || idx < 1 || idx > activeCourses.length) continue;
+      return { code, raw, tabCode: String(tab.shortCode || requestedTab).trim().toLowerCase(), courseIndex: idx };
     }
   }
-
   return null;
 }
 
