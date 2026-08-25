@@ -37,7 +37,7 @@ jobs:
         run: node scripts/external-backup.mjs
       - name: Upload encrypted backup artifact
         if: ${{ hashFiles('backup-output/*.zip.enc') != '' }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: encrypted-backup-${{ env.BACKUP_PROJECT_CODE }}-${{ github.run_id }}
           path: backup-output/*.zip.enc
