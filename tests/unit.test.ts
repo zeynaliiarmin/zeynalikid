@@ -212,7 +212,7 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
   assert(keepIban.info===copiedIban&&!keepIban.shouldCopyDefault,'لانچر شبای کپی‌شده را با کارت پیش‌فرض جایگزین نمی‌کند');
   const useDefault=resolvePaymentLaunchInfo(null,'6037990012345678','بانک اول');
   assert(useDefault.shouldCopyDefault&&useDefault.info?.value==='6037990012345678','لانچر فقط در نبود اطلاعات قبلی کارت اول را انتخاب می‌کند');
-  assert(paymentShareText(copiedCrypto,'fa').includes('wallet-123'),'متن اشتراک‌گذاری از اطلاعات انتخاب‌شده کاربر استفاده می‌کند');
+  assert(paymentShareText(copiedCrypto,'fa')==='wallet-123','اشتراک‌گذاری فقط مقدار خام اطلاعات پرداخت را ارسال می‌کند');
 }
 
 console.log(`\n═══════════════════════════════════`);

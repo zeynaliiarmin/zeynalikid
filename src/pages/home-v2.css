@@ -1,0 +1,154 @@
+/* Experimental responsive Home V2. Remove `zk-home-v2` (or disable its project flag)
+   to restore the previous layout without touching content or admin settings. */
+.zk-home-v2{
+  background:
+    radial-gradient(circle at 8% 8%,color-mix(in srgb,var(--zk-primary,#0f766e) 8%,transparent),transparent 30rem),
+    radial-gradient(circle at 92% 28%,color-mix(in srgb,var(--zk-action-primary,#2563eb) 6%,transparent),transparent 34rem),
+    var(--zk-bg,#f8fafc)!important;
+}
+.zk-home-v2 .zk-home-container{
+  max-width:760px;
+  padding:14px clamp(12px,4vw,24px) 32px;
+}
+.zk-home-v2 .zk-home-specialist-note,
+.zk-home-v2 .zk-home-referral{
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-radius:24px!important;
+}
+.zk-home-v2 .zk-home-hero{
+  border-radius:30px!important;
+  box-shadow:0 18px 50px color-mix(in srgb,var(--zk-primary,#0f766e) 12%,transparent)!important;
+}
+.zk-home-v2 .zk-home-section{
+  margin-top:clamp(18px,4vw,30px);
+}
+.zk-home-v2 .zk-home-section:not(.zk-home-v2-trust-image):not(.zk-home-v2-trust-rotator){
+  padding:clamp(14px,3vw,20px);
+  border:1px solid var(--zk-border,rgba(15,23,42,.1));
+  border-radius:clamp(20px,4vw,28px);
+  background:color-mix(in srgb,var(--zk-surface,#fff) 92%,transparent);
+  box-shadow:0 12px 34px rgba(15,23,42,.055);
+}
+.zk-home-v2 .zk-home-section-heading{
+  align-items:center;
+  margin-bottom:14px;
+}
+.zk-home-v2 .zk-home-section-title{
+  position:relative;
+  margin:0;
+  font-size:clamp(18px,3.2vw,23px);
+  line-height:1.35;
+  letter-spacing:-.015em;
+}
+.zk-home-v2[dir="rtl"] .zk-home-section-title{padding-right:13px}
+.zk-home-v2[dir="ltr"] .zk-home-section-title{padding-left:13px}
+.zk-home-v2 .zk-home-section-title::before{
+  content:"";
+  position:absolute;
+  inset-block:4px;
+  inset-inline-start:0;
+  width:4px;
+  border-radius:999px;
+  background:linear-gradient(180deg,var(--zk-primary,#0f766e),var(--zk-action-primary,#2563eb));
+}
+.zk-home-v2 .zk-home-section-link{
+  min-height:38px;
+  display:inline-flex;
+  align-items:center;
+  padding:6px 11px;
+  border:1px solid var(--zk-border,rgba(15,23,42,.1));
+  border-radius:999px;
+  background:var(--zk-surface,#fff);
+}
+.zk-home-v2 .zk-home-quick-item{
+  min-height:88px!important;
+  border-radius:20px!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.zk-home-v2 .zk-home-quick-item:hover{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb,var(--zk-primary,#0f766e) 36%,var(--zk-border))!important;
+  box-shadow:0 14px 30px color-mix(in srgb,var(--zk-primary,#0f766e) 12%,transparent)!important;
+}
+.zk-home-v2 .featured-products-desktop{
+  grid-template-columns:repeat(auto-fit,minmax(245px,1fr))!important;
+  align-items:stretch;
+}
+.zk-home-v2 .zk-home-core-card,
+.zk-home-v2 .zk-home-testimonial-card{
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.zk-home-v2 .zk-home-core-card:hover,
+.zk-home-v2 .zk-home-testimonial-card:hover{transform:translateY(-3px)}
+
+@media(max-width:699px){
+  .zk-home-v2 .zk-home-container{padding-inline:12px;padding-top:8px}
+  .zk-home-v2 .zk-home-specialist-note,
+  .zk-home-v2 .zk-home-referral{padding:12px!important;gap:11px!important}
+  .zk-home-v2 .zk-home-specialist-note img,
+  .zk-home-v2 .zk-home-referral img{width:54px!important;height:54px!important}
+  .zk-home-v2 .zk-home-hero{margin-inline:-2px;margin-bottom:16px!important}
+  .zk-home-v2 .zk-home-quick-grid{gap:9px!important}
+  .zk-home-v2 .zk-home-quick-item{
+    min-height:108px!important;
+    padding:12px 9px!important;
+    flex-direction:column;
+    justify-content:center;
+    text-align:center!important;
+  }
+  .zk-home-v2 .zk-home-quick-item>span:first-child{width:44px!important;height:44px!important}
+  .zk-home-v2 .zk-home-section:not(.zk-home-v2-trust-image):not(.zk-home-v2-trust-rotator){padding:13px;border-radius:22px}
+  .zk-home-v2 .zk-home-section-title{font-size:18px}
+  .zk-home-v2 .zk-home-core-grid,
+  .zk-home-v2 .zk-home-testimonials-grid{
+    display:flex!important;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+    padding:2px 1px 10px;
+  }
+  .zk-home-v2 .zk-home-core-grid::-webkit-scrollbar,
+  .zk-home-v2 .zk-home-testimonials-grid::-webkit-scrollbar{display:none}
+  .zk-home-v2 .zk-home-core-card{flex:0 0 45%;min-width:145px;scroll-snap-align:start}
+  .zk-home-v2 .zk-home-testimonial-card{flex:0 0 86%;min-width:260px;scroll-snap-align:start}
+}
+
+@media(min-width:700px) and (max-width:1099px){
+  .zk-home-v2 .zk-home-container{max-width:920px;padding-inline:24px}
+  .zk-home-v2 .zk-home-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .zk-home-v2 .zk-home-quick-item{grid-column:auto!important}
+  .zk-home-v2 .zk-home-core-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(min-width:1100px){
+  .zk-home-v2 .zk-home-container{
+    max-width:1240px;
+    padding:22px 30px 42px;
+    display:grid;
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    column-gap:24px;
+    align-items:start;
+  }
+  .zk-home-v2 .zk-home-container>*{grid-column:1/-1;min-width:0}
+  .zk-home-v2 .zk-home-services{grid-column:1/6}
+  .zk-home-v2 .zk-home-core{grid-column:6/-1}
+  .zk-home-v2 .zk-home-parents{grid-column:1/5}
+  .zk-home-v2 .zk-home-testimonials{grid-column:5/-1}
+  .zk-home-v2 .zk-home-quick-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important}
+  .zk-home-v2 .zk-home-quick-item{grid-column:auto!important}
+  .zk-home-v2 .zk-home-core-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  .zk-home-v2 .zk-home-testimonials-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .zk-home-v2 .zk-home-section:not(.zk-home-v2-trust-image):not(.zk-home-v2-trust-rotator){padding:20px 22px}
+  .zk-home-v2 .zk-home-specialist-note{margin-bottom:18px!important}
+  .zk-home-v2 .zk-home-hero{padding:28px 30px!important;min-height:320px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .zk-home-v2 .zk-home-quick-item,
+  .zk-home-v2 .zk-home-core-card,
+  .zk-home-v2 .zk-home-testimonial-card{transition:none!important}
+}
+
+.zk-home-v2 .zk-home-core-grid:focus-visible,.zk-home-v2 .zk-home-testimonials-grid:focus-visible{outline:3px solid color-mix(in srgb,var(--zk-primary,#0f766e) 42%,transparent);outline-offset:4px;border-radius:14px}

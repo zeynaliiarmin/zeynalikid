@@ -10,5 +10,5 @@ export function resolvePaymentLaunchInfo(lastCopied:CopiedPaymentInfo|null,defau
 }
 
 export const paymentShareText=(info:CopiedPaymentInfo|null,lang:'fa'|'en')=>info
- ? `${info.label}: ${info.value}`
+ ? info.value
  : (lang==='en'?'Open a supported payment application.':'یک برنامه پرداخت پشتیبانی‌شده را انتخاب کنید.');
