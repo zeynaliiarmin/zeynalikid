@@ -1,8 +1,8 @@
 import {readFile} from 'node:fs/promises';
 
 const read=(path)=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
-const [page,client,edge,widget,projectConfig,vercel]=await Promise.all([
- read('src/pages/CoursePaymentPage.tsx'),read('src/lib/checkoutSession.ts'),read('supabase/functions/checkout-session/index.ts'),read('src/components/TurnstileGate.tsx'),read('src/config/project.ts'),read('vercel.json'),
+const [page,client,edge,widget,projectConfig,vercel,consent,launcher]=await Promise.all([
+ read('src/pages/CoursePaymentPage.tsx'),read('src/lib/checkoutSession.ts'),read('supabase/functions/checkout-session/index.ts'),read('src/components/TurnstileGate.tsx'),read('src/config/project.ts'),read('vercel.json'),read('src/components/PrivacyConsent.tsx'),read('src/utils/paymentLauncher.ts'),
 ]);
 const failures=[];
 const requireText=(source,text,label)=>{if(!source.includes(text))failures.push(label)};
@@ -17,6 +17,11 @@ requireText(edge,'expectedHostname','Turnstile hostname is not validated');
 requireText(widget,"action:'payment_details'",'widget action does not match server verification');
 requireText(projectConfig,'TURNSTILE_SITE_KEY','public Turnstile site key is missing');
 requireText(vercel,'https://challenges.cloudflare.com','CSP does not allow the Turnstile origin');
-if(/TURNSTILE_SECRET_KEY\s*=\s*['"][^'"]+/i.test([page,client,edge,widget,projectConfig,vercel].join('\n')))failures.push('Turnstile secret appears hard-coded');
+requireText(page,'data-testid="payment-app-launcher"','experimental payment launcher is not rendered after unlock');
+requireText(projectConfig,'EXPERIMENTAL_PAYMENT_APP_LAUNCHER=true','payment launcher is not controlled by a rollback flag');
+requireText(launcher,'if(lastCopied)return','launcher may overwrite a user-selected clipboard value');
+requireText(consent,'aria-invalid={invalid}','consent does not expose its validation state');
+requireText(consent,"whiteSpace:'normal'",'consent text layout is not normalized for mobile');
+if(/TURNSTILE_SECRET_KEY\s*=\s*['"][^'"]+/i.test([page,client,edge,widget,projectConfig,vercel,consent,launcher].join('\n')))failures.push('Turnstile secret appears hard-coded');
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}
 console.log('Payment CAPTCHA security contracts passed.');

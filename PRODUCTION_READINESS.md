@@ -47,3 +47,15 @@ No item above should be guessed or activated with placeholder values.
 - CAPTCHA tokens are short-lived and single-use. A successful verification can issue the existing SHA-256-hashed, course-scoped checkout token; `payment-details` still requires that second token.
 - Missing, invalid, expired, wrong-action, wrong-hostname, or unavailable CAPTCHA verification fails closed and returns no payment destination.
 - Final registration and online gateway actions are also blocked until payment details have been unlocked by server verification.
+
+
+## Experimental payment-app launcher and consent UX — 2026-08-25
+
+- After CAPTCHA unlock, an experimental `Choose a payment application` action is placed before payment destinations and remains sticky/visible in the payment card.
+- The feature is controlled by `EXPERIMENTAL_PAYMENT_APP_LAUNCHER`; setting it to `false` rolls the experiment back without touching payment data.
+- If the visitor has not copied a card, IBAN, or crypto address, only the first/default card of the returned payment scope is copied. For referral checkout this is the consultant's first returned card.
+- If the visitor already copied any card, IBAN, or crypto address, the launcher preserves that exact selection and never overwrites the clipboard with the default card.
+- The browser Web Share chooser is used when available; installed banking applications are shown only when the operating system/application declares support for shared text.
+- CAPTCHA copy changes between bank-only and bank-or-crypto wording according to destination and `cryptoVisibility`.
+- Consultation and child-course consent buttons remain visually enabled. An attempted continuation without consent is blocked and highlights the consent container with a red two-pixel border and an inline explanation.
+- Consent text uses one inline text flow with normalized line-height to prevent an empty visual line on narrow screens.

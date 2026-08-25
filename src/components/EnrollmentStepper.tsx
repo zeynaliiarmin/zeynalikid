@@ -154,10 +154,11 @@ export default function EnrollmentStepper({ step, lang, T }: EnrollmentStepperPr
                 </div>
                 <div
                   style={{
-                    fontSize: 8.5,
+                    fontSize: 9,
                     color: T.mut,
                     marginTop: 1.5,
-                    opacity: isActive ? 0.95 : 0.6,
+                    opacity: 1,
+                    fontWeight: 600,
                     lineHeight: 1.15,
                   }}
                 >

@@ -1,6 +1,7 @@
 import { useAppContext } from '../app/AppContext';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
+import PrivacyConsent from '../components/PrivacyConsent';
 import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
@@ -43,6 +44,7 @@ export default function ChildInfoPage(){
  const [errs, setErrs] = useState<any>({});
  const [voiceBlob,setVoiceBlob]=useState<Blob|null>(null);
  const [privacyAccepted,setPrivacyAccepted]=useState(false);
+ const [privacyAttempted,setPrivacyAttempted]=useState(false);
  const selectedTitle = lang === 'en' ? (course.selected?.titleEn || course.selected?.title) : course.selected?.title;
  // اگر از فرم مشاوره آمده باشد (fd.gender از قبل ست شده)، کل اطلاعات فرزند فقط نمایشی و غیرقابل ویرایش است.
  const fromConsultForm = !!fd?.gender;
@@ -69,6 +71,7 @@ export default function ChildInfoPage(){
  // اصلاح ۳۰ (مرحله ۷): اعتبارسنجی الزامی‌بودن عکس زبان (در صورت فعال بودن از پنل مدیریت)
  const tonguePhotos:string[]=course.tonguePhotos||[];
  const submit=async()=>{
+  if(!privacyAccepted){setPrivacyAttempted(true);return}
   const tongueErr:any={};
   if(cfg.isTonguePhotoRequired&&tonguePhotos.length===0) tongueErr.tonguePhoto=publicText('tonguePhotoRequired','بارگذاری عکس زبان الزامی است');
   if(fromConsultForm){
@@ -129,10 +132,10 @@ export default function ChildInfoPage(){
  {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — قبل از دکمه‌های بازگشت/ادامه */}
  <TonguePhotoUploader app={app} tonguePhotos={tonguePhotos} onChange={(list:string[])=>setCourse((c:any)=>({...c,tonguePhotos:list}))} tongueErr={errs.tonguePhoto}/>
 
- <label style={{display:'flex',alignItems:'flex-start',gap:8,margin:'14px 0 8px',fontSize:11.5,lineHeight:1.8,color:T.mut,cursor:'pointer'}}><input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} style={{marginTop:5,accentColor:T.acc}}/><span>{lang==='en'?'I consent to using this information to provide and follow up the requested course.':'با استفاده از این اطلاعات برای ارائه و پیگیری دوره درخواستی موافقم.'} <button type="button" onClick={e=>{e.preventDefault();setView('privacy')}} style={{border:0,background:'transparent',padding:0,color:T.acc,fontFamily:'inherit',fontWeight:700,cursor:'pointer'}}>{lang==='en'?'Privacy notice':'متن حریم خصوصی'}</button></span></label>
+ <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="با استفاده از این اطلاعات برای ارائه و پیگیری دوره درخواستی موافقم." textEn="I consent to using this information to provide and follow up the requested course." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>setView('privacy')}/>
  {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={`err-${i}`}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
   <button type="button" style={S.btnGhost} onClick={()=>setView('courses')}>{publicText('backBtn','بازگشت')}</button>
-  <button type="button" disabled={!privacyAccepted} style={{...S.btn,minHeight:52,opacity:privacyAccepted?1:.55,cursor:privacyAccepted?'pointer':'not-allowed'}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
+  <button type="button" style={{...S.btn,minHeight:52,opacity:1,cursor:'pointer'}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
 </div></div>
  {editChild&&<EditChildOnInfoModal app={app}/>}
  </div>

@@ -33,11 +33,12 @@ interface TurnstileGateProps {
  siteKey:string;
  lang:'fa'|'en';
  T:DynamicRecord;
+ includeCrypto:boolean;
  onVerify:(token:string)=>void;
  onReset:()=>void;
 }
 
-export default function TurnstileGate({siteKey,lang,T,onVerify,onReset}:TurnstileGateProps){
+export default function TurnstileGate({siteKey,lang,T,includeCrypto,onVerify,onReset}:TurnstileGateProps){
  const containerRef=useRef<HTMLDivElement|null>(null);
  const [state,setState]=useState<'loading'|'ready'|'verified'|'error'>('loading');
  useEffect(()=>{
@@ -63,8 +64,8 @@ export default function TurnstileGate({siteKey,lang,T,onVerify,onReset}:Turnstil
   return()=>{disposed=true;if(widgetId&&window.turnstile){try{window.turnstile.remove(widgetId)}catch{}}};
  },[siteKey,lang,onVerify,onReset]);
  return <div data-testid="payment-captcha-gate" style={{border:`1px solid ${T.brd}`,borderRadius:14,padding:'14px 12px',background:T.soft,margin:'10px 0 12px',textAlign:'center'}}>
-  <div style={{fontSize:13,fontWeight:800,color:T.txt,marginBottom:5}}>{lang==='en'?'Human verification required':'تأیید انسان بودن الزامی است'}</div>
-  <p style={{fontSize:11.5,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>{lang==='en'?'Complete the security check to view bank or crypto payment details.':'برای مشاهده اطلاعات بانکی یا پرداخت رمزارزی، بررسی امنیتی زیر را تکمیل کنید.'}</p>
+  <div style={{fontSize:13,fontWeight:800,color:T.txt,marginBottom:5}}>{lang==='en'?"For secure payment, confirm you're not a robot":'برای پرداخت امن، تأیید کنید ربات نیستید'}</div>
+  <p style={{fontSize:11.5,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>{lang==='en'?(includeCrypto?'Complete the check to view bank or crypto payment details.':'Complete the check to view bank payment details.'):(includeCrypto?'برای مشاهده اطلاعات بانکی یا پرداخت رمزارزی، بررسی امنیتی زیر را تکمیل کنید.':'برای مشاهده اطلاعات بانکی، بررسی امنیتی زیر را تکمیل کنید.')}</p>
   <div ref={containerRef} style={{width:'100%',minHeight:65,display:'flex',justifyContent:'center',alignItems:'center'}}/>
   <div role={state==='error'?'alert':'status'} style={{fontSize:10.5,marginTop:7,color:state==='error'?T.err:state==='verified'?T.ok:T.mut,fontWeight:state==='verified'?800:500}}>
    {state==='loading'?(lang==='en'?'Loading security check…':'در حال بارگذاری بررسی امنیتی…'):state==='verified'?(lang==='en'?'Verified — loading payment details…':'تأیید شد؛ در حال دریافت اطلاعات پرداخت…'):state==='error'?(lang==='en'?'The security check did not load. Check your connection and refresh this page.':'بررسی امنیتی بارگذاری نشد. اتصال اینترنت را بررسی و صفحه را تازه‌سازی کنید.'):(lang==='en'?'Your payment details remain hidden until verification.':'اطلاعات پرداخت تا زمان تأیید مخفی می‌ماند.')}

@@ -17,6 +17,7 @@ import en from '../src/locales/en';
 import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../src/services/payment/PaymentService';
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
+import { paymentShareText, resolvePaymentLaunchInfo } from '../src/utils/paymentLauncher';
 
 let passed = 0;
 let failed = 0;
@@ -198,6 +199,20 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
   assert(findConsultantByCode(withNew, 'az2')?.id === 'c2', 'findConsultantByCode کد مشاور جدید');
   assert(findTabByCode(tabs, 'h')?.id === 'height', 'findTabByCode مخفف سفارشی');
   assert(findTabByCode(tabs, 'mind')?.id === 'mind', 'findTabByCode با id');
+}
+
+
+// ── experimental payment app launcher clipboard rules ─────────────
+{
+  const copiedCrypto={kind:'crypto' as const,value:'wallet-123',label:'آدرس کیف پول'};
+  const keepCrypto=resolvePaymentLaunchInfo(copiedCrypto,'6037990012345678','بانک اول');
+  assert(keepCrypto.info===copiedCrypto&&!keepCrypto.shouldCopyDefault,'لانچر اطلاعات رمزارز کپی‌شده را با کارت پیش‌فرض جایگزین نمی‌کند');
+  const copiedIban={kind:'iban' as const,value:'IR123',label:'شماره شبا'};
+  const keepIban=resolvePaymentLaunchInfo(copiedIban,'6037990012345678','بانک اول');
+  assert(keepIban.info===copiedIban&&!keepIban.shouldCopyDefault,'لانچر شبای کپی‌شده را با کارت پیش‌فرض جایگزین نمی‌کند');
+  const useDefault=resolvePaymentLaunchInfo(null,'6037990012345678','بانک اول');
+  assert(useDefault.shouldCopyDefault&&useDefault.info?.value==='6037990012345678','لانچر فقط در نبود اطلاعات قبلی کارت اول را انتخاب می‌کند');
+  assert(paymentShareText(copiedCrypto,'fa').includes('wallet-123'),'متن اشتراک‌گذاری از اطلاعات انتخاب‌شده کاربر استفاده می‌کند');
 }
 
 console.log(`\n═══════════════════════════════════`);

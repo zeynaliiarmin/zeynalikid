@@ -4,7 +4,7 @@ import { AxePuppeteer } from '@axe-core/puppeteer';
 const base=process.env.TEST_BASE_URL||'http://localhost:4173';
 const executablePath=process.env.PUPPETEER_EXECUTABLE_PATH||undefined;
 const launchOptions={headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']};
-const routes=['/','/courses','/products','/faq','/education','/about','/contact','/privacy','/track','/profile','/admin/login','/not-found-a11y'];
+const routes=['/','/courses','/products','/consultation','/child-info','/faq','/education','/about','/contact','/privacy','/track','/profile','/admin/login','/not-found-a11y'];
 const blocking=[];
 for(const route of routes){
  const browser=await puppeteer.launch(launchOptions);const page=await browser.newPage();await page.setBypassServiceWorker(true);await page.setViewport({width:390,height:844});await page.setRequestInterception(true);

@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import PrivacyConsent from '../components/PrivacyConsent';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -159,6 +160,7 @@ export default function ConsultationPage(){
   const [allowNewChild, setAllowNewChild] = useState(false);
   const [submitting,setSubmitting]=useState(false);
   const [privacyAccepted,setPrivacyAccepted]=useState(false);
+  const [privacyAttempted,setPrivacyAttempted]=useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const subsCacheRef = useRef<any[] | null>(null);
@@ -259,6 +261,8 @@ export default function ConsultationPage(){
     setEditId(null);
     editEntryRef.current = null;
     setAllowNewChild(false);
+    setPrivacyAccepted(false);
+    setPrivacyAttempted(false);
     setDupEntry(null);
     setFormView('form');
   };
@@ -295,6 +299,7 @@ export default function ConsultationPage(){
   };
 
   const doSubmit = async (allowNewChildOverride?: boolean) => {
+    if(!privacyAccepted){setPrivacyAttempted(true);return}
     if (!validateConsult() || submitting) return;
     setSubmitting(true);
     try {
@@ -439,6 +444,8 @@ export default function ConsultationPage(){
     setEditId(d.id);
     editEntryRef.current = d;
     setAllowNewChild(false);
+    setPrivacyAccepted(false);
+    setPrivacyAttempted(false);
     setDupEntry(null);
   };
   const chooseDupNo = () => setDupEntry(null);
@@ -538,7 +545,7 @@ export default function ConsultationPage(){
         {/* Specialist photo + title */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
           {cfg.showSpecialistPhoto && <div style={{ flexShrink: 0, position: 'relative', width: 72, height: 72, borderRadius: '50%', padding: 3, background: T.grad, boxShadow: `0 6px 16px ${T.acc}33` }}>
-            <img src={cfg.images?.consultationPhoto?.url || cfg.photoUrl || '/specialist-photo.webp'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
+            <img src={cfg.images?.consultationPhoto?.url || cfg.photoUrl || '/specialist-photo.webp'} alt={lang==='en'?(cfg.specialistNameEn||cfg.specialistName||'Consultation specialist'):(cfg.specialistName||'کارشناس مشاوره')} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
           </div>}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 16, margin: '0 0 6px', color: T.ttl, fontWeight: 800, lineHeight: 1.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{publicText('heroTitle')}</h1>
@@ -612,12 +619,12 @@ export default function ConsultationPage(){
           {voiceBlob && <div style={{ fontSize: 11, color: '#059669', marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
-        <label style={{display:'flex',alignItems:'flex-start',gap:8,margin:'14px 0 8px',fontSize:11.5,lineHeight:1.8,color:T.mut,cursor:'pointer'}}><input type="checkbox" checked={privacyAccepted} onChange={e=>setPrivacyAccepted(e.target.checked)} style={{marginTop:5,accentColor:T.acc}}/><span>{lang==='en'?'I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service.':'اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم.'} <button type="button" onClick={e=>{e.preventDefault();setView('privacy')}} style={{border:0,background:'transparent',padding:0,color:T.acc,fontFamily:'inherit',fontWeight:700,cursor:'pointer'}}>{lang==='en'?'Privacy notice':'متن حریم خصوصی'}</button></span></label>
+        <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم." textEn="I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>setView('privacy')}/>
         <p style={{ fontSize: 10, color: T.mut, textAlign: 'center' }}>{publicText('required', 'فیلدهای دارای * الزامی هستند')}</p>
         {Object.keys(errs).length > 0 && <div style={{ background: `${T.err}12`, border: `1px solid ${T.err}`, borderRadius: 12, padding: 12, marginBottom: 12, color: T.err, fontSize: 12 }}>
           {Object.values(errs).map((x: any, i) => <div key={i}>- {x}</div>)}
         </div>}
-        <button style={{...S.btn,opacity:privacyAccepted?1:.55,cursor:privacyAccepted?'pointer':'not-allowed'}} disabled={!privacyAccepted||submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</button>
+        <button style={{...S.btn,opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</button>
       </div>
 
       {/* Duplicate modal */}
