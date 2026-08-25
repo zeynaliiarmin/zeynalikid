@@ -3,8 +3,8 @@ export interface PaymentWallet {id:string;name:string;symbol:string;address:stri
 export interface PaymentDetails {banks:PaymentBank[];wallets:PaymentWallet[];cryptoVisibility?:string;}
 const functionBase=()=>String(import.meta.env.VITE_SUPABASE_URL||'').replace(/\/$/,'')+'/functions/v1';
 const parseJson=async(response:Response):Promise<Record<string,unknown>>=>response.json().catch(()=>({})) as Promise<Record<string,unknown>>;
-export async function loadCheckoutPaymentDetails(courseId:string,referralCode:string,signal?:AbortSignal):Promise<PaymentDetails>{
- const sessionResponse=await fetch(`${functionBase()}/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId,referralCode}),signal});
+export async function loadCheckoutPaymentDetails(courseId:string,referralCode:string,turnstileToken:string,signal?:AbortSignal):Promise<PaymentDetails>{
+ const sessionResponse=await fetch(`${functionBase()}/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId,referralCode,turnstileToken}),signal});
  const sessionBody=await parseJson(sessionResponse);const checkoutToken=typeof sessionBody.checkoutToken==='string'?sessionBody.checkoutToken:'';
  if(!sessionResponse.ok||!checkoutToken)throw new Error(typeof sessionBody.error==='string'?sessionBody.error:'ساخت نشست پرداخت انجام نشد');
  const detailsResponse=await fetch(`${functionBase()}/payment-details`,{method:'POST',headers:{'Content-Type':'application/json','X-Checkout-Token':checkoutToken},body:JSON.stringify({referralCode}),signal});

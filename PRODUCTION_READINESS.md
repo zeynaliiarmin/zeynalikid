@@ -37,3 +37,13 @@ No item above should be guessed or activated with placeholder values.
 - Existing public content and uploaded Storage objects are not migrated, renamed, or deleted.
 - Normalized tables are projections; JSONB remains the compatibility source until all admin/reporting consumers explicitly move.
 - Checkout sessions contain no phone, receipt, card number, bank account, or user profile data.
+
+
+## Payment CAPTCHA gate — 2026-08-25
+
+- Bank-card, IBAN, and cryptocurrency destinations are not requested or rendered until Cloudflare Turnstile succeeds.
+- The browser token is verified by `checkout-session` against Cloudflare Siteverify; success, `payment_details` action, and the exact request hostname must all match.
+- The Turnstile secret is stored only as a Supabase Edge secret. Only the public site key is included in the client bundle.
+- CAPTCHA tokens are short-lived and single-use. A successful verification can issue the existing SHA-256-hashed, course-scoped checkout token; `payment-details` still requires that second token.
+- Missing, invalid, expired, wrong-action, wrong-hostname, or unavailable CAPTCHA verification fails closed and returns no payment destination.
+- Final registration and online gateway actions are also blocked until payment details have been unlocked by server verification.

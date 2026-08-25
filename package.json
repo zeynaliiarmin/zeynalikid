@@ -8,14 +8,15 @@
     "typecheck": "tsc -b --pretty false",
     "lint": "oxlint src tests api scripts --deny-warnings",
     "test:unit": "esbuild tests/unit.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-unit.test.mjs && node /tmp/zeynalikid-unit.test.mjs",
-    "test": "npm run test:unit",
+    "test": "npm run test:unit && npm run test:security",
     "build": "tsc -b && vite build && npm run build:ssg",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
     "test:a11y": "node tests/accessibility.mjs",
-    "test:e2e:readonly": "node tests/critical-paths.mjs",
+    "test:e2e:readonly": "node tests/critical-paths.mjs && node tests/payment-captcha-ui.mjs",
     "build:ssg": "vite build --ssr src/entry-server.tsx --outDir .ssr && node scripts/prerender.mjs && npm run test:ssg",
-    "test:ssg": "node tests/ssg-output.mjs"
+    "test:ssg": "node tests/ssg-output.mjs",
+    "test:security": "node tests/security-contracts.mjs"
   },
   "dependencies": {
     "@fontsource/vazirmatn": "5.3.0",
