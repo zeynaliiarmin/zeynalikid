@@ -15,7 +15,7 @@ const missing=required.filter(key=>!String(process.env[key]||'').trim());
 if(missing.length){console.log(`External backup is not configured yet. Missing GitHub secrets: ${missing.join(', ')}`);process.exit(0)}
 const env=Object.fromEntries(required.map(key=>[key,String(process.env[key]).trim()]));
 const retentionDays=Math.max(1,Number(process.env.BACKUP_RETENTION_DAYS||20));
-const tables=['settings','submissions','reviews','user_questions','page_views','error_logs','admin_devices','admin_sessions','security_rate_limits','admin_credentials','admin_audit_logs','submission_contacts','submission_orders','submission_consultations','checkout_sessions'];
+const tables=['settings','submissions','reviews','user_questions','page_views','error_logs','admin_devices','admin_sessions','security_rate_limits','admin_credentials','admin_audit_logs','submission_contacts','submission_orders','submission_consultations','checkout_sessions','assistant_knowledge','assistant_settings','assistant_unanswered','assistant_feedback','assistant_bot_states'];
 const zip=new JSZip();const manifest={project:env.BACKUP_PROJECT_CODE,createdAt:new Date().toISOString(),retentionDays,tables:{},storage:{objects:0,bytes:0},files:[]};
 const sha=value=>crypto.createHash('sha256').update(value).digest('hex');
 const addFile=(path,value)=>{const data=Buffer.isBuffer(value)?value:Buffer.from(typeof value==='string'?value:JSON.stringify(value,null,2));zip.file(path,data);manifest.files.push({path,bytes:data.length,sha256:sha(data)})};

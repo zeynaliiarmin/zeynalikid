@@ -90,3 +90,15 @@ No item above should be guessed or activated with placeholder values.
 - Telegram alert delivery for fatal/payment/registration/storage errors is implemented without PII, but remains dormant until Bot Token and Chat ID are configured as Edge secrets.
 - `LEGAL_PRIVACY_DRAFT_FA.md` and `CONTENT_OWNER_CHECKLIST_FA.md` record the transparent no-automatic-deletion behavior and deletion-request wording and all owner/legal/medical verification items. The live Privacy page is not replaced until owner/legal approval.
 - Articles without `reviewedAt` explicitly state that no specialist review has been recorded.
+
+## Free curated assistant pilot — 2026-08-25
+
+- Zeynalikid now has an independent owner-curated knowledge assistant; Farzandman is unchanged.
+- Matching runs in the visitor browser and calls no paid or external generative-AI API per question.
+- Five new RLS-protected tables store knowledge, settings, anonymous unanswered questions, feedback, and owner-only Telegram conversation state.
+- `assistant-public` exposes published/active knowledge only and accepts unanswered/feedback writes through central rate limits.
+- `assistant-admin` requires the existing hashed admin session and audits create/update/delete/import operations.
+- `assistant-telegram` requires Telegram's secret webhook header plus the verified private owner Chat ID; new knowledge starts as draft.
+- The public widget warns users not to enter phone/private medical data and states that it is not a medical professional.
+- 26 published items were seeded exclusively from already-public FAQ/course content and safe site guidance.
+- No DeepSeek, OpenAI, Gemini, or other paid AI API is configured. DeepSeek can be added later only behind a separate paid/optional provider decision.
