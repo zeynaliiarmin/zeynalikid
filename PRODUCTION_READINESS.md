@@ -62,9 +62,9 @@ No item above should be guessed or activated with placeholder values.
 - Consent text uses one inline text flow with normalized line-height to prevent an empty visual line on narrow screens.
 
 
-## Experimental responsive Home V2 — 2026-08-25
+## Permanent responsive Home V2 — 2026-08-25
 
-- The redesign is controlled by `EXPERIMENTAL_RESPONSIVE_HOME_V2`; disabling it restores the previous layout while preserving every Home item and admin setting.
+- Home V2 is now the permanent public layout. The pre-V2 screenshots and Git commit remain available as a rollback reference without deleting Home content or admin settings.
 - Pre-change mobile and desktop screenshots for both projects are stored outside the repositories under `/home/user/backups/pre-home-v2-20260825`.
 - Mobile uses compact section shells, two-column quick access, and keyboard-accessible swipe regions for core areas and parent experiences.
 - Tablet expands quick access to three columns. Desktop uses a 1240px twelve-column layout, five-column quick access, balanced product grids, and paired services/core and parent/testimonial sections.
@@ -79,3 +79,14 @@ No item above should be guessed or activated with placeholder values.
 - A direct-course suffix is accepted only when that 1-based course index currently exists and is active in the selected tab. Newly added tabs/courses become routable from `public-settings` without a code deployment; server cache is limited to 15 seconds.
 - Hyphen/underscore legacy forms are canonicalized to the compact referral form before entering the SPA.
 - Unknown single-segment routes retain a real HTTP 404 but now render the full branded 404 number, responsive visual card, quick-access links, and Home action instead of the previous plain response.
+
+
+## Design-aware 404, horizontal products, and external operations — 2026-08-25
+
+- Client, single-segment server, and deep/static 404 pages now share a design-aware contract. The standalone 404 reads `zk_design_system`/`zk_theme` immediately and also refreshes its default design from `public-settings`; Wellness, KidLearn, NavyStack, Blend, Classic variants, and dark mode have distinct tokens.
+- Featured Home products use one keyboard-accessible horizontal scroll-snap rail at every viewport, with swipe, scrollbar, and previous/next controls. No product or visibility setting is removed.
+- Responsive Home V2 is permanent; pre-V2 screenshots and Git history remain the rollback reference.
+- An R2 backup workflow is scheduled every two calendar days with 20-day retention. It remains safely dormant until R2/GitHub credentials are configured. A real dry run successfully created an archive containing 15 tables and 56 Storage objects.
+- Telegram alert delivery for fatal/payment/registration/storage errors is implemented without PII, but remains dormant until Bot Token and Chat ID are configured as Edge secrets.
+- `LEGAL_PRIVACY_DRAFT_FA.md` and `CONTENT_OWNER_CHECKLIST_FA.md` record the transparent no-automatic-deletion behavior and deletion-request wording and all owner/legal/medical verification items. The live Privacy page is not replaced until owner/legal approval.
+- Articles without `reviewedAt` explicitly state that no specialist review has been recorded.

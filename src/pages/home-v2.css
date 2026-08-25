@@ -1,5 +1,4 @@
-/* Experimental responsive Home V2. Remove `zk-home-v2` (or disable its project flag)
-   to restore the previous layout without touching content or admin settings. */
+/* Permanent responsive Home V2. The pre-V2 screenshots and Git history remain the rollback reference. */
 .zk-home-v2{
   background:
     radial-gradient(circle at 8% 8%,color-mix(in srgb,var(--zk-primary,#0f766e) 8%,transparent),transparent 30rem),
@@ -152,3 +151,9 @@
 }
 
 .zk-home-v2 .zk-home-core-grid:focus-visible,.zk-home-v2 .zk-home-testimonials-grid:focus-visible{outline:3px solid color-mix(in srgb,var(--zk-primary,#0f766e) 42%,transparent);outline-offset:4px;border-radius:14px}
+
+.zk-home-v2 .featured-products-rail{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--zk-primary,#0f766e) 40%,transparent) transparent}
+.zk-home-v2 .featured-products-rail::-webkit-scrollbar{height:7px}
+.zk-home-v2 .featured-products-rail::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--zk-primary,#0f766e) 40%,transparent);border-radius:999px}
+.zk-home-v2 .featured-products-rail:focus-visible{outline:3px solid color-mix(in srgb,var(--zk-primary,#0f766e) 42%,transparent);outline-offset:4px;border-radius:14px}
+@media(max-width:699px){.zk-home-v2 .featured-products-rail-item{flex-basis:82%!important;min-width:260px!important}.zk-home-v2 .zk-home-featured-products .zk-home-section-heading{align-items:flex-start}.zk-home-v2 .zk-home-featured-products .zk-home-section-heading>div{flex-wrap:wrap;justify-content:flex-end}.zk-home-v2 .zk-home-featured-products .zk-home-section-link{min-height:36px}}

@@ -11,6 +11,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, jsonResponse, getOrigin } from "../_shared/cors.ts";
 import { rateLimit, rateLimitKey, cleanupExpiredBuckets } from "../_shared/rateLimit.ts";
+import { sendTelegramErrorAlert } from "../_shared/telegramAlert.ts";
 
 const MAX_MESSAGE = 2000;
 const MAX_STACK = 4000;
@@ -59,7 +60,8 @@ serve(async (req) => {
     if(insErr)console.error("log-error insert failed:",insErr.message);
     const webhook=Deno.env.get("ERROR_ALERT_WEBHOOK_URL")||"";
     const urgent=rows.filter((row:any)=>/fatal|payment|registration|storage/i.test(String(row.kind)));
-    if(webhook&&urgent.length){try{await fetch(webhook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'frontend-error-monitor',count:urgent.length,kinds:[...new Set(urgent.map((row:any)=>row.kind))],timestamp:new Date().toISOString()})})}catch{}}
+    if(webhook&&urgent.length){try{await fetch(webhook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'frontend-error-monitor',count:urgent.length,kinds:[...new Set(urgent.map((row:any)=>row.kind))],timestamp:new Date().toISOString()}),signal:AbortSignal.timeout(6000)})}catch{}}
+    if(urgent.length)await sendTelegramErrorAlert(urgent);
 
     // پاکسازی خودکار: خطاهای قدیمی‌تر از ۱۵ روز (هر ~۵۰ گزارش یک‌بار اجرا می‌شود)
     cleanupCounter++;
@@ -75,6 +77,6 @@ serve(async (req) => {
     return jsonResponse({ ok: true }, 200, origin);
   } catch (_e) {
     console.error("log-error failed:", _e);
-    return jsonResponse({ok:true,accepted:rows.length},200,origin);
+    return jsonResponse({ok:true,accepted:0},200,origin);
   }
 });

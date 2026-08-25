@@ -1,7 +1,6 @@
 import { useAppContext } from '../app/AppContext';
-import { EXPERIMENTAL_RESPONSIVE_HOME_V2 } from '../config/project';
 import './home-v2.css';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import InstallPrompt from '../components/InstallPrompt';
@@ -69,7 +68,9 @@ export default function HomePage(){
  const featuredProducts=(productsCfg.list||productsCfg.items||[])
   .filter((product:any)=>product.isVisible!==false&&product.active!==false&&product.showOnHome!==false)
   .sort((a:any,b:any)=>(a.order||0)-(b.order||0));
- return <main className={`zk-home-page${EXPERIMENTAL_RESPONSIVE_HOME_V2?' zk-home-v2':''}`} dir={isRtl?'rtl':'ltr'} style={{...app.S?.page,paddingBottom:92,flexDirection:'column',alignItems:'center',background:T.bg,color:T.txt,overflowX:'hidden'}}>
+ const productRailRef=useRef<HTMLDivElement|null>(null);
+ const scrollProducts=(direction:-1|1)=>productRailRef.current?.scrollBy({left:direction*Math.max(260,productRailRef.current.clientWidth*.78),behavior:'smooth'});
+ return <main className="zk-home-page zk-home-v2" dir={isRtl?'rtl':'ltr'} style={{...app.S?.page,paddingBottom:92,flexDirection:'column',alignItems:'center',background:T.bg,color:T.txt,overflowX:'hidden'}}>
   <Helmet><title>{`${brand} | مشاوره رشد قد و تغذیه کودک و نوجوان`}</title><meta name="description" content="مشاوره و آموزش والدین درباره رشد، تغذیه، اشتها، قد، وزن و تمرکز کودک و نوجوان."/><meta name="keywords" content="رشد قد کودک, تغذیه کودک, بی‌اشتهایی کودک, بدغذایی, مشاوره رشد کودک"/><meta property="og:title" content={`${brand} | رشد و تغذیه کودک و نوجوان`}/><meta property="og:description" content="مسیر آرام‌تر و آگاهانه‌تر برای همراهی با رشد و تغذیه فرزند شما"/></Helmet>
   <style>{css}{` .zk-home-page{width:100%;}.zk-home-container{width:100%;max-width:680px;margin-inline:auto;padding-inline:16px}.zk-home-section{width:100%;margin-top:26px}.zk-home-section-title{font-size:20px;color:var(--zk-text-primary);margin:0 0 12px;font-weight:800}.zk-home-section-heading{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:12px}.zk-home-section-link{color:var(--zk-action-primary);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}@media(min-width:481px){.zk-home-container{padding-inline:20px}}@media(min-width:900px){.zk-home-container{max-width:1120px;padding-inline:24px}.zk-home-quick-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}.zk-home-quick-item{grid-column:auto!important}}`}</style>
   <div className="zk-home-container" style={{paddingTop:8}}>
@@ -157,33 +158,20 @@ export default function HomePage(){
 
    {fc.enabled!==false&&selectedCourses.length>0&&<section className="zk-home-section zk-home-featured-courses"><div className="zk-home-section-heading"><h2 className="zk-home-section-title">{lang==='en'?(fc.titleEn||'Featured courses'):(fc.title||'دوره‌های منتخب')}</h2><Link className="zk-home-section-link" to="/courses">{lang==='en'?'View all':'مشاهده همه'}</Link></div><FeaturedCourses courses={selectedCourses} heroCourseId={heroId} title="" T={T} lang={lang} showStock={fc.showStock!==false} showDiscount={fc.showDiscount!==false}/></section>}
 
-   {/* محصولات منتخب خانه: نمایش کل بخش، انتخاب موارد و عکس مستقل هر مورد از پنل محصولات کنترل می‌شود. */}
+   {/* محصولات منتخب خانه: یک ریل افقی واحد در موبایل، تبلت و دسکتاپ. */}
    {showFeaturedProducts && featuredProducts.length>0 && (
      <section className="zk-home-section zk-home-featured-products" data-home-section="featured-products">
        <div className="zk-home-section-heading">
          <h2 className="zk-home-section-title">{lang==='en' ? 'Featured Products & Plans' : 'محصولات و برنامه‌های منتخب'}</h2>
-         {showProductsPage&&<Link className="zk-home-section-link" to="/products">{lang==='en'?'View all':'مشاهده همه'}</Link>}
-       </div>
-
-       {/* Desktop grid */}
-       <div className="featured-products-desktop" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-         {featuredProducts.map((p:any)=>(
-           <ProductCard key={p.id} product={p} size="normal" imageVariant="home" T={T} lang={lang} onProductClick={()=>{window.location.href=showProductsPage?'/products':'/form'}} />
-         ))}
-       </div>
-
-       {/* Mobile horizontal swipe — تمام مواردی که ادمین برای خانه انتخاب کرده است */}
-       <div className="featured-products-mobile" style={{ display: 'none' }}>
-         <div tabIndex={0} role="region" aria-label={lang==='en'?'Featured products':'محصولات منتخب'} style={{display:'flex',gap:12,overflowX:'auto',paddingBottom:12,scrollSnapType:'x mandatory',WebkitOverflowScrolling:'touch'}}>
-           {featuredProducts.map((p:any)=>(
-             <div key={p.id} style={{ flex: '0 0 82%', scrollSnapAlign: 'start', minWidth: 260 }}>
-               <ProductCard product={p} size="normal" imageVariant="home" T={T} lang={lang} onProductClick={()=>{window.location.href=showProductsPage?'/products':'/form'}} />
-             </div>
-           ))}
+         <div style={{display:'flex',alignItems:'center',gap:7}}>
+          <button type="button" aria-label={lang==='en'?'Previous products':'محصولات قبلی'} onClick={()=>scrollProducts(-1)} style={{width:38,height:38,display:'grid',placeItems:'center',border:`1px solid ${T.brd}`,borderRadius:999,background:T.card,color:T.acc,cursor:'pointer',fontFamily:'inherit',fontSize:18}}>‹</button>
+          <button type="button" aria-label={lang==='en'?'Next products':'محصولات بعدی'} onClick={()=>scrollProducts(1)} style={{width:38,height:38,display:'grid',placeItems:'center',border:`1px solid ${T.brd}`,borderRadius:999,background:T.card,color:T.acc,cursor:'pointer',fontFamily:'inherit',fontSize:18}}>›</button>
+          {showProductsPage&&<Link className="zk-home-section-link" to="/products">{lang==='en'?'View all':'مشاهده همه'}</Link>}
          </div>
        </div>
-
-       <style>{}</style>
+       <div ref={productRailRef} className="featured-products-rail" dir="ltr" tabIndex={0} role="region" aria-label={lang==='en'?'Featured products — horizontal list':'محصولات منتخب — فهرست افقی'} style={{display:'flex',gap:14,overflowX:'auto',overscrollBehaviorX:'contain',scrollSnapType:'x mandatory',scrollPaddingInline:2,padding:'3px 2px 14px',WebkitOverflowScrolling:'touch'}}>
+        {featuredProducts.map((product:any)=><div key={product.id} className="featured-products-rail-item" dir={isRtl?'rtl':'ltr'} style={{flex:'0 0 clamp(260px,27vw,300px)',minWidth:260,scrollSnapAlign:'start'}}><ProductCard product={product} size="normal" imageVariant="home" T={T} lang={lang} onProductClick={()=>{window.location.href=showProductsPage?'/products':'/form'}}/></div>)}
+       </div>
      </section>
    )}
 
