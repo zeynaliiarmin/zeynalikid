@@ -423,11 +423,6 @@ export default function CoursesPage(){
           ))}
         </div>
 
-        {/* Results count */}
-        <div style={{ fontSize: 12.5, color: 'var(--zk-text-muted)', marginBottom: 10 }}>
-          {filteredCourses.length} {lang === 'en' ? 'courses' : 'دوره'}
-        </div>
-
         {/* کادر جملات اعتمادساز تب فعال دوره — هوشمند و چندتبی (همگام با پنل ادمین) */}
         {(() => {
           const currentTabId = filter === 'all' || filter === 'discount' ? 'health' : filter;

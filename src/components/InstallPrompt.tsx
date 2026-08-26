@@ -171,9 +171,9 @@ export default function InstallPrompt({ lang }: { lang: string }) {
           style={{
             width: 32,
             height: 32,
-            borderRadius: '50%',
+            borderRadius: 0,
             border: 'none',
-            background: 'var(--zk-bg-soft, rgba(0, 0, 0, 0.05))',
+            background: 'transparent',
             color: 'var(--zk-text-muted, #64748B)',
             display: 'flex',
             alignItems: 'center',

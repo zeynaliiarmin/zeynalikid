@@ -1337,7 +1337,7 @@ function ThemeManagerEditor(){
   </Box>}
 
  function ProductsTabEditor(){
-  // منبع واحد مدیریت محصولات و بخش «محصولات و برنامه‌های منتخب» صفحهٔ خانه.
+  // منبع واحد مدیریت محصولات و بخش «محصولات منتخب» صفحهٔ خانه.
   const productsCfg=editCfg.products&&typeof editCfg.products==='object'&&!Array.isArray(editCfg.products)
    ?editCfg.products:{showSection:true,list:Array.isArray(editCfg.products)?editCfg.products:[]};
   let items:any[]=Array.isArray(productsCfg.list)?productsCfg.list:[];
@@ -1385,7 +1385,7 @@ function ThemeManagerEditor(){
     </label>
    </Box>
 
-   <Box title="محصولات و برنامه‌های منتخب در صفحه خانه">
+   <Box title="محصولات منتخب در صفحه خانه">
     <p style={{fontSize:11,color:T.mut,lineHeight:1.9,margin:'0 0 10px'}}>نمایش یا لغو نمایش کل این بخش را مستقل از صفحهٔ محصولات تعیین کنید و سپس محصولاتی را که باید داخل آن دیده شوند انتخاب کنید. ترتیب نمایش همان ترتیب لیست محصولات است.</p>
     <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',marginBottom:12,background:showHomeFeatured?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showHomeFeatured?T.ok:T.err}`,borderRadius:12}}>
      <input data-product-setting="home-featured-enabled" type="checkbox" checked={showHomeFeatured} onChange={e=>setEditCfg({...editCfg,products:{...productsCfg,list:items,items:[],homeFeatured:{...homeFeatured,enabled:e.target.checked}}})} style={{width:18,height:18}}/>
@@ -1438,7 +1438,7 @@ function ThemeManagerEditor(){
       </div>
 
       <div data-home-image-editor={it.id||i} style={{padding:'11px',border:`2px solid ${T.acc}`,borderRadius:12,background:T.soft,marginTop:10}}>
-       <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس جداگانه برای بخش «محصولات و برنامه‌های منتخب» صفحه خانه</b>
+       <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس جداگانه برای بخش «محصولات منتخب» صفحه خانه</b>
        <p style={{fontSize:10.5,color:T.mut,lineHeight:1.8,margin:'0 0 9px'}}>برای این محصول می‌توانید عکسی متفاوت از صفحهٔ محصولات بارگذاری کنید و کادر آن را با لمس، زوم و جابه‌جایی تنظیم کنید. اگر خالی باشد، عکس اصلی محصول استفاده می‌شود.</p>
        <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:9}}>
         {(it.homeImage||it.homeImageUrl||it.image||it.imageUrl)&&<img data-home-image-preview src={it.homeImage||it.homeImageUrl||it.image||it.imageUrl} alt={it.name||it.title||''} style={{width:138,aspectRatio:it.homeImageAspectRatio||'4 / 3',objectFit:'cover',objectPosition:it.homeImageObjectPosition||'center',borderRadius:10,border:`1px solid ${T.brd}`}}/>}
