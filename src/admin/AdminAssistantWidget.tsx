@@ -1,0 +1,23 @@
+import {useEffect,useRef,useState} from 'react';
+import type {DynamicRecord} from '../app/AppContext';
+import {assistantAdminGenerate,type AssistantAdminAction} from '../lib/assistantAdminApi';
+import GuideHeadsetIcon from '../components/GuideHeadsetIcon';
+import './admin-assistant-widget.css';
+
+type AdminMessage={role:'assistant'|'user';text:string;actions?:AssistantAdminAction[];suggestions?:string[]};
+const defaults=['چطور رمز پنل را تغییر بدهم؟','تنظیمات فرم‌ها را کجا تغییر بدهم؟','چطور یک دوره اضافه یا ویرایش کنم؟','فرم‌ها و سفارش‌ها را از کجا مدیریت کنم؟'];
+export default function AdminAssistantWidget({T,onNavigate}:{T:DynamicRecord;onNavigate:(tab:string,focus:string)=>void}){
+ const [open,setOpen]=useState(false),[input,setInput]=useState(''),[busy,setBusy]=useState(false),[messages,setMessages]=useState<AdminMessage[]>([{role:'assistant',text:'درباره تنظیمات و روندهای پنل مدیریت از من بپرسید.',suggestions:defaults}]);
+ const inputRef=useRef<HTMLInputElement|null>(null),endRef=useRef<HTMLDivElement|null>(null);
+ useEffect(()=>{if(open){setTimeout(()=>inputRef.current?.focus(),100);setTimeout(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),80)}},[open,messages.length,busy]);
+ const ask=async(value=input)=>{const question=value.trim();if(question.length<3||busy)return;setInput('');setMessages(current=>[...current,{role:'user',text:question}]);setBusy(true);try{const result=await assistantAdminGenerate(question);setMessages(current=>[...current,{role:'assistant',text:result.answer,actions:result.actions,suggestions:result.suggestions?.length?result.suggestions:defaults}])}catch(error){setMessages(current=>[...current,{role:'assistant',text:String((error as Error)?.message||'دستیار مدیریتی موقتاً در دسترس نیست.'),suggestions:defaults}])}finally{setBusy(false)}};
+ return <>
+  <button data-testid="admin-assistant-launch" type="button" className="zkaa-launch" aria-label="بازکردن راهنمای پنل مدیریت" aria-expanded={open} onClick={()=>setOpen(value=>!value)} style={{background:T.grad||T.acc}}><GuideHeadsetIcon size={29}/></button>
+  {open&&<section data-testid="admin-assistant-panel" className="zkaa-panel" role="dialog" aria-label="راهنمای پنل مدیریت" style={{background:T.pop||T.card,borderColor:T.brd}}>
+   <header className="zkaa-head" style={{background:T.grad||T.acc}}><GuideHeadsetIcon size={31}/><button type="button" aria-label="بستن" onClick={()=>setOpen(false)}>×</button></header>
+   <div className="zkaa-messages" role="log" aria-live="polite">{messages.map((message,index)=><div key={index} className={`zkaa-turn ${message.role}`}><div className={`zkaa-message ${message.role}`} style={message.role==='assistant'?{background:T.soft,color:T.txt}:{background:T.acc,color:'#fff'}}>{message.text}</div>{message.actions?.length?<div className="zkaa-actions">{message.actions.map(action=><button type="button" key={`${action.tab}-${action.focus}`} onClick={()=>{onNavigate(action.tab,action.focus);setOpen(false)}} style={{borderColor:T.acc,color:T.acc}}>{action.label}</button>)}</div>:null}{message.role==='assistant'&&message.suggestions?.length?<div className="zkaa-next">{message.suggestions.map(question=><button type="button" key={`${index}-${question}`} onClick={()=>ask(question)} style={{borderColor:T.brd,color:T.txt}}>{question}</button>)}</div>:null}</div>)}{busy&&<div className="zkaa-turn assistant"><div className="zkaa-message assistant" style={{background:T.soft,color:T.txt}}>در حال آماده‌سازی پاسخ…</div></div>}<div ref={endRef}/></div>
+   <form className="zkaa-form" onSubmit={event=>{event.preventDefault();ask()}}><input ref={inputRef} value={input} maxLength={500} onChange={event=>setInput(event.target.value)} placeholder="سؤال درباره پنل مدیریت…" style={{background:T.inp,color:T.txt,borderColor:T.brd}}/><button type="submit" aria-label="ارسال سؤال" disabled={busy||input.trim().length<3} style={{background:T.grad||T.acc}}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button></form>
+   <footer style={{color:T.mut}}>رمز، کلید، اطلاعات شخصی کاربران یا داده پزشکی خصوصی وارد نکنید.</footer>
+  </section>}
+ </>;
+}
