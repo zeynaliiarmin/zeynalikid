@@ -54,6 +54,16 @@ export function isPublicAdminQuestion(value:unknown):boolean{
   return direct.test(text)||action.test(text)||reverse.test(text);
 }
 
+export function isPublicPrivateDataQuestion(value:unknown):boolean{
+  const text=normalizeAssistantText(value);if(!text)return false;
+  const person=/(فلانی|یک نفر|شخص|کاربر|مشتری|مراجع|ثبت نام کننده|دانش آموز|بچه مردم|کاربر دیگر|فرد دیگر)/i;
+  const privateData=/(شماره تماس|شماره موبایل|موبایل|تلفن|آدرس|کد ملی|رسید|عکس|ویس|صدای ضبط شده|پرونده|فرم پر شده|اطلاعات ثبت نام|اطلاعات مشاوره|چه دوره ای|کدام دوره|دوره ثبت شده)/i;
+  const selfRecord=/(اطلاعات|فرم|درخواست|ثبت نام|دوره|مشاوره|پرونده).{0,45}(من|خودم|که ثبت کردم|که پر کردم|که فرستادم)|(من|خودم).{0,45}(اطلاعات|فرم|درخواست|ثبت نام|دوره|مشاوره|پرونده)/i;
+  const thirdParty=(person.test(text)&&privateData.test(text))||/(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام).{0,35}(فلانی|کاربر دیگر|فرد دیگر|یک نفر)|(فلانی|کاربر دیگر|فرد دیگر|یک نفر).{0,35}(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام)/i.test(text);
+  const trackingChat=/(کد پیگیری).{0,45}(اطلاعات|فرم|شماره|دوره|مشاوره|اینجا|نمایش|بده)|(اطلاعات|فرم|شماره|دوره|مشاوره).{0,45}(کد پیگیری)/i.test(text);
+  return thirdParty||selfRecord.test(text)||trackingChat;
+}
+
 export const relatedKnowledge=(question:string,knowledge:ScopedKnowledge[],limit=6)=>matchKnowledge(question,knowledge,limit);
 
 function buildReference(matches:ReturnType<typeof matchKnowledge>):string{

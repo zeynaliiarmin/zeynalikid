@@ -2,7 +2,7 @@ import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
 import {getSupabaseAdmin} from '../_shared/supabaseClient.ts';
 import {handleOptions,jsonResponse,getOrigin} from '../_shared/cors.ts';
 import {centralRateLimit} from '../_shared/rateLimit.ts';
-import {generateGroundedAssistant,isPublicAdminQuestion,relatedKnowledge,sanitizeAssistantQuestion,type AssistantSource} from '../_shared/generativeAssistant.ts';
+import {generateGroundedAssistant,isPublicAdminQuestion,isPublicPrivateDataQuestion,relatedKnowledge,sanitizeAssistantQuestion,type AssistantSource} from '../_shared/generativeAssistant.ts';
 import {normalizeAssistantText} from '../_shared/assistantMatch.ts';
 
 const BRAND='زینالیکید';
@@ -54,7 +54,11 @@ serve(async req=>{
   if(!minute.ok||!daily.ok)return reply({error:'سقف سؤال‌های این مرورگر رسیده است؛ بعداً دوباره تلاش کنید.'},429,origin);
   if(isPublicAdminQuestion(question)){
    const answer=String(settings?.admin_block_message||defaultFallback);
-   return reply({ok:true,answer,model:'internal-policy',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:true,remaining_daily:daily.remaining},200,origin);
+   return reply({ok:true,answer,model:'internal-policy',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:true,blocked_private:false,remaining_daily:daily.remaining},200,origin);
+  }
+  if(isPublicPrivateDataQuestion(question)){
+   const answer='برای حفاظت از حریم خصوصی، دستیار اطلاعات ثبت‌نام، فرم، شماره تماس، دوره یا پرونده هیچ شخصی را نمایش نمی‌دهد. برای پیگیری درخواست خودتان از صفحه امن پیگیری استفاده کنید و کد پیگیری و شماره تماس ثبت‌شده را فقط همان‌جا وارد کنید.';
+   return reply({ok:true,answer,model:'internal-privacy-policy',sources:[],actions:[{label:'رفتن به صفحه پیگیری امن',path:'/track'}],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:false,blocked_private:true,remaining_daily:daily.remaining},200,origin);
   }
   let result;
   try{result=await generateGroundedAssistant({question,knowledge:knowledge||[],mode:'public',brand:BRAND})}
@@ -64,7 +68,7 @@ serve(async req=>{
    console.warn('assistant-public provider fallback:',String((error as Error)?.message||error));
   }
   const answer=result.answer||String(settings?.fallback_message||defaultFallback);
-  return reply({ok:true,answer,model:result.model,sources:result.sources,actions:actionsFrom(result.sources),suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,remaining_daily:daily.remaining},200,origin);
+  return reply({ok:true,answer,model:result.model,sources:result.sources,actions:actionsFrom(result.sources),suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false,remaining_daily:daily.remaining},200,origin);
  }
  const rate=await centralRateLimit(req,`assistant-${action||'write'}`,{maxRequests:20,windowMs:60_000,blockMs:60_000});if(!rate.ok)return reply({error:'درخواست بیش از حد مجاز است'},429,origin);
  if(action==='unanswered'){
