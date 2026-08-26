@@ -28,4 +28,4 @@ export async function fetchAssistantData():Promise<AssistantPublicData>{
 async function post<T>(payload:Record<string,unknown>):Promise<T>{
  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(String(body.error||'دستیار موقتاً در دسترس نیست'));return body as T;
 }
-export const generateAssistantAnswer=(question:string)=>post<AssistantGeneratedAnswer>({action:'generate',question,client_id:browserId()});
+export const generateAssistantAnswer=(question:string,ui_language:'fa'|'en')=>post<AssistantGeneratedAnswer>({action:'generate',question,ui_language,client_id:browserId()});
