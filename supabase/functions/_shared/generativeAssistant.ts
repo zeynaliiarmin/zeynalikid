@@ -39,6 +39,7 @@ const scrub=(value:unknown,max:number)=>String(value||'')
   .replace(/\bIR\d{24}\b/gi,'[IBAN]')
   .replace(/\b\d{16}\b/g,'[CARD]')
   .replace(/\b\d{10}\b/g,'[IDENTIFIER]')
+  .replace(/بهترین نتیجه/g,'نتیجه به شرایط فرد بستگی دارد')
   .replace(/\s+/g,' ')
   .trim()
   .slice(0,max);
@@ -56,12 +57,15 @@ export function isPublicAdminQuestion(value:unknown):boolean{
 
 export function isPublicPrivateDataQuestion(value:unknown):boolean{
   const text=normalizeAssistantText(value);if(!text)return false;
-  const person=/(فلانی|یک نفر|شخص|کاربر|مشتری|مراجع|ثبت نام کننده|دانش آموز|بچه مردم|کاربر دیگر|فرد دیگر)/i;
+  const personMention=/(^|\s)(فلانی|شخص|کاربر|مشتری|مراجع)(?=\s|$)|یک نفر|ثبت نام کننده|دانش آموز|بچه مردم|کاربر دیگر|فرد دیگر/i.test(text);
   const privateData=/(شماره تماس|شماره موبایل|موبایل|تلفن|آدرس|کد ملی|رسید|عکس|ویس|صدای ضبط شده|پرونده|فرم پر شده|اطلاعات ثبت نام|اطلاعات مشاوره|چه دوره ای|کدام دوره|دوره ثبت شده)/i;
-  const selfRecord=/(اطلاعات|فرم|درخواست|ثبت نام|دوره|مشاوره|پرونده).{0,45}(من|خودم|که ثبت کردم|که پر کردم|که فرستادم)|(من|خودم).{0,45}(اطلاعات|فرم|درخواست|ثبت نام|دوره|مشاوره|پرونده)/i;
-  const thirdParty=(person.test(text)&&privateData.test(text))||/(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام).{0,35}(فلانی|کاربر دیگر|فرد دیگر|یک نفر)|(فلانی|کاربر دیگر|فرد دیگر|یک نفر).{0,35}(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام)/i.test(text);
+  const selfMention=/(^|\s)(من|خودم)(?=\s|$)/i.test(text);
+  const recordTerms=/(اطلاعات ثبت نام|اطلاعات مشاوره|فرم پر شده|فرمی که|درخواست ثبت شده|پرونده|دوره ای که ثبت کردم|ثبت نامی که)/i.test(text);
+  const recordRequest=/(بده|نمایش بده|نشان بده|ارسال کن|پیدا کن|دریافت کنم|میخوام|می خواهم)/i.test(text);
+  const selfRecord=(selfMention||/(که ثبت کردم|که پر کردم|که فرستادم)/i.test(text))&&recordTerms&&recordRequest;
+  const thirdParty=(personMention&&privateData.test(text))||/(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام).{0,35}(فلانی|کاربر دیگر|فرد دیگر|یک نفر)|(فلانی|کاربر دیگر|فرد دیگر|یک نفر).{0,35}(اطلاعات|شماره|فرم|دوره|مشاوره|ثبت نام)/i.test(text);
   const trackingChat=/(کد پیگیری).{0,45}(اطلاعات|فرم|شماره|دوره|مشاوره|اینجا|نمایش|بده)|(اطلاعات|فرم|شماره|دوره|مشاوره).{0,45}(کد پیگیری)/i.test(text);
-  return thirdParty||selfRecord.test(text)||trackingChat;
+  return thirdParty||selfRecord||trackingChat;
 }
 
 export const relatedKnowledge=(question:string,knowledge:ScopedKnowledge[],limit=6)=>matchKnowledge(question,knowledge,limit);
@@ -81,12 +85,14 @@ function parseProvider(payload:unknown):{answer:string;model:string}{
   const choices=Array.isArray(record.choices)?record.choices:[];
   const first=choices[0]&&typeof choices[0]==='object'?choices[0] as Record<string,unknown>:{};
   const message=first.message&&typeof first.message==='object'?first.message as Record<string,unknown>:{};
-  return {answer:String(message.content||'').replace(/\*\*/g,'').replace(/^#{1,6}\s+/gm,'').trim().slice(0,5000),model:String(record.model||MISTRAL_ASSISTANT_MODEL).slice(0,100)};
+  return {answer:String(message.content||'').replace(/\*\*/g,'').replace(/^#{1,6}\s+/gm,'').replace(/بهترین نتیجه/g,'نتیجه به شرایط فرد بستگی دارد').trim().slice(0,5000),model:String(record.model||MISTRAL_ASSISTANT_MODEL).slice(0,100)};
 }
 
 export async function generateGroundedAssistant(options:{question:unknown;knowledge:ScopedKnowledge[];mode:'public'|'admin';brand:string}):Promise<GroundedAssistantResult>{
-  const question=sanitizeAssistantQuestion(options.question);
-  const matches=relatedKnowledge(question,options.knowledge,6);
+  const rawQuestion=String(options.question||'');
+  const question=sanitizeAssistantQuestion(rawQuestion);
+  const retrievalQuestion=sanitizeAssistantQuestion(rawQuestion.split(/\r?\n/)[0]||rawQuestion);
+  const matches=relatedKnowledge(retrievalQuestion,options.knowledge,6);
   const sources=matches.map(({item,score})=>{
     const scoped=item as ScopedKnowledge;
     return {
@@ -96,12 +102,15 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
   });
   if(!matches.length)return {answer:'',model:MISTRAL_ASSISTANT_MODEL,sources:[],providerCalled:false};
 
-  const apiKey=String(Deno.env.get('MISTRAL_API_KEY')||'').trim();
+  const scopedSecret=options.mode==='public'?'MISTRAL_PUBLIC_API_KEY':'MISTRAL_ADMIN_API_KEY';
+  const apiKey=String(Deno.env.get(scopedSecret)||Deno.env.get('MISTRAL_API_KEY')||'').trim();
   if(!apiKey)throw new Error('MISTRAL_NOT_CONFIGURED');
   const publicRules=[
     `شما راهنمای عمومی ${options.brand} هستید.`,
     'فقط درباره خدمات و بخش‌های عمومی سایت پاسخ دهید.',
     'درباره پنل مدیریت، رمز مدیر، تنظیمات داخلی، تغییر محتوا، زیرساخت، کلیدها و روش مدیریت سایت هیچ راهنمایی ندهید.',
+    'برای مکمل، دارو یا وضعیت پزشکی هیچ محصول مشخص، مقدار مصرف یا تضمین نتیجه نسازید؛ فقط دوره منتشرشده مرتبط یا فرم مشاوره را پیشنهاد کنید.',
+    'برای پیشنهاد دوره از عبارت «ممکن است مناسب باشد» استفاده کن و ادعای بهترین نتیجه یا نتیجه قطعی نکن.',
     'پاسخ را فقط از متن‌های مرجع تأییدشده تولید کنید.',
   ];
   const adminRules=[

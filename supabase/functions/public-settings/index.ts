@@ -15,6 +15,7 @@ import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import {
   handleOptions, jsonResponse, getOrigin,
 } from "../_shared/cors.ts";
+const settingsResponse=(body:unknown,status:number,origin:string)=>{const response=jsonResponse(body,status,origin);response.headers.set("Cache-Control","no-store");return response};
 
 // Whitelist of settings keys that the public website needs.
 // Everything else is stripped from the response.
@@ -60,8 +61,14 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "contactVisibility",
   // Country codes (for phone selector)
   "countryCodes",
-  // Form fields config
+  // Consultation form configuration. These values are public UI choices and must
+  // be returned after an admin save; otherwise refresh falls back to defaults.
   "formFields",
+  "consultTopics",
+  "digestiveOptions",
+  "appetiteOptions",
+  "specialConditions",
+  "categories",
   // Manual user questions (display)
   "manualUserQuestions",
   // Settings version
@@ -317,7 +324,7 @@ serve(async (req) => {
   const origin = getOrigin(req);
 
   if (req.method !== "GET" && req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405, origin);
+    return settingsResponse({ error: "Method not allowed" }, 405, origin);
   }
 
   try {
@@ -331,17 +338,17 @@ serve(async (req) => {
 
     if (error) {
       console.error("public-settings error:", error);
-      return jsonResponse({ error: "خطا در دریافت تنظیمات" }, 500, origin);
+      return settingsResponse({ error: "خطا در دریافت تنظیمات" }, 500, origin);
     }
 
     if (!data || !data.settings) {
-      return jsonResponse({ settings: {} }, 200, origin);
+      return settingsResponse({ settings: {} }, 200, origin);
     }
 
     // Sanitize — only return whitelisted, non-sensitive fields
     const sanitized = sanitizeSettings(data.settings);
-    return jsonResponse({ settings: sanitized }, 200, origin);
+    return settingsResponse({ settings: sanitized }, 200, origin);
   } catch (_e) {
-    return jsonResponse({ error: "خطای سرور" }, 500, origin);
+    return settingsResponse({ error: "خطای سرور" }, 500, origin);
   }
 });

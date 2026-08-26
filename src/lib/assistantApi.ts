@@ -5,7 +5,7 @@ export interface AssistantSuggestion {question:string;label:string;path?:string;
 export interface AssistantAction {label:string;path:string;}
 export interface AssistantSettings {enabled:boolean;welcome_message:string;fallback_message:string;disclaimer:string;suggested_questions:AssistantSuggestion[];updated_at?:string;}
 export interface AssistantPublicData {knowledge:AssistantKnowledge[];settings:AssistantSettings;}
-export interface AssistantGeneratedAnswer {ok:true;answer:string;model:string;actions:AssistantAction[];suggestions:AssistantSuggestion[];provider_called:boolean;blocked_admin:boolean;blocked_private?:boolean;remaining_daily:number;}
+export interface AssistantGeneratedAnswer {ok:true;answer:string;model:string;actions:AssistantAction[];suggestions:AssistantSuggestion[];provider_called:boolean;blocked_admin:boolean;blocked_private?:boolean;remaining_daily:number;limit_code?:string;support_phone?:string;}
 
 const base=String(import.meta.env.VITE_SUPABASE_URL||'').replace(/\/$/,'');
 const url=`${base}/functions/v1/assistant-public`;
