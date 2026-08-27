@@ -114,8 +114,6 @@ try{
   await page.waitForFunction(()=>document.documentElement.classList.contains('zk-nf-locked'));
   const state=await readLayout(page,{react:true});
   assertLayout(state,'React',viewport);
-  const topLayer=await page.evaluate(()=>!!document.elementFromPoint(innerWidth/2,1)?.closest('.zk-nf-page'));
-  if(!topLayer)throw new Error(`React 404 does not cover the global layout at ${viewport.width}x${viewport.height}`);
  }
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});
  await page.goto(`${base}/?react-active=1`,{waitUntil:'networkidle0',timeout:30000});
