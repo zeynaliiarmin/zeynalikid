@@ -28,7 +28,7 @@ export default function AssistantDiscoveryHint({lang,onOpen}:{lang:'fa'|'en';onO
   const visibility=()=>{last.current=Date.now()};document.addEventListener('visibilitychange',visibility);
   return()=>{clearInterval(tick);clearTimeout(initialTimer);document.removeEventListener('visibilitychange',visibility);try{sessionStorage.setItem(prefix+'elapsed',String(elapsed.current))}catch{}};
  },[prefix]);
- useEffect(()=>{if(!kind)return;const hide=()=>dismiss();window.addEventListener('scroll',hide,{passive:true,once:true});document.addEventListener('pointerdown',hide,{passive:true,once:true,capture:true});return()=>{window.removeEventListener('scroll',hide);document.removeEventListener('pointerdown',hide,true)}},[kind]);
+ useEffect(()=>{if(!kind)return;const hide=()=>dismiss(),autoHide=window.setTimeout(hide,5000);window.addEventListener('scroll',hide,{passive:true,once:true});document.addEventListener('pointerdown',hide,{passive:true,once:true,capture:true});return()=>{clearTimeout(autoHide);window.removeEventListener('scroll',hide);document.removeEventListener('pointerdown',hide,true)}},[kind]);
  if(!kind)return null;const copy=textFor(kind,lang==='en');
  return <button type="button" className={`zka-discovery ${leaving?'is-leaving':''}`} onClick={onOpen} aria-label={`${copy.title}. ${copy.text}`}>
   <svg viewBox="0 0 420 112" preserveAspectRatio="none" aria-hidden="true"><path d="M24 25H63c13 0 20-4 25-16 7-17 21-28 39-33 7-2 11 3 7 9-8 13-18 21-18 32 0 6 4 8 13 8h267c13 0 22 10 22 23v38c0 13-9 22-22 22H24C11 108 2 99 2 86V47C2 34 11 25 24 25Z"/></svg>
