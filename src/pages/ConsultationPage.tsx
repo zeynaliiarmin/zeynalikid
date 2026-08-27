@@ -129,6 +129,7 @@ export default function ConsultationPage(){
   };
 
   const [formView, setFormView] = useState<'form' | 'success'>('form');
+  useEffect(()=>{window.dispatchEvent(new CustomEvent('zk-flow-complete',{detail:{flow:'consultation',complete:formView==='success'}}));return()=>{window.dispatchEvent(new CustomEvent('zk-flow-complete',{detail:{flow:'consultation',complete:false}}))}},[formView]);
   const [showCt, setShowCt] = useState(false);
   const [fd, setFd] = useState<any>(() => {
     try {
@@ -619,7 +620,7 @@ export default function ConsultationPage(){
           {voiceBlob && <div style={{ fontSize: 11, color: '#059669', marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
-        <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم." textEn="I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>setView('privacy')}/>
+        <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم." textEn="I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>{try{sessionStorage.setItem('zk_privacy_return_to',location.pathname||'/consultation')}catch{};setView('privacy')}}/>
         <p style={{ fontSize: 10, color: T.mut, textAlign: 'center' }}>{publicText('required', 'فیلدهای دارای * الزامی هستند')}</p>
         {Object.keys(errs).length > 0 && <div style={{ background: `${T.err}12`, border: `1px solid ${T.err}`, borderRadius: 12, padding: 12, marginBottom: 12, color: T.err, fontSize: 12 }}>
           {Object.values(errs).map((x: any, i) => <div key={i}>- {x}</div>)}

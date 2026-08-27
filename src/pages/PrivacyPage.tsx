@@ -1,9 +1,11 @@
 import { useAppContext } from '../app/AppContext';
 import { Helmet } from 'react-helmet-async';
+import {useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 export default function PrivacyPage(){
- const app=useAppContext();
- const {cfg,T,S,css,lang,setView}=app;const en=lang==='en';const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
+ const app=useAppContext();const navigate=useNavigate();
+ const {cfg,T,S,css,lang,setView}=app;const returnTo=(()=>{try{const value=sessionStorage.getItem('zk_privacy_return_to')||'';return ['/consultation','/form','/child-info'].includes(value)?value:''}catch{return ''}})();const goBack=()=>{if(returnTo){try{sessionStorage.removeItem('zk_privacy_return_to')}catch{};navigate(returnTo)}else setView('home')};useEffect(()=>{if(!returnTo)return;const onPop=()=>{try{sessionStorage.removeItem('zk_privacy_return_to')}catch{};navigate(returnTo,{replace:true})};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[navigate,returnTo]);const en=lang==='en';const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
  const sections=en?[
   ['Data we receive','Contact details, consultation answers, child growth and nutrition information, optional voice/photo attachments, delivery details and payment receipts.'],
   ['Why we use it','To provide the requested consultation or course, follow up an order, deliver files, prevent abuse and resolve technical errors.'],
@@ -21,5 +23,5 @@ export default function PrivacyPage(){
   ['حقوق و انتخاب شما','ارسال فایل‌های اختیاری الزامی نیست، مگر آنکه فرم آن را صریحاً ضروری اعلام کند. درخواست مشاهده، اصلاح یا حذف داده از راه‌های تماس رسمی منتشرشده در سایت قابل ارسال است.'],
   ['تذکر سلامت','محتوای سایت آموزشی است و جایگزین معاینه، تشخیص پزشک یا مراجعه فوری پزشکی نیست.'],
  ];
- return <main style={S.page} aria-labelledby="privacy-title"><Helmet><title>{en?`Privacy | ${brand}`:`حریم خصوصی | ${brand}`}</title><meta name="description" content={en?'How personal and child-related information is used and protected.':'نحوه استفاده و حفاظت از اطلاعات والد و کودک.'}/><meta name="robots" content="index, follow"/></Helmet><style>{css}</style><article style={{...S.card,maxWidth:760,marginTop:18}}><h1 id="privacy-title" style={{color:T.ttl,fontSize:24,margin:'0 0 8px'}}>{en?'Privacy and data protection':'حریم خصوصی و حفاظت از داده‌ها'}</h1><p style={{color:T.mut,fontSize:12.5,lineHeight:1.9,margin:'0 0 18px'}}>{en?'Last reviewed: 26 August 2026':'تاریخ آخرین بازبینی: ۴ شهریور ۱۴۰۵'}</p>{sections.map(([title,text])=><section key={title} style={{marginBottom:18}}><h2 style={{fontSize:16,color:T.ttl,margin:'0 0 6px'}}>{title}</h2><p style={{fontSize:13.5,color:T.txt,lineHeight:2,margin:0}}>{text}</p></section>)}<button type="button" style={S.btnGhost} onClick={()=>setView('home')}>{en?'Back to home':'بازگشت به صفحه اصلی'}</button></article></main>;
+ return <main style={S.page} aria-labelledby="privacy-title"><Helmet><title>{en?`Privacy | ${brand}`:`حریم خصوصی | ${brand}`}</title><meta name="description" content={en?'How personal and child-related information is used and protected.':'نحوه استفاده و حفاظت از اطلاعات والد و کودک.'}/><meta name="robots" content="index, follow"/></Helmet><style>{css}</style><article style={{...S.card,maxWidth:760,marginTop:18}}><h1 id="privacy-title" style={{color:T.ttl,fontSize:24,margin:'0 0 8px'}}>{en?'Privacy and data protection':'حریم خصوصی و حفاظت از داده‌ها'}</h1><p style={{color:T.mut,fontSize:12.5,lineHeight:1.9,margin:'0 0 18px'}}>{en?'Last reviewed: 26 August 2026':'تاریخ آخرین بازبینی: ۴ شهریور ۱۴۰۵'}</p>{sections.map(([title,text])=><section key={title} style={{marginBottom:18}}><h2 style={{fontSize:16,color:T.ttl,margin:'0 0 6px'}}>{title}</h2><p style={{fontSize:13.5,color:T.txt,lineHeight:2,margin:0}}>{text}</p></section>)}<button type="button" style={S.btnGhost} onClick={goBack}>{returnTo?(en?'Back to previous step':'بازگشت به مرحله قبل'):(en?'Back to home':'بازگشت به صفحه اصلی')}</button></article></main>;
 }

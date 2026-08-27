@@ -26,7 +26,7 @@ create table if not exists public.assistant_settings(
  enabled boolean not null default true,
  welcome_message text not null default 'سلام! سؤال خود را درباره دوره‌ها، خدمات و محتوای زینالیکید بپرسید.',
  fallback_message text not null default 'پاسخ تأییدشده‌ای برای این سؤال پیدا نکردم. می‌توانید فرم مشاوره را تکمیل کنید یا با پشتیبانی تماس بگیرید.',
- disclaimer text not null default 'این دستیار فقط اطلاعات عمومی و تأییدشده سایت را نمایش می‌دهد و جایگزین پزشک یا مشاور تخصصی نیست.',
+ disclaimer text not null default 'این دستیار راهنمای عمومی است و جایگزین مشاوره یا پزشک نیست',
  updated_at timestamptz not null default now()
 );
 create table if not exists public.assistant_unanswered(

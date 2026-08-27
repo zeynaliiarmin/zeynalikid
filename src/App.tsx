@@ -62,6 +62,7 @@ function App(){
    if(justLoggedIn)return;
    let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
+ const [consultationComplete,setConsultationComplete]=useState(false);useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.flow==='consultation')setConsultationComplete(detail.complete===true)};window.addEventListener('zk-flow-complete',handler);return()=>window.removeEventListener('zk-flow-complete',handler)},[]);
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
  useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/admin-login',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
@@ -413,9 +414,11 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  // اصلاح ۵: نمایش منوی همبرگری اکنون از تنظیمات پنل مدیریت (cfg.menuVisibility) خوانده می‌شود؛
  // در صورت نبود مقدار برای یک view (تنظیمات قدیمی/نامعتبر)، به رفتار پیش‌فرض قبلی (noMenuViews) بازمی‌گردیم.
  const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','admin-login','admin'];
- const showAssistant=['home','courses','experience','licenses','education','about','faq','contact','products','privacy'].includes(view);
- const showMenu=!glassFullViews.includes(view)&&(view==='courses'||(!['child-info','course-shipping','course-payment','course-confirm'].includes(view)&&(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view))));
- const showHeader=view!=='admin'&&!glassFullViews.includes(view)&&!courseFlowViews.includes(view);
+ const successView=view==='course-done'||(view==='form'&&consultationComplete);
+ const sensitiveFlow=!successView&&['form','child-info','course-shipping','course-payment','payment-verify','course-confirm'].includes(view);
+ const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy'].includes(view);
+ const showMenu=!glassFullViews.includes(view)&&!sensitiveFlow&&(successView||view==='courses'||(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)));
+ const showHeader=view!=='admin'&&!glassFullViews.includes(view);
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
  // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحهٔ عمومی را نشان نده ───
  if(!referralReady && view!=='admin' && view!=='admin-login'){

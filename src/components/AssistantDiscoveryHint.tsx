@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {PROJECT_CODE} from '../config/project';
+import GuideHeadsetIcon from './GuideHeadsetIcon';
 
 type HintKind='initial'|'five'|'nine';
 const textFor=(kind:HintKind,en:boolean)=>{
@@ -32,6 +33,6 @@ export default function AssistantDiscoveryHint({lang,onOpen}:{lang:'fa'|'en';onO
  if(!kind)return null;const copy=textFor(kind,lang==='en');
  return <button type="button" className={`zka-discovery ${leaving?'is-leaving':''}`} onClick={onOpen} aria-label={`${copy.title}. ${copy.text}`}>
   <svg viewBox="0 0 420 112" preserveAspectRatio="none" aria-hidden="true"><path d="M24 25H63c13 0 20-4 25-16 7-17 21-28 39-33 7-2 11 3 7 9-8 13-18 21-18 32 0 6 4 8 13 8h267c13 0 22 10 22 23v38c0 13-9 22-22 22H24C11 108 2 99 2 86V47C2 34 11 25 24 25Z"/></svg>
-  <span><b>{copy.title}</b><small>{copy.text}</small></span>
+  <span dir={lang==='en'?'ltr':'rtl'}><i aria-hidden="true"><GuideHeadsetIcon size={23}/></i><em><b>{copy.title}</b><small>{copy.text}</small></em></span>
  </button>;
 }
