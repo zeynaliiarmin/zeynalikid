@@ -3,7 +3,7 @@ import {PROJECT_CODE} from '../config/project';
 
 export interface AssistantSuggestion {question:string;label:string;path?:string;}
 export type AssistantAction=AssistantKnowledgeAction;
-export interface AssistantSettings {enabled:boolean;welcome_message:string;fallback_message:string;disclaimer:string;suggested_questions:AssistantSuggestion[];revision?:number;updated_at?:string;}
+export interface AssistantSettings {enabled:boolean;welcome_message:string;fallback_message:string;disclaimer:string;suggested_questions:AssistantSuggestion[];frequent_question_threshold?:number;revision?:number;updated_at?:string;}
 export interface AssistantPublicData {knowledge:AssistantKnowledge[];settings:AssistantSettings;}
 export interface AssistantGeneratedAnswer {ok:true;answer:string;model:string;actions:AssistantAction[];suggestions:AssistantSuggestion[];provider_called:boolean;blocked_admin:boolean;blocked_private?:boolean;remaining_daily:number;limit_code?:string;support_phone?:string;}
 export interface AssistantStatus {enabled:boolean;revision:number;updated_at:string;}
@@ -30,7 +30,7 @@ export async function fetchAssistantStatus():Promise<AssistantStatus>{
 export async function fetchAssistantData(force=false):Promise<AssistantPublicData>{
   const now=Date.now();if(!force&&memory&&now-memory.at<30_000)return memory.value;
   const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error('دستیار در دسترس نیست');const body=await response.json();
-  const value={knowledge:Array.isArray(body.knowledge)?body.knowledge:[],settings:{enabled:body.settings?.enabled===true,welcome_message:String(body.settings?.welcome_message||'سلام! سؤال خود را بپرسید.'),fallback_message:String(body.settings?.fallback_message||'در مورد این سؤال اطلاعاتی ندارم.'),disclaimer:String(body.settings?.disclaimer||'این دستیار جایگزین مشاوره تخصصی نیست.'),suggested_questions:Array.isArray(body.settings?.suggested_questions)?body.settings.suggested_questions:[],revision:Number(body.settings?.revision||0),updated_at:body.settings?.updated_at}};
+  const value={knowledge:Array.isArray(body.knowledge)?body.knowledge:[],settings:{enabled:body.settings?.enabled===true,welcome_message:String(body.settings?.welcome_message||'سلام! سؤال خود را بپرسید.'),fallback_message:String(body.settings?.fallback_message||'در مورد این سؤال اطلاعاتی ندارم.'),disclaimer:String(body.settings?.disclaimer||'این دستیار جایگزین مشاوره تخصصی نیست.'),suggested_questions:Array.isArray(body.settings?.suggested_questions)?body.settings.suggested_questions:[],frequent_question_threshold:Math.max(2,Math.min(100,Number(body.settings?.frequent_question_threshold)||3)),revision:Number(body.settings?.revision||0),updated_at:body.settings?.updated_at}};
   memory={at:now,value};return value;
 }
 

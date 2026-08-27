@@ -75,3 +75,44 @@ export function findKnowledgeRule(query:string,items:KnowledgeLike[]){
   }).filter(row=>row.score>0).sort((a,b)=>b.score-a.score||Number(b.item.priority||0)-Number(a.item.priority||0));
   return candidates[0]||null;
 }
+
+const assistantIntentStopWords=new Set(['از','به','با','در','برای','که','را','رو','و','یا','من','ما','شما','لطفا','لطفاً','میخوام','میخواهم','میخواد','چی','چیه','چیست','چطور','چگونه','کجا','کدام','درباره','میشه','میتونم','هست','است','بود','بگو','سوال','سؤال','the','a','an','is','are','to','of','for','and','or','i','we','you','how','what','where','which','please','can','could','do','does']);
+const assistantIntentFacets:Array<[string,RegExp]>=[
+  ['price',/(^|\s)(قیمت|هزینه|مبلغ|شهریه|تعرفه|چنده|price|cost|fee)(?=\s|$)/i],
+  ['time',/(^|\s)(زمان|ساعت|تاریخ|موعد|چه وقت|چه زمانی|کی برگزار|when|schedule|date)(?=\s|$)/i],
+  ['location',/(^|\s)(کجا|آدرس|محل|مکان|where|address|location)(?=\s|$)/i],
+  ['cancel',/(^|\s)(لغو|کنسل|انصراف|استرداد|بازپرداخت|refund|cancel)(?=\s|$)/i],
+  ['requirements',/(^|\s)(شرایط|مدارک|پیش نیاز|لازم|requirements|prerequisite)(?=\s|$)/i],
+  ['duration',/(^|\s)(مدت|چقدر طول|چند روز|چند ماه|duration|how long)(?=\s|$)/i],
+  ['availability',/(^|\s)(موجود|ظرفیت|جا دارید|ارائه میشه|available|availability)(?=\s|$)/i],
+  ['age',/(^|\s)(چه سنی|رده سنی|مناسب سن|سن مناسب|age range|what age)(?=\s|$)/i],
+  ['contents',/(^|\s)(سرفصل|محتوا|شامل چه|contents|syllabus)(?=\s|$)/i],
+  ['tracking',/(^|\s)(پیگیری|وضعیت سفارش|کد پیگیری|tracking|order status)(?=\s|$)/i],
+];
+export function assistantIntentTokens(value:unknown):string[]{
+  return normalizeAssistantText(value).split(' ').filter(token=>token.length>1&&!assistantIntentStopWords.has(token));
+}
+function intentFacets(value:string):Set<string>{
+  const found=new Set(assistantIntentFacets.filter(([,pattern])=>pattern.test(value)).map(([name])=>name));
+  if(/(^|\s)(آنلاین|مجازی|غیر حضوری|غیرحضوری|online|virtual)(?=\s|$)/i.test(value))found.add('channel:online');
+  else if(/(^|\s)(حضوری|in person|onsite)(?=\s|$)/i.test(value))found.add('channel:in-person');
+  else if(/(^|\s)(تلفنی|تلفن|phone|telephone)(?=\s|$)/i.test(value))found.add('channel:phone');
+  return found;
+}
+/** Different qualifiers, channels or numeric subjects stay separate even when topic words overlap. */
+export function compatibleAssistantIntent(left:unknown,right:unknown):boolean{
+  const a=normalizeAssistantText(left),b=normalizeAssistantText(right);if(!a||!b)return false;
+  const af=intentFacets(a),bf=intentFacets(b);if(af.size!==bf.size||[...af].some(facet=>!bf.has(facet)))return false;
+  const an=a.match(/(^|\s)\d+(?:[./]\d+)?(?=\s|$)/g)?.map(item=>item.trim())||[],bn=b.match(/(^|\s)\d+(?:[./]\d+)?(?=\s|$)/g)?.map(item=>item.trim())||[];
+  return an.length===bn.length&&an.every((number,index)=>number===bn[index]);
+}
+export function shareAssistantIntentToken(left:unknown,right:unknown):boolean{
+  const rightTokens=new Set(assistantIntentTokens(right));return assistantIntentTokens(left).some(token=>rightTokens.has(token));
+}
+/** Deliberately conservative: ambiguity creates a separate cluster instead of mixing goals. */
+export function sameAssistantIntent(left:unknown,right:unknown):boolean{
+  const a=normalizeAssistantText(left),b=normalizeAssistantText(right);if(!a||!b)return false;if(a===b)return true;if(!compatibleAssistantIntent(a,b))return false;
+  const at=new Set(assistantIntentTokens(a)),bt=new Set(assistantIntentTokens(b));let overlap=0;for(const token of at)if(bt.has(token))overlap++;
+  if(overlap<2)return false;const coverage=Math.min(overlap/Math.max(1,at.size),overlap/Math.max(1,bt.size));
+  return coverage>=.5&&dice(a,b)>=.34;
+}

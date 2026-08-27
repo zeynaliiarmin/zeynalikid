@@ -10,7 +10,7 @@ export interface AssistantAdminSource {id:string;question:string;category:string
 export interface AssistantAdminAction {label:string;tab:string;focus:string;record_id?:string;}
 export interface AssistantCustomerResult {id:string;name:string;phone:string;type:string;course:string;topics:string[];status:string;date:string;}
 export interface AssistantAdminAnswer {ok:true;answer:string;model:string;sources:AssistantAdminSource[];actions:AssistantAdminAction[];suggestions:string[];customer_results?:AssistantCustomerResult[];provider_called:boolean;remaining?:number;provider_notice?:string;}
-export interface AssistantKnowledgeTestResult {ok:true;answer:string;model:string;sources:AssistantAdminSource[];actions:AssistantKnowledgeAction[]|AssistantAdminAction[];provider_called:boolean;}
+export interface AssistantKnowledgeTestResult {ok:true;answer:string;model:string;sources:AssistantAdminSource[];actions:AssistantKnowledgeAction[]|AssistantAdminAction[];provider_called:boolean;needs_training?:boolean;confidence?:number;}
 export interface ParsedAssistantDraft {scope:AssistantKnowledgeScope;question:string;aliases:string[];answer:string;keywords:string[];category:string;response_mode:AssistantResponseMode;match_mode:AssistantMatchMode;actions:AssistantKnowledgeAction[];target_tab:string;target_focus:string;action_label:string;needs_clarification:boolean;clarification_message:string;}
 export interface AssistantTelegramStatus {configured:{token:boolean;owner:boolean;webhook_secret:boolean};connected:boolean;bot:null|{id:string;username:string;name:string};webhook:null|{url:string;pending_updates:number;last_error_date:number;last_error_message:string;allowed_updates:string[]};expected_url:string;error:string;}
 

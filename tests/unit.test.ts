@@ -18,7 +18,7 @@ import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../s
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 import { paymentShareText, resolvePaymentLaunchInfo } from '../src/utils/paymentLauncher';
-import { findAssistantRule, matchAssistantKnowledge, normalizeAssistantText, scoreAssistantKnowledge, type AssistantKnowledge } from '../src/utils/assistantMatch';
+import { compatibleAssistantIntent, findAssistantRule, matchAssistantKnowledge, normalizeAssistantText, sameAssistantIntent, scoreAssistantKnowledge, shareAssistantIntentToken, type AssistantKnowledge } from '../src/utils/assistantMatch';
 
 let passed = 0;
 let failed = 0;
@@ -228,6 +228,11 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
  assert(matchAssistantKnowledge('چطور مشاوره ثبت کنم',knowledge,1)[0]?.item.id==='1','تطبیق سؤال فارسی نزدیک');
  assert(matchAssistantKnowledge('لیست دوره‌ها',knowledge,1)[0]?.item.id==='2','تحمل نیم‌فاصله و نشانه در دستیار');
  assert(matchAssistantKnowledge('آب و هوای مریخ',knowledge).length===0,'دستیار برای سؤال نامرتبط پاسخ نمی‌سازد');
+ assert(sameAssistantIntent('روش ثبت درخواست مشاوره چیست؟','چطور درخواست مشاوره را ثبت کنم؟'),'جمله‌بندی متفاوت با هدف یکسان در خوشه مشترک قرار می‌گیرد');
+ assert(!sameAssistantIntent('هزینه لغو مشاوره چقدر است؟','هزینه ثبت مشاوره چقدر است؟'),'هدف لغو با هدف ثبت مشاوره ادغام نمی‌شود');
+ assert(!compatibleAssistantIntent('قیمت دوره آنلاین چقدر است؟','قیمت دوره حضوری چقدر است؟'),'کانال آنلاین و حضوری به‌عنوان هدف متفاوت جدا می‌ماند');
+ assert(!compatibleAssistantIntent('دوره مناسب کودک ۵ ساله است؟','دوره مناسب کودک ۸ ساله است؟'),'موضوع‌های عددی متفاوت با هم ادغام نمی‌شوند');
+ assert(shareAssistantIntentToken('هزینه مشاوره کودک','قیمت مشاوره کودک'),'اشتراک موضوع برای بررسی معنایی تشخیص داده می‌شود');
  const rules:AssistantKnowledge[]=[
   {id:'r1',question:'قیمت مشاوره',answer:'برای قیمت وارد فرم شوید.',aliases:['مشاوره چنده'],keywords:[],category:'قیمت',response_mode:'exact',match_mode:'contains',priority:50},
   {id:'r2',question:'پیش بینی هوا',answer:'من درباره این موضوع اطلاعاتی ندارم.',aliases:['هوا چطوره'],keywords:[],category:'خارج از حوزه',response_mode:'refusal',match_mode:'exact',priority:50},

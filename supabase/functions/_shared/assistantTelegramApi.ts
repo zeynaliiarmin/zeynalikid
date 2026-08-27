@@ -10,7 +10,7 @@ async function telegramApi(method:string,payload:Record<string,unknown>={}){
   const token=botToken();if(!token)throw new Error('TELEGRAM_TOKEN_MISSING');
   const response=await fetch(`https://api.telegram.org/bot${token}/${method}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10_000)});
   const body=await response.json().catch(()=>null);
-  if(!response.ok||!body?.ok){console.error('assistant telegram api',method,response.status,String(body?.description||'').slice(0,180));throw new Error(`TELEGRAM_${method.toUpperCase()}_FAILED`)}
+  if(!response.ok||!body?.ok){const description=String(body?.description||'');if(method==='editMessageText'&&/message is not modified/i.test(description))return null;console.error('assistant telegram api',method,response.status,description.slice(0,180));throw new Error(`TELEGRAM_${method.toUpperCase()}_FAILED`)}
   return body.result;
 }
 
@@ -39,6 +39,7 @@ export async function repairAssistantTelegram(brand:string){
     {command:'quick',description:'آموزش با یک جمله'},
     {command:'list',description:'مدیریت دانش‌ها'},
     {command:'test',description:'آزمایش پاسخ دستیار'},
+    {command:'frequent',description:'سؤال‌های پرتکرار'},
     {command:'unanswered',description:'سؤال‌های بی‌پاسخ'},
     {command:'cancel',description:'لغو عملیات فعلی'},
     {command:'help',description:'راهنما'},
