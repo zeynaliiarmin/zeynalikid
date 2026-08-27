@@ -17,6 +17,11 @@ async function telegramApi(method:string,payload:Record<string,unknown>={}){
 export const telegramSendMessage=(chatId:string,text:string,replyMarkup?:TelegramReplyMarkup)=>telegramApi('sendMessage',{chat_id:chatId,text:String(text||'').slice(0,4090),disable_web_page_preview:true,...(replyMarkup?{reply_markup:replyMarkup}:{})});
 export const telegramEditMessage=(chatId:string,messageId:number,text:string,replyMarkup?:TelegramReplyMarkup)=>telegramApi('editMessageText',{chat_id:chatId,message_id:messageId,text:String(text||'').slice(0,4090),disable_web_page_preview:true,...(replyMarkup?{reply_markup:replyMarkup}:{})});
 export const telegramAnswerCallback=(callbackQueryId:string,text='')=>telegramApi('answerCallbackQuery',{callback_query_id:callbackQueryId,...(text?{text:String(text).slice(0,180)}:{})});
+export async function telegramSendDocument(chatId:string,filename:string,content:string,caption='',replyMarkup?:TelegramReplyMarkup){
+  const token=botToken();if(!token)throw new Error('TELEGRAM_TOKEN_MISSING');const bytes=new TextEncoder().encode(content);if(bytes.byteLength>45*1024*1024)throw new Error('TELEGRAM_DOCUMENT_TOO_LARGE');
+  const form=new FormData();form.set('chat_id',chatId);form.set('document',new Blob([bytes],{type:filename.toLowerCase().endsWith('.md')?'text/markdown; charset=utf-8':'text/plain; charset=utf-8'}),filename.replace(/[^a-zA-Z0-9._-]/g,'-').slice(0,120)||'assistant-knowledge-backup.txt');if(caption)form.set('caption',caption.slice(0,1000));if(replyMarkup)form.set('reply_markup',JSON.stringify(replyMarkup));
+  const response=await fetch(`https://api.telegram.org/bot${token}/sendDocument`,{method:'POST',body:form,signal:AbortSignal.timeout(30_000)}),body=await response.json().catch(()=>null);if(!response.ok||!body?.ok){console.error('assistant telegram document',response.status,String(body?.description||'').slice(0,180));throw new Error('TELEGRAM_SENDDOCUMENT_FAILED')}return body.result;
+}
 
 export async function getAssistantTelegramStatus(){
   const configured={token:Boolean(botToken()),owner:Boolean(assistantTelegramOwner()),webhook_secret:Boolean(assistantTelegramWebhookSecret())};
@@ -41,6 +46,8 @@ export async function repairAssistantTelegram(brand:string){
     {command:'test',description:'آزمایش پاسخ دستیار'},
     {command:'frequent',description:'سؤال‌های پرتکرار'},
     {command:'unanswered',description:'سؤال‌های بی‌پاسخ'},
+    {command:'backup',description:'دریافت بکاپ کامل هر دو دستیار'},
+
     {command:'cancel',description:'لغو عملیات فعلی'},
     {command:'help',description:'راهنما'},
   ],scope:{type:'all_private_chats'}});

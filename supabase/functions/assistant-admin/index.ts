@@ -1,12 +1,13 @@
 import {serve} from 'https://deno.land/std@0.177.0/http/server.ts';
 import {getSupabaseAdmin} from '../_shared/supabaseClient.ts';
-import {handleOptions,jsonResponse,getOrigin} from '../_shared/cors.ts';
+import {handleOptions,jsonResponse,getOrigin,corsHeaders} from '../_shared/cors.ts';
 import {validateAdminSession,extractSessionToken} from '../_shared/adminAuth.ts';
 import {centralRateLimit} from '../_shared/rateLimit.ts';
 import {findKnowledgeRule,normalizeAssistantText} from '../_shared/assistantMatch.ts';
 import {generateGroundedAssistant,relatedKnowledge,sanitizeAssistantQuestion,type AssistantSource,type ScopedKnowledge} from '../_shared/generativeAssistant.ts';
 import {cleanList,parseAssistantInstruction,safeAdminTab,safePublicPath,sanitizeKnowledgeActions,sanitizeMatchMode,sanitizeResponseMode} from '../_shared/assistantTraining.ts';
 import {getAssistantTelegramStatus,repairAssistantTelegram} from '../_shared/assistantTelegramApi.ts';
+import {buildAssistantKnowledgeBackup} from '../_shared/assistantKnowledgeExport.ts';
 
 const BRAND='زینالیکید';
 const text=(value:unknown,max:number)=>String(value||'').trim().slice(0,max);
@@ -35,7 +36,21 @@ async function searchCustomers(db:any,question:string,auth:any,origin:string){
   return jsonResponse({ok:true,answer:results.length?`${results.length} نتیجه منطبق پیدا شد. شماره‌ها و نام‌ها در چت ماسک شده‌اند؛ برای جزئیات کامل پرونده را داخل پنل باز کنید.`:'نتیجه منطبقی پیدا نشد. بخشی دیگر از نام، شماره، کد پیگیری، دوره یا موضوع را امتحان کنید.',model:'internal-private-search',sources:[],actions:[],suggestions:['جست‌وجو با بخشی از شماره تماس','جست‌وجو با نام دوره یا موضوع مشاوره'],customer_results:results,provider_called:false},200,origin);
 }
 
-async function testKnowledge(db:any,scope:'public'|'admin',question:string){
+type KnowledgeScope='public'|'admin';
+type KnowledgeSelection=KnowledgeScope|'both';
+const selectionFrom=(value:unknown):KnowledgeSelection=>value==='admin'?'admin':value==='both'?'both':'public';
+const selectedScopes=(selection:KnowledgeSelection):KnowledgeScope[]=>selection==='both'?['public','admin']:[selection];
+const tableFor=(scope:KnowledgeScope)=>scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge';
+const itemFor=(scope:KnowledgeScope,source:any)=>scope==='admin'?adminItem(source):publicItem(source);
+async function matchingKnowledgeId(db:any,scope:KnowledgeScope,question:string){
+  const {data,error}=await db.from(tableFor(scope)).select('id,question').limit(5000);if(error)throw error;const needle=normalizeAssistantText(question);return String((data||[]).find((row:any)=>normalizeAssistantText(row.question)===needle)?.id||'');
+}
+async function saveKnowledgeScope(db:any,scope:KnowledgeScope,source:any,requestedId='',matchQuestion=''){
+  const item:any=itemFor(scope,source);if(item.question.length<2||item.answer.length<2)throw new Error('ASSISTANT_REQUIRED_FIELDS');
+  const tableName=tableFor(scope),table:any=db.from(tableName),id=text(requestedId,50)||(matchQuestion?await matchingKnowledgeId(db,scope,matchQuestion):''),query=id?table.update(item).eq('id',id).select().single():table.insert(item).select().single(),{data,error}=await query;if(error)throw error;return {item:data,scope,id:String(data?.id||''),tableName,created:!id};
+}
+
+async function testKnowledge(db:any,scope:KnowledgeScope,question:string){
   const table=scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge';
   const fields=scope==='admin'?'id,question,answer,aliases,keywords,category,priority,target_tab,target_focus,action_label,response_mode,match_mode':'id,question,answer,aliases,keywords,category,priority,link_url,link_label,actions,response_mode,match_mode';
   const {data,error}=await db.from(table).select(fields).eq('status','published').eq('is_active',true).order('priority',{ascending:false}).limit(500);if(error)throw error;
@@ -63,25 +78,51 @@ serve(async req=>{
       return jsonResponse({ok:true,answer,model:result.model,sources:result.sources,actions:actionsFrom(result.sources),suggestions:suggestionsFrom(result.sources,question),customer_results:[],provider_called:result.providerCalled,provider_notice:providerError?'پاسخ داخلی نمایش داده شد.':''},200,origin);
     }
     if(action==='test_knowledge'){
-      const question=sanitizeAssistantQuestion(body.question),scope=body.scope==='admin'?'admin':'public';if(normalizeAssistantText(question).length<2)return jsonResponse({error:'سؤال آزمایشی معتبر نیست'},400,origin);const result=await testKnowledge(db,scope,question);await audit(db,auth,'assistant_knowledge_test',scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge','',{scope,model:result.model});return jsonResponse(result,200,origin);
+      const question=sanitizeAssistantQuestion(body.question),selection=selectionFrom(body.scope);if(normalizeAssistantText(question).length<2)return jsonResponse({error:'سؤال آزمایشی معتبر نیست'},400,origin);
+      if(selection==='both'){
+        const [publicResult,adminResult]=await Promise.all([testKnowledge(db,'public',question),testKnowledge(db,'admin',question)]);await audit(db,auth,'assistant_knowledge_test','assistant_knowledge','',{scope:'both',models:{public:publicResult.model,admin:adminResult.model}});return jsonResponse({ok:true,scope:'both',results:{public:publicResult,admin:adminResult},needs_training:publicResult.needs_training===true||adminResult.needs_training===true,provider_called:publicResult.provider_called||adminResult.provider_called},200,origin);
+      }
+      const result=await testKnowledge(db,selection,question);await audit(db,auth,'assistant_knowledge_test',tableFor(selection),'',{scope:selection,model:result.model});return jsonResponse({...result,scope:selection},200,origin);
     }
     if(action==='parse_instruction'){
-      const limited=await centralRateLimit(req,'assistant-instruction-parser',{maxRequests:10,windowMs:60_000,blockMs:60_000},auth.session.sessionId);if(!limited.ok)return jsonResponse({error:'لطفاً کمی بعد دوباره تلاش کنید.'},429,origin);const parsed=await parseAssistantInstruction({instruction:body.instruction,brand:BRAND,scopeHint:body.scope==='admin'?'admin':'public'});return jsonResponse({ok:true,draft:parsed},200,origin);
+      const limited=await centralRateLimit(req,'assistant-instruction-parser',{maxRequests:10,windowMs:60_000,blockMs:60_000},auth.session.sessionId);if(!limited.ok)return jsonResponse({error:'لطفاً کمی بعد دوباره تلاش کنید.'},429,origin);const selection=selectionFrom(body.scope),parsed=await parseAssistantInstruction({instruction:body.instruction,brand:BRAND,scopeHint:selection==='admin'?'admin':'public'});return jsonResponse({ok:true,draft:{...parsed,scope:selection}},200,origin);
     }
     if(action==='telegram_status')return jsonResponse({ok:true,status:await getAssistantTelegramStatus()},200,origin);
     if(action==='telegram_repair'){const status=await repairAssistantTelegram(BRAND);await audit(db,auth,'assistant_telegram_repair','assistant_telegram');return jsonResponse({ok:true,status},200,origin)}
+    if(action==='export_knowledge'){
+      const backup=await buildAssistantKnowledgeBackup(db,BRAND);await audit(db,auth,'assistant_knowledge_export','assistant_knowledge','',{counts:backup.counts});return new Response(backup.content,{status:200,headers:{'Content-Type':'text/markdown; charset=utf-8','Content-Disposition':`attachment; filename="${backup.filename}"`,'X-Backup-Filename':backup.filename,'Access-Control-Expose-Headers':'Content-Disposition, X-Backup-Filename',...corsHeaders(origin)}});
+    }
     if(action==='save'){
-      const scope=body.scope==='admin'?'admin':'public',item:any=scope==='admin'?adminItem(body.item):publicItem(body.item);if(item.question.length<2||item.answer.length<2)return jsonResponse({error:'سؤال و پاسخ الزامی است'},400,origin);const id=text(body.item?.id,50),tableName=scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge',table:any=db.from(tableName),query=id?table.update(item).eq('id',id).select().single():table.insert(item).select().single(),{data,error}=await query;if(error)throw error;await audit(db,auth,id?'assistant_update':'assistant_create',tableName,String(data?.id||''),{status:item.status,scope,response_mode:item.response_mode,match_mode:item.match_mode});return jsonResponse({item:data,scope},200,origin);
+      const selection=selectionFrom(body.scope),source=body.item||{};if(text(source.question,500).length<2||text(source.answer,6000).length<2)return jsonResponse({error:'سؤال و پاسخ الزامی است'},400,origin);
+      const matchQuestion=selection==='both'?text(source.original_question||source.question,500):'',results:any[]=[];
+      for(const scope of selectedScopes(selection)){
+        const requestedId=text(source?.[`${scope}_id`]||(source?.source_scope===scope?source?.id:''),50)||(selection!=='both'?text(source?.id,50):'');
+        const saved=await saveKnowledgeScope(db,scope,source,requestedId,matchQuestion);results.push(saved);await audit(db,auth,saved.created?'assistant_create':'assistant_update',saved.tableName,saved.id,{status:saved.item?.status,scope,response_mode:saved.item?.response_mode,match_mode:saved.item?.match_mode,selection});
+      }
+      if(selection==='both')return jsonResponse({ok:true,scope:'both',items:Object.fromEntries(results.map(result=>[result.scope,result.item]))},200,origin);return jsonResponse({item:results[0].item,scope:selection},200,origin);
     }
     if(action==='delete'){
-      const scope=body.scope==='admin'?'admin':'public',id=text(body.id,50),table=scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge';if(!id||body.confirm!==true)return jsonResponse({error:'تأیید حذف لازم است'},400,origin);const {error}=await db.from(table).delete().eq('id',id);if(error)throw error;await audit(db,auth,'assistant_delete',table,id,{scope});return jsonResponse({ok:true},200,origin);
+      const selection=selectionFrom(body.scope),id=text(body.id,50);if(body.confirm!==true||(!id&&!text(body.question,500)))return jsonResponse({error:'تأیید حذف لازم است'},400,origin);
+      if(selection!=='both'){
+        const table=tableFor(selection);const {error}=await db.from(table).delete().eq('id',id);if(error)throw error;await audit(db,auth,'assistant_delete',table,id,{scope:selection});return jsonResponse({ok:true,deleted:{[selection]:id?1:0}},200,origin);
+      }
+      let question=text(body.question,500);if(!question&&id){for(const scope of selectedScopes(selection)){const {data}=await db.from(tableFor(scope)).select('question').eq('id',id).maybeSingle();if(data?.question){question=String(data.question);break}}}
+      const needle=normalizeAssistantText(question),deleted:Record<KnowledgeScope,number>={public:0,admin:0};
+      for(const scope of selectedScopes(selection)){
+        const table=tableFor(scope),explicitId=text(body?.[`${scope}_id`],50),{data,error:listError}=await db.from(table).select('id,question').limit(5000);if(listError)throw listError;const ids=(data||[]).filter((row:any)=>normalizeAssistantText(row.question)===needle||String(row.id)===explicitId||String(row.id)===id).map((row:any)=>String(row.id));if(ids.length){const {error}=await db.from(table).delete().in('id',ids);if(error)throw error;deleted[scope]=ids.length;await audit(db,auth,'assistant_delete',table,ids[0],{scope,selection:'both',count:ids.length})}
+      }
+      return jsonResponse({ok:true,deleted},200,origin);
     }
     if(action==='settings'){
       const suggestions=Array.isArray(body.settings?.suggested_questions)?body.settings.suggested_questions.slice(0,10).map((item:any)=>({question:text(item?.question,500),label:text(item?.label||item?.question,100),path:safePublicPath(item?.path)})).filter((item:any)=>item.question):[];const settings={enabled:body.settings?.enabled===true,welcome_message:text(body.settings?.welcome_message,1000),fallback_message:text(body.settings?.fallback_message,1500),disclaimer:text(body.settings?.disclaimer,1200),admin_block_message:text(body.settings?.admin_block_message,1500),suggested_questions:suggestions,frequent_question_threshold:Math.max(2,Math.min(100,Number(body.settings?.frequent_question_threshold)||3))},{data,error}=await db.from('assistant_settings').update(settings).eq('key','default').select().single();if(error)throw error;await audit(db,auth,'assistant_settings_update','assistant_settings','default',{enabled:settings.enabled,revision:Number(data?.revision||0)});return jsonResponse({settings:data},200,origin);
     }
     if(action==='unanswered_status'){const id=Number(body.id),status=['pending','resolved','ignored'].includes(body.status)?body.status:'pending';if(!Number.isSafeInteger(id))return jsonResponse({error:'شناسه معتبر نیست'},400,origin);const {error}=await db.from('assistant_unanswered').update({status}).eq('id',id);if(error)throw error;return jsonResponse({ok:true},200,origin)}
     if(action==='batch_import'){
-      const incoming=Array.isArray(body.items)?body.items.slice(0,150):[],{data:existing}=await db.from('assistant_knowledge').select('question'),known=new Set((existing||[]).map((item:any)=>String(item.question||'').trim().toLowerCase())),rows=incoming.map(publicItem).filter((item:any)=>item.question.length>1&&item.answer.length>1&&!known.has(item.question.toLowerCase()));if(!rows.length)return jsonResponse({ok:true,imported:0},200,origin);const {error}=await db.from('assistant_knowledge').insert(rows);if(error)throw error;await audit(db,auth,'assistant_import','assistant_knowledge','',{count:rows.length});return jsonResponse({ok:true,imported:rows.length},200,origin);
+      const incoming=Array.isArray(body.items)?body.items.slice(0,150):[],selection=selectionFrom(body.scope),imported:Record<KnowledgeScope,number>={public:0,admin:0};
+      for(const scope of selectedScopes(selection)){
+        const table=tableFor(scope),{data:existing,error:listError}=await db.from(table).select('question').limit(5000);if(listError)throw listError;const known=new Set((existing||[]).map((item:any)=>normalizeAssistantText(item.question))),rows=incoming.map((item:any)=>itemFor(scope,item)).filter((item:any)=>item.question.length>1&&item.answer.length>1&&!known.has(normalizeAssistantText(item.question)));if(rows.length){const {error}=await db.from(table).insert(rows);if(error)throw error;imported[scope]=rows.length;await audit(db,auth,'assistant_import',table,'',{scope,selection,count:rows.length})}
+      }
+      return jsonResponse({ok:true,scope:selection,imported:selection==='both'?imported:imported[selection],counts:imported},200,origin);
     }
     return jsonResponse({error:'Action not allowed'},400,origin);
   }catch(error){const code=String((error as Error)?.message||error);console.error('assistant-admin:',code);const friendly=code.startsWith('MISTRAL_')?'تحلیل هوشمند موقتاً در دسترس نیست؛ دوباره تلاش کنید.':code.startsWith('TELEGRAM_')?'اتصال تلگرام کامل نیست یا موقتاً پاسخ نمی‌دهد.':'عملیات دستیار انجام نشد';return jsonResponse({error:friendly},500,origin)}
