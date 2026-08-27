@@ -30,6 +30,7 @@ globalThis.fetch=originalFetch;
 const static404=await readFile(new URL('../public/404.html',import.meta.url),'utf8');
 if(!static404.includes('zk_design_system')||!static404.includes('/functions/v1/public-settings')||!static404.includes('data-design="classic"'))throw new Error('Static 404 is not design-aware.');
 if((static404.match(/class="nf-shortcut /g)||[]).length!==6)throw new Error('Static 404 must expose exactly six concise shortcuts.');
+if(!static404.includes('<p>صفحه‌ای که دنبالش بودی، پیدا نشد. مسیر درست را از بین گزینه‌های زیر پیدا کن!</p>')||!static404.includes('<strong>ارتباط با ما و پشتیبانی</strong>'))throw new Error('Static 404 exact Persian copy is incomplete.');
 for(const path of ['/consultation','/courses','/experience','/licenses','/education','/contact'])if(!static404.includes(`href="${path}"`))throw new Error(`Static 404 shortcut missing: ${path}`);
 if(/\p{Extended_Pictographic}/u.test(static404))throw new Error('Static 404 must not contain emoji.');
 const kidlearn404=renderNotFoundPage({brand:'Test',defaultDesign:'kidlearn',defaultTheme:'light'});

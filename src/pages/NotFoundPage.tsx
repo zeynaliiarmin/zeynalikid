@@ -37,14 +37,14 @@ export default function NotFoundPage(){
   {title:en?"Parents' stories":'تجربه والدین',aria:en?"View parents' stories":'رفتن به تجربه والدین',icon:<VideoIcon size={20} color={iconColor}/>,tone:'yellow',run:()=>setView('experience')},
   {title:en?'Licenses and badges':'مجوزها و نمادها',aria:en?'View licenses and trust badges':'رفتن به مجوزها و نمادها',icon:<LicensesIcon size={20} color={iconColor}/>,tone:'violet',run:()=>setView('licenses')},
   {title:en?'Educational articles':'مقالات آموزشی',aria:en?'View educational articles':'رفتن به مقالات آموزشی',icon:<EducationIcon size={20} color={iconColor}/>,tone:'green',run:()=>setView('education')},
-  {title:en?'Contact and support':'ارتباط و پشتیبانی',aria:en?'Contact support':'رفتن به ارتباط با ما و پشتیبانی',icon:<ContactIcon size={20} color={iconColor}/>,tone:'orange',run:()=>setView('contact')},
+  {title:en?'Contact and support':'ارتباط با ما و پشتیبانی',aria:en?'Contact support':'رفتن به ارتباط با ما و پشتیبانی',icon:<ContactIcon size={20} color={iconColor}/>,tone:'orange',run:()=>setView('contact')},
  ];
  return <main className="zk-nf-page" style={vars} aria-labelledby="not-found-title" dir={en?'ltr':'rtl'}>
   <Helmet><title>{en?`Page not found | ${brand}`:`صفحه پیدا نشد | ${brand}`}</title><meta name="robots" content="noindex, nofollow"/></Helmet>
   <section className="zk-nf-shell">
    <header className="zk-nf-top"><div className="zk-nf-brand"><span className="zk-nf-brand-mark"/><span>{brand}</span></div><button className="zk-nf-home-icon" type="button" onClick={()=>setView('home')} aria-label={en?'Back to home':'بازگشت به صفحه اصلی'}><HomeIcon size={19} color="currentColor"/></button></header>
    <MemphisArtwork/>
-   <div className="zk-nf-copy"><h1 id="not-found-title">{en?<>Well, where are we<span>!</span></>:<>عه<span>!</span> اینجا کجاست؟</>}</h1><p>{en?<>The page you were looking for could not be found.<br/>Choose the right path from the options below.</>:<>صفحه‌ای که دنبالش بودی، پیدا نشد.<br/>مسیر درست را از بین گزینه‌های زیر پیدا کن!</>}</p></div>
+   <div className="zk-nf-copy"><h1 id="not-found-title">{en?<>Well, where are we<span>!</span></>:<>عه<span>!</span> اینجا کجاست؟</>}</h1><p>{en?<>The page you were looking for could not be found.<br/>Choose the right path from the options below.</>:<>صفحه‌ای که دنبالش بودی، پیدا نشد. مسیر درست را از بین گزینه‌های زیر پیدا کن!</>}</p></div>
    <nav className="zk-nf-shortcuts" aria-label={en?'Quick access':'دسترسی سریع'}>{shortcuts.map(item=><button key={item.title} className={`zk-nf-shortcut zk-nf-tone-${item.tone}`} type="button" onClick={item.run} aria-label={item.aria}><span className="zk-nf-shortcut-icon">{item.icon}</span><strong>{item.title}</strong><ArrowBackIcon/></button>)}</nav>
    <button className="zk-nf-primary" type="button" onClick={()=>setView('home')}><HomeIcon size={20} color="currentColor"/><strong>{en?'Back to home':'بازگشت به صفحه اصلی'}</strong><ArrowBackIcon/></button>
   </section>
