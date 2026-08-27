@@ -1,52 +1,91 @@
+import {useEffect, type ReactNode} from 'react';
 import {Helmet} from 'react-helmet-async';
-import type {CSSProperties,ReactNode} from 'react';
 import {useAppContext} from '../app/AppContext';
 import {ConsultIcon,CoursesIcon,VideoIcon,LicensesIcon,EducationIcon,ContactIcon,HomeIcon} from '../components/Icons';
 import './not-found-page.css';
 
 type Shortcut={title:string;aria:string;icon:ReactNode;tone:string;run:()=>void};
-type NotFoundVars=CSSProperties&Record<`--nf-${string}`,string>;
 
-function ArrowBackIcon(){return <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>}
-function MemphisArtwork(){return <div className="zk-nf-art" aria-hidden="true">
- <svg className="zk-nf-decor" viewBox="0 0 760 270" preserveAspectRatio="xMidYMid meet">
-  <g className="zk-nf-dot-grid" fill="var(--nf-pop-2)">{Array.from({length:20},(_,index)=><circle key={index} cx={66+(index%5)*13} cy={155+Math.floor(index/5)*13} r="2.6"/>)}</g>
-  <path className="zk-nf-squiggle" d="M78 70c14-24 28 24 42 0s28 24 42 0 28 24 42 0" fill="none" stroke="var(--nf-pop-3)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-  <g className="zk-nf-plane-wrap">
-   <path className="zk-nf-flight" d="M550 122c39-55 103-48 115-4 9 33-21 51-50 35-20-11-16-39 9-53" fill="none" stroke="var(--nf-pop-2)" strokeWidth="3" strokeDasharray="7 9" strokeLinecap="round"/>
-   <g className="zk-nf-plane" transform="translate(624 69) rotate(-12)"><path d="M0 28 70 0 45 48 27 31Z" fill="var(--nf-pop-1)"/><path d="m27 31 43-31-35 37-8 22Z" fill="var(--nf-pop-2)"/><path d="m27 31 18 17-10-11L70 0Z" fill="var(--nf-surface)" opacity=".72"/></g>
-  </g>
-  <g className="zk-nf-striped-ball" transform="translate(104 205) rotate(-14)"><circle r="34" fill="var(--nf-pop-5)"/><path d="M-31-12C-12-24 12-24 31-12M-34 2C-12-10 12-10 34 2M-29 17C-9 6 12 6 29 17" fill="none" stroke="var(--nf-surface)" strokeWidth="8" opacity=".66"/></g>
-  <path className="zk-nf-triangle" d="m674 205 22 38-44-1Z" fill="var(--nf-pop-4)"/>
-  <circle className="zk-nf-small-ring" cx="579" cy="219" r="13" fill="none" stroke="var(--nf-pop-1)" strokeWidth="6"/>
- </svg>
- <div className="zk-nf-code" dir="ltr"><span className="zk-nf-four">4</span><span className="zk-nf-zero"><span/></span><span className="zk-nf-four">4</span></div>
- </div>}
+function Memphis404Artwork(){
+ return <div className="zk-nf-art" role="img" aria-label="خطای ۴۰۴">
+  <svg viewBox="0 0 400 170" width="100%" height="150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+   <defs>
+    <filter id="neu-4-shadow" x="-20%" y="-20%" width="140%" height="140%">
+     <feDropShadow dx="5" dy="6" stdDeviation="5" floodColor="#b4d4cb" floodOpacity="0.85"/>
+     <feDropShadow dx="-4" dy="-4" stdDeviation="4" floodColor="#ffffff" floodOpacity="0.95"/>
+    </filter>
+    <filter id="donut-shadow" x="-20%" y="-20%" width="140%" height="140%">
+     <feDropShadow dx="4" dy="7" stdDeviation="7" floodColor="#9cbdb5" floodOpacity="0.75"/>
+    </filter>
+    <mask id="donut-hole-mask">
+     <rect width="400" height="170" fill="white"/>
+     <circle cx="200" cy="85" r="26" fill="black"/>
+    </mask>
+   </defs>
+   <path d="M 40 38 Q 50 25, 62 38 T 84 38 T 106 38" fill="none" stroke="#FBBF24" strokeWidth="4.5" strokeLinecap="round"/>
+   <g transform="translate(305, 22) rotate(12) scale(0.85)">
+    <path d="M 0 15 L 42 0 L 24 32 L 18 18 Z" fill="#F472B6"/>
+    <path d="M 18 18 L 42 0 L 24 32 Z" fill="#EC4899"/>
+    <path d="M -25 30 Q -10 14, 0 16" fill="none" stroke="#818CF8" strokeWidth="2.2" strokeDasharray="3.5 3.5" strokeLinecap="round"/>
+   </g>
+   <g transform="translate(48, 105)">
+    <circle cx="18" cy="18" r="16" fill="#8B5CF6"/>
+    <path d="M 3 13 Q 18 17 33 13" stroke="#EDE9FE" strokeWidth="2.5" fill="none"/>
+    <path d="M 3 22 Q 18 26 33 22" stroke="#EDE9FE" strokeWidth="2.5" fill="none"/>
+   </g>
+   <polygon points="325,120 345,150 305,150" fill="#10B981"/>
+   <circle cx="346" cy="112" r="3.5" fill="#EC4899"/>
+   <text x="92" y="122" fontFamily="system-ui, sans-serif" fontSize="115" fontWeight="900" fill="#D9ECE7" stroke="#A7CEC4" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
+   <g mask="url(#donut-hole-mask)" filter="url(#donut-shadow)">
+    <path d="M 200 85 L 145 85 A 55 55 0 0 1 200 30 Z" fill="#0D9488"/>
+    <path d="M 200 85 L 200 30 A 55 55 0 0 1 255 85 Z" fill="#FB923C"/>
+    <path d="M 200 85 L 255 85 A 55 55 0 0 1 200 140 Z" fill="#FACC15"/>
+    <path d="M 200 85 L 200 140 A 55 55 0 0 1 145 85 Z" fill="#EC4899"/>
+    <circle cx="168" cy="112" r="3" fill="#FFFFFF"/>
+    <circle cx="184" cy="126" r="2.5" fill="#FFFFFF"/>
+    <line x1="218" y1="46" x2="234" y2="62" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
+    <line x1="228" y1="62" x2="244" y2="78" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
+    <circle cx="174" cy="60" r="2.8" fill="#A7F3D0"/>
+   </g>
+   <circle cx="200" cy="85" r="26" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="2"/>
+   <circle cx="200" cy="85" r="55" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2"/>
+   <text x="308" y="122" fontFamily="system-ui, sans-serif" fontSize="115" fontWeight="900" fill="#D9ECE7" stroke="#A7CEC4" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
+  </svg>
+ </div>;
+}
 
 export default function NotFoundPage(){
- const {cfg,T,lang,setView,requestConsult}=useAppContext(),en=lang==='en';
- const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
- const dark=['dark','ocean','navystack','navystack-dark'].includes(String(T.id||''));
- const vars:NotFoundVars={
-  '--nf-page-bg':String(T.bg||'#f6f3fb'),'--nf-surface':String(T.card||'#fff'),'--nf-soft':String(T.soft||'#f1eafb'),'--nf-text':String(T.txt||'#251b32'),'--nf-muted':String(T.mut||'#74677f'),'--nf-accent':String(T.acc||'#7c3aed'),'--nf-title':String(T.ttl||T.acc||'#7c3aed'),'--nf-border':String(T.brd||'rgba(124,58,237,.14)'),'--nf-gradient':String(T.grad||'linear-gradient(135deg,#7c3aed,#ec4899)'),'--nf-neu-out':String(T.neuOut||'6px 6px 16px rgba(80,60,110,.14),-6px -6px 16px rgba(255,255,255,.85)'),'--nf-neu-in':String(T.neuIn||'inset 4px 4px 8px rgba(80,60,110,.13),inset -4px -4px 8px rgba(255,255,255,.8)'),'--nf-shadow-hi':dark?'rgba(255,255,255,.055)':'rgba(255,255,255,.9)','--nf-shadow-lo':dark?'rgba(0,0,0,.46)':'color-mix(in srgb, var(--nf-accent) 16%, transparent)','--nf-pop-1':dark?'#f472b6':'color-mix(in srgb, var(--nf-accent) 38%, #f472b6)','--nf-pop-2':String(T.secondary||T.primaryHover||'#38bdf8'),'--nf-pop-3':String(T.tertiary||T.warn||'#facc15'),'--nf-pop-4':String(T.ok||T.success||'#34d399'),'--nf-pop-5':String(T.purple||T.brandPurple||T.acc||'#8b5cf6')
- };
- const iconColor='currentColor';
+ const {setView,requestConsult}=useAppContext();
+ useEffect(()=>{
+  const html=document.documentElement,body=document.body;
+  html.classList.add('zk-nf-locked');body.classList.add('zk-nf-locked');
+  return()=>{html.classList.remove('zk-nf-locked');body.classList.remove('zk-nf-locked')};
+ },[]);
  const shortcuts:Shortcut[]=[
-  {title:en?'Consultation':'درخواست مشاوره',aria:en?'Request a consultation':'رفتن به ثبت درخواست مشاوره',icon:<ConsultIcon size={20} color={iconColor}/>,tone:'pink',run:()=>requestConsult?.()},
-  {title:en?'Courses':'معرفی دوره‌ها',aria:en?'View courses':'رفتن به معرفی دوره‌ها',icon:<CoursesIcon size={20} color={iconColor}/>,tone:'blue',run:()=>setView('courses')},
-  {title:en?"Parents' stories":'تجربه والدین',aria:en?"View parents' stories":'رفتن به تجربه والدین',icon:<VideoIcon size={20} color={iconColor}/>,tone:'yellow',run:()=>setView('experience')},
-  {title:en?'Licenses and badges':'مجوزها و نمادها',aria:en?'View licenses and trust badges':'رفتن به مجوزها و نمادها',icon:<LicensesIcon size={20} color={iconColor}/>,tone:'violet',run:()=>setView('licenses')},
-  {title:en?'Educational articles':'مقالات آموزشی',aria:en?'View educational articles':'رفتن به مقالات آموزشی',icon:<EducationIcon size={20} color={iconColor}/>,tone:'green',run:()=>setView('education')},
-  {title:en?'Contact and support':'ارتباط با ما و پشتیبانی',aria:en?'Contact support':'رفتن به ارتباط با ما و پشتیبانی',icon:<ContactIcon size={20} color={iconColor}/>,tone:'orange',run:()=>setView('contact')},
+  {title:'درخواست مشاوره',aria:'رفتن به ثبت درخواست مشاوره',icon:<ConsultIcon size={18} color="currentColor"/>,tone:'pink',run:()=>requestConsult?.()},
+  {title:'معرفی دوره‌ها',aria:'رفتن به معرفی دوره‌ها',icon:<CoursesIcon size={18} color="currentColor"/>,tone:'blue',run:()=>setView('courses')},
+  {title:'تجربه والدین',aria:'رفتن به تجربه والدین',icon:<VideoIcon size={18} color="currentColor"/>,tone:'yellow',run:()=>setView('experience')},
+  {title:'مجوزها و نمادها',aria:'رفتن به مجوزها و نمادها',icon:<LicensesIcon size={18} color="currentColor"/>,tone:'violet',run:()=>setView('licenses')},
+  {title:'مقالات آموزشی',aria:'رفتن به مقالات آموزشی',icon:<EducationIcon size={18} color="currentColor"/>,tone:'green',run:()=>setView('education')},
+  {title:'ارتباط و پشتیبانی',aria:'رفتن به ارتباط و پشتیبانی',icon:<ContactIcon size={18} color="currentColor"/>,tone:'orange',run:()=>setView('contact')},
  ];
- return <main className="zk-nf-page" style={vars} aria-labelledby="not-found-title" dir={en?'ltr':'rtl'}>
-  <Helmet><title>{en?`Page not found | ${brand}`:`صفحه پیدا نشد | ${brand}`}</title><meta name="robots" content="noindex, nofollow"/></Helmet>
+ const goHome=()=>setView('home');
+ return <main className="zk-nf-page" aria-labelledby="not-found-title" dir="rtl">
+  <Helmet><title>صفحه پیدا نشد | زینالیکید</title><meta name="robots" content="noindex, nofollow"/></Helmet>
   <section className="zk-nf-shell">
-   <header className="zk-nf-top"><div className="zk-nf-brand"><span className="zk-nf-brand-mark"/><span>{brand}</span></div><button className="zk-nf-home-icon" type="button" onClick={()=>setView('home')} aria-label={en?'Back to home':'بازگشت به صفحه اصلی'}><HomeIcon size={19} color="currentColor"/></button></header>
-   <MemphisArtwork/>
-   <div className="zk-nf-copy"><h1 id="not-found-title">{en?<>Well, where are we<span>!</span></>:<>عه<span>!</span> اینجا کجاست؟</>}</h1><p>{en?<>The page you were looking for could not be found.<br/>Choose the right path from the options below.</>:<>صفحه‌ای که دنبالش بودی، پیدا نشد. مسیر درست را از بین گزینه‌های زیر پیدا کن!</>}</p></div>
-   <nav className="zk-nf-shortcuts" aria-label={en?'Quick access':'دسترسی سریع'}>{shortcuts.map(item=><button key={item.title} className={`zk-nf-shortcut zk-nf-tone-${item.tone}`} type="button" onClick={item.run} aria-label={item.aria}><span className="zk-nf-shortcut-icon">{item.icon}</span><strong>{item.title}</strong><ArrowBackIcon/></button>)}</nav>
-   <button className="zk-nf-primary" type="button" onClick={()=>setView('home')}><HomeIcon size={20} color="currentColor"/><strong>{en?'Back to home':'بازگشت به صفحه اصلی'}</strong><ArrowBackIcon/></button>
+   <header className="zk-nf-top">
+    <div className="zk-nf-brand"><span>زینالیکید</span><span className="zk-nf-brand-mark" aria-hidden="true"/></div>
+    <button className="zk-nf-home-icon" type="button" onClick={goHome} aria-label="صفحه اصلی"><HomeIcon size={20} color="currentColor"/></button>
+   </header>
+   <Memphis404Artwork/>
+   <div className="zk-nf-copy">
+    <h1 id="not-found-title"><span>عه</span><b>!</b>{' '}<span>اینجا کجاست؟</span></h1>
+    <p><span>صفحه‌ای که دنبالش بودی، پیدا نشد.</span><br/><span>مسیر درست را از بین گزینه‌های زیر پیدا کن!</span></p>
+   </div>
+   <nav className="zk-nf-shortcuts" aria-label="دسترسی سریع">
+    {shortcuts.map(item=><button key={item.title} className={`zk-nf-shortcut zk-nf-tone-${item.tone}`} type="button" onClick={item.run} aria-label={item.aria}><strong>{item.title}</strong><span className="zk-nf-shortcut-icon">{item.icon}</span></button>)}
+   </nav>
+   <button className="zk-nf-primary" type="button" onClick={goHome}><HomeIcon size={18} color="currentColor"/><strong>بازگشت به صفحه اصلی</strong></button>
   </section>
  </main>;
 }
