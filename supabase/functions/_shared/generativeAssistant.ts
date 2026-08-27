@@ -23,6 +23,9 @@ export interface AssistantSource {
   target_tab:string;
   target_focus:string;
   action_label:string;
+  actions:Array<{label:string;path:string}>;
+  response_mode:string;
+  match_mode:string;
   score:number;
 }
 
@@ -76,6 +79,7 @@ function buildReference(matches:ReturnType<typeof matchKnowledge>):string{
     `سؤال مرجع: ${scrub(item.question,500)}`,
     `پاسخ تأییدشده: ${scrub(item.answer,2400)}`,
     `دسته‌بندی: ${scrub(item.category||'عمومی',80)}`,
+    `شیوه پاسخ: ${scrub((item as ScopedKnowledge).response_mode||'grounded',20)}`,
   ].join('\n')).join('\n\n').slice(0,12000);
 }
 
@@ -97,7 +101,7 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
     const scoped=item as ScopedKnowledge;
     return {
       id:String(scoped.id||''),question:String(scoped.question||'').slice(0,500),answer:String(scoped.answer||'').slice(0,6000),category:String(scoped.category||'عمومی').slice(0,80),
-      link_url:String(scoped.link_url||'').slice(0,500),link_label:String(scoped.link_label||'').slice(0,100),target_tab:String(scoped.target_tab||'').slice(0,50),target_focus:String(scoped.target_focus||'').slice(0,120),action_label:String(scoped.action_label||'').slice(0,100),score:Math.round(score*1000)/1000,
+      link_url:String(scoped.link_url||'').slice(0,500),link_label:String(scoped.link_label||'').slice(0,100),target_tab:String(scoped.target_tab||'').slice(0,50),target_focus:String(scoped.target_focus||'').slice(0,120),action_label:String(scoped.action_label||'').slice(0,100),actions:Array.isArray(scoped.actions)?scoped.actions.slice(0,3).map((item:any)=>({label:String(item?.label||'').slice(0,100),path:String(item?.path||'').slice(0,500)})):[],response_mode:String(scoped.response_mode||'grounded'),match_mode:String(scoped.match_mode||'smart'),score:Math.round(score*1000)/1000,
     };
   });
   if(!matches.length)return {answer:'',model:MISTRAL_ASSISTANT_MODEL,sources:[],providerCalled:false};

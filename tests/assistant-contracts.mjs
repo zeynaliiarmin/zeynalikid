@@ -1,14 +1,113 @@
 import {readFile} from 'node:fs/promises';
-const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');const optional=async path=>read(path).catch(()=> '');
-const [migration,publicFn,adminFn,generator,telegramFn,widget,css,app,adminPanel,adminWidget,manager,adminApi,backup,publicSettings]=await Promise.all([read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AdminAssistantWidget.tsx'),read('src/admin/AssistantManager.tsx'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts')]);
-const failures=[];const need=(source,text,label)=>{if(!source.includes(text))failures.push(label)};const forbid=(source,pattern,label)=>{if(pattern.test(source))failures.push(label)};
-need(migration,'assistant_admin_knowledge','physically separate admin knowledge table missing');need(migration,'alter table public.assistant_admin_knowledge enable row level security','admin knowledge RLS missing');need(migration,"revoke all on public.assistant_knowledge",'assistant tables are not revoked from browser roles');
-need(publicFn,"action==='generate'",'public generation action missing');need(publicFn,'exactConsultant','individual consultant lookup missing');need(publicFn,'OWNER_LABEL','assistant owner identity missing');need(publicFn,'internal-context-policy','contextual out-of-scope responses missing');need(publicFn,'responseLanguage','question-language detection missing');need(publicFn,'ui_language','UI language fallback missing');need(publicFn,'assistant-public-mistral-minute','public minute rate limit missing');need(publicFn,'maxRequests:5,windowMs:60_000','public 5-per-minute limit is incorrect');need(publicFn,'maxRequests:20,windowMs:86_400_000','public 20-per-day limit is incorrect');need(publicFn,"limit_code:'minute_limit'",'minute-limit response missing');need(publicFn,"'daily_limit'",'daily-limit support response missing');need(publicFn,"'provider_daily_limit'",'provider-limit support response missing');need(publicFn,"path:'/contact'",'support contact action missing');need(publicFn,'support_phone','support phone response missing');need(publicFn,'isPublicAdminQuestion(question)','public admin guard missing');need(publicFn,'isPublicPrivateDataQuestion(question)','public private-data guard missing');need(publicFn,'blocked_private:true','private-data refusal missing');forbid(publicFn,/assistant_admin_knowledge/,'public endpoint references admin knowledge');forbid(publicFn,/from\(['\"]submissions['\"]\)/,'public assistant must never query submissions');
-need(adminFn,'validateAdminSession','admin assistant lacks session authentication');need(adminFn,"from('assistant_admin_knowledge')",'admin knowledge missing');need(adminFn,"from('assistant_knowledge')",'admin assistant must also know public knowledge');need(adminFn,'customerIntent(question)','customer search intent missing');need(adminFn,"from('submissions')",'internal customer search missing');need(adminFn,'maskPhone','customer phone masking missing');need(adminFn,'maskName','customer name masking missing');need(adminFn,"action:'assistant_customer_search'",'customer-search audit missing');need(adminFn,"providerError==='MISTRAL_RATE_LIMIT'",'admin token exhaustion response missing');if(adminFn.indexOf('customerIntent(question)')>adminFn.indexOf('generateGroundedAssistant({question'))failures.push('customer search reaches Mistral before internal search');forbid(adminFn,/assistant-admin-mistral-2m/,'obsolete admin question cap still exists');
-need(generator,'فارسی گفتاری مودبانه','polite conversational Persian style missing');need(generator,"options.language==='en'",'English response rule missing');need(generator,'معادل فارسی','Persian terminology rule missing');need(generator,"MISTRAL_PUBLIC_API_KEY",'public scoped Mistral secret missing');need(generator,"MISTRAL_ADMIN_API_KEY",'admin scoped Mistral secret missing');need(generator,"Deno.env.get('MISTRAL_API_KEY')",'legacy rotation fallback missing');need(generator,'فقط درباره خدمات و بخش‌های عمومی سایت پاسخ دهید','public model boundary missing');need(generator,'هیچ رمز، کلید، توکن','admin secret boundary missing');need(generator,'مکمل، دارو','medical safety rule missing');forbid(generator,/MISTRAL_(?:PUBLIC_|ADMIN_)?API_KEY\s*=\s*['"][^'"]+/i,'Mistral key is hard-coded');
-need(widget,'generateAssistantAnswer(question,lang)','widget does not send UI language');need(widget,'AssistantDiscoveryHint','assistant discovery hint missing');need(widget,'guidedIntent','guided course flow missing');need(widget,"stage:'goal'",'guided goal question missing');need(widget,"stage:'age'",'guided age question missing');need(widget,"stage:'metrics'",'guided height/weight question missing');need(widget,'GuideHeadsetIcon','headset vector missing');forbid(widget,/مفید بود|submitAssistantFeedback|zka-feedback/,'helpful feedback still exists');forbid(widget,/رضایت|consent/i,'assistant contains consent prompt');need(css,'left:72px','assistant launcher is not beside language control');need(css,'top:calc(8px','assistant launcher is not in header');need(css,'padding:3px','compact suggestions missing');
-need(app,'<AssistantWidget','public assistant not mounted');need(adminPanel,'<AdminAssistantWidget','admin assistant not mounted');need(adminPanel,'zk_admin_open_form','admin record deep-link missing');need(adminWidget,'customerResults','masked customer result UI missing');need(adminWidget,"onNavigate('data','',record.id)",'open-record action missing');need(manager,'راهنمای پنل مدیریت','admin knowledge manager missing');need(backup,"'assistant_admin_knowledge'",'backup omits admin knowledge');
-for(const key of ['"consultTopics"','"digestiveOptions"','"appetiteOptions"','"specialConditions"','"categories"'])need(publicSettings,key,`public settings omits ${key}`);need(publicSettings,'Cache-Control","no-store','public settings cache hardening missing');
-if(telegramFn){need(telegramFn,"step:'scope'",'Telegram scope missing');need(telegramFn,'/test_admin','Telegram admin test missing');need(telegramFn,'/show ID','Telegram show missing');need(telegramFn,'/set_question ID','Telegram question edit missing');need(telegramFn,'/set_answer ID','Telegram answer edit missing');need(telegramFn,'/set_target ID','Telegram target edit missing')}
+const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
+const optional=async path=>read(path).catch(()=> '');
+const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,adminWidget,manager,managerCss,adminApi,backup,publicSettings]=await Promise.all([
+ read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AdminAssistantWidget.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts')
+]);
+const failures=[];
+const need=(source,text,label)=>{if(!source.includes(text))failures.push(label)};
+const forbid=(source,pattern,label)=>{if(pattern.test(source))failures.push(label)};
+
+need(migration,'assistant_admin_knowledge','physically separate admin knowledge table missing');
+need(migration,'alter table public.assistant_admin_knowledge enable row level security','admin knowledge RLS missing');
+need(migration,'revoke all on public.assistant_knowledge','assistant tables are not revoked from browser roles');
+for(const field of ['response_mode','match_mode','actions jsonb','revision bigint'])need(trainingMigration,field,`assistant training schema omits ${field}`);
+need(trainingMigration,"response_mode in ('grounded','exact','refusal')",'response modes are not constrained');
+need(trainingMigration,"match_mode in ('smart','contains','exact')",'match modes are not constrained');
+need(trainingMigration,'assistant_settings_increment_revision','settings revision trigger missing');
+need(trainingMigration,'assistant_knowledge_touch_revision','public knowledge revision trigger missing');
+need(trainingMigration,'assistant_admin_knowledge_touch_revision','admin knowledge revision trigger missing');
+
+need(publicFn,"action==='generate'",'public generation action missing');
+need(publicFn,"searchParams.get('status')==='1'",'lightweight assistant status endpoint missing');
+need(publicFn,'findKnowledgeRule(question,rows)','deterministic owner rules missing');
+need(publicFn,"'internal-exact-rule'",'exact response mode missing');
+need(publicFn,"'internal-refusal-rule'",'refusal response mode missing');
+need(publicFn,'rememberUnanswered','automatic unanswered recording missing');
+need(publicFn,"settings?.fallback_message",'configurable unknown-answer response missing');
+need(publicFn,'exactConsultant','individual consultant lookup missing');
+need(publicFn,'OWNER_LABEL','assistant owner identity missing');
+need(publicFn,'responseLanguage','question-language detection missing');
+need(publicFn,'assistant-public-mistral-minute','public minute rate limit missing');
+need(publicFn,'maxRequests:5,windowMs:60_000','public 5-per-minute provider limit is incorrect');
+need(publicFn,'maxRequests:20,windowMs:86_400_000','public 20-per-day provider limit is incorrect');
+need(publicFn,"limit_code:'minute_limit'",'minute-limit response missing');
+need(publicFn,"'daily_limit'",'daily-limit support response missing');
+need(publicFn,"'provider_daily_limit'",'provider-limit support response missing');
+need(publicFn,"path:'/contact'",'support contact action missing');
+need(publicFn,'isPublicAdminQuestion(question)','public admin guard missing');
+need(publicFn,'isPublicPrivateDataQuestion(question)','public private-data guard missing');
+need(publicFn,'blocked_private:true','private-data refusal missing');
+need(publicFn,"Cache-Control','no-store",'assistant settings are still cached after disabling');
+need(publicFn,"settings?.enabled!==true",'public assistant does not fail closed when disabled');
+need(publicFn,'return reply({knowledge:[],settings:', 'disabled assistant still exposes public knowledge');
+forbid(publicFn,/assistant_admin_knowledge/,'public endpoint references admin knowledge');
+forbid(publicFn,/from\(['\"]submissions['\"]\)/,'public assistant must never query submissions');
+
+need(adminFn,'validateAdminSession','admin assistant lacks session authentication');
+need(adminFn,"from('assistant_admin_knowledge')",'admin knowledge missing');
+need(adminFn,"from('assistant_knowledge')",'admin assistant must also know public knowledge');
+need(adminFn,'customerIntent(question)','customer search intent missing');
+need(adminFn,"from('submissions')",'internal customer search missing');
+need(adminFn,'maskPhone','customer phone masking missing');
+need(adminFn,'maskName','customer name masking missing');
+need(adminFn,"'assistant_customer_search'",'customer-search audit missing');
+need(adminFn,"action==='parse_instruction'",'natural-language training action missing');
+need(adminFn,"action==='test_knowledge'",'knowledge preview action missing');
+need(adminFn,"action==='telegram_status'",'Telegram status action missing');
+need(adminFn,"action==='telegram_repair'",'Telegram repair action missing');
+need(adminFn,"providerError==='MISTRAL_RATE_LIMIT'",'admin token exhaustion response missing');
+forbid(adminFn,/assistant-admin-mistral-2m/,'obsolete admin question cap still exists');
+
+need(generator,'فارسی گفتاری مودبانه','polite conversational Persian style missing');
+need(generator,"options.language==='en'",'English response rule missing');
+need(generator,"MISTRAL_PUBLIC_API_KEY",'public scoped Mistral secret missing');
+need(generator,"MISTRAL_ADMIN_API_KEY",'admin scoped Mistral secret missing');
+need(generator,"Deno.env.get('MISTRAL_API_KEY')",'legacy provider fallback missing');
+need(generator,'مکمل، دارو','medical safety rule missing');
+forbid(generator,/MISTRAL_(?:PUBLIC_|ADMIN_)?API_KEY\s*=\s*['"][^'"]+/i,'Mistral key is hard-coded');
+need(training,'parseAssistantInstruction','instruction parser missing');
+need(training,"response_format:{type:'json_object'}",'instruction parser does not enforce JSON output');
+need(training,'sanitizeKnowledgeActions','knowledge action sanitizer missing');
+
+need(widget,'fetchAssistantStatus','assistant enabled status is not checked');
+need(widget,'ASSISTANT_SETTINGS_EVENT','immediate assistant toggle event missing');
+need(widget,'current.settings.revision','widget does not use lightweight revision invalidation');
+need(widget,'generateAssistantAnswer(question,lang)','widget does not send UI language');
+need(widget,'AssistantDiscoveryHint','assistant discovery hint missing');
+need(widget,'guidedIntent','guided course flow missing');
+need(widget,'GuideHeadsetIcon','headset vector missing');
+need(api,"cache:'no-store'",'browser assistant cache can keep disabled launcher visible');
+forbid(widget,/مفید بود|submitAssistantFeedback|zka-feedback/,'helpful feedback still exists');
+forbid(widget,/رضایت|consent/i,'assistant contains consent prompt');
+need(css,'left:72px','assistant launcher is not beside language control');
+need(css,'top:calc(8px','assistant launcher is not in header');
+
+need(app,'<AssistantWidget','public assistant not mounted');
+need(adminPanel,'<AdminAssistantWidget','admin assistant not mounted');
+need(adminPanel,'zk_admin_open_form','admin record deep-link missing');
+need(adminWidget,'customerResults','masked customer result UI missing');
+need(manager,'assistant-enabled-toggle','assistant enabled toggle missing');
+need(manager,'آموزش با یک جمله','one-sentence trainer missing');
+need(manager,'assistantAdminParseInstruction','panel instruction parser missing');
+need(manager,'assistantAdminTestKnowledge','panel knowledge test missing');
+need(manager,'assistantAdminTelegramRepair','panel Telegram repair missing');
+need(manager,'اعلام عدم اطلاع','explicit unknown-answer mode missing');
+need(managerCss,'.zkam-switch','assistant toggle styling missing');
+need(adminApi,"'parse_instruction'",'admin parser API missing');
+need(adminApi,"'telegram_repair'",'admin Telegram repair API missing');
+need(backup,"'assistant_admin_knowledge'",'backup omits admin knowledge');
+
+if(telegramFn){
+ need(telegramFn,'callback_query','Telegram callback handling missing');need(telegramFn,'inline_keyboard','Telegram glass buttons missing');need(telegramFn,'menu:quick','Telegram quick trainer missing');need(telegramFn,'parseAssistantInstruction','Telegram natural-language trainer missing');need(telegramFn,'addscope:','Telegram scope buttons missing');need(telegramFn,'item:show:','Telegram item view buttons missing');need(telegramFn,'item:editq:','Telegram question edit button missing');need(telegramFn,'item:edita:','Telegram answer edit button missing');need(telegramFn,'deleteyes:','Telegram confirmed delete missing');need(telegramFn,'testAnswer','Telegram real answer test missing');need(telegramFn,'getAssistantTelegramStatus','Telegram connection status missing');need(telegramFn,"chatId!==owner",'Telegram owner restriction missing');need(telegramFn,"callback_data:'site:enable'",'Telegram site-enable button missing');need(telegramFn,"callback_data:'site:disable'",'Telegram site-disable button missing');need(telegramFn,'is_active:true','Telegram publish action does not reactivate knowledge');
+}
+need(telegramApi,"allowed_updates:['message','callback_query']",'Telegram webhook does not accept callback buttons');
+need(telegramApi,'setMyCommands','Telegram command menu setup missing');
+need(telegramApi,'getWebhookInfo','Telegram webhook health check missing');
+forbid([telegramApi,telegramFn].join('\n'),/ASSISTANT_TELEGRAM_BOT_TOKEN\s*=\s*['"][^'"]+/i,'Telegram token is hard-coded');
 forbid([widget,adminWidget,adminApi].join('\n'),/MISTRAL_API_KEY|api\.mistral\.ai/i,'Mistral secret leaked into browser code');
-if(failures.length){console.error(failures.join('\n'));process.exit(1)}console.log('Scoped assistants, privacy, customer search, guidance and settings persistence contracts passed.');
+
+for(const key of ['"consultTopics"','"digestiveOptions"','"appetiteOptions"','"specialConditions"','"categories"'])need(publicSettings,key,`public settings omits ${key}`);
+need(publicSettings,'Cache-Control","no-store','public settings cache hardening missing');
+if(failures.length){console.error(failures.join('\n'));process.exit(1)}
+console.log('Scoped assistants, simple training, Telegram controls, privacy and settings contracts passed.');

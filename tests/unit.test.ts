@@ -18,7 +18,7 @@ import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../s
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 import { paymentShareText, resolvePaymentLaunchInfo } from '../src/utils/paymentLauncher';
-import { matchAssistantKnowledge, normalizeAssistantText, scoreAssistantKnowledge, type AssistantKnowledge } from '../src/utils/assistantMatch';
+import { findAssistantRule, matchAssistantKnowledge, normalizeAssistantText, scoreAssistantKnowledge, type AssistantKnowledge } from '../src/utils/assistantMatch';
 
 let passed = 0;
 let failed = 0;
@@ -228,6 +228,14 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
  assert(matchAssistantKnowledge('چطور مشاوره ثبت کنم',knowledge,1)[0]?.item.id==='1','تطبیق سؤال فارسی نزدیک');
  assert(matchAssistantKnowledge('لیست دوره‌ها',knowledge,1)[0]?.item.id==='2','تحمل نیم‌فاصله و نشانه در دستیار');
  assert(matchAssistantKnowledge('آب و هوای مریخ',knowledge).length===0,'دستیار برای سؤال نامرتبط پاسخ نمی‌سازد');
+ const rules:AssistantKnowledge[]=[
+  {id:'r1',question:'قیمت مشاوره',answer:'برای قیمت وارد فرم شوید.',aliases:['مشاوره چنده'],keywords:[],category:'قیمت',response_mode:'exact',match_mode:'contains',priority:50},
+  {id:'r2',question:'پیش بینی هوا',answer:'من درباره این موضوع اطلاعاتی ندارم.',aliases:['هوا چطوره'],keywords:[],category:'خارج از حوزه',response_mode:'refusal',match_mode:'exact',priority:50},
+ ];
+ assert(findAssistantRule('لطفاً بگو مشاوره چنده',rules)?.item.id==='r1','قانون شامل عبارت، پاسخ ثابت را پیدا می‌کند');
+ assert(findAssistantRule('قیمت',rules)===null,'قانون contains فقط وقتی اجرا می‌شود که عبارت کامل داخل سؤال کاربر باشد');
+ assert(findAssistantRule('هوا چطوره',rules)?.item.id==='r2','قانون عدم اطلاع با جمله دقیق پیدا می‌شود');
+ assert(findAssistantRule('هوا فردا چطوره',rules)===null,'قانون exact روی جمله متفاوت اجرا نمی‌شود');
 }
 
 console.log(`\n═══════════════════════════════════`);
