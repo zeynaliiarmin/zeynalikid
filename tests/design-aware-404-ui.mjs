@@ -25,7 +25,7 @@ const forcedDarkTheme=themes.find(theme=>theme.id==='dark');
 if(!forcedDarkTheme)throw new Error('Dark 404 theme fixture is missing');
 const panelThemes=themes.filter(theme=>theme.id!=='navystack-dark');
 const forcedDarkDesigns=themes.filter(theme=>['wellness','kidlearn','navystack','motherly-trust'].includes(theme.id)||theme.design==='blend');
-let mockedSettings={publicThemeMode:'light'};
+let mockedSettings={publicThemeMode:'light'},blockSettingsFetch=false;
 const labels=['درخواست مشاوره','معرفی دوره‌ها','تجربه والدین','مجوزها و نمادها','مقالات آموزشی','ارتباط با ما و پشتیبانی'];
 const paths=['/consultation','/courses','/experience','/licenses','/education','/contact'];
 const line1='صفحه‌ای که دنبالش بودی، پیدا نشد.';
@@ -101,7 +101,7 @@ async function waitForReactTheme(page,expectedId){
 }
 
 async function setReactTheme(page,{design,theme,id},publicThemeMode='light'){
- mockedSettings={publicThemeMode};
+ blockSettingsFetch=false;mockedSettings={publicThemeMode};
  await page.goto(`${base}/?theme=${design}-${theme}`,{waitUntil:'networkidle0',timeout:30000});
  await page.evaluate(values=>{localStorage.setItem('zk_design_system',values.design);localStorage.setItem('zk_theme',values.theme);sessionStorage.removeItem('zk_public_settings_cache_v1')}, {design,theme});
  await page.reload({waitUntil:'networkidle0',timeout:30000});
@@ -110,8 +110,9 @@ async function setReactTheme(page,{design,theme,id},publicThemeMode='light'){
 }
 
 async function setPanelTheme(page,{design,theme,id},publicThemeMode='light'){
- mockedSettings={publicThemeMode,designSystem:{sections:{public:{design,theme}}}};
- await page.goto(`${base}/?panel-theme=${design}-${theme}-${publicThemeMode}`,{waitUntil:'networkidle0',timeout:30000});
+ blockSettingsFetch=true;mockedSettings={publicThemeMode,designSystem:{sections:{public:{design,theme}}}};
+ const settingsParam=encodeURIComponent(JSON.stringify(mockedSettings));
+ await page.goto(`${base}/?nf-panel-settings=${settingsParam}`,{waitUntil:'networkidle0',timeout:30000});
  await page.evaluate(()=>{localStorage.removeItem('zk_design_system');localStorage.removeItem('zk_theme');localStorage.removeItem('zkid_settings_v2');sessionStorage.removeItem('zk_public_settings_cache_v1')});
  await page.reload({waitUntil:'networkidle0',timeout:30000});
  await page.evaluate(()=>{history.pushState(null,'','/client-side-panel-theme-404');window.dispatchEvent(new PopStateEvent('popstate'))});
@@ -122,7 +123,8 @@ const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-s
 try{
  const context=await browser.createBrowserContext(),page=await context.newPage();await page.setBypassServiceWorker(true);await page.setCacheEnabled(false);
  await page.evaluateOnNewDocument(()=>{const NativeDate=Date,fixed=new NativeDate('2026-08-28T12:00:00');class NoonDate extends NativeDate{constructor(...args){super(...(args.length?args:[fixed.getTime()]))}static now(){return fixed.getTime()}};Object.defineProperty(window,'Date',{value:NoonDate})});
- await page.setRequestInterception(true);page.on('request',request=>{if(request.url().includes('/functions/v1/public-settings')){const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};if(request.method()==='OPTIONS')return request.respond({status:204,headers,body:''});return request.respond({status:200,headers,contentType:'application/json',body:JSON.stringify({settings:mockedSettings})})}return request.continue()});
+ await page.evaluateOnNewDocument(()=>{const raw=new URLSearchParams(location.search).get('nf-panel-settings');if(!raw)return;try{const settings=JSON.parse(raw);Object.defineProperty(window,'__APP_SSG_SETTINGS__',{value:settings,writable:false,configurable:false})}catch{}});
+ await page.setRequestInterception(true);page.on('request',request=>{if(request.url().includes('/functions/v1/public-settings')){const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};if(request.method()==='OPTIONS')return request.respond({status:204,headers,body:''});if(blockSettingsFetch)return request.respond({status:503,headers,contentType:'application/json',body:'{}'});return request.respond({status:200,headers,contentType:'application/json',body:JSON.stringify({settings:mockedSettings})})}return request.continue()});
 
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});await page.goto(`${base}/`,{waitUntil:'domcontentloaded'});await page.evaluate(()=>{localStorage.setItem('zk_design_system','navystack');localStorage.setItem('zk_theme','dark')});
  for(const viewport of viewports){await page.setViewport({...viewport,deviceScaleFactor:1});await page.goto(`${base}/404.html?viewport=${viewport.width}x${viewport.height}`,{waitUntil:'domcontentloaded',timeout:30000});const state=await readLayout(page,{react:false});assertGeometry(state,'static',viewport);if(state.cardBackground!==rgb(255,255,255)||state.exclaimColor!==rgb(184,58,58)||state.questionColor!==rgb(23,32,43)||state.segmentColors.join(',')!==[rgb(23,105,194),rgb(181,106,8),rgb(250,204,21),rgb(184,58,58)].join(','))throw new Error(`Static safe palette mismatch: ${JSON.stringify(state)}`);const hrefs=await page.$$eval('.nf-shortcut',nodes=>nodes.map(node=>node.getAttribute('href')));if(JSON.stringify(hrefs)!==JSON.stringify(paths))throw new Error(`Static shortcut paths mismatch: ${JSON.stringify(hrefs)}`)}
