@@ -41,12 +41,12 @@ export default function StarRatingInput({ value, onChange, lang, size = 30 }: Pr
         .zkr-star{border:0;background:transparent;padding:3px;cursor:pointer;color:var(--zk-text-subtle,#94A3B8);border-radius:10px;transition:transform .15s var(--zk-ease,cubic-bezier(.2,0,0,1)),color .2s ease;-webkit-tap-highlight-color:transparent;display:inline-flex}
         .zkr-star:hover,.zkr-star:focus-visible{transform:translateY(-2px);outline:none}
         .zkr-star:focus-visible{box-shadow:0 0 0 2px var(--zk-accent,#0EA5E9)}
-        .zkr-star.zkr-filled{color:#F59E0B}
+        .zkr-star.zkr-filled{color:var(--zk-warning)}
         .zkr-star svg{display:block;overflow:visible}
         .zkr-fill{transform:scale(0);transform-origin:center;transform-box:fill-box;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
         .zkr-filled .zkr-fill{transform:scale(1);animation:zkr-fill .42s cubic-bezier(.34,1.56,.64,1) both}
-        .zkr-ring{stroke:#F59E0B;stroke-width:2.4;transform-origin:center;transform-box:fill-box;animation:zkr-ring .6s ease-out both}
-        .zkr-label{min-width:58px;font-size:12.5px;font-weight:800;color:#F59E0B;animation:zkr-label .3s ease both}
+        .zkr-ring{stroke:var(--zk-warning);stroke-width:2.4;transform-origin:center;transform-box:fill-box;animation:zkr-ring .6s ease-out both}
+        .zkr-label{min-width:58px;font-size:12.5px;font-weight:800;color:var(--zk-warning);animation:zkr-label .3s ease both}
         @keyframes zkr-ring{0%{transform:scale(.6);opacity:.9}70%{transform:scale(1.45);opacity:0}100%{transform:scale(1.45);opacity:0}}
         @-webkit-keyframes zkr-ring{0%{-webkit-transform:scale(.6);opacity:.9}70%{-webkit-transform:scale(1.45);opacity:0}100%{-webkit-transform:scale(1.45);opacity:0}}
         @keyframes zkr-fill{0%{transform:scale(0)}55%{transform:scale(1.28)}75%{transform:scale(.92)}100%{transform:scale(1)}}

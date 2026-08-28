@@ -152,7 +152,7 @@ export default function InstallPrompt({ lang }: { lang: string }) {
             borderRadius: 9999,
             border: 'none',
             background: 'var(--zk-primary, #0F766E)',
-            color: '#ffffff',
+            color: 'var(--zk-text-inverse, #ffffff)',
             fontFamily: 'inherit',
             fontSize: 13,
             fontWeight: 800,

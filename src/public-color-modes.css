@@ -1,0 +1,150 @@
+/* Public light/dark colour contract.
+ * Geometry, spacing and component behaviour deliberately stay in their owning styles.
+ * The dark palette is shared by every public design and is based on NavyStack's
+ * deep-navy hierarchy; admin colours remain scoped to zkadmin-tokens.css.
+ */
+html[data-public-theme='light'] body.public-root { color-scheme: light; }
+
+html[data-public-theme='dark'] body.public-root {
+  color-scheme: dark;
+
+  --zk-bg: #0A0E27;
+  --zk-surface: #111638;
+  --zk-surface-muted: #0D1333;
+  --zk-surface-soft: #161D48;
+  --zk-primary: #00D4FF;
+  --zk-primary-hover: #33DDFF;
+  --zk-primary-light: rgba(0, 212, 255, .12);
+  --zk-accent: #7C3AED;
+  --zk-accent-light: rgba(124, 58, 237, .16);
+  --zk-text: #E2E8F0;
+  --zk-text-muted: #A7B4C5;
+  --zk-text-subtle: #94A3B8;
+  --zk-text-inverse: #04111B;
+  --zk-border: #1E2756;
+  --zk-border-strong: #34406F;
+  --zk-success: #34D399;
+  --zk-warning: #FBBF24;
+  --zk-error: #F87171;
+  --zk-info: #38BDF8;
+  --zk-shadow-light: 0 4px 15px rgba(0, 0, 0, .24);
+  --zk-shadow-medium: 0 8px 24px rgba(0, 0, 0, .32);
+  --zk-shadow-strong: 0 18px 42px rgba(0, 0, 0, .44);
+
+  --zk-action-primary: #00D4FF;
+  --zk-action-primary-hover: #33DDFF;
+  --zk-action-primary-soft: rgba(0, 212, 255, .12);
+  --zk-action-secondary: #5EEAD4;
+  --zk-surface-page: #0A0E27;
+  --zk-surface-base: #111638;
+  --zk-surface-raised: #111638;
+  --zk-surface-selected: #161D48;
+  --zk-surface-inverse: #E2E8F0;
+  --zk-text-primary: #E2E8F0;
+  --zk-text-secondary: #B8C5D4;
+  --zk-border-default: #1E2756;
+  --zk-border-focus: #00D4FF;
+  --zk-status-success: #34D399;
+  --zk-status-warning: #FBBF24;
+  --zk-status-error: #F87171;
+  --zk-status-info: #38BDF8;
+  --zk-status-disabled: #64748B;
+  --zk-focus-ring: 0 0 0 3px rgba(0, 212, 255, .28);
+
+  background: #0A0E27;
+  color: #E2E8F0;
+}
+
+html[data-public-theme='dark'] body.public-root #root {
+  background: #0A0E27;
+  color: #E2E8F0;
+}
+
+html[data-public-theme='dark'] body.public-root input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+html[data-public-theme='dark'] body.public-root textarea,
+html[data-public-theme='dark'] body.public-root select {
+  background-color: #0A0E27 !important;
+  color: #E2E8F0 !important;
+  border-color: #34406F !important;
+  caret-color: #00D4FF;
+}
+
+html[data-public-theme='dark'] body.public-root input::placeholder,
+html[data-public-theme='dark'] body.public-root textarea::placeholder {
+  color: #94A3B8 !important;
+  opacity: 1;
+}
+
+html[data-public-theme='dark'] body.public-root select option {
+  background: #111638;
+  color: #E2E8F0;
+}
+
+html[data-public-theme='dark'] body.public-root input:-webkit-autofill,
+html[data-public-theme='dark'] body.public-root input:-webkit-autofill:hover,
+html[data-public-theme='dark'] body.public-root input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #E2E8F0 !important;
+  box-shadow: 0 0 0 1000px #0A0E27 inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+html[data-public-theme='dark'] body.public-root hr,
+html[data-public-theme='dark'] body.public-root fieldset {
+  border-color: #1E2756;
+}
+
+/* Design roots may carry a fixed light canvas. The public mode has final say. */
+html[data-public-theme='dark'] body.public-root :is(.zk-page,.kidlearn-page,.wellness-page) {
+  background-color: #0A0E27 !important;
+  color: #E2E8F0 !important;
+}
+
+html[data-public-theme='dark'] body.public-root .zk-launch {
+  background: linear-gradient(145deg,#0A0E27 0%,#0D1333 52%,#111638 100%);
+  color: #E2E8F0;
+}
+html[data-public-theme='dark'] body.public-root .zk-launch-card {
+  background: rgba(17,22,56,.88);
+  border-color: #1E2756;
+  box-shadow: 14px 14px 32px rgba(0,0,0,.32),-8px -8px 22px rgba(30,39,86,.18);
+}
+html[data-public-theme='dark'] body.public-root .zk-launch h1 { color: #7DD3FC; }
+html[data-public-theme='dark'] body.public-root .zk-launch p,
+html[data-public-theme='dark'] body.public-root .zk-launch small { color: #A7B4C5; }
+html[data-public-theme='dark'] body.public-root .zk-launch-loader { background: #161D48; }
+
+html[data-public-theme='dark'] body.public-root .zk-launch-icon {
+  background: linear-gradient(145deg,#161D48,#0D1333);
+  box-shadow: 8px 8px 18px rgba(0,0,0,.32),-5px -5px 14px rgba(30,39,86,.22);
+}
+html[data-public-theme='dark'] body.public-root .zk-launch-blob-a { background: #164E63; }
+html[data-public-theme='dark'] body.public-root .zk-launch-blob-b { background: #312E81; }
+html[data-public-theme='dark'] body.public-root .zk-launch-dots i { background: #00D4FF; }
+html[data-public-theme='dark'] body.public-root .zka-discovery {
+  background: rgba(42,35,16,.94) !important;
+  border-color: rgba(251,191,36,.70) !important;
+  color: #FDE68A;
+  box-shadow: 0 14px 34px rgba(0,0,0,.34),0 3px 10px rgba(0,0,0,.24);
+}
+html[data-public-theme='dark'] body.public-root .zka-discovery :is(b,small) { color: #FDE68A; }
+html[data-public-theme='dark'] body.public-root .zka-discovery-connector { border-left-color: rgba(251,191,36,.82); }
+
+html[data-zk-theme='navystack'] body .zk-launch {
+  background: linear-gradient(145deg,#0A0E27 0%,#0D1333 52%,#111638 100%);
+  color: #E2E8F0;
+}
+html[data-zk-theme='navystack'] body .zk-launch-card {
+  background: rgba(17,22,56,.88);
+  border-color: #1E2756;
+  box-shadow: 14px 14px 32px rgba(0,0,0,.32),-8px -8px 22px rgba(30,39,86,.18);
+}
+html[data-zk-theme='navystack'] body .zk-launch-icon {
+  background: linear-gradient(145deg,#161D48,#0D1333);
+  box-shadow: 8px 8px 18px rgba(0,0,0,.32),-5px -5px 14px rgba(30,39,86,.22);
+}
+html[data-zk-theme='navystack'] body .zk-launch h1 { color: #7DD3FC; }
+html[data-zk-theme='navystack'] body .zk-launch :is(p,small) { color: #A7B4C5; }
+html[data-zk-theme='navystack'] body .zk-launch-loader { background: #161D48; }
+html[data-zk-theme='navystack'] body .zk-launch-blob-a { background: #164E63; }
+html[data-zk-theme='navystack'] body .zk-launch-blob-b { background: #312E81; }
+html[data-zk-theme='navystack'] body .zk-launch-dots i { background: #00D4FF; }

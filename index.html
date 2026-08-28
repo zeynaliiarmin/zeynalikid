@@ -69,8 +69,35 @@
       ]
     }
     </script>
+    <script>
+      (function () {
+        var key = 'zk_public_theme_mode';
+        var isAdmin = function () { return /^\/admin(?:\/|$)/.test(location.pathname); };
+        var apply = function (requested) {
+          if (isAdmin()) return;
+          var mode = requested === 'light' || requested === 'dark' || requested === 'auto' ? requested : 'auto';
+          var hour = new Date().getHours();
+          var resolved = mode === 'dark' || (mode === 'auto' && (hour >= 23 || hour < 7)) ? 'dark' : 'light';
+          var root = document.documentElement;
+          root.setAttribute('data-theme', resolved);
+          root.setAttribute('data-public-theme', resolved);
+          root.style.colorScheme = resolved;
+          root.style.backgroundColor = resolved === 'dark' ? '#0A0E27' : '#F8FBFA';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0A0E27' : '#F8FBFA');
+          try { localStorage.setItem(key, mode); } catch (_) {}
+          return resolved;
+        };
+        window.__zkApplyPublicMode = apply;
+        var cached = null;
+        try { cached = localStorage.getItem(key); } catch (_) {}
+        apply(cached);
+        window.addEventListener('storage', function (event) { if (event.key === key) apply(event.newValue); });
+      })();
+    </script>
   </head>
   <body>
+    <script>if (!/^\/admin(?:\/|$)/.test(location.pathname) && document.documentElement.hasAttribute('data-public-theme')) document.body.classList.add('public-root');</script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

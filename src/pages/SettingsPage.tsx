@@ -77,7 +77,7 @@ export default function SettingsPage(){
                 style={{
                   flex: 1, padding: '11px 14px', borderRadius: btnRad,
                   background: lang === l ? T.acc : T.card,
-                  color: lang === l ? '#fff' : T.txt,
+                  color: lang === l ? 'var(--zk-text-inverse, #fff)' : T.txt,
                   border: `1px solid ${lang === l ? T.acc : T.brd}`,
                   fontWeight: 700, minHeight: 48, cursor: 'pointer',
                   fontFamily: 'inherit'

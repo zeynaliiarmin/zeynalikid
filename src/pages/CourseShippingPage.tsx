@@ -75,7 +75,7 @@ export default function CourseShippingPage(){
               padding: '1px 7px',
               borderRadius: 999,
               background: T.ok,
-              color: '#fff',
+              color: 'var(--zk-text-inverse, #fff)',
               fontWeight: 800,
             }}
           >

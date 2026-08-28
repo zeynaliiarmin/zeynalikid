@@ -22,7 +22,7 @@ import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, saveSe
 import { uploadAdminFile, uploadPublicFile } from './lib/storageUpload';
 import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
-import { resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
+import { applyZkTheme, getZkThemePref, resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
 // PWA admin: shared session utils (clear on logout, validate on /admin/app)
 import { clearAdminSession, getAdminSessionToken, validateAdminSession } from './utils/adminSession';
 import ErrorAlertHost from './components/ErrorAlert/ErrorAlertHost';
@@ -39,12 +39,19 @@ import {
   baseCountries, mergeSettings, validPhone, fullPhone, phonePlaceholder, t,
   StableErr, StableField, StableSelectBox, StableCountrySelect, MiniIcon, Modal,
   Footer, ContactPanel, MemphisBg, TrustRotator, pathToView, viewToPath, updateImageCompressionKB,
+  PUBLIC_DARK_COLORS,
   type Lang,
 } from './app/appSupport';
 export { genTrackingCode } from './app/appSupport';
 
 function App(){
- const [cfg,setCfg]=useState(()=>mergeSettings(getPreloadedSettings()??getLS(SK.settings,null)));
+ const [cfg,setCfg]=useState(()=>{
+  const preloaded=getPreloadedSettings();
+  const stored=getLS(SK.settings,null);
+  let seed=preloaded??stored;
+  if(!preloaded){try{const mode=localStorage.getItem('zk_public_theme_mode');if(mode==='light'||mode==='dark'||mode==='auto')seed={...(seed||{}),publicThemeMode:mode}}catch{}}
+  return mergeSettings(seed);
+ });
  const location=useLocation(); const navigate=useNavigate();
  // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
  // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
@@ -114,17 +121,28 @@ function App(){
  // تم عمومی مستقل از تم شخصی پنل: خودکار فقط برای بازدیدکنندگان، ساعت 23 تا 07.
  const [publicThemeTick,setPublicThemeTick]=useState(0);
  useEffect(()=>{const timer=window.setInterval(()=>setPublicThemeTick(x=>x+1),60000);return()=>window.clearInterval(timer)},[]);
+ useEffect(()=>{const sync=(event:StorageEvent)=>{if(event.key!=='zk_public_theme_mode')return;const mode=event.newValue;if(mode==='light'||mode==='dark'||mode==='auto')setCfg((current:DynamicRecord)=>({...current,publicThemeMode:mode}))};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync)},[]);
  const isAdminRoute=location.pathname.startsWith('/admin');
  const publicThemeMode=cfg.publicThemeMode||'auto';
- const publicAutoDark=!isAdminRoute&&publicThemeMode==='auto'&&(()=>{const h=new Date().getHours();return h>=23||h<7})();
- const publicForcedDark=!isAdminRoute&&publicThemeMode==='dark';
- const publicForcedLight=!isAdminRoute&&publicThemeMode==='light';
- // انتخاب T بر اساس دیزاین و تم فعال
- const T = (publicAutoDark||publicForcedDark) ? TH.dark : (activeDesign === 'classic' || activeDesign === 'blend')
+ const publicDark=!isAdminRoute&&(publicThemeMode==='dark'||(publicThemeMode==='auto'&&(()=>{const h=new Date().getHours();return h>=23||h<7})()));
+ // پنل در روشن از توکن‌های روشن خودش و در تاریک دقیقاً از NavyStack استفاده می‌کند.
+ // صفحات عمومی در حالت تاریک همیشه یک پالت واحد دارند و به دیزاین انتخابی وابسته نیستند.
+ const selectedPublicTheme=(activeDesign === 'classic' || activeDesign === 'blend')
   ? (TH[activeTheme] || TH.blend)
-  : activeDesign === 'navystack'
-  ? (adminDark ? TH['navystack-dark'] : TH['navystack'])
   : (TH[activeDesign] || TH.wellness);
+ // Legacy dark/ocean/navystack palettes cannot leak into an explicitly light public mode.
+ // Their layout metrics are preserved while the colour layer resolves to a light counterpart.
+ const publicLightTheme=selectedPublicTheme.id==='navystack'
+  ? TH['admin-light']
+  : (selectedPublicTheme.id==='dark'||selectedPublicTheme.id==='ocean')
+  ? TH.light
+  : selectedPublicTheme;
+ const publicDarkTheme=useMemo(()=>({...publicLightTheme,...PUBLIC_DARK_COLORS}),[publicLightTheme]);
+ const T = isAdminRoute
+  ? (adminDark ? TH.navystack : TH['admin-light'])
+  : publicDark
+  ? publicDarkTheme
+  : publicLightTheme;
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
  // ─── تایمر ۱۵ دقیقه‌ای روند ثبت دوره (اعتمادسازی — فقط نمایشی/هدایتی) ───
@@ -133,13 +151,32 @@ function App(){
  const flowExpiredRef=useRef(false);
  const expireCourseFlowRef=useRef<()=>void>(()=>{});
  useEffect(()=>{ try{ setLS('zkid_course_draft',course); }catch{} },[course]);
- useEffect(()=>{setLS(SK.settings,cfg); updateImageCompressionKB(cfg.imageCompressionKB); document.documentElement.dataset.zkTheme=activeTheme==='classic'?'motherly-trust':activeTheme;},[cfg,T,activeTheme]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
+ useEffect(()=>{setLS(SK.settings,cfg); updateImageCompressionKB(cfg.imageCompressionKB); document.documentElement.dataset.zkTheme=isAdminRoute?(adminDark?'navystack':'admin-light'):T.id;},[cfg,isAdminRoute,adminDark,T.id]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
  // Stage 9: lang/dir پویا روی <html> برای SEO/RTL-LTR واقعی
  useEffect(()=>{document.documentElement.lang=lang==='fa'?'fa':'en';document.documentElement.dir=lang==='fa'?'rtl':'ltr';},[lang]);
- // تم عمومی از پنل کنترل می‌شود و به تنظیم محلی ادمین وابسته نیست.
- useEffect(()=>{if(!isAdminRoute){document.documentElement.setAttribute('data-theme',(publicAutoDark||publicForcedDark)?'dark':'light')}},[isAdminRoute,publicAutoDark,publicForcedDark,publicForcedLight,publicThemeTick]);
- // Stage 8: اعمال تم ذخیره‌شدهٔ Stage 6 در لحظه بارگذاری اپ (همان قانون zk_theme/auto) تا همه صفحات (از جمله آموزش) در تیره خوانا باشند
- useLayoutEffect(()=>{try{const v=localStorage.getItem('zk_theme'); if(v==='light'||v==='dark'||v==='auto'){let final:'light'|'dark'=v==='dark'?'dark':v==='light'?'light':((()=>{const pd=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches); return pd;})()?'dark':'light'); const root=document.documentElement; root.setAttribute('data-theme',final); if(final==='dark'){root.style.setProperty('--zk-bg','#0F1722');root.style.setProperty('--zk-surface','#172231');root.style.setProperty('--zk-text','#E2E8F0');root.style.setProperty('--zk-text-muted','#94A3B8');root.style.setProperty('--zk-border','rgba(148,163,184,0.2)');root.style.setProperty('--zk-primary','#4BA8D8');}}}catch{}},[]); useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
+ // پل یکتای تم: تنظیم شخصی مدیر فقط روی پنل و سیاست ذخیره‌شدهٔ عمومی فقط روی سایت اعمال می‌شود.
+ useLayoutEffect(()=>{
+  const root=document.documentElement;
+  const body=document.body;
+  const adminInlineVars=['--zk-bg','--zk-surface','--zk-text','--zk-text-muted','--zk-border','--zk-primary'];
+  if(isAdminRoute){
+   body.classList.remove('public-root');
+   root.removeAttribute('data-public-theme');
+   root.style.removeProperty('color-scheme');
+   applyZkTheme(getZkThemePref());
+   return;
+  }
+  body.classList.add('public-root');
+  const final=publicDark?'dark':'light';
+  root.setAttribute('data-theme',final);
+  root.setAttribute('data-public-theme',final);
+  root.style.setProperty('color-scheme',final);
+  adminInlineVars.forEach(name=>root.style.removeProperty(name));
+  try{localStorage.setItem('zk_public_theme_mode',String(publicThemeMode))}catch{}
+  const themeColor=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if(themeColor)themeColor.content=publicDark?'#0A0E27':'#F8FBFA';
+ },[isAdminRoute,publicDark,publicThemeMode,publicThemeTick]);
+ useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage
  useEffect(()=>{const onStorage=(e:StorageEvent)=>{if(e.key==='zkid_lang'&&e.newValue){try{const v=JSON.parse(e.newValue);if(v==='fa'||v==='en')setLang(v)}catch{if(e.newValue==='fa'||e.newValue==='en')setLang(e.newValue as Lang)}}};window.addEventListener('storage',onStorage);return()=>window.removeEventListener('storage',onStorage)},[]);
  // اصلاح ۳۱: ثبت بازدید صفحه — بسیار سبک و بی‌صدا؛ در صورت خطا هیچ تأثیری روی تجربه کاربری ندارد و صفحهٔ پنل مدیریت (admin/admin-login) ثبت نمی‌شود.
@@ -473,7 +510,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
             : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاورهٔ جدید نیست.`))}
         </h3>
         <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:16}}>
-          <button type="button" onClick={primary} style={{minHeight:52,padding:'12px 16px',borderRadius:14,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:14.5,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>{mainLabel}</button>
+          <button type="button" onClick={primary} style={{minHeight:52,padding:'12px 16px',borderRadius:14,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:14.5,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>{mainLabel}</button>
           <button type="button" onClick={()=>setReferralConsultShowReason(true)} style={{minHeight:48,padding:'11px 16px',borderRadius:14,background:T.card,border:`1px solid ${T.brd}`,color:T.txt,fontWeight:700,fontSize:13.5,cursor:'pointer',fontFamily:'inherit'}}>
             {(cfg.referral?.texts?.reconsultLabel || (lang==='en' ? 'I need a consultation again' : 'مجدداً درخواست مشاوره دارم'))}
           </button>
@@ -489,7 +526,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
               placeholder={lang==='en'?'Please describe your reason...':'لطفاً دلیل خود را بنویسید...'}
               style={{width:'100%',padding:'11px 12px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:12,color:T.txt,fontSize:14,fontFamily:'inherit',minHeight:80,resize:'vertical',boxSizing:'border-box'}}
             />
-            <button type="button" onClick={submitReason} disabled={!referralConsultReason.trim()} style={{width:'100%',minHeight:48,marginTop:8,padding:'11px 16px',borderRadius:14,background:referralConsultReason.trim()?'var(--zk-primary)':`${T.acc}33`,color:'#fff',border:0,fontWeight:800,fontSize:14,cursor:referralConsultReason.trim()?'pointer':'not-allowed',fontFamily:'inherit'}}>
+            <button type="button" onClick={submitReason} disabled={!referralConsultReason.trim()} style={{width:'100%',minHeight:48,marginTop:8,padding:'11px 16px',borderRadius:14,background:referralConsultReason.trim()?'var(--zk-primary)':`${T.acc}33`,color:referralConsultReason.trim()?'var(--zk-text-inverse, #fff)':T.mut,border:0,fontWeight:800,fontSize:14,cursor:referralConsultReason.trim()?'pointer':'not-allowed',fontFamily:'inherit'}}>
               {lang==='en' ? 'Continue to consultation form' : 'ادامه به فرم مشاوره'}
             </button>
           </div>

@@ -299,12 +299,12 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
       {/* کارت معرفی مشاور ارجاع‌دهنده در ابتدای جزئیات دوره */}
       {hasReferral && referralConsultant && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#FFF7ED', borderBottom: '1px solid #FED7AA' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'color-mix(in srgb, var(--zk-warning) 9%, var(--zk-surface))', borderBottom: '1px solid color-mix(in srgb, var(--zk-warning) 36%, var(--zk-border))' }}>
           {referralConsultant.showPhoto !== false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
             <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isFa ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)} style={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: '50%', border: '2px solid #FB923C', flexShrink: 0 }} />
           ) : null}
           <div style={{ minWidth: 0 }}>
-            <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, color: '#C2410C', marginBottom: 2 }}>{isFa ? 'شما توسط این مشاور مشاوره شده‌اید' : 'You are advised by'}</span>
+            <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, color: 'var(--zk-warning)', marginBottom: 2 }}>{isFa ? 'شما توسط این مشاور مشاوره شده‌اید' : 'You are advised by'}</span>
             <strong style={{ display: 'block', fontSize: 14, color: 'var(--zk-text)', fontWeight: 800, lineHeight: 1.4 }}>{isFa ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)}</strong>
             {(isFa ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)) ? <span style={{ display: 'block', fontSize: 12, color: 'var(--zk-text-muted)', lineHeight: 1.7, marginTop: 4 }}>{isFa ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)}</span> : null}
           </div>
@@ -380,7 +380,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={T.warn}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span style={{ fontWeight: 700 }}>{course.rating || 4.8}</span>
           </div>
           <span style={{ color: 'var(--zk-text-muted)', fontSize: 12.5 }}>{course.students || 1240} {isFa ? 'والد همراه' : 'families'}</span>
@@ -700,7 +700,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             </div>
           )}
           <ReviewSection
-            T={{acc:'#0F766E',card:'#fff',brd:'#E5E0D8',mut:'#4B5563',txt:'#1F2937',ttl:'#0F766E',inp:'#fff',soft:'#CCFBF1',btnRadius:14,cardRadius:18,inputRadius:12,neuOut:'0 4px 15px rgba(15,23,42,.06)',neuIn:'inset 2px 2px 5px rgba(15,23,42,.05)',ok:'#14B8A6',err:'#DC2626',warn:'#F59E0B',grad:'linear-gradient(135deg,#0F766E,#0EA5E9)'}}
+            T={{...T,btnRadius:14,cardRadius:18,inputRadius:12}}
             lang={isFa ? 'fa' : 'en'}
             courseId={course?.id || ''}
             countries={countries}
@@ -808,7 +808,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       <div style={{ 
         position: 'sticky', 
         bottom: 0, 
-        background: 'rgba(253,248,243,0.96)', 
+        background: T.hdr || T.card,
         borderTop: '1px solid var(--zk-border)', 
         padding: '10px 16px calc(10px + env(safe-area-inset-bottom, 0px))', 
         display: 'flex', 
@@ -820,7 +820,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             {isFa ? 'مشاوره رایگان' : 'Free consult'}
           </button>
         )}
-        <button onClick={() => scrollToTopAndPulse('enroll')} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
+        <button onClick={() => scrollToTopAndPulse('enroll')} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)', fontWeight: 700, fontSize: 13.5, animation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined, WebkitAnimation: hasReferral ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined }}>
           {isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
         </button>
       </div>

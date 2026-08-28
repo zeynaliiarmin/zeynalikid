@@ -31,7 +31,8 @@ requireText(logError,'sendTelegramErrorAlert(urgent)','urgent errors are not rou
 requireText(static404,'min-height:100dvh','static 404 does not cover the dynamic viewport');
 requireText(static404,'overflow-y:auto','static 404 does not preserve natural vertical scrolling');
 requireText(static404,'-webkit-tap-highlight-color:transparent','static 404 does not suppress mobile tap highlighting');
-if(static404.includes('<script'))failures.push('static 404 unexpectedly executes client bootstrap code');
+requireText(static404,"key='zk_public_theme_mode'",'static 404 does not apply the isolated public theme mode');
+if(static404.includes('/src/main')||/type=["']module["']/.test(static404)||/<script[^>]+\bsrc\s*=/.test(static404))failures.push('static 404 unexpectedly executes client bootstrap code');
 if(/TURNSTILE_SECRET_KEY\s*=\s*['"][^'"]+/i.test([page,client,edge,widget,projectConfig,vercel,consent,launcher,home,homeCss,telegram,logError,static404].join('\n')))failures.push('Turnstile secret appears hard-coded');
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}
 console.log('Payment CAPTCHA security contracts passed.');

@@ -95,7 +95,7 @@ export default function FAQManagementEditor({ cfg, T, S, AdminBtn, Box, setEditC
     <Box title="مدیریت سوالات متداول (FAQ)">
       <div className="zkad-qu-faq-head"><h4 style={{ color: T.ttl, margin: 0, textAlign: 'right' }}>فارسی ({fa.length})</h4><h4 style={{ color: T.ttl, margin: 0, textAlign: 'left' }}>English ({en.length})</h4></div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        <button type="button" style={{ ...AdminBtn(), background: T.acc || '#0f766e', color: '#fff', border: 0, fontWeight: 800 }} onClick={addPair}>+ افزودن سؤال جدید</button>
+        <button type="button" style={{ ...AdminBtn(), background: T.acc || '#0f766e', color: 'var(--zkad-acc-contrast, #fff)', border: 0, fontWeight: 800 }} onClick={addPair}>+ افزودن سؤال جدید</button>
         <button type="button" style={{ ...AdminBtn() }} onClick={() => publish({ faqItems: fa, faqItemsEn: en }, 'همه سؤالات متداول ذخیره و منتشر شد.')}>ذخیره همه</button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

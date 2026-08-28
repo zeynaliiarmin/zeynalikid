@@ -15,6 +15,7 @@ body.admin-root {
   --zkad-sidebar: #FFFFFF;
   --zkad-header: rgba(255, 255, 255, 0.94);
   --zkad-card: #FFFFFF;
+  --zkad-badge: #F1F5F9;
   --zkad-hover: rgba(14, 165, 233, 0.08);      /* آبی با opacity — hover */
   --zkad-hover-strong: rgba(14, 165, 233, 0.14);
   --zkad-selected: #F0FDFA;                     /* teal-50 — آیتم فعال */
@@ -22,7 +23,7 @@ body.admin-root {
   --zkad-pop: #FFFFFF;
 
   /* brand */
-  --zkad-acc: #0F766E;                          /* teal زینالیکید */
+  --zkad-acc: #0B5F59;                          /* teal پرکنتراست زینالیکید */
   --zkad-acc-hover: #134E4B;
   --zkad-acc-soft: rgba(15, 118, 110, 0.09);
   --zkad-accent2: #0EA5E9;                      /* آبی آسمانی */
@@ -30,22 +31,23 @@ body.admin-root {
 
   /* text */
   --zkad-txt: #0F172A;
-  --zkad-mut: #64748B;
-  --zkad-faint: #94A3B8;
-  --zkad-ttl: #0F766E;
+  --zkad-mut: #475569;
+  --zkad-faint: #475569;
+  --zkad-ttl: #0B5F59;
 
   /* lines */
   --zkad-brd: #E2E8F0;
   --zkad-brd-strong: #CBD5E1;
 
   /* semantic */
-  --zkad-ok: #10B981;
+  --zkad-ok: #047857;
   --zkad-ok-soft: rgba(16, 185, 129, 0.10);
-  --zkad-warn: #F59E0B;
+  --zkad-warn: #92400E;
+  --zkad-warn-contrast: #FFFFFF;
   --zkad-warn-soft: rgba(245, 158, 11, 0.12);
-  --zkad-err: #EF4444;
+  --zkad-err: #B91C1C;
   --zkad-err-soft: rgba(239, 68, 68, 0.09);
-  --zkad-info: #0EA5E9;
+  --zkad-info: #0369A1;
   --zkad-info-soft: rgba(14, 165, 233, 0.10);
 
   /* elevation — سه سطح سایه، کوچک‌تر/متراکم‌تر از مارکتینگ */
@@ -84,6 +86,7 @@ html[data-theme="dark"] body.admin-root {
   --zkad-sidebar: #111827;
   --zkad-header: rgba(17, 24, 39, 0.92);
   --zkad-card: #1E293B;
+  --zkad-badge: #16202E;
   --zkad-hover: rgba(14, 165, 233, 0.10);
   --zkad-hover-strong: rgba(14, 165, 233, 0.16);
   --zkad-selected: rgba(15, 118, 110, 0.18);
@@ -97,8 +100,8 @@ html[data-theme="dark"] body.admin-root {
   --zkad-acc-contrast: #0F1722;
 
   --zkad-txt: #E2E8F0;
-  --zkad-mut: #94A3B8;
-  --zkad-faint: #64748B;
+  --zkad-mut: #B0BED1;
+  --zkad-faint: #B0BED1;
   --zkad-ttl: #5EEAD4;
 
   --zkad-brd: #334155;
@@ -107,6 +110,7 @@ html[data-theme="dark"] body.admin-root {
   --zkad-ok: #34D399;
   --zkad-ok-soft: rgba(52, 211, 153, 0.12);
   --zkad-warn: #FBBF24;
+  --zkad-warn-contrast: #422006;
   --zkad-warn-soft: rgba(251, 191, 36, 0.12);
   --zkad-err: #F87171;
   --zkad-err-soft: rgba(248, 113, 113, 0.12);
@@ -206,7 +210,7 @@ body.admin-root .zkad-brand {
 body.admin-root .zkad-brand-logo {
   width: 38px; height: 38px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #0F766E, #0EA5E9);
+  background: linear-gradient(135deg, #0F766E, #0369A1);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -447,7 +451,7 @@ body.admin-root .zkad-bell-dot {
 body.admin-root .zkad-avatar {
   width: 36px; height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0F766E, #0EA5E9);
+  background: linear-gradient(135deg, #0F766E, #0369A1);
   color: #fff;
   font-size: 14px; font-weight: 800;
   display: inline-flex; align-items: center; justify-content: center;
@@ -511,10 +515,14 @@ body.admin-root .zkad-flat-btn {
 /* ── semantic tag colors (light) ── */
 body.admin-root {
   --zkad-tag-ok-bg: rgba(16, 185, 129, 0.13);  --zkad-tag-ok-tx: #0B7A5C;
-  --zkad-tag-warn-bg: rgba(245, 158, 11, 0.14); --zkad-tag-warn-tx: #92600A;
-  --zkad-tag-err-bg: rgba(239, 68, 68, 0.11);  --zkad-tag-err-tx: #C23636;
+  --zkad-tag-warn-bg: rgba(245, 158, 11, 0.14); --zkad-tag-warn-tx: #854D0E;
+  --zkad-tag-err-bg: rgba(239, 68, 68, 0.11);  --zkad-tag-err-tx: #B42323;
   --zkad-tag-info-bg: rgba(14, 165, 233, 0.12); --zkad-tag-info-tx: #0B6FA8;
   --zkad-tag-mut-bg: rgba(100, 116, 139, 0.12); --zkad-tag-mut-tx: #475569;
+  --zkad-placement-course: #6D28D9;
+  --zkad-placement-course-soft: rgba(109, 40, 217, 0.10);
+  --zkad-placement-product: #0B5F59;
+  --zkad-placement-product-soft: rgba(15, 118, 110, 0.10);
   --zkad-thead-bg: #F1F5F9;
 }
 html[data-theme="dark"] body.admin-root {
@@ -523,6 +531,10 @@ html[data-theme="dark"] body.admin-root {
   --zkad-tag-err-bg: rgba(248, 113, 113, 0.16); --zkad-tag-err-tx: #FCA5A5;
   --zkad-tag-info-bg: rgba(56, 189, 248, 0.16); --zkad-tag-info-tx: #7DD3FC;
   --zkad-tag-mut-bg: rgba(148, 163, 184, 0.16); --zkad-tag-mut-tx: #CBD5E1;
+  --zkad-placement-course: #C4B5FD;
+  --zkad-placement-course-soft: rgba(196, 181, 253, 0.12);
+  --zkad-placement-product: #5EEAD4;
+  --zkad-placement-product-soft: rgba(94, 234, 212, 0.12);
   --zkad-thead-bg: #16202E;
 }
 
@@ -896,6 +908,11 @@ body.admin-root .admin-main textarea {
   resize: vertical !important;
   line-height: 1.9;
 }
+body.admin-root .admin-main input::placeholder,
+body.admin-root .admin-main textarea::placeholder {
+  color: var(--zkad-mut) !important;
+  opacity: 1 !important;
+}
 body.admin-root .admin-main input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus,
 body.admin-root .admin-main select:focus,
 body.admin-root .admin-main textarea:focus {
@@ -1103,7 +1120,7 @@ body.admin-root .zkad-data-hero{display:flex;align-items:center;justify-content:
 body.admin-root .zkad-data-eyebrow{font-size:10px;font-weight:800;color:var(--zkad-acc)}
 body.admin-root .zkad-data-hero h3{margin:3px 0 0;font-size:17px;color:var(--zkad-txt)}
 body.admin-root .zkad-data-hero h3 small{font-size:11px;color:var(--zkad-mut);font-weight:600;margin-inline-start:6px}
-body.admin-root .zkad-refresh-btn{min-height:38px;padding:7px 12px;border:0;border-radius:11px;background:var(--zkad-acc);color:#fff;font:700 12px inherit;cursor:pointer;white-space:nowrap}
+body.admin-root .zkad-refresh-btn{min-height:38px;padding:7px 12px;border:0;border-radius:11px;background:var(--zkad-acc);color:var(--zkad-acc-contrast);font:700 12px inherit;cursor:pointer;white-space:nowrap}
 body.admin-root .zkad-refresh-btn:disabled{opacity:.65}
 body.admin-root .zkad-filter-toggle{display:flex;gap:8px;align-items:center;margin:0 0 10px}
 body.admin-root .zkad-filter-toggle button{min-height:34px;padding:5px 11px;border:1px solid var(--zkad-brd);border-radius:10px;background:var(--zkad-card);color:var(--zkad-mut);font:700 11px inherit;cursor:pointer}

@@ -10,7 +10,7 @@
   --zk-primary: #0F766E;
   --zk-primary-hover: #134E4B;
   --zk-primary-light: #CCFBF1;
-  --zk-accent: #0EA5E9;
+  --zk-accent: #0369A1;
   --zk-accent-light: #E0F2FE;
 
   /* Surfaces */
@@ -30,10 +30,10 @@
   --zk-border-strong: #D1C8BB;
 
   /* Semantic */
-  --zk-success: #14B8A6;
-  --zk-warning: #F59E0B;
-  --zk-error: #DC2626;
-  --zk-info: #0EA5E9;
+  --zk-success: #047857;
+  --zk-warning: #92400E;
+  --zk-error: #B91C1C;
+  --zk-info: #0369A1;
 
   /* Radius */
   --zk-radius-pill: 9999px;

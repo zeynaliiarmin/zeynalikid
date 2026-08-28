@@ -297,10 +297,10 @@ export default function CoursesPage(){
         </Helmet>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '16px 14px 80px' }}>
           {expiredNotice && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 960, margin: '0 auto 12px', padding: '11px 13px', background: '#FEF3C7', border: '1.5px solid #F59E0B', borderRadius: 14, color: '#92400E', fontSize: 12.5, lineHeight: 1.9 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 960, margin: '0 auto 12px', padding: '11px 13px', background: 'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))', border: '1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))', borderRadius: 14, color: 'var(--zk-warning)', fontSize: 12.5, lineHeight: 1.9 }}>
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>
               <span style={{ flex: 1 }}>{lang === 'en' ? "Your time to complete the registration has expired. Please plan your time more carefully before trying again to avoid any restrictions in the process." : 'مدت زمان شما برای ثبت دوره به اتمام رسید؛ برای ثبت مجدد دوره، لطفاً روی زمان‌بندی خود دقت کنید تا محدودیتی برای شما در روند ثبت دوره ایجاد نشود.'}</span>
-              <button type="button" onClick={() => setExpiredNotice(false)} aria-label={lang === 'en' ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#92400E', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '2px 4px', fontFamily: 'inherit' }}>×</button>
+              <button type="button" onClick={() => setExpiredNotice(false)} aria-label={lang === 'en' ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: 'var(--zk-warning)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '2px 4px', fontFamily: 'inherit' }}>×</button>
             </div>
           )}
           <CourseDetailView
@@ -361,12 +361,12 @@ export default function CoursesPage(){
 
         {/* کارت معرفی مشاور ارجاع‌دهنده — وقتی مخاطب با لینک اختصاصی مشاور آمده */}
         {referralConsultant && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 16px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 20, boxShadow: 'var(--zk-shadow-light)', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 16px', background: 'color-mix(in srgb, var(--zk-warning) 9%, var(--zk-surface))', border: '1px solid color-mix(in srgb, var(--zk-warning) 36%, var(--zk-border))', borderRadius: 20, boxShadow: 'var(--zk-shadow-light)', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both' }}>
             {referralConsultant.showPhoto !== false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
               <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={lang === 'fa' ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)} style={{ width: 64, height: 64, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: '50%', border: '2px solid #FB923C', flexShrink: 0 }} />
             ) : null}
             <div style={{ minWidth: 0 }}>
-              <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, color: '#C2410C', marginBottom: 3 }}>{lang === 'en' ? 'You are advised by' : 'شما توسط این مشاور مشاوره شده‌اید'}</span>
+              <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, color: 'var(--zk-warning)', marginBottom: 3 }}>{lang === 'en' ? 'You are advised by' : 'شما توسط این مشاور مشاوره شده‌اید'}</span>
               <strong style={{ display: 'block', fontSize: 15, color: 'var(--zk-text)', fontWeight: 800, lineHeight: 1.4 }}>{lang === 'fa' ? referralConsultant.name : (referralConsultant.nameEn || referralConsultant.name)}</strong>
               {(lang === 'fa' ? referralConsultant.title : (referralConsultant.titleEn || referralConsultant.title)) ? <span style={{ display: 'block', fontSize: 12, color: 'var(--zk-text-muted)', lineHeight: 1.5, marginTop: 2 }}>{lang === 'fa' ? referralConsultant.title : (referralConsultant.titleEn || referralConsultant.title)}</span> : null}
               {(lang === 'fa' ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)) ? <span style={{ display: 'block', fontSize: 12.5, color: 'var(--zk-text-muted)', lineHeight: 1.8, marginTop: 6 }}>{lang === 'fa' ? (referralConsultant.introText || referralConsultant.desc) : (referralConsultant.introTextEn || referralConsultant.descEn || referralConsultant.introText || referralConsultant.desc)}</span> : null}
@@ -381,7 +381,7 @@ export default function CoursesPage(){
           const tabName = lang==='en' ? (t.titleEn||t.title) : t.title;
           const isDir = typeof referralTarget?.courseIndex === 'number';
           return (
-            <div style={{marginBottom:14,padding:'12px 14px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:14,fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
+            <div style={{marginBottom:14,padding:'12px 14px',background:'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))',border:'1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))',borderRadius:14,fontSize:13,lineHeight:1.9,color:'var(--zk-warning)',fontWeight:700}}>
               {isDir
                 ? (cfg.referral?.texts?.coursesCourse || (lang==='en'
                     ? `Tap “View details & enroll” on the highlighted course to register this course.`
@@ -476,7 +476,7 @@ export default function CoursesPage(){
               return (
                 <div key={cr.id} id={isTarget ? `zk-ref-course-${cr.id}` : undefined} style={isTarget ? { scrollMarginTop: 20 } : undefined}>
                   {isTarget && (
-                    <div style={{ marginBottom: 12, padding: '12px 14px', background: '#FEF9C3', border: '1.5px solid #FACC15', borderRadius: 14, fontSize: 12.5, lineHeight: 1.9, color: '#713F12', fontWeight: 700 }}>
+                    <div style={{ marginBottom: 12, padding: '12px 14px', background: 'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))', border: '1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))', borderRadius: 14, fontSize: 12.5, lineHeight: 1.9, color: 'var(--zk-warning)', fontWeight: 700 }}>
                       {lang === 'en'
                         ? 'Tap the highlighted button to view details and enroll in this course.'
                         : `با زدن دکمهٔ «مشاهده جزئیات و ثبت ${cr.title}» می‌توانید جزئیات و ثبت‌نام این دوره را ببینید.`}
@@ -500,7 +500,7 @@ export default function CoursesPage(){
           ) : (
             <div style={{ padding: 40, textAlign: 'center', background: 'var(--zk-surface)', borderRadius: 18, border: '1px solid var(--zk-border)' }}>
               <div style={{ fontSize: 15, color: 'var(--zk-text-muted)' }}>{lang === 'en' ? 'No courses match your filter.' : 'دوره‌ای با این فیلتر پیدا نشد.'}</div>
-              <button onClick={() => setFilter('all')} style={{ marginTop: 12, minHeight: 42, padding: '0 18px', borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', border: 0, fontWeight: 700 }}>
+              <button onClick={() => setFilter('all')} style={{ marginTop: 12, minHeight: 42, padding: '0 18px', borderRadius: 999, background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)', border: 0, fontWeight: 700 }}>
                 {lang === 'en' ? 'Show all courses' : 'نمایش همه دوره‌ها'}
               </button>
             </div>

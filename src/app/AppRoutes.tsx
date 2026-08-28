@@ -35,7 +35,7 @@ interface AppRoutesProps {
 }
 
 export default function AppRoutes({ app, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
-  const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: '#888', fontSize: 14 }}>در حال بارگذاری...</div>;
+  const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--zk-text-muted, #4B5563)', fontSize: 14 }}>در حال بارگذاری...</div>;
   return (
     <AppContextProvider value={app}>
       <Suspense fallback={fallback}>

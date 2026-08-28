@@ -69,7 +69,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
   return (
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
       {/* Hero */}
-      <div style={{ position: 'relative', height: 210, background: 'linear-gradient(145deg, #F8F4EF, #FDF8F3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
+      <div style={{ position: 'relative', height: 210, background: 'linear-gradient(145deg, var(--zk-surface-muted), var(--zk-bg))', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
         <img
           src={imgSrc}
           alt={name}
@@ -114,7 +114,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
       {/* Info */}
       <div style={{ padding: '16px 16px 8px' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 10.5, padding: '2px 9px', borderRadius: 999, background: '#0EA5E9', color: '#fff', fontWeight: 700 }}>{product.category || (isFa ? 'دوره شخصی‌سازی‌شده' : 'Personalized Plan')}</span>
+          <span style={{ fontSize: 10.5, padding: '2px 9px', borderRadius: 999, background: '#0369A1', color: '#fff', fontWeight: 700 }}>{product.category || (isFa ? 'دوره شخصی‌سازی‌شده' : 'Personalized Plan')}</span>
           {product.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{product.duration}</span>}
         </div>
 
@@ -166,7 +166,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
             </div>
 
             {/* Gentle warning */}
-            <div style={{ marginTop: 14, padding: '12px 15px', background: '#FEF3C7', border: '1px solid #F59E0B33', borderRadius: 14, fontSize: 12.5, lineHeight: 1.55, color: '#713F12' }}>
+            <div style={{ marginTop: 14, padding: '12px 15px', background: 'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))', border: '1px solid color-mix(in srgb, var(--zk-warning) 40%, var(--zk-border))', borderRadius: 14, fontSize: 12.5, lineHeight: 1.55, color: 'var(--zk-warning)' }}>
               {isFa ? 'نکته مهم: معرفی این محصول جایگزین مشاوره نمی‌باشد و تهیه این محصول جایگزین دوره مربوطه نیست. این محصول صرفاً یکی از محصولات ما برای معرفی می‌باشد، لطفاً برای اطلاعات بیشتر در مورد دوره‌ها با ضربه زدن روی گزینه «مشاوره رایگان» درخواست مشاوره ثبت کنید.' : 'Important: This product presentation is not a substitute for consultation, and obtaining it does not replace the corresponding course. This is simply one of our products showcased for informational purposes. For more details about our courses, please tap "Free consult" to request a consultation.'}
             </div>
         </section>
@@ -184,25 +184,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
 
         <section id="product-detail-reviews" data-detail-section style={detailSectionStyle(navTopOffset)}>
           <ReviewSection
-            T={{
-              acc: '#0F766E',
-              card: '#fff',
-              brd: '#E5E0D8',
-              mut: '#4B5563',
-              txt: '#1F2937',
-              ttl: '#0F766E',
-              inp: '#fff',
-              soft: '#CCFBF1',
-              btnRadius: 14,
-              cardRadius: 18,
-              inputRadius: 12,
-              neuOut: '0 4px 15px rgba(15,23,42,.06)',
-              neuIn: 'inset 2px 2px 5px rgba(15,23,42,.05)',
-              ok: '#14B8A6',
-              err: '#DC2626',
-              warn: '#F59E0B',
-              grad: 'linear-gradient(135deg,#0F766E,#0EA5E9)',
-            }}
+            T={{ ...T, btnRadius: 14, cardRadius: 18, inputRadius: 12 }}
             lang={isFa ? 'fa' : 'en'}
             courseId={product?.id || ''}
             placement="product_detail"
@@ -219,13 +201,13 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
       </div>
 
       {/* Sticky CTA — safe-area (اگر محصول قیمت ندارد، به‌جای فروش فقط «مشاوره رایگان» نمایش داده می‌شود) */}
-      <div style={{ position: 'sticky', bottom: 0, background: 'rgba(253,248,243,0.96)', borderTop: '1px solid var(--zk-border)', padding: '10px 16px calc(10px + env(safe-area-inset-bottom, 0px))', display: 'flex', gap: 10, zIndex: 10 }}>
+      <div style={{ position: 'sticky', bottom: 0, background: T.hdr || T.card, borderTop: '1px solid var(--zk-border)', padding: '10px 16px calc(10px + env(safe-area-inset-bottom, 0px))', display: 'flex', gap: 10, zIndex: 10 }}>
         {hasDiscount || product.price ? (
           <>
             <button onClick={onConsult} style={{ flex: 1, minHeight: 46, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface)', fontWeight: 700, fontSize: 13.5 }}>
               {isFa ? 'مشاوره رایگان' : 'Free consult'}
             </button>
-            <button onClick={onAddToCart} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 13.5 }}>
+            <button onClick={onAddToCart} style={{ flex: 1, minHeight: 46, borderRadius: 999, background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)', fontWeight: 700, fontSize: 13.5 }}>
               {isFa ? 'معرفی دوره‌ها' : 'View courses'}
             </button>
           </>

@@ -209,7 +209,7 @@ export default function SmartFAQ({
               type="button"
               className="zke-pillbtn"
               onClick={() => setAskModalOpen(true)}
-              style={{ background: 'var(--zk-primary)', color: '#fff' }}
+              style={{ background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)' }}
             >
               {en ? 'Ask a question?' : 'سوال دارم؟'}
             </button>

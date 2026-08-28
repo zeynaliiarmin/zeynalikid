@@ -32,14 +32,16 @@ export default function AdminLoginPage(){
    }else setAErr(en?'Biometric verification was not completed.':'تأیید بیومتریک انجام نشد');
  }catch{setAErr(en?'Fingerprint or Face ID was not verified.':'اثر انگشت یا Face ID تأیید نشد')}finally{setBioBusy(false)}};
  const mem=T.memphis||[T.soft,T.soft,T.soft];
- return <main className="zkgl-root zkgl-has-topbar" dir={en?'ltr':'rtl'} style={{['--zkgl-acc' as any]:T.acc||'#0F766E',position:'fixed',inset:0,zIndex:1500,alignItems:'center',overflowY:'auto'}} aria-labelledby="admin-login-title">
+ const darkGlass=T.id==='navystack'||T.id==='dark';
+ const pageOverlay=darkGlass?'linear-gradient(160deg, rgba(15,23,42,.78), rgba(15,23,42,.58))':'linear-gradient(160deg, rgba(248,250,252,.90), rgba(240,253,250,.84))';
+ return <main className={`zkgl-root zkgl-has-topbar zkgl-mode-${darkGlass?'dark':'light'}`} dir={en?'ltr':'rtl'} style={{['--zkgl-acc' as any]:T.acc||'#0F766E',position:'fixed',inset:0,zIndex:1500,alignItems:'center',overflowY:'auto'}} aria-labelledby="admin-login-title">
    <Helmet><title>{en?`Admin sign in | ${brand}`:`ورود مدیریت | ${brand}`}</title><meta name="robots" content="noindex, nofollow" /></Helmet>
    <style>{css}</style>
    <GlassTopBar brand={brand} lang={lang} setLang={setLang} T={T} onBack={goHome} backLabel={en?'Back':'بازگشت'} showLang={false}/>
    <div className="zkgl-bg" style={{background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})`}}>
     <svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice"><circle cx="8%" cy="14%" r="80" fill={mem[0]} opacity=".30"/><circle cx="92%" cy="20%" r="52" fill={mem[1]} opacity=".24"/><circle cx="86%" cy="84%" r="96" fill={mem[2]} opacity=".22"/><circle cx="12%" cy="90%" r="40" fill={mem[0]} opacity=".24"/></svg>
-    <div style={{position:'absolute',inset:0,backgroundImage:'url(/images/asset13c-hero-mother-child.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(6px)',opacity:.5}}/>
-    <div style={{position:'absolute',inset:0,background:'linear-gradient(160deg, rgba(15,23,42,.72), rgba(15,23,42,.5))'}}/>
+    <div style={{position:'absolute',inset:0,backgroundImage:'url(/images/asset13c-hero-mother-child.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(6px)',opacity:darkGlass?.5:.14}}/>
+    <div style={{position:'absolute',inset:0,background:pageOverlay}}/>
    </div>
    <div className="zkgl-col" style={{maxWidth:400}}><div className="zkgl-card">
     <h1 id="admin-login-title" className="zkgl-title">{en?'Admin panel':'پنل مدیریت'}</h1>

@@ -617,7 +617,7 @@ export default function ConsultationPage(){
             <VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved} />
           </div>
           <textarea style={LS.ta} value={fd.notes} onChange={e => setFd({ ...fd, notes: e.target.value })} placeholder={trVal(cfg.formFields?.notes?.placeholder)} />
-          {voiceBlob && <div style={{ fontSize: 11, color: '#059669', marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
+          {voiceBlob && <div style={{ fontSize: 11, color: T.ok, marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
         <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="اطلاعیه حریم خصوصی را مطالعه کرده‌ام و با استفاده از اطلاعات ثبت‌شده برای ارائه و پیگیری خدمت درخواستی موافقم." textEn="I have read the privacy notice and consent to using the submitted information to provide and follow up the requested service." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>{try{sessionStorage.setItem('zk_privacy_return_to',location.pathname||'/consultation')}catch{};setView('privacy')}}/>
@@ -671,18 +671,18 @@ export default function ConsultationPage(){
       <div style={{ ...S.card, maxWidth: 460, textAlign: 'center', padding: '20px 18px', marginTop: 0 }}>
         {/* Success checkmark */}
         <div style={{ margin: '2px auto 12px', width: 78, height: 78, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 38px rgba(16,185,129,.3), 4px 4px 10px rgba(0,0,0,.08)', animation: 'modalIn .4s ease both' }}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#04111B" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
         <h2 style={{ color: T.ttl, fontSize: 17, margin: '0 0 5px', fontWeight: 800 }}>{publicText('successMsg')}</h2>
         <p style={{ color: T.mut, fontSize: 12.5, lineHeight: 1.8, margin: '0 0 8px' }}>{publicText('successSubMsg')}</p>
 
         {/* Tracking code */}
-        {lastTrack && <div style={{ background: '#facc1518', borderRadius: 12, padding: '9px 11px', marginBottom: 8, textAlign: 'right', boxShadow: T.neuIn }}>
-          <div style={{ fontSize: 11, color: '#ca8a04', fontWeight: 800, lineHeight: 1.8, marginBottom: 3 }}>{lang === 'en' ? 'Please save your tracking code:' : 'حتماً کد پیگیری را ذخیره کنید:'}</div>
+        {lastTrack && <div style={{ background: `${T.warn}18`, borderRadius: 12, padding: '9px 11px', marginBottom: 8, textAlign: 'right', boxShadow: T.neuIn }}>
+          <div style={{ fontSize: 11, color: T.warn, fontWeight: 800, lineHeight: 1.8, marginBottom: 3 }}>{lang === 'en' ? 'Please save your tracking code:' : 'حتماً کد پیگیری را ذخیره کنید:'}</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <span style={{ fontSize: 10, color: T.mut }}>{lang === 'en' ? 'Tracking code:' : 'کد پیگیری:'}</span>
             <b dir="ltr" onClick={copyTrack} title={lang === 'en' ? 'Click to copy' : 'برای کپی کلیک کنید'} style={{ fontSize: 17, color: T.acc, letterSpacing: '2px', fontFamily: 'monospace,-apple-system,"Courier New"', cursor: 'pointer' }}>{lastTrack}</b>
-            <button onClick={copyTrack} title={lang === 'en' ? 'Copy' : 'کپی'} style={{ width: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: trackCopied ? '#16a34a' : 'rgba(255,255,255,.9)', color: trackCopied ? '#fff' : '#111', fontSize: 13, transition: 'all .3s ease', flexShrink: 0, border: 0, fontFamily: 'inherit' }}>{trackCopied ? (lang === 'en' ? 'Copied' : 'کپی شد') : (lang === 'en' ? 'Copy' : 'کپی')}</button>
+            <button onClick={copyTrack} title={lang === 'en' ? 'Copy' : 'کپی'} style={{ width: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: trackCopied ? T.ok : T.inp || T.card, color: trackCopied ? 'var(--zk-text-inverse, #fff)' : T.txt, fontSize: 13, transition: 'all .3s ease', flexShrink: 0, border: 0, fontFamily: 'inherit' }}>{trackCopied ? (lang === 'en' ? 'Copied' : 'کپی شد') : (lang === 'en' ? 'Copy' : 'کپی')}</button>
           </div>
         </div>}
 

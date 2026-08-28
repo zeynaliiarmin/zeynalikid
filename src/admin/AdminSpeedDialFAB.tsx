@@ -109,7 +109,7 @@ export default function AdminSpeedDialFAB({
           height: 52,
           borderRadius: 26,
           background: T.acc || '#0F766E',
-          color: '#fff',
+          color: 'var(--zkad-acc-contrast, #fff)',
           border: 0,
           boxShadow: `0 4px 14px ${T.acc || '#0F766E'}55`,
           cursor: 'pointer',

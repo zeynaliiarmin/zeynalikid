@@ -101,9 +101,43 @@ body{font-family:'Vazirmatn','Tahoma',Arial,sans-serif}
 .home-icon:focus-visible,.nf-shortcut:focus-visible{box-shadow:0 1px 2px rgba(15,23,42,.06),0 0 0 3px rgba(23,105,194,.2)}.primary:focus-visible{box-shadow:0 10px 15px -3px rgba(23,105,194,.18),0 0 0 3px rgba(23,105,194,.22)}
 @media (min-width:640px){.nf-page{padding:16px}.nf-shell{padding:20px}.copy p{font-size:13px}}
 @media (max-width:319px){.nf-page{padding:10px}.nf-shell{padding:14px}.copy h1{font-size:21px;gap:4px}.quick{gap:8px}.nf-shortcut{padding-inline:9px;gap:5px}.nf-shortcut strong{font-size:11px}.nf-shortcut-icon{width:32px;height:32px;flex-basis:32px}}
+
+html[data-theme='dark']{color-scheme:dark;background:#0A0E27}
+html[data-theme='dark'] body{background:#0A0E27}
+html[data-theme='dark'] .nf-page{background:linear-gradient(180deg,#0A0E27 0%,#0D1333 52%,#111638 100%);color:#E2E8F0}
+html[data-theme='dark'] .nf-shell{background:#111638;border:1px solid #1E2756;box-shadow:0 20px 44px rgba(0,0,0,.38)}
+html[data-theme='dark'] .home-icon,html[data-theme='dark'] .brand{background:#0D1333;border-color:#34406F;color:#E2E8F0;box-shadow:0 1px 2px rgba(0,0,0,.24)}
+html[data-theme='dark'] .brand-mark{background:#00D4FF}
+html[data-theme='dark'] .nf-art text{fill:#E2E8F0;stroke:#34406F;filter:none}
+html[data-theme='dark'] .nf-art circle[fill='none']{stroke:#34406F}
+html[data-theme='dark'] .exclaim{color:#FCA5A5}
+html[data-theme='dark'] .question{color:#E2E8F0}
+html[data-theme='dark'] .copy p{color:#A7B4C5}
+html[data-theme='dark'] .nf-shortcut{--nf-icon-bg:rgba(0,212,255,.10);--nf-icon-color:#7DD3FC;background:#0D1333;border-color:#34406F;color:#E2E8F0;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+html[data-theme='dark'] .tone-pink{--nf-icon-bg:rgba(248,113,113,.13);--nf-icon-color:#FCA5A5}
+html[data-theme='dark'] .tone-blue{--nf-icon-bg:rgba(56,189,248,.13);--nf-icon-color:#7DD3FC}
+html[data-theme='dark'] .tone-yellow{--nf-icon-bg:rgba(251,191,36,.13);--nf-icon-color:#FCD34D}
+html[data-theme='dark'] .tone-violet{--nf-icon-bg:rgba(167,139,250,.13);--nf-icon-color:#C4B5FD}
+html[data-theme='dark'] .tone-green{--nf-icon-bg:rgba(52,211,153,.13);--nf-icon-color:#6EE7B7}
+html[data-theme='dark'] .tone-orange{--nf-icon-bg:rgba(251,146,60,.13);--nf-icon-color:#FDBA74}
+html[data-theme='dark'] .primary{background:#00D4FF;box-shadow:0 10px 20px rgba(0,212,255,.18);color:#04111B!important}
+html[data-theme='dark'] .home-icon:active,html[data-theme='dark'] .nf-shortcut:active{background:#161D48}
+html[data-theme='dark'] .nf-shortcut:active .nf-shortcut-icon{background:#161D48}
+html[data-theme='dark'] .primary:active{background:#33DDFF;color:#04111B!important}
+html[data-theme='dark'] .home-icon:focus-visible,html[data-theme='dark'] .nf-shortcut:focus-visible{box-shadow:0 0 0 3px rgba(0,212,255,.28)}
+html[data-theme='dark'] .primary:focus-visible{box-shadow:0 10px 20px rgba(0,212,255,.18),0 0 0 3px rgba(0,212,255,.28)}
 `;
 
-export function renderNotFoundPage({brand='زینالیکید'}={}){
+
+function renderThemeBootstrap({supabaseUrl='',initialMode='auto'}={}){
+ const endpoint=supabaseUrl?`${String(supabaseUrl).replace(/\/$/,'')}/functions/v1/public-settings`:'';
+ const safeEndpoint=JSON.stringify(endpoint).replace(/</g,'\u003c');
+ const safeInitial=JSON.stringify(['light','dark','auto'].includes(initialMode)?initialMode:'auto');
+ return `(function(){var root=document.documentElement,key='zk_public_theme_mode',mode=${safeInitial},endpoint=${safeEndpoint};function valid(v){return v==='light'||v==='dark'||v==='auto'}function apply(next){mode=valid(next)?next:'auto';var hour=(new Date()).getHours(),resolved=mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light';root.setAttribute('data-theme',resolved);root.setAttribute('data-public-theme',resolved);root.setAttribute('data-public-theme-mode',mode);root.style.colorScheme=resolved;return resolved}try{var cached=localStorage.getItem(key);if(valid(cached))mode=cached}catch(e){}apply(mode);window.addEventListener('storage',function(e){if(e.key===key&&valid(e.newValue))apply(e.newValue)});setInterval(function(){if(mode==='auto')apply(mode)},60000);if(endpoint){fetch(endpoint,{method:'GET',headers:{'Content-Type':'application/json'}}).then(function(response){if(!response.ok)throw new Error('theme');return response.json()}).then(function(payload){var next=payload&&payload.settings&&payload.settings.publicThemeMode;if(valid(next)){try{localStorage.setItem(key,next)}catch(e){}apply(next)}}).catch(function(){})}})();`;
+}
+
+export function renderNotFoundPage({brand='زینالیکید',supabaseUrl='',initialMode='auto'}={}){
  const cleanBrand=escapeHtml(brand);
- return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>صفحه پیدا نشد | ${cleanBrand}</title><style>${styles}</style></head><body><div class="nf-page"><main class="nf-shell" aria-labelledby="not-found-title"><header class="nf-top"><a class="home-icon nf-control" href="/" aria-label="خانه">${icons.home}</a><div class="brand"><span>${cleanBrand}</span><span class="brand-mark" aria-hidden="true"></span></div></header>${artwork}<div class="copy"><h1 id="not-found-title" aria-label="عه ! اینجا کجاست؟"><span class="exclaim">عه !</span><span class="question">اینجا کجاست؟</span></h1><p><span>صفحه‌ای که دنبالش بودی، پیدا نشد.</span><br><span>مسیر درست را از بین گزینه‌های زیر پیدا کن!</span></p></div><nav class="quick" aria-label="دسترسی سریع">${shortcuts.map(shortcut).join('')}</nav><footer class="nf-footer"><a class="primary nf-control" href="/"><strong>بازگشت به صفحه اصلی</strong>${icons.home}</a></footer></main></div></body></html>`;
+ const themeScript=renderThemeBootstrap({supabaseUrl,initialMode});
+ return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>صفحه پیدا نشد | ${cleanBrand}</title><script>${themeScript}</script><style>${styles}</style></head><body><div class="nf-page"><main class="nf-shell" aria-labelledby="not-found-title"><header class="nf-top"><a class="home-icon nf-control" href="/" aria-label="خانه">${icons.home}</a><div class="brand"><span>${cleanBrand}</span><span class="brand-mark" aria-hidden="true"></span></div></header>${artwork}<div class="copy"><h1 id="not-found-title" aria-label="عه ! اینجا کجاست؟"><span class="exclaim">عه !</span><span class="question">اینجا کجاست؟</span></h1><p><span>صفحه‌ای که دنبالش بودی، پیدا نشد.</span><br><span>مسیر درست را از بین گزینه‌های زیر پیدا کن!</span></p></div><nav class="quick" aria-label="دسترسی سریع">${shortcuts.map(shortcut).join('')}</nav><footer class="nf-footer"><a class="primary nf-control" href="/"><strong>بازگشت به صفحه اصلی</strong>${icons.home}</a></footer></main></div></body></html>`;
 }

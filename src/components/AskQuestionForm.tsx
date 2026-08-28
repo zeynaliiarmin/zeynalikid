@@ -294,13 +294,13 @@ export default function AskQuestionForm({
                 width: 64,
                 height: 64,
                 borderRadius: '50%',
-                background: '#10b98118',
-                color: '#10b981',
+                background: `${T.ok}18`,
+                color: T.ok,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 14px',
-                border: '2px solid #10b98155',
+                border: `2px solid ${T.ok}55`,
               }}
             >
               <svg
@@ -378,7 +378,7 @@ export default function AskQuestionForm({
                 }}
               >
                 <span>{isFa ? 'شماره تماس (جهت تماس و پاسخ کارشناس)' : 'Phone Number (Required)'}</span>
-                <span style={{ color: '#DC2626' }}>*</span>
+                <span style={{ color: 'var(--zk-error, #DC2626)' }}>*</span>
               </label>
 
               <div style={{ display: 'flex', gap: 6, alignItems: 'stretch', direction: 'ltr' }}>
@@ -417,7 +417,7 @@ export default function AskQuestionForm({
               </div>
 
               {phoneTouched && !isPhoneValid && (
-                <div style={{ fontSize: 11.5, color: '#DC2626', marginTop: 4, fontWeight: 600 }}>
+                <div style={{ fontSize: 11.5, color: 'var(--zk-error, #DC2626)', marginTop: 4, fontWeight: 600 }}>
                   {isFa
                     ? 'لطفاً یک شماره تماس معتبر برای کشور انتخاب‌شده وارد فرمایید'
                     : 'Please enter a valid phone number for the selected country'}

@@ -100,7 +100,7 @@ export default function Header({
                   height: 18,
                   borderRadius: 9,
                   background: T.err || '#e53e3e',
-                  color: '#fff',
+                  color: 'var(--zk-text-inverse, #fff)',
                   fontSize: 10,
                   fontWeight: 700,
                   display: 'flex',

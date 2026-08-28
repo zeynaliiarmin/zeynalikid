@@ -212,7 +212,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
           )}
         </div>
         <div aria-label={`${review.rating} / 5`} style={{ display: 'flex', gap: 2, direction: 'ltr', justifyContent: 'flex-end', marginBottom: review.comment ? 8 : 4 }}>
-          {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color="#F59E0B" size={14} />)}
+          {[1, 2, 3, 4, 5].map((star) => <StarSvg key={star} filled={star <= review.rating} color={T.warn} size={14} />)}
         </div>
         <CommentBody comment={review.comment} expandable={long} expanded={expanded} inSheet={opts.inSheet} onMore={() => opts.inPage ? toggleExpand(String(review.id)) : setSheetReview(review)} />
         <time dateTime={review.created_at} style={{ display: 'block', borderTop: `1px solid ${T.brd}`, marginTop: 10, paddingTop: 8, fontSize: 10.5, color: T.mut }}>
@@ -352,7 +352,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
       <form ref={formRef} onSubmit={handleSubmit} style={{ background: T.soft, borderRadius: T.cardRadius || 16, border: `1px solid ${T.brd}`, padding: 16, boxShadow: T.neuIn }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: T.ttl, marginBottom: 12 }}>{isFa ? 'ثبت نظر جدید' : 'Leave a Review'}</div>
         {success ? (
-          <div style={{ padding: '12px 14px', background: '#10b98118', border: '1px solid #10b98144', color: '#10b981', borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
+          <div style={{ padding: '12px 14px', background: `${T.ok}18`, border: `1px solid ${T.ok}44`, color: T.ok, borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
             {isFa ? 'نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.' : 'Your review was submitted and will appear after approval.'}
           </div>
         ) : (

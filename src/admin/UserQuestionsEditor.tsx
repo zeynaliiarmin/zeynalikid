@@ -322,10 +322,10 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
   const getStatusBadgeStyle = (status: string) => {
     if (status === 'pending') {
-      return { background: '#FEF3C7', color: '#92400E', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 };
+      return { background: 'var(--zkad-tag-warn-bg)', color: 'var(--zkad-tag-warn-tx)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 };
     }
     if (status === 'answered') {
-      return { background: '#D1FAE5', color: '#065F46', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 };
+      return { background: 'var(--zkad-tag-ok-bg)', color: 'var(--zkad-tag-ok-tx)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 };
     }
     return { background: T.inp || '#F3F4F6', color: T.mut || '#6B7280', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 };
   };
@@ -356,9 +356,9 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
           <div
             style={{
               padding: '10px 16px',
-              background: '#ecfdf5',
-              border: '1px solid #10b981',
-              color: '#047857',
+              background: 'var(--zkad-tag-ok-bg)',
+              border: '1px solid var(--zkad-ok)',
+              color: 'var(--zkad-tag-ok-tx)',
               borderRadius: 12,
               fontSize: 13,
               fontWeight: 700,
@@ -411,8 +411,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
             flexWrap: 'wrap',
             gap: 10,
             padding: '10px 14px',
-            background: hasSomeSelected ? '#eff6ff' : (T.card || '#fff'),
-            border: `1px solid ${hasSomeSelected ? '#93c5fd' : (T.brd || '#E5E0D8')}`,
+            background: hasSomeSelected ? 'var(--zkad-tag-info-bg)' : (T.card || '#fff'),
+            border: `1px solid ${hasSomeSelected ? 'var(--zkad-info)' : (T.brd || '#E5E0D8')}`,
             borderRadius: 12,
             marginBottom: 14,
           }}
@@ -427,16 +427,16 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                 لغو انتخاب
               </button>
             )}
-            <span style={{ fontSize: 12, color: hasSomeSelected ? '#1e40af' : T.mut }}>
+            <span style={{ fontSize: 12, color: hasSomeSelected ? 'var(--zkad-tag-info-tx)' : T.mut }}>
               {hasSomeSelected ? `${selectedIds.length} سوال انتخاب شد` : `${filtered.length} سوال فیلترشده`}
             </span>
           </div>
           {hasSomeSelected && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button type="button" onClick={handleBulkArchive} style={{ ...AdminBtn(), padding: '6px 12px', background: '#f59e0b', color: '#fff', border: 0, fontSize: 12, fontWeight: 700 }}>
+              <button type="button" onClick={handleBulkArchive} style={{ ...AdminBtn(), padding: '6px 12px', background: '#92400e', color: '#fff', border: 0, fontSize: 12, fontWeight: 700 }}>
                 بایگانی انتخابی ({selectedIds.length})
               </button>
-              <button type="button" onClick={handleBulkDelete} style={{ ...AdminBtn(), padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', fontSize: 12, fontWeight: 700 }}>
+              <button type="button" onClick={handleBulkDelete} style={{ ...AdminBtn(), padding: '6px 12px', background: 'var(--zkad-tag-err-bg)', color: 'var(--zkad-tag-err-tx)', border: '1px solid var(--zkad-err)', fontSize: 12, fontWeight: 700 }}>
                 حذف انتخابی ({selectedIds.length})
               </button>
             </div>
@@ -485,8 +485,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                 <div
                   key={q.id}
                   style={{
-                    background: isSelected ? '#eff6ff' : (T.card || '#fff'),
-                    border: `1px solid ${isSelected ? '#93c5fd' : (T.brd || '#E5E0D8')}`,
+                    background: isSelected ? 'var(--zkad-selected)' : (T.card || '#fff'),
+                    border: `1px solid ${isSelected ? 'var(--zkad-info)' : (T.brd || '#E5E0D8')}`,
                     borderRadius: T.cardRadius || 14,
                     padding: 16,
                     boxShadow: isSelected ? '0 4px 12px rgba(59,130,246,0.15)' : (T.neuOut || '0 4px 15px rgba(0,0,0,0.06)'),
@@ -496,7 +496,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                     <div style={{ flex: 1 }}>
                       <div className="zkad-qu-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                         {/* دکمه انتخاب — بدون عنوان، هم‌اندازه فیلد شماره تماس، قبل از وضعیت */}
-                        <label className="zkad-qu-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'), borderRadius: 8, border: `1px solid ${isSelected ? '#93c5fd' : 'transparent'}`, height: 32, minWidth: 44, padding: '0 10px' }} title={isSelected ? 'لغو انتخاب' : 'انتخاب سوال'}>
+                        <label className="zkad-qu-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: isSelected ? 'var(--zkad-tag-info-bg)' : (T.soft || '#F4F1EA'), borderRadius: 8, border: `1px solid ${isSelected ? 'var(--zkad-info)' : 'transparent'}`, height: 32, minWidth: 44, padding: '0 10px' }} title={isSelected ? 'لغو انتخاب' : 'انتخاب سوال'}>
                           <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(q.id)} style={{ width: 17, height: 17, cursor: 'pointer', accentColor: T.acc || '#0F766E', margin: 0 }} />
                         </label>
 
@@ -510,9 +510,9 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 6,
-                              background: '#e0f2fe',
-                              color: '#0369a1',
-                              border: '1px solid #bae6fd',
+                              background: 'var(--zkad-tag-info-bg)',
+                              color: 'var(--zkad-tag-info-tx)',
+                              border: '1px solid var(--zkad-info)',
                               borderRadius: 8,
                               padding: '3px 10px',
                               fontSize: 12.5,
@@ -522,7 +522,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                             }}
                           >
                             <span>📞 {phone}</span>
-                            <span className="zkad-qu-phone-call" style={{ fontSize: 11, color: '#0284c7' }}>(تماس مستقیم)</span>
+                            <span className="zkad-qu-phone-call" style={{ fontSize: 11, color: 'inherit' }}>(تماس مستقیم)</span>
                           </a>
                         )}
 
@@ -593,7 +593,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                         href={`tel:${phone}`}
                         style={{
                           ...AdminBtn(),
-                          background: '#0284c7',
+                          background: '#0369A1',
                           color: '#fff',
                           border: 0,
                           textDecoration: 'none',
@@ -611,9 +611,9 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                       type="button"
                       style={{
                         ...AdminBtn(),
-                        background: '#f0fdf4',
-                        color: '#16a34a',
-                        border: '1px solid #bbf7d0',
+                        background: 'var(--zkad-tag-ok-bg)',
+                        color: 'var(--zkad-tag-ok-tx)',
+                        border: '1px solid var(--zkad-ok)',
                         fontWeight: 700,
                       }}
                       onClick={() => handleOpenAddToFAQ(q)}

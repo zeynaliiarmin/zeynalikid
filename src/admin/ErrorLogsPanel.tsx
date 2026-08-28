@@ -162,7 +162,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={load} disabled={loading} style={{ minHeight: 40, padding: '0 14px', borderRadius: 10, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>{loading ? 'در حال دریافت...' : 'به‌روزرسانی'}</button>
-          <button type="button" onClick={clearAll} disabled={clearing || !logs?.length} style={{ minHeight: 40, padding: '0 14px', borderRadius: 10, border: '1px solid #fca5a5', background: '#fee2e2', color: '#b91c1c', cursor: clearing || !logs?.length ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: 800, opacity: clearing || !logs?.length ? 0.6 : 1 }}>{clearing ? 'در حال پاک‌سازی...' : 'پاک‌سازی خطاها'}</button>
+          <button type="button" onClick={clearAll} disabled={clearing || !logs?.length} style={{ minHeight: 40, padding: '0 14px', borderRadius: 10, border: '1px solid var(--zkad-err)', background: 'var(--zkad-tag-err-bg)', color: 'var(--zkad-tag-err-tx)', cursor: clearing || !logs?.length ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: 800, opacity: clearing || !logs?.length ? 0.6 : 1 }}>{clearing ? 'در حال پاک‌سازی...' : 'پاک‌سازی خطاها'}</button>
         </div>
       </div>
 

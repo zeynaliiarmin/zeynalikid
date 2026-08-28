@@ -8,13 +8,13 @@
 
 /* ─── پالت بنفش مشاوره (برند) ─── */
 :root {
-  --zk-consult-a: #7C3AED;
-  --zk-consult-b: #A78BFA;
+  --zk-consult-a: #6D28D9;
+  --zk-consult-b: #7C3AED;
   --zk-consult-deep: #6D28D9;
 }
 [data-theme='dark'] {
-  --zk-consult-a: #7C3AED;
-  --zk-consult-b: #8B5CF6;
+  --zk-consult-a: #6D28D9;
+  --zk-consult-b: #7C3AED;
   --zk-consult-deep: #5B21B6;
 }
 
@@ -187,7 +187,7 @@
    طرح «ثبت‌نام دوره» — گرادیان primary/accent تم + سوییچ نرم primary ↔ muted
    ═══════════════════════════════════════════════════════════════════ */
 .zk-swap-enroll {
-  background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--zk-primary) 72%, #0F172A), color-mix(in srgb, var(--zk-primary) 42%, #0F172A));
   color: #fff;
   box-shadow: var(--zk-shadow-light);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 26%, transparent), var(--zk-shadow-light);
@@ -348,4 +348,9 @@
     -webkit-animation: none !important;
   }
   .zk-swap-stack { transform: translateY(0) !important; }
+}
+
+html[data-public-theme='dark'] .zk-swap-enroll {
+  background: var(--zk-primary);
+  color: var(--zk-text-inverse, #04111B);
 }

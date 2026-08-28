@@ -93,7 +93,7 @@ function CountdownTimer({
       style={{
         fontSize: 11,
         fontWeight: 700,
-        color: '#fff',
+        color: '#111827',
         background: '#EF4444',
         borderRadius: 9999,
         padding: '2px 8px',
@@ -208,7 +208,7 @@ export default function CourseCard({
             {tag && (
               <span style={{
                 background: tag.color,
-                color: '#fff',
+                color: '#111827',
                 padding: '3px 9px',
                 borderRadius: '999px',
                 fontSize: '10.5px',
@@ -223,7 +223,7 @@ export default function CourseCard({
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <span style={{
                   background: '#F59E0B',
-                  color: '#fff',
+                  color: '#111827',
                   padding: '2px 8px',
                   borderRadius: '999px',
                   fontSize: '10px',
@@ -248,7 +248,7 @@ export default function CourseCard({
             }}>
               {course.duration && (
                 <span style={{
-                  background: 'rgba(255,255,255,0.92)',
+                  background: 'color-mix(in srgb, var(--zk-surface) 92%, transparent)',
                   color: 'var(--zk-text)',
                   padding: '1px 7px',
                   borderRadius: '999px',
@@ -284,11 +284,11 @@ export default function CourseCard({
         {!showImage && !isSmall && (tag || hasDiscount) && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 7, marginBottom: 8 }}>
             {tag ? (
-              <span style={{ background: tag.color, color: '#fff', padding: '3px 9px', borderRadius: 999, fontSize: 10.5, fontWeight: 700 }}>{tag.label}</span>
+              <span style={{ background: tag.color, color: '#111827', padding: '3px 9px', borderRadius: 999, fontSize: 10.5, fontWeight: 700 }}>{tag.label}</span>
             ) : <span />}
             {hasDiscount && (
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                <span style={{ background: '#F59E0B', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
+                <span style={{ background: '#F59E0B', color: '#111827', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
                   {discountPercent}% {lang === 'en' ? 'off' : 'تخفیف'}
                 </span>
                 {course.discountEnd && <CountdownTimer targetDate={course.discountEnd} lang={lang} onExpire={handleExpire} />}
@@ -313,7 +313,7 @@ export default function CourseCard({
         {!showImage && !isSmall && (course.duration || course.ageBadge !== false) && (
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
             {course.duration && <span style={{ background: 'var(--zk-surface-muted)', color: 'var(--zk-text-muted)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{course.duration}</span>}
-            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: '#0B5D56', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
+            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
           </div>
         )}
 
@@ -338,7 +338,7 @@ export default function CourseCard({
             {course.rating && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                 {/* SVG Star */}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={T.warn} stroke={T.warn} strokeWidth="1">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
                 <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--zk-text)' }}>{course.rating}</span>
@@ -385,8 +385,8 @@ export default function CourseCard({
         {/* CTA */}
         {!isSmall && (
           <div style={{
-            background: '#0B5D56',
-            color: '#fff',
+            background: 'var(--zk-primary)',
+            color: 'var(--zk-text-inverse, #fff)',
             minHeight: 44,
             padding: '10px 16px',
             borderRadius: '999px',

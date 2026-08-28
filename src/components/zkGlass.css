@@ -288,3 +288,66 @@
 @media (prefers-reduced-motion: reduce) {
   .zkgl-btn, .zkgl-ghost, .zkgl-label, .zkgl-topbtn, .zkgl-lang button { transition: none !important; }
 }
+
+/* Light-mode counterpart for glass screens (tracking and admin sign-in).
+   Only colour/surface values change; sizing and layout stay identical. */
+.zkgl-root.zkgl-mode-light {
+  color: var(--zk-text, #0F172A);
+}
+.zkgl-root.zkgl-mode-light .zkgl-card {
+  background: rgba(255, 255, 255, .90);
+  border-color: var(--zk-border, #E2E8F0);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.zkgl-root.zkgl-mode-light .zkgl-title,
+.zkgl-root.zkgl-mode-light .zkgl-topbar,
+.zkgl-root.zkgl-mode-light .zkgl-topbtn,
+.zkgl-root.zkgl-mode-light .zkgl-prefix {
+  color: var(--zk-text, #0F172A);
+}
+.zkgl-root.zkgl-mode-light .zkgl-sub,
+.zkgl-root.zkgl-mode-light .zkgl-label,
+.zkgl-root.zkgl-mode-light .zkgl-eye,
+.zkgl-root.zkgl-mode-light .zkgl-link {
+  color: var(--zk-text-muted, #64748B);
+}
+.zkgl-root.zkgl-mode-light .zkgl-field .zkgl-input {
+  background: transparent !important;
+  color: var(--zk-text, #0F172A) !important;
+  border-color: var(--zk-border-strong, #CBD5E1) !important;
+}
+.zkgl-root.zkgl-mode-light .zkgl-field .zkgl-input:focus,
+.zkgl-root.zkgl-mode-light .zkgl-field .zkgl-input:focus-visible {
+  border-bottom-color: var(--zk-primary, #0F766E) !important;
+}
+.zkgl-root.zkgl-mode-light .zkgl-input:focus + .zkgl-label,
+.zkgl-root.zkgl-mode-light .zkgl-input:not(:placeholder-shown) + .zkgl-label {
+  color: var(--zk-primary, #0F766E);
+}
+.zkgl-root.zkgl-mode-light .zkgl-topbar {
+  background: rgba(255, 255, 255, .86);
+  border-color: var(--zk-border, #E2E8F0);
+}
+.zkgl-root.zkgl-mode-light .zkgl-topbtn,
+.zkgl-root.zkgl-mode-light .zkgl-lang {
+  background: rgba(255, 255, 255, .72);
+  border-color: var(--zk-border, #E2E8F0);
+}
+.zkgl-root.zkgl-mode-light .zkgl-topbtn:hover { background: var(--zk-surface-muted, #F1F5F9); }
+.zkgl-root.zkgl-mode-light .zkgl-lang button { color: var(--zk-text-muted, #64748B); }
+.zkgl-root.zkgl-mode-light .zkgl-lang button.zkgl-lang-on {
+  background: var(--zk-primary, #0F766E);
+  color: var(--zk-text-inverse, #FFFFFF);
+}
+.zkgl-root.zkgl-mode-light .zkgl-langsep { color: var(--zk-text-subtle, #94A3B8); }
+.zkgl-root.zkgl-mode-light .zkgl-ghost {
+  background: var(--zk-surface-muted, #F1F5F9);
+  border-color: var(--zk-border, #E2E8F0);
+  color: var(--zk-text, #0F172A);
+}
+.zkgl-root.zkgl-mode-light .zkgl-link { color: var(--zk-primary, #0F766E); }
+.zkgl-root.zkgl-mode-light .zkgl-err {
+  color: #B91C1C;
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}

@@ -165,7 +165,7 @@ export default function ProductsPage(){
               <div style={{ fontSize: 15, color: 'var(--zk-text-muted)', marginBottom: 12 }}>
                 {lang === 'en' ? 'No products match this filter.' : 'محصولی با این فیلتر پیدا نشد.'}
               </div>
-              <button onClick={() => setFilter('all')} style={{ minHeight: 42, padding: '0 18px', borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', border: 0, fontWeight: 700 }}>
+              <button onClick={() => setFilter('all')} style={{ minHeight: 42, padding: '0 18px', borderRadius: 999, background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)', border: 0, fontWeight: 700 }}>
                 {lang === 'en' ? 'Show all products' : 'نمایش همه محصولات'}
               </button>
             </div>
@@ -177,7 +177,7 @@ export default function ProductsPage(){
           <div style={{ marginTop: 36, padding: '20px 18px', background: 'var(--zk-surface)', borderRadius: 22, border: '1px solid var(--zk-border)' }}>
             <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 8 }}>{lang === 'en' ? 'Not sure which one is right?' : 'نمی‌دانی کدام مناسب‌تر است؟'}</div>
             <p style={{ fontSize: 13, color: 'var(--zk-text-muted)', marginBottom: 14 }}>{lang === 'en' ? 'Start with a free consultation to get a personalized recommendation.' : 'با یک مشاوره رایگان، بهترین گزینه را برای فرزندتان پیدا کنید.'}</p>
-            <button onClick={goConsult} style={{ width: '100%', minHeight: 48, borderRadius: 999, background: 'var(--zk-primary)', color: '#fff', fontWeight: 700, fontSize: 14 }}>
+            <button onClick={goConsult} style={{ width: '100%', minHeight: 48, borderRadius: 999, background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)', fontWeight: 700, fontSize: 14 }}>
               {lang === 'en' ? 'Request free consultation' : 'درخواست مشاوره رایگان'}
             </button>
           </div>

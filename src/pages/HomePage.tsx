@@ -83,12 +83,12 @@ export default function HomePage(){
 
    {/* کارت مشاور ارجاع‌دهنده (وقتی مخاطب با لینک اختصاصی مشاور وارد شده) */}
    {referralConsultant && (
-     <section className="zk-home-referral" style={{display:'flex',flexDirection:'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'#FFF7ED',border:'1px solid #FED7AA',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both',WebkitAnimation:'fadeSlide .6s ease both'}}>
+     <section className="zk-home-referral" style={{display:'flex',flexDirection:'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'color-mix(in srgb, var(--zk-warning) 9%, var(--zk-surface))',border:'1px solid color-mix(in srgb, var(--zk-warning) 36%, var(--zk-border))',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)',animation:'fadeSlide .6s ease both',WebkitAnimation:'fadeSlide .6s ease both'}}>
        {referralConsultant.showPhoto!==false && (referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl) ? (
          <img src={referralConsultant.photoUrl || referralConsultant.aboutPhotoUrl} alt={isRtl?referralConsultant.name:referralConsultant.nameEn||referralConsultant.name} style={{width:64,height:64,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid #FB923C',flexShrink:0}} />
        ) : null}
        <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}>
-         <span style={{display:'inline-block',fontSize:10.5,fontWeight:800,color:'#C2410C',marginBottom:3}}>{lang==='en'?'You are advised by':'شما توسط این مشاور مشاوره شده‌اید'}</span>
+         <span style={{display:'inline-block',fontSize:10.5,fontWeight:800,color:'var(--zk-warning)',marginBottom:3}}>{lang==='en'?'You are advised by':'شما توسط این مشاور مشاوره شده‌اید'}</span>
          <strong style={{display:'block',fontSize:15,color:'var(--zk-text)',fontWeight:800,lineHeight:1.4}}>{isRtl?referralConsultant.name:(referralConsultant.nameEn||referralConsultant.name)}</strong>
          {(isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title))?<span style={{display:'block',fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.5,marginTop:2}}>{isRtl?referralConsultant.title:(referralConsultant.titleEn||referralConsultant.title)}</span>:null}
          {(isRtl?referralConsultant.introText||referralConsultant.desc:(referralConsultant.introTextEn||referralConsultant.descEn||referralConsultant.introText||referralConsultant.desc))?<span style={{display:'block',fontSize:12.5,color:'var(--zk-text-muted)',lineHeight:1.8,marginTop:6}}>{(isRtl?referralConsultant.introText||referralConsultant.desc:(referralConsultant.introTextEn||referralConsultant.descEn||referralConsultant.introText||referralConsultant.desc))}</span>:null}
@@ -100,13 +100,13 @@ export default function HomePage(){
 
    {/* وقتی لینک ارجاع پایه است، یک باکس شناور زرد برای راهنمایی والد نمایش می‌دهیم */}
    {showBaseTip && (
-     <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)',fontSize:13.5,lineHeight:1.9,color:'#713F12',fontWeight:700}}>
+     <section style={{marginBottom:16,padding:'14px 16px',background:'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))',border:'1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)',fontSize:13.5,lineHeight:1.9,color:'var(--zk-warning)',fontWeight:700}}>
        <div style={{marginBottom:10}}>
          {(cfg.referral?.texts?.homeBase || (lang==='en'
            ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
            : 'والد عزیز، برای شناخت بهتر شرایط فرزندتان و انتخاب مسیر مناسب روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
        </button>
      </section>
@@ -114,15 +114,15 @@ export default function HomePage(){
 
    {/* وقتی لینک ارجاع روی یک تب خاص است، CTA برجسته برای آن تب */}
    {referralTab && !isDirectCourse && (
-     <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
-       <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
+     <section style={{marginBottom:16,padding:'14px 16px',background:'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))',border:'1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
+       <div style={{fontSize:13,lineHeight:1.9,color:'var(--zk-warning)',fontWeight:700,marginBottom:10}}>
          {(cfg.referral?.texts?.homeTab
            ? fillReferralText(cfg.referral.texts.homeTab, { tab: lang === 'en' ? (referralTab.titleEn || referralTab.title) : referralTab.title })
            : (lang==='en'
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
            : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {coursesCtaLabel}
        </button>
      </section>
@@ -134,15 +134,15 @@ export default function HomePage(){
      const target = courses[(referralTarget.courseIndex as number)-1];
      const cname = lang==='en' ? (target?.titleEn||target?.title||referralTab.title) : (target?.title||referralTab.title);
      return (
-       <section style={{marginBottom:16,padding:'14px 16px',background:'#FEF9C3',border:'1.5px solid #FACC15',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
-         <div style={{fontSize:13,lineHeight:1.9,color:'#713F12',fontWeight:700,marginBottom:10}}>
+       <section style={{marginBottom:16,padding:'14px 16px',background:'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))',border:'1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)'}}>
+         <div style={{fontSize:13,lineHeight:1.9,color:'var(--zk-warning)',fontWeight:700,marginBottom:10}}>
            {(cfg.referral?.texts?.homeCourse
              ? fillReferralText(cfg.referral.texts.homeCourse, { course: cname })
              : (lang==='en'
              ? `Tap the button below to see the details and register "${cname}".`
              : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>
-         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'#fff',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
+         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
            {coursesCtaLabel}
          </button>
        </section>

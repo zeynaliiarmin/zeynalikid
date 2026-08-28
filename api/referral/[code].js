@@ -3,14 +3,14 @@ import {renderNotFoundPage} from './notFoundPage.js';
 const BRAND="زینالیکید";
 const SITE_URL='https://zeynalikid.vercel.app';
 const SUPABASE_URL=String(process.env.VITE_SUPABASE_URL||'https://kkdrvexwzuuumjezipnd.supabase.co').replace(/\/$/,'');
-let cache={expiresAt:0,consultants:[],tabs:[]};
+let cache={expiresAt:0,consultants:[],tabs:[],publicThemeMode:'auto'};
 
-function notFound(response){
+function notFound(response,initialMode='auto'){
  response.statusCode=404;
  response.setHeader('Content-Type','text/html; charset=utf-8');
  response.setHeader('Cache-Control','public, max-age=0, s-maxage=60');
  response.setHeader('X-Robots-Tag','noindex, nofollow');
- response.end(renderNotFoundPage({brand:BRAND}));
+ response.end(renderNotFoundPage({brand:BRAND,supabaseUrl:SUPABASE_URL,initialMode}));
 }
 
 async function referralSettings(){
@@ -18,16 +18,16 @@ async function referralSettings(){
  const response=await fetch(`${SUPABASE_URL}/functions/v1/public-settings`,{headers:{Origin:SITE_URL},signal:AbortSignal.timeout(5000)});
  if(!response.ok)throw new Error(`public-settings ${response.status}`);
  const payload=await response.json();const settings=payload?.settings||{};
- cache={expiresAt:Date.now()+15_000,consultants:Array.isArray(settings.consultants)?settings.consultants:[],tabs:Array.isArray(settings.courseTabs)?settings.courseTabs:[]};
+ cache={expiresAt:Date.now()+15_000,consultants:Array.isArray(settings.consultants)?settings.consultants:[],tabs:Array.isArray(settings.courseTabs)?settings.courseTabs:[],publicThemeMode:['light','dark','auto'].includes(settings.publicThemeMode)?settings.publicThemeMode:'auto'};
  return cache;
 }
 
 export default async function handler(request,response){
  const raw=String(request.query?.code||'').trim();const normalized=raw.toLowerCase();
- if(!/^[a-z0-9]([a-z0-9_-]{0,126}[a-z0-9])?$/.test(normalized))return notFound(response);
+ if(!/^[a-z0-9]([a-z0-9_-]{0,126}[a-z0-9])?$/.test(normalized)){try{const settings=await referralSettings();return notFound(response,settings.publicThemeMode)}catch{return notFound(response)}}
  try{
   const settings=await referralSettings();const parsed=parseServerReferral(normalized,settings.consultants,settings.tabs);
-  if(!parsed)return notFound(response);
+  if(!parsed)return notFound(response,settings.publicThemeMode);
   response.statusCode=307;
   response.setHeader('Location',`/?ref=${encodeURIComponent(parsed.canonical)}`);
   response.setHeader('Cache-Control','private, no-store');

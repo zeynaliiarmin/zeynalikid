@@ -336,7 +336,7 @@ export default function ImageCropper({
           <button type="button" disabled={busy} onClick={onCancel} style={{ flex: 1, minHeight: 46, borderRadius: 11, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
             انصراف
           </button>
-          <button type="button" disabled={!img || busy || loadError} onClick={confirm} style={{ flex: 1, minHeight: 46, borderRadius: 11, border: 0, background: T.acc || '#0f766e', color: '#fff', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" disabled={!img || busy || loadError} onClick={confirm} style={{ flex: 1, minHeight: 46, borderRadius: 11, border: 0, background: T.acc || '#0f766e', color: 'var(--zkad-acc-contrast, #fff)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
             {busy ? 'در حال ذخیره…' : 'تأیید کادر'}
           </button>
         </div>

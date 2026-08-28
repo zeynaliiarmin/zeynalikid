@@ -39,11 +39,11 @@ const FALLBACK_PRODUCT = '/images/products/product-personalized-plan.webp';
 
 const getCategoryBadge = (cat: string | undefined, lang: 'fa' | 'en') => {
   const c = (cat || '').toLowerCase();
-  if (c.includes('personal') || c.includes('برنامه') || c.includes('دوره')) return { label: lang === 'en' ? 'Personalized Plan' : 'دوره شخصی‌سازی‌شده', color: '#0EA5E9' };
-  if (c.includes('supplement') || c.includes('مکمل')) return { label: lang === 'en' ? 'Supplement' : 'مکمل تخصصی', color: '#0F766E' };
-  if (c.includes('education') || c.includes('منبع')) return { label: lang === 'en' ? 'Educational' : 'منبع آموزشی', color: '#14B8A6' };
-  if (c.includes('bundle') || c.includes('باندل')) return { label: lang === 'en' ? 'Bundle' : 'باندل همراهی', color: '#F59E0B' };
-  return { label: lang === 'en' ? 'Product' : 'محصول', color: '#0F766E' };
+  if (c.includes('personal') || c.includes('برنامه') || c.includes('دوره')) return { label: lang === 'en' ? 'Personalized Plan' : 'دوره شخصی‌سازی‌شده', color: '#0EA5E9', text: '#111827' };
+  if (c.includes('supplement') || c.includes('مکمل')) return { label: lang === 'en' ? 'Supplement' : 'مکمل تخصصی', color: '#0F766E', text: '#FFFFFF' };
+  if (c.includes('education') || c.includes('منبع')) return { label: lang === 'en' ? 'Educational' : 'منبع آموزشی', color: '#14B8A6', text: '#111827' };
+  if (c.includes('bundle') || c.includes('باندل')) return { label: lang === 'en' ? 'Bundle' : 'باندل همراهی', color: '#F59E0B', text: '#111827' };
+  return { label: lang === 'en' ? 'Product' : 'محصول', color: '#0F766E', text: '#FFFFFF' };
 };
 
 export default function ProductCard({
@@ -104,7 +104,7 @@ export default function ProductCard({
           position: 'relative',
           height: isSmall ? '92px' : (hasDisplayFrame ? undefined : '168px'),
           aspectRatio: !isSmall && hasDisplayFrame ? imageAspect : undefined,
-          background: 'linear-gradient(145deg, #F8F4EF, #FDF8F3)',
+          background: 'linear-gradient(145deg, var(--zk-surface-muted), var(--zk-bg))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -140,7 +140,7 @@ export default function ProductCard({
           <span
             style={{
               background: badge.color,
-              color: '#fff',
+              color: badge.text,
               fontSize: '10px',
               fontWeight: 700,
               padding: '2px 9px',
@@ -155,7 +155,7 @@ export default function ProductCard({
             <span
               style={{
                 background: '#F59E0B',
-                color: '#fff',
+                color: '#111827',
                 fontSize: '9.5px',
                 fontWeight: 700,
                 padding: '1px 7px',
@@ -220,7 +220,7 @@ export default function ProductCard({
         {!isSmall && (
           <div style={{
             background: 'var(--zk-primary)',
-            color: '#fff',
+            color: 'var(--zk-text-inverse, #fff)',
             fontSize: '13px',
             fontWeight: 700,
             padding: '9px 16px',

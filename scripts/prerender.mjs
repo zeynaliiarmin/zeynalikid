@@ -29,7 +29,7 @@ for(const route of routes){
  const result=await render(route,settings);
  let html=template.replace(/<div id="root"><\/div>/,`<div id="root" data-ssg="true">${result.body}</div>`);
  html=html.replace('</head>',`${result.head}
-<script>window.__APP_SSG_SETTINGS__=${serialized}</script>
+<script>window.__APP_SSG_SETTINGS__=${serialized};window.__zkApplyPublicMode?.(window.__APP_SSG_SETTINGS__?.publicThemeMode)</script>
 </head>`);
  const relative=route==='/'?'index.html':path.join(route.slice(1),'index.html');
  const output=path.join(dist,relative);

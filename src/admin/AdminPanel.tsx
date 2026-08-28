@@ -430,8 +430,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
 
 {/* بنر هوشمند پایش و هشدار ظرفیت دیتابیس و استوریج (هایلایت قرمز بولد در صورت کمبود فضا) */}
 <div className="zkad-storage-banner" style={{
-  background: isStorageWarning ? '#fef2f2' : 'var(--zkad-card)',
-  border: `2px solid ${isStorageWarning ? '#dc2626' : 'var(--zkad-brd)'}`,
+  background: isStorageWarning ? 'var(--zkad-tag-err-bg)' : 'var(--zkad-card)',
+  border: `2px solid ${isStorageWarning ? 'var(--zkad-err)' : 'var(--zkad-brd)'}`,
   borderRadius: 16,
   padding: '14px 18px',
   marginBottom: 16,
@@ -442,12 +442,12 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     <div style={{display:'flex', alignItems:'center', gap:8, minWidth:0, flex:'1 1 200px'}}>
       <span style={{fontSize:20}}>{isStorageWarning ? '⚠️' : '💾'}</span>
       <div>
-        <h3 style={{margin:0, fontSize:14.5, fontWeight:800, color: isStorageWarning ? '#b91c1c' : 'var(--zkad-ttl)'}}>
+        <h3 style={{margin:0, fontSize:14.5, fontWeight:800, color: isStorageWarning ? 'var(--zkad-tag-err-tx)' : 'var(--zkad-ttl)'}}>
           {isStorageWarning
             ? `هشدار فوری ظرفیت ذخیره‌سازی: تنها حدود ${faNum(remainingPercent)}٪ از فضای دیتابیس و استوریج باقی مانده است!`
             : `پایش هوشمند ظرفیت دیتابیس و فضای ذخیره‌سازی (استوریج): ${faNum(remainingPercent)}٪ در دسترس`}
         </h3>
-        <p style={{margin:'2px 0 0', fontSize:11.5, color: isStorageWarning ? '#991b1b' : 'var(--zkad-mut)'}}>
+        <p style={{margin:'2px 0 0', fontSize:11.5, color: isStorageWarning ? 'var(--zkad-tag-err-tx)' : 'var(--zkad-mut)'}}>
           {isStorageWarning
             ? 'فضای ذخیره‌سازی شما رو به اتمام است. جهت جلوگیری از اختلال در ثبت فرم‌ها و آپلود تصاویر، فیش‌های قدیمی را پاک‌سازی یا فضا را آزاد نمایید.'
             : 'پایش مستمر حجم عکس‌های زبان، فیش‌های واریزی، فایل‌های صوتی و رکوردهای پایگاه داده.'}
@@ -458,7 +458,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
       <button
         type="button"
         className="zkad-toolbtn"
-        style={{background:'#fee2e2', color:'#b91c1c', borderColor:'#fca5a5', fontWeight:800}}
+        style={{background:'var(--zkad-tag-err-bg)', color:'var(--zkad-tag-err-tx)', borderColor:'var(--zkad-err)', fontWeight:800}}
         onClick={async () => {
           // Phase 3: use admin-api client with sessionToken + dryRun first
           try {
@@ -488,7 +488,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
       <button type="button" className="zkad-toolbtn" onClick={exportExcel}>
         📥 بک‌آپ Excel
       </button>
-      <button type="button" className="zkad-toolbtn" style={{background:'#e0f2fe', color:'#0369a1', borderColor:'#7dd3fc', fontWeight:800}} onClick={downloadFullBackup}>
+      <button type="button" className="zkad-toolbtn" style={{background:'var(--zkad-tag-info-bg)', color:'var(--zkad-tag-info-tx)', borderColor:'var(--zkad-info)', fontWeight:800}} onClick={downloadFullBackup}>
         🗜️ بک‌آپ کامل (ZIP)
       </button>
     </div>
@@ -519,7 +519,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     <span style={{background:'var(--zkad-badge)', padding:'3px 8px', borderRadius:6, border:'1px solid var(--zkad-brd)'}}>
       📄 کل رکوردهای ثبت‌شده: <b>{faNum(subs.length)} مورد</b>
     </span>
-    <span style={{background: isStorageWarning ? '#fee2e2' : 'var(--zkad-badge)', color: isStorageWarning ? '#b91c1c' : 'inherit', padding:'3px 8px', borderRadius:6, border:`1px solid ${isStorageWarning ? '#fca5a5' : 'var(--zkad-brd)'}`, fontWeight:800}}>
+    <span style={{background: isStorageWarning ? 'var(--zkad-tag-err-bg)' : 'var(--zkad-badge)', color: isStorageWarning ? 'var(--zkad-tag-err-tx)' : 'inherit', padding:'3px 8px', borderRadius:6, border:`1px solid ${isStorageWarning ? 'var(--zkad-err)' : 'var(--zkad-brd)'}`, fontWeight:800}}>
       💾 حجم تخمینی: <b>{faNum(estimatedStorageMB)} MB / {faNum(storageCapacityLimitMB)} MB ({faNum(usedPercent)}%)</b>
     </span>
   </div>
@@ -1301,7 +1301,7 @@ function ThemeManagerEditor(){
       <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۱۲ کاراکتر"/></label>
       <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار رمز جدید</span><input ref={credRepPwdRef} type="password" style={S.inp} placeholder="تکرار رمز جدید"/></label>
      </div>
-     <div><button type="button" style={{...AdminBtn(),background:T.acc||'#0F766E',color:'#fff',border:0,fontWeight:800}} disabled={credBusy} onClick={doChangeCreds}>{credBusy?'در حال ذخیره…':'ذخیره تغییرات ورود'}</button></div>
+     <div><button type="button" style={{...AdminBtn(),background:T.acc||'#0F766E',color:'var(--zkad-acc-contrast, #fff)',border:0,fontWeight:800}} disabled={credBusy} onClick={doChangeCreds}>{credBusy?'در حال ذخیره…':'ذخیره تغییرات ورود'}</button></div>
     </div>
    </div>
    <div style={{marginTop:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
@@ -1322,8 +1322,8 @@ function ThemeManagerEditor(){
         <div style={{minWidth:0,flex:1}}>
          <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
           <span style={{fontSize:12.5,fontWeight:800,color:T.txt,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{d.device_name||'دستگاه ناشناخته'}</span>
-          {isCurrent&&<span style={{fontSize:10,fontWeight:800,background:T.acc||'#0F766E',color:'#fff',borderRadius:6,padding:'1px 7px'}}>این دستگاه</span>}
-          {d.biometric_enabled&&<span style={{fontSize:10,fontWeight:800,background:'#ede9fe',color:'#6d28d9',borderRadius:6,padding:'1px 7px'}}>بیومتریک</span>}
+          {isCurrent&&<span style={{fontSize:10,fontWeight:800,background:T.acc||'#0F766E',color:'var(--zkad-acc-contrast, #fff)',borderRadius:6,padding:'1px 7px'}}>این دستگاه</span>}
+          {d.biometric_enabled&&<span style={{fontSize:10,fontWeight:800,background:'var(--zkad-placement-course-soft)',color:'var(--zkad-placement-course)',borderRadius:6,padding:'1px 7px'}}>بیومتریک</span>}
          </div>
          <div style={{fontSize:10.5,color:T.mut,marginTop:3}}>{d.browser||''}{d.platform?` • ${d.platform}`:''}{d.last_seen_at?` • آخرین فعالیت: ${new Date(d.last_seen_at).toLocaleDateString('fa-IR')} ${new Date(d.last_seen_at).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}`:''}</div>
         </div>

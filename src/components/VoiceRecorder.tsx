@@ -106,7 +106,7 @@ export default function VoiceRecorder({
             borderRadius: 9999,
             background: 'rgba(239, 68, 68, 0.08)',
             border: '1px solid rgba(239, 68, 68, 0.35)',
-            color: '#DC2626',
+            color: 'var(--zk-error, #DC2626)',
             cursor: 'pointer',
             fontFamily: 'inherit',
             fontSize: 12,
@@ -167,7 +167,7 @@ export default function VoiceRecorder({
                 fontFamily: 'monospace,-apple-system,"Courier New"',
                 fontSize: 13,
                 fontWeight: 800,
-                color: '#DC2626',
+                color: 'var(--zk-error, #DC2626)',
               }}
               dir="ltr"
             >
@@ -243,7 +243,7 @@ export default function VoiceRecorder({
                   display: 'inline-block',
                 }}
               />
-              <span style={{ fontSize: 12, color: '#DC2626', fontWeight: 800 }}>
+              <span style={{ fontSize: 12, color: 'var(--zk-error, #DC2626)', fontWeight: 800 }}>
                 {isFa ? 'یادداشت صوتی ضبط شد' : 'Voice note recorded'}
               </span>
               <span
@@ -273,7 +273,7 @@ export default function VoiceRecorder({
                   borderRadius: 8,
                   border: '1px solid rgba(220, 38, 38, 0.3)',
                   background: 'rgba(220, 38, 38, 0.08)',
-                  color: '#DC2626',
+                  color: 'var(--zk-error, #DC2626)',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   fontSize: 11.5,
@@ -282,7 +282,7 @@ export default function VoiceRecorder({
                   margin: 0,
                 }}
               >
-                <TrashIcon color="#DC2626" size={13} />
+                <TrashIcon color="var(--zk-error, #DC2626)" size={13} />
                 <span>{isFa ? 'حذف' : 'Delete'}</span>
               </button>
 
@@ -303,7 +303,7 @@ export default function VoiceRecorder({
                   borderRadius: 8,
                   border: '1px solid rgba(15, 118, 110, 0.3)',
                   background: 'rgba(15, 118, 110, 0.08)',
-                  color: '#0F766E',
+                  color: 'var(--zk-primary, #0F766E)',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   fontSize: 11.5,
@@ -312,7 +312,7 @@ export default function VoiceRecorder({
                   margin: 0,
                 }}
               >
-                <RefreshIcon color="#0F766E" size={13} />
+                <RefreshIcon color="var(--zk-primary, #0F766E)" size={13} />
                 <span>{isFa ? 'ضبط مجدد' : 'Re-record'}</span>
               </button>
             </div>
@@ -332,7 +332,7 @@ export default function VoiceRecorder({
             borderRadius: 9999,
             background: 'rgba(220, 38, 38, 0.12)',
             border: '1px solid #DC2626',
-            color: '#DC2626',
+            color: 'var(--zk-error, #DC2626)',
             fontSize: 11.5,
             fontWeight: 700,
             boxSizing: 'border-box',

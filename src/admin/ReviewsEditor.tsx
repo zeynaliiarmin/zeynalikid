@@ -442,10 +442,13 @@ export default function ReviewsEditor({ app }: { app: any }) {
     }
   };
 
+  const placementColor = (id: string) => id === 'course_detail' ? 'var(--zkad-placement-course)' : 'var(--zkad-placement-product)';
+  const placementSoft = (id: string) => id === 'course_detail' ? 'var(--zkad-placement-course-soft)' : 'var(--zkad-placement-product-soft)';
+
   const getStatusBadge = (status: string) => {
-    if (status === 'approved') return { background: '#D1FAE5', color: '#065F46', label: '✓ قابل پخش در سایت' };
-    if (status === 'rejected') return { background: '#FEE2E2', color: '#991B1B', label: '✕ غیرقابل پخش' };
-    return { background: '#FEF3C7', color: '#92400E', label: '⏳ در انتظار بررسی' };
+    if (status === 'approved') return { background: 'var(--zkad-tag-ok-bg)', color: 'var(--zkad-tag-ok-tx)', label: '✓ قابل پخش در سایت' };
+    if (status === 'rejected') return { background: 'var(--zkad-tag-err-bg)', color: 'var(--zkad-tag-err-tx)', label: '✕ غیرقابل پخش' };
+    return { background: 'var(--zkad-tag-warn-bg)', color: 'var(--zkad-tag-warn-tx)', label: '⏳ در انتظار بررسی' };
   };
 
   const fmtDate = (dString?: string) => formatPersianReviewDate(dString, true);
@@ -458,9 +461,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
           <div
             style={{
               padding: '12px 18px',
-              background: '#ecfdf5',
-              border: '1px solid #10b981',
-              color: '#047857',
+              background: 'var(--zkad-tag-ok-bg)',
+              border: '1px solid var(--zkad-ok)',
+              color: 'var(--zkad-tag-ok-tx)',
               borderRadius: 14,
               fontSize: 13.5,
               fontWeight: 800,
@@ -513,7 +516,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                   borderRadius: T.btnRadius || 12,
                   border: `1px solid ${statusFilter === tab.id ? (T.acc || '#0F766E') : (T.brd || '#E5E0D8')}`,
                   background: statusFilter === tab.id ? (T.acc || '#0F766E') : (T.card || '#fff'),
-                  color: statusFilter === tab.id ? '#fff' : (T.txt || '#1F2937'),
+                  color: statusFilter === tab.id ? 'var(--zkad-acc-contrast, #fff)' : (T.txt || '#1F2937'),
                   fontWeight: 700,
                   fontSize: 12.5,
                   cursor: 'pointer',
@@ -651,8 +654,8 @@ export default function ReviewsEditor({ app }: { app: any }) {
             flexWrap: 'wrap',
             gap: 10,
             padding: '10px 14px',
-            background: hasSomeSelected ? '#eff6ff' : (T.card || '#fff'),
-            border: `1px solid ${hasSomeSelected ? '#93c5fd' : (T.brd || '#E5E0D8')}`,
+            background: hasSomeSelected ? 'var(--zkad-tag-info-bg)' : (T.card || '#fff'),
+            border: `1px solid ${hasSomeSelected ? 'var(--zkad-info)' : (T.brd || '#E5E0D8')}`,
             borderRadius: 12,
             marginBottom: 16,
             transition: 'all .2s ease',
@@ -707,10 +710,10 @@ export default function ReviewsEditor({ app }: { app: any }) {
               </button>
             )}
 
-            <span style={{ fontSize: 13, fontWeight: 700, color: hasSomeSelected ? '#1e40af' : T.mut }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: hasSomeSelected ? 'var(--zkad-tag-info-tx)' : T.mut }}>
               {hasSomeSelected ? (
                 <>
-                  <b style={{ color: '#2563eb', fontSize: 14 }}>{selectedIds.length}</b> نظر از{' '}
+                  <b style={{ color: 'var(--zkad-tag-info-tx)', fontSize: 14 }}>{selectedIds.length}</b> نظر از{' '}
                   <b>{filtered.length}</b> نظر فیلترشده انتخاب شده است
                 </>
               ) : (
@@ -728,7 +731,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 style={{
                   ...AdminBtn(),
                   padding: '6px 12px',
-                  background: '#16a34a',
+                  background: '#047857',
                   color: '#fff',
                   border: 0,
                   fontSize: 12,
@@ -745,8 +748,8 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 style={{
                   ...AdminBtn(),
                   padding: '6px 12px',
-                  background: '#eab308',
-                  color: '#422006',
+                  background: 'var(--zkad-warn)',
+                  color: 'var(--zkad-warn-contrast)',
                   border: 0,
                   fontSize: 12,
                   fontWeight: 700,
@@ -779,7 +782,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 style={{
                   ...AdminBtn(),
                   padding: '6px 12px',
-                  background: '#0284c7',
+                  background: '#0369A1',
                   color: '#fff',
                   border: 0,
                   fontSize: 12,
@@ -796,9 +799,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 style={{
                   ...AdminBtn(),
                   padding: '6px 12px',
-                  background: '#fee2e2',
-                  color: '#dc2626',
-                  border: '1px solid #fca5a5',
+                  background: 'var(--zkad-tag-err-bg)',
+                  color: 'var(--zkad-tag-err-tx)',
+                  border: '1px solid var(--zkad-err)',
                   fontSize: 12,
                   fontWeight: 700,
                 }}
@@ -838,10 +841,10 @@ export default function ReviewsEditor({ app }: { app: any }) {
                 <div
                   key={r.id}
                   style={{
-                    background: isSelected ? '#f8fafc' : (T.card || '#fff'),
+                    background: isSelected ? 'var(--zkad-selected)' : (T.card || '#fff'),
                     borderRadius: T.cardRadius || 14,
                     border: isSelected
-                      ? '2px solid #2563eb'
+                      ? '2px solid var(--zkad-info)'
                       : `1px solid ${r.status === 'approved' ? '#86efac' : r.status === 'rejected' ? '#fca5a5' : (T.brd || '#E5E0D8')}`,
                     padding: 16,
                     boxShadow: isSelected
@@ -873,13 +876,13 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           alignItems: 'center',
                           gap: 6,
                           cursor: 'pointer',
-                          background: isSelected ? '#dbeafe' : (T.soft || '#F4F1EA'),
+                          background: isSelected ? 'var(--zkad-tag-info-bg)' : (T.soft || '#F4F1EA'),
                           padding: '5px 10px',
                           borderRadius: 8,
-                          border: `1px solid ${isSelected ? '#3b82f6' : (T.brd || '#E5E0D8')}`,
+                          border: `1px solid ${isSelected ? 'var(--zkad-info)' : (T.brd || '#E5E0D8')}`,
                           fontWeight: 800,
                           fontSize: 12,
-                          color: isSelected ? '#1e40af' : (T.txt || '#1F2937'),
+                          color: isSelected ? 'var(--zkad-tag-info-tx)' : (T.txt || '#1F2937'),
                         }}
                       >
                         <input
@@ -918,7 +921,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                               border: 0,
                               cursor: 'pointer',
                               padding: 2,
-                              color: star <= currentEdit.rating ? '#F59E0B' : '#D1D5DB',
+                              color: star <= currentEdit.rating ? 'var(--zkad-warn)' : 'var(--zkad-brd-strong)',
                               fontSize: 18,
                               lineHeight: 1,
                               transition: 'color .15s ease',
@@ -927,7 +930,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                             ★
                           </button>
                         ))}
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', marginInlineStart: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--zkad-warn)', marginInlineStart: 4 }}>
                           ({currentEdit.rating} از ۵)
                         </span>
                       </div>
@@ -1082,9 +1085,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                             style={{
                               padding: '4px 10px',
                               borderRadius: 20,
-                              border: `1px solid ${isPlaced ? opt.color : (T.brd || '#E5E0D8')}`,
-                              background: isPlaced ? `${opt.color}15` : (T.card || '#fff'),
-                              color: isPlaced ? opt.color : (T.mut || '#6B7280'),
+                              border: `1px solid ${isPlaced ? placementColor(opt.id) : (T.brd || '#E5E0D8')}`,
+                              background: isPlaced ? placementSoft(opt.id) : (T.card || '#fff'),
+                              color: isPlaced ? placementColor(opt.id) : (T.mut || '#6B7280'),
                               fontWeight: isPlaced ? 800 : 500,
                               fontSize: 11.5,
                               cursor: 'pointer',
@@ -1092,7 +1095,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                               alignItems: 'center',
                               gap: 4,
                               transition: 'all .15s ease',
-                              boxShadow: isPlaced ? `0 1px 4px ${opt.color}22` : 'none',
+                              boxShadow: isPlaced ? `0 1px 4px ${placementColor(opt.id)}` : 'none',
                             }}
                           >
                             <span>{isPlaced ? '✓' : '+'}</span>
@@ -1119,9 +1122,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                               style={{
                                 padding: '4px 10px',
                                 borderRadius: 20,
-                                border: `1px solid ${on ? '#0d9488' : (T.brd || '#E5E0D8')}`,
-                                background: on ? '#0d948815' : (T.card || '#fff'),
-                                color: on ? '#0d9488' : (T.mut || '#6B7280'),
+                                border: `1px solid ${on ? 'var(--zkad-placement-product)' : (T.brd || '#E5E0D8')}`,
+                                background: on ? 'var(--zkad-placement-product-soft)' : (T.card || '#fff'),
+                                color: on ? 'var(--zkad-placement-product)' : (T.mut || '#6B7280'),
                                 fontWeight: on ? 800 : 500,
                                 fontSize: 11.5,
                                 cursor: 'pointer',
@@ -1149,7 +1152,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       type="button"
                       style={{
                         ...AdminBtn(),
-                        background: '#0284c7',
+                        background: '#0369A1',
                         color: '#fff',
                         border: 0,
                         fontWeight: 700,
@@ -1168,7 +1171,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         type="button"
                         style={{
                           ...AdminBtn(),
-                          background: '#16a34a',
+                          background: '#047857',
                           color: '#fff',
                           border: 0,
                           fontWeight: 700,
@@ -1413,9 +1416,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         style={{
                           padding: '5px 12px',
                           borderRadius: 20,
-                          border: `1px solid ${isSelected ? opt.color : (T.brd || '#E5E0D8')}`,
-                          background: isSelected ? `${opt.color}18` : (T.card || '#fff'),
-                          color: isSelected ? opt.color : (T.mut || '#6B7280'),
+                          border: `1px solid ${isSelected ? placementColor(opt.id) : (T.brd || '#E5E0D8')}`,
+                          background: isSelected ? placementSoft(opt.id) : (T.card || '#fff'),
+                          color: isSelected ? placementColor(opt.id) : (T.mut || '#6B7280'),
                           fontWeight: isSelected ? 800 : 500,
                           fontSize: 12,
                           cursor: 'pointer',
@@ -1455,9 +1458,9 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         style={{
                           padding: '5px 12px',
                           borderRadius: 20,
-                          border: `1px solid ${on ? '#0d9488' : (T.brd || '#E5E0D8')}`,
-                          background: on ? '#0d948815' : (T.card || '#fff'),
-                          color: on ? '#0d9488' : (T.mut || '#6B7280'),
+                          border: `1px solid ${on ? 'var(--zkad-placement-product)' : (T.brd || '#E5E0D8')}`,
+                          background: on ? 'var(--zkad-placement-product-soft)' : (T.card || '#fff'),
+                          color: on ? 'var(--zkad-placement-product)' : (T.mut || '#6B7280'),
                           fontWeight: on ? 800 : 500,
                           fontSize: 12,
                           cursor: 'pointer',
@@ -1492,7 +1495,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         border: 0,
                         cursor: 'pointer',
                         padding: 4,
-                        color: star <= newReview.rating ? '#F59E0B' : '#D1D5DB',
+                        color: star <= newReview.rating ? 'var(--zkad-warn)' : 'var(--zkad-brd-strong)',
                         fontSize: 24,
                         lineHeight: 1,
                       }}
@@ -1500,7 +1503,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       ★
                     </button>
                   ))}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B', marginInlineStart: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--zkad-warn)', marginInlineStart: 6 }}>
                     {newReview.rating} از ۵ ستاره
                   </span>
                 </div>
@@ -1632,7 +1635,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#7c3aed' }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--zkad-placement-course)' }}>
                   🏷️ تنظیم دسته‌جمعی محل‌های نمایش در سایت
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: 12, color: T.mut || '#6B7280' }}>
@@ -1674,8 +1677,8 @@ export default function ReviewsEditor({ app }: { app: any }) {
                         justifyContent: 'space-between',
                         padding: '8px 12px',
                         borderRadius: 10,
-                        border: `1px solid ${isChecked ? opt.color : (T.brd || '#E5E0D8')}`,
-                        background: isChecked ? `${opt.color}12` : (T.soft || '#F4F1EA'),
+                        border: `1px solid ${isChecked ? placementColor(opt.id) : (T.brd || '#E5E0D8')}`,
+                        background: isChecked ? placementSoft(opt.id) : (T.soft || '#F4F1EA'),
                         cursor: 'pointer',
                         transition: 'all .15s ease',
                       }}
@@ -1690,7 +1693,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           )}
                           style={{ width: 16, height: 16, cursor: 'pointer' }}
                         />
-                        <span style={{ fontSize: 13, fontWeight: isChecked ? 800 : 600, color: isChecked ? opt.color : T.txt }}>
+                        <span style={{ fontSize: 13, fontWeight: isChecked ? 800 : 600, color: isChecked ? placementColor(opt.id) : T.txt }}>
                           {opt.label}
                         </span>
                       </div>

@@ -16,6 +16,7 @@ import './index.css';
 import './components/zkCta.css';
 // گلسمورفیسم (کارت شیشه‌ای + لیبل شناور) برای ورود ادمین و صفحهٔ پیگیری
 import './components/zkGlass.css';
+import './public-color-modes.css';
 
 // ثبت سراسری خطاهای فرانت‌اند (بی‌صدا — تجربهٔ کاربر را مختل نمی‌کند)
 initErrorLogging();

@@ -493,7 +493,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
           const seen = stories.length > 0 && stories.every((s) => seenSet.has(s.id));
           return (
             <button key={hl.id} className="zk-hl-btn" onClick={() => openStory(i)} style={{ scrollSnapAlign: 'start' }}>
-              <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : '#fff' }}>
+              <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : T.card }}>
                 {!seen && <span className="zk-hl-spin" aria-hidden="true" />}
                 <div className="zk-hl-inner" style={{ background: T.card }}>
                   {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <span style={{ fontSize: 18, color: T.acc }}>✦</span>}
