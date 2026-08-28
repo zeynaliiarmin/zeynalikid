@@ -110,7 +110,7 @@ export default function NotFoundPage(){
   '--nf-donut-inner':dark?'rgba(255,255,255,.24)':'rgba(0,0,0,.18)',
   '--nf-donut-outer':dark?'rgba(255,255,255,.28)':'rgba(255,255,255,.45)',
  };
- return <div className="zk-nf-page" dir="rtl" style={vars} data-nf-theme={themeId}>
+ return <div className="zk-nf-page" dir="rtl" style={vars} data-nf-theme={themeId} data-nf-mode={dark?'dark':'light'}>
   <Helmet><title>صفحه پیدا نشد | زینالیکید</title><meta name="robots" content="noindex, nofollow"/></Helmet>
   <main className="zk-nf-shell" aria-labelledby="not-found-title">
    <header className="zk-nf-top">

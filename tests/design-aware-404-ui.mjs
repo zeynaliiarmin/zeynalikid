@@ -20,6 +20,12 @@ const themes=[
  {design:'classic',theme:'blend',id:'blend',accent:'#1769c2',warm:'#b83a3a',text:'#17202b',surface:'#fff',page:'#f7fafb'},
  {design:'blend',theme:'blend',id:'blend',accent:'#1769c2',warm:'#b83a3a',text:'#17202b',surface:'#fff',page:'#f7fafb'},
 ];
+const darkThemeIds=new Set(['ocean','dark','navystack','navystack-dark']);
+const forcedDarkTheme=themes.find(theme=>theme.id==='dark');
+if(!forcedDarkTheme)throw new Error('Dark 404 theme fixture is missing');
+const panelThemes=themes.filter(theme=>theme.id!=='navystack-dark');
+const forcedDarkDesigns=themes.filter(theme=>['wellness','kidlearn','navystack','motherly-trust'].includes(theme.id)||theme.design==='blend');
+let mockedSettings={publicThemeMode:'light'};
 const labels=['درخواست مشاوره','معرفی دوره‌ها','تجربه والدین','مجوزها و نمادها','مقالات آموزشی','ارتباط با ما و پشتیبانی'];
 const paths=['/consultation','/courses','/experience','/licenses','/education','/contact'];
 const line1='صفحه‌ای که دنبالش بودی، پیدا نشد.';
@@ -27,6 +33,11 @@ const line2='مسیر درست را از بین گزینه‌های زیر پی�
 const transparentTap=new Set(['rgba(0, 0, 0, 0)','transparent']);
 const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
 const hexRgb=value=>{const hex=value.toLowerCase()==='#fff'?'#ffffff':value.toLowerCase();const match=/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/.exec(hex);return match?rgb(parseInt(match[1],16),parseInt(match[2],16),parseInt(match[3],16)):value};
+
+function assertThemeState(state,theme,source){
+ const mode=darkThemeIds.has(theme.id)?'dark':'light';
+ if(state.themeId!==theme.id||state.mode!==mode||state.colorScheme!==mode||state.accent.toLowerCase()!==theme.accent.toLowerCase()||state.warm.toLowerCase()!==theme.warm.toLowerCase()||state.text.toLowerCase()!==theme.text.toLowerCase()||state.surface.toLowerCase()!==theme.surface.toLowerCase()||state.pageToken.replaceAll(' ','').toLowerCase()!==theme.page.replaceAll(' ','').toLowerCase()||state.cardBackground!==hexRgb(theme.surface)||state.questionColor!==hexRgb(theme.text)||state.exclaimColor!==hexRgb(theme.warm)||state.segmentColors[0]!==hexRgb(theme.accent))throw new Error(`${source} theme token mismatch for ${theme.design}/${theme.theme}: ${JSON.stringify(state)}`);
+}
 
 function assertGeometry(state,kind,viewport){
  const where=`${kind} ${viewport.width}x${viewport.height}`;
@@ -71,7 +82,7 @@ async function readLayout(page,{react}){
    brand:brandEl.querySelector('span')?.textContent,homeRight:homeRect.left>brandRect.left,number:[...svg.querySelectorAll('text')].map(node=>node.textContent).join(''),segmentColors:segments.map(node=>getComputedStyle(node).fill),
    svgComplete:!!svg.querySelector('#neu-4-shadow')&&!!svg.querySelector('#donut-shadow')&&!!svg.querySelector('#donut-hole-mask')&&svg.getAttribute('viewBox')==='0 0 400 170',motion,emoji:/\p{Extended_Pictographic}/u.test(pageEl.textContent||''),
    tapHighlight:homeStyle.webkitTapHighlightColor,outline:homeStyle.outlineStyle,userSelect:pageStyle.userSelect,controlsAreLinks:[home,primary,...cards].every(node=>node.tagName==='A'),pills:cards.every(node=>parseFloat(getComputedStyle(node).borderRadius)>1000),roundIcons:icons.every(node=>getComputedStyle(node).borderRadius==='50%'),primaryGradient:getComputedStyle(primary).backgroundImage,
-   themeId:pageEl.dataset.nfTheme||'',accent:pageEl.style.getPropertyValue('--nf-accent').trim(),warm:pageEl.style.getPropertyValue('--nf-warm').trim(),text:pageEl.style.getPropertyValue('--nf-text').trim(),surface:pageEl.style.getPropertyValue('--nf-surface').trim(),pageToken:pageEl.style.getPropertyValue('--nf-page-bg').trim(),gradientToken:pageEl.style.getPropertyValue('--nf-gradient').trim(),mutedColor:getComputedStyle(copy.querySelector('p')).color,controlBackground:getComputedStyle(cards[0]).backgroundColor,
+   themeId:pageEl.dataset.nfTheme||'',mode:pageEl.dataset.nfMode||'',colorScheme:pageStyle.colorScheme,accent:pageEl.style.getPropertyValue('--nf-accent').trim(),warm:pageEl.style.getPropertyValue('--nf-warm').trim(),text:pageEl.style.getPropertyValue('--nf-text').trim(),surface:pageEl.style.getPropertyValue('--nf-surface').trim(),pageToken:pageEl.style.getPropertyValue('--nf-page-bg').trim(),gradientToken:pageEl.style.getPropertyValue('--nf-gradient').trim(),mutedColor:getComputedStyle(copy.querySelector('p')).color,controlBackground:getComputedStyle(cards[0]).backgroundColor,
   };
  },react);
 }
@@ -84,22 +95,37 @@ async function assertActive(page,selector){
  if(!changed||state.color===rgb(0,0,238)||!transparentTap.has(state.tap)||state.outline!=='none'||state.transform!=='none'||state.filter!=='none'||parseFloat(state.transition)>0)throw new Error(`Unsafe active state for ${selector}: ${JSON.stringify({before,state})}`);
 }
 
-async function setReactTheme(page,{design,theme}){
+async function waitForReactTheme(page,expectedId){
+ await page.waitForSelector('.zk-nf-shell',{timeout:20000});
+ await page.waitForFunction(id=>document.querySelector('.zk-nf-page')?.dataset.nfTheme===id,{timeout:20000},expectedId);
+}
+
+async function setReactTheme(page,{design,theme,id},publicThemeMode='light'){
+ mockedSettings={publicThemeMode};
  await page.goto(`${base}/?theme=${design}-${theme}`,{waitUntil:'networkidle0',timeout:30000});
- await page.evaluate(values=>{localStorage.setItem('zk_design_system',values.design);localStorage.setItem('zk_theme',values.theme)}, {design,theme});
+ await page.evaluate(values=>{localStorage.setItem('zk_design_system',values.design);localStorage.setItem('zk_theme',values.theme);sessionStorage.removeItem('zk_public_settings_cache_v1')}, {design,theme});
  await page.reload({waitUntil:'networkidle0',timeout:30000});
  await page.evaluate(()=>{history.pushState(null,'','/client-side-theme-404');window.dispatchEvent(new PopStateEvent('popstate'))});
- await page.waitForSelector('.zk-nf-shell',{timeout:20000});
+ await waitForReactTheme(page,publicThemeMode==='dark'?'dark':id);
+}
+
+async function setPanelTheme(page,{design,theme,id},publicThemeMode='light'){
+ mockedSettings={publicThemeMode,designSystem:{sections:{public:{design,theme}}}};
+ await page.goto(`${base}/?panel-theme=${design}-${theme}-${publicThemeMode}`,{waitUntil:'networkidle0',timeout:30000});
+ await page.evaluate(()=>{localStorage.removeItem('zk_design_system');localStorage.removeItem('zk_theme');localStorage.removeItem('zkid_settings_v2');sessionStorage.removeItem('zk_public_settings_cache_v1')});
+ await page.reload({waitUntil:'networkidle0',timeout:30000});
+ await page.evaluate(()=>{history.pushState(null,'','/client-side-panel-theme-404');window.dispatchEvent(new PopStateEvent('popstate'))});
+ await waitForReactTheme(page,publicThemeMode==='dark'?'dark':id);
 }
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
 try{
  const context=await browser.createBrowserContext(),page=await context.newPage();await page.setBypassServiceWorker(true);await page.setCacheEnabled(false);
  await page.evaluateOnNewDocument(()=>{const NativeDate=Date,fixed=new NativeDate('2026-08-28T12:00:00');class NoonDate extends NativeDate{constructor(...args){super(...(args.length?args:[fixed.getTime()]))}static now(){return fixed.getTime()}};Object.defineProperty(window,'Date',{value:NoonDate})});
- await page.setRequestInterception(true);page.on('request',request=>{if(request.url().includes('/functions/v1/public-settings')){const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};if(request.method()==='OPTIONS')return request.respond({status:204,headers,body:''});return request.respond({status:200,headers,contentType:'application/json',body:JSON.stringify({settings:{publicThemeMode:'light'}})})}return request.continue()});
+ await page.setRequestInterception(true);page.on('request',request=>{if(request.url().includes('/functions/v1/public-settings')){const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};if(request.method()==='OPTIONS')return request.respond({status:204,headers,body:''});return request.respond({status:200,headers,contentType:'application/json',body:JSON.stringify({settings:mockedSettings})})}return request.continue()});
 
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});await page.goto(`${base}/`,{waitUntil:'domcontentloaded'});await page.evaluate(()=>{localStorage.setItem('zk_design_system','navystack');localStorage.setItem('zk_theme','dark')});
- for(const viewport of viewports){await page.setViewport({...viewport,deviceScaleFactor:1});await page.goto(`${base}/404.html?viewport=${viewport.width}x${viewport.height}`,{waitUntil:'domcontentloaded',timeout:30000});const state=await readLayout(page,{react:false});assertGeometry(state,'static',viewport);if(state.cardBackground!==rgb(255,255,255)||state.exclaimColor!==rgb(238,119,110)||state.questionColor!==rgb(49,46,85)||state.segmentColors.join(',')!==[rgb(13,148,136),rgb(251,146,60),rgb(250,204,21),rgb(236,72,153)].join(','))throw new Error(`Static safe palette mismatch: ${JSON.stringify(state)}`);const hrefs=await page.$$eval('.nf-shortcut',nodes=>nodes.map(node=>node.getAttribute('href')));if(JSON.stringify(hrefs)!==JSON.stringify(paths))throw new Error(`Static shortcut paths mismatch: ${JSON.stringify(hrefs)}`)}
+ for(const viewport of viewports){await page.setViewport({...viewport,deviceScaleFactor:1});await page.goto(`${base}/404.html?viewport=${viewport.width}x${viewport.height}`,{waitUntil:'domcontentloaded',timeout:30000});const state=await readLayout(page,{react:false});assertGeometry(state,'static',viewport);if(state.cardBackground!==rgb(255,255,255)||state.exclaimColor!==rgb(184,58,58)||state.questionColor!==rgb(23,32,43)||state.segmentColors.join(',')!==[rgb(23,105,194),rgb(181,106,8),rgb(250,204,21),rgb(184,58,58)].join(','))throw new Error(`Static safe palette mismatch: ${JSON.stringify(state)}`);const hrefs=await page.$$eval('.nf-shortcut',nodes=>nodes.map(node=>node.getAttribute('href')));if(JSON.stringify(hrefs)!==JSON.stringify(paths))throw new Error(`Static shortcut paths mismatch: ${JSON.stringify(hrefs)}`)}
 
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});await page.goto(`${base}/404.html?active=1`,{waitUntil:'domcontentloaded'});await assertActive(page,'.home-icon');await assertActive(page,'.nf-shortcut');await assertActive(page,'.primary');
 
@@ -107,8 +133,10 @@ try{
  for(const viewport of viewports){await page.setViewport({...viewport,deviceScaleFactor:1});await page.goto(`${base}/?react-viewport=${viewport.width}x${viewport.height}`,{waitUntil:'networkidle0',timeout:30000});await page.evaluate(()=>{history.pushState(null,'','/client-side-unified-404');window.dispatchEvent(new PopStateEvent('popstate'))});await page.waitForSelector('.zk-nf-shell',{timeout:20000});const state=await readLayout(page,{react:true});assertGeometry(state,'React',viewport);const hrefs=await page.$$eval('.zk-nf-shortcut',nodes=>nodes.map(node=>node.getAttribute('href')));if(JSON.stringify(hrefs)!==JSON.stringify(paths))throw new Error(`React shortcut paths mismatch: ${JSON.stringify(hrefs)}`)}
 
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});
- for(const theme of themes){await setReactTheme(page,theme);const state=await readLayout(page,{react:true});assertGeometry(state,`React ${theme.design}/${theme.theme}`,{width:390,height:844});if(state.themeId!==theme.id||state.accent.toLowerCase()!==theme.accent.toLowerCase()||state.warm.toLowerCase()!==theme.warm.toLowerCase()||state.text.toLowerCase()!==theme.text.toLowerCase()||state.surface.toLowerCase()!==theme.surface.toLowerCase()||state.pageToken.replaceAll(' ','').toLowerCase()!==theme.page.replaceAll(' ','').toLowerCase()||state.cardBackground!==hexRgb(theme.surface)||state.questionColor!==hexRgb(theme.text)||state.exclaimColor!==hexRgb(theme.warm)||state.segmentColors[0]!==hexRgb(theme.accent))throw new Error(`Theme token mismatch for ${theme.design}/${theme.theme}: ${JSON.stringify(state)}`)}
+ for(const theme of themes){await setReactTheme(page,theme);const state=await readLayout(page,{react:true});assertGeometry(state,`React local ${theme.design}/${theme.theme}`,{width:390,height:844});assertThemeState(state,theme,'Local selection')}
+ for(const theme of panelThemes){await setPanelTheme(page,theme);const state=await readLayout(page,{react:true});assertGeometry(state,`React panel ${theme.design}/${theme.theme}`,{width:390,height:844});assertThemeState(state,theme,'Panel selection')}
+ for(const design of forcedDarkDesigns){await setPanelTheme(page,design,'dark');const state=await readLayout(page,{react:true});assertGeometry(state,`React forced dark ${design.design}`,{width:390,height:844});assertThemeState(state,forcedDarkTheme,'Forced dark selection')}
 
  await setReactTheme(page,themes[0]);await assertActive(page,'.zk-nf-home-icon');await assertActive(page,'.zk-nf-shortcut');await assertActive(page,'.zk-nf-primary');
- await context.close();console.log('Unified 404 keeps its layout while following every React design/theme and a script-free static fallback.');
+ await context.close();console.log('Unified 404 follows local and panel-selected themes, including forced dark mode, with the correct script-free project fallback.');
 }finally{await browser.close()}

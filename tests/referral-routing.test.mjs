@@ -35,7 +35,7 @@ for(const path of ['/consultation','/courses','/experience','/licenses','/educat
 if(/\p{Extended_Pictographic}/u.test(static404))throw new Error('Static 404 must not contain emoji.');
 if(/@keyframes|animation\s*:/.test(static404))throw new Error('Static 404 must not contain motion.');
 if(/overflow\s*:\s*hidden|position\s*:\s*fixed|max-height\s*:\s*100dvh/.test(static404))throw new Error('Static 404 must not lock the viewport or vertical scroll.');
-for(const token of ['min-height:100dvh','min-height:92dvh','overflow-y:auto','border-radius:38px','border-radius:9999px','-webkit-tap-highlight-color:transparent','background:#f8fafc','linear-gradient(90deg,#6b21a8 0%,#db2777 100%)','color:#EE776E','color:#312E55','id="neu-4-shadow"','id="donut-shadow"','id="donut-hole-mask"'])if(!static404.includes(token))throw new Error(`Static 404 contract missing: ${token}`);
+for(const token of ['min-height:100dvh','min-height:92dvh','overflow-y:auto','border-radius:38px','border-radius:9999px','-webkit-tap-highlight-color:transparent','background:#edf6f5','linear-gradient(90deg,#1769c2 0%,#356b62 100%)','color:#B83A3A','color:#17202b','id="neu-4-shadow"','id="donut-shadow"','id="donut-hole-mask"'])if(!static404.includes(token))throw new Error(`Static 404 contract missing: ${token}`);
 const rendered404=renderNotFoundPage({brand:'Test'});
 if(!rendered404.includes('<span>Test</span>')||!rendered404.includes('<span class="exclaim">عه !</span><span class="question">اینجا کجاست؟</span>')||!rendered404.includes('fill="#F8FAFC"'))throw new Error('Unified 404 renderer is incomplete.');
 const handlerSource=await readFile(new URL('../api/referral/[code].js',import.meta.url),'utf8');

@@ -24,6 +24,9 @@ body:has(.zk-nf-page) #root>div{
   box-sizing:border-box;
 }
 
+.zk-nf-page[data-nf-mode='light']{color-scheme:light}
+.zk-nf-page[data-nf-mode='dark']{color-scheme:dark}
+
 .zk-nf-page{
   width:100%;
   min-height:100vh;
