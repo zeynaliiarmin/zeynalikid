@@ -88,11 +88,15 @@ async function readLayout(page,{react}){
 }
 
 async function assertActive(page,selector){
- const before=await page.$eval(selector,node=>{const style=getComputedStyle(node);return {background:style.backgroundColor,gradient:style.backgroundImage,filter:style.filter}}),handle=await page.$(selector),box=await handle?.boundingBox();
- if(!box)throw new Error(`Cannot test active state for ${selector}`);await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
- const state=await page.$eval(selector,node=>{const style=getComputedStyle(node);return {background:style.backgroundColor,gradient:style.backgroundImage,filter:style.filter,color:style.color,tap:style.webkitTapHighlightColor,outline:style.outlineStyle,transform:style.transform,transition:style.transitionDuration}});await page.mouse.move(1,1);await page.mouse.up();
- const changed=state.background!==before.background||state.gradient!==before.gradient||state.filter!==before.filter;
- if(!changed||state.color===rgb(0,0,238)||!transparentTap.has(state.tap)||state.outline!=='none'||state.transform!=='none'||state.filter!=='none'||parseFloat(state.transition)>0)throw new Error(`Unsafe active state for ${selector}: ${JSON.stringify({before,state})}`);
+ const before=await page.$eval(selector,node=>{const style=getComputedStyle(node);return {background:style.backgroundColor,gradient:style.backgroundImage,filter:style.filter}});
+ const client=await page.createCDPSession();let nodeId=0;
+ try{
+  await client.send('DOM.enable');await client.send('CSS.enable');const {root}=await client.send('DOM.getDocument');({nodeId}=await client.send('DOM.querySelector',{nodeId:root.nodeId,selector}));
+  if(!nodeId)throw new Error(`Cannot test active state for ${selector}`);await client.send('CSS.forcePseudoState',{nodeId,forcedPseudoClasses:['active']});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>resolve())));
+  const state=await page.$eval(selector,node=>{const style=getComputedStyle(node);return {background:style.backgroundColor,gradient:style.backgroundImage,filter:style.filter,color:style.color,tap:style.webkitTapHighlightColor,outline:style.outlineStyle,transform:style.transform,transition:style.transitionDuration}});
+  const changed=state.background!==before.background||state.gradient!==before.gradient||state.filter!==before.filter;
+  if(!changed||state.color===rgb(0,0,238)||!transparentTap.has(state.tap)||state.outline!=='none'||state.transform!=='none'||state.filter!=='none'||parseFloat(state.transition)>0)throw new Error(`Unsafe active state for ${selector}: ${JSON.stringify({before,state})}`);
+ }finally{if(nodeId)await client.send('CSS.forcePseudoState',{nodeId,forcedPseudoClasses:[]}).catch(()=>{});await client.detach()}
 }
 
 async function waitForReactTheme(page,expectedId){
