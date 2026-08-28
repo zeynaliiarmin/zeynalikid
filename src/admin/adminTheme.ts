@@ -1,58 +1,54 @@
 /**
- * Zeynalikid Admin — Stage 7A
- * Theme bridge between the admin panel and Stage 6's theme system.
- * Stage 6 contract (must stay identical):
- *   - localStorage key: "zk_theme"  =  'light' | 'dark' | 'auto'
- *   - <html data-theme="light|dark">
- *   - auto: dark between 20:00–07:00 OR when OS prefers-color-scheme is dark
- *   - dark mode sets the same --zk-* overrides SettingsPage sets.
+ * Persistent personal colour-mode bridge for this browser and domain.
+ * The header toggle writes only localStorage; it never changes site settings.
  */
-export type ZkThemePref = 'light' | 'dark' | 'auto';
+import {
+  LEGACY_THEME_KEY,
+  PERSONAL_COLOR_MODE_EVENT,
+  PERSONAL_COLOR_MODE_KEY,
+  normalizePersonalColorMode,
+  type PersonalColorMode,
+} from '../utils/colorMode';
 
-export const ZK_THEME_KEY = 'zk_theme';
-export const ZK_THEME_EVENT = 'zk-admin-theme-changed';
+export type ZkThemePref = PersonalColorMode;
+export const ZK_THEME_KEY = PERSONAL_COLOR_MODE_KEY;
+export const ZK_LEGACY_THEME_KEY = LEGACY_THEME_KEY;
+export const ZK_THEME_EVENT = PERSONAL_COLOR_MODE_EVENT;
 
-export function getZkThemePref(): ZkThemePref {
+export function getZkThemePref(): ZkThemePref | null {
   try {
-    const v = localStorage.getItem(ZK_THEME_KEY);
-    // تم پنل فقط انتخاب شخصی مدیر است؛ حالت auto قدیمی را برای جلوگیری از
-    // تداخل با دارک‌مود سیستم، معادل روشن در نظر می‌گیریم.
-    if (v === 'light' || v === 'dark') return v;
-    if (v === 'auto') return 'light';
-  } catch {}
-  return 'light';
-}
-
-/** Resolve a preference to an actual dark/light result (Stage 6 rule). */
-export function resolveZkDark(pref?: ZkThemePref): boolean {
-  const p = pref ?? getZkThemePref();
-  if (p === 'dark') return true;
-  if (p === 'light') return false;
-  try {
-    const prefersDark = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return prefersDark;
+    return normalizePersonalColorMode(localStorage.getItem(ZK_THEME_KEY));
   } catch {
-    return false;
+    return null;
   }
 }
 
-/**
- * Apply a preference: writes localStorage, sets data-theme + --zk-* vars
- * (mirrors SettingsPage.applyTheme exactly) and notifies the app shell so
- * the admin T-tokens can re-render. Returns the resolved dark state.
- */
-export function applyZkTheme(pref: ZkThemePref): boolean {
-  let final: 'light' | 'dark' = pref === 'dark' ? 'dark' : pref === 'light' ? 'light' : (resolveZkDark('auto') ? 'dark' : 'light');
-  try { localStorage.setItem(ZK_THEME_KEY, pref); } catch {}
+/** Read the former admin key only when the admin shell explicitly migrates it. */
+export function getLegacyZkThemePref(): ZkThemePref | null {
+  try {
+    return normalizePersonalColorMode(localStorage.getItem(ZK_LEGACY_THEME_KEY));
+  } catch {
+    return null;
+  }
+}
+
+export function resolveZkDark(pref: ZkThemePref | null = getZkThemePref()): boolean {
+  return pref === 'dark';
+}
+
+/** Apply resolved colours to the document without persisting a preference. */
+export function applyResolvedZkTheme(mode: ZkThemePref): boolean {
+  const dark = mode === 'dark';
   const root = document.documentElement;
-  root.setAttribute('data-theme', final);
-  if (final === 'dark') {
+  root.setAttribute('data-theme', mode);
+  root.style.colorScheme = mode;
+  if (dark) {
     root.style.setProperty('--zk-bg', '#0F1722');
-    root.style.setProperty('--zk-surface', '#172231');
+    root.style.setProperty('--zk-surface', '#1E293B');
     root.style.setProperty('--zk-text', '#E2E8F0');
-    root.style.setProperty('--zk-text-muted', '#94A3B8');
-    root.style.setProperty('--zk-border', 'rgba(148,163,184,0.2)');
-    root.style.setProperty('--zk-primary', '#4BA8D8');
+    root.style.setProperty('--zk-text-muted', '#B0BED1');
+    root.style.setProperty('--zk-border', '#334155');
+    root.style.setProperty('--zk-primary', '#2DD4BF');
   } else {
     root.style.removeProperty('--zk-bg');
     root.style.removeProperty('--zk-surface');
@@ -61,6 +57,13 @@ export function applyZkTheme(pref: ZkThemePref): boolean {
     root.style.removeProperty('--zk-border');
     root.style.removeProperty('--zk-primary');
   }
-  try { window.dispatchEvent(new CustomEvent(ZK_THEME_EVENT, { detail: { dark: final === 'dark', pref } })); } catch {}
-  return final === 'dark';
+  return dark;
+}
+
+/** Persist a deliberate header-toggle choice and notify the current tab. */
+export function applyZkTheme(pref: ZkThemePref): boolean {
+  try { localStorage.setItem(ZK_THEME_KEY, pref); } catch {}
+  const dark = applyResolvedZkTheme(pref);
+  try { window.dispatchEvent(new CustomEvent(ZK_THEME_EVENT, { detail: { dark, pref } })); } catch {}
+  return dark;
 }

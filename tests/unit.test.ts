@@ -18,6 +18,7 @@ import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../s
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 import { paymentShareText, resolvePaymentLaunchInfo } from '../src/utils/paymentLauncher';
+import { normalizeDesignId, normalizePersonalColorMode, normalizePublicColorMode, normalizeThemeId, resolveColorMode } from '../src/utils/colorMode';
 import { compatibleAssistantIntent, findAssistantRule, matchAssistantKnowledge, normalizeAssistantText, sameAssistantIntent, scoreAssistantKnowledge, shareAssistantIntentToken, type AssistantKnowledge } from '../src/utils/assistantMatch';
 
 let passed = 0;
@@ -28,6 +29,23 @@ function assert(cond: boolean, name: string) {
   if (cond) { passed++; }
   else { failed++; failures.push(name); console.error(`  ✗ ${name}`); }
 }
+
+// ── personal/global colour-mode resolution ─────────────────────────
+assert(normalizePersonalColorMode('light') === 'light', 'حالت شخصی روشن معتبر');
+assert(normalizePersonalColorMode('auto') === null, 'حالت شخصی فقط روشن یا تاریک است');
+assert(normalizePublicColorMode('auto') === 'auto', 'حالت عمومی خودکار معتبر');
+assert(normalizePublicColorMode('invalid') === 'auto', 'حالت عمومی نامعتبر به خودکار برمی‌گردد');
+assert(resolveColorMode('dark', 'light', 12) === 'dark', 'انتخاب شخصی تاریک بر عمومی روشن اولویت دارد');
+assert(resolveColorMode('light', 'dark', 1) === 'light', 'انتخاب شخصی روشن بر عمومی تاریک اولویت دارد');
+assert(resolveColorMode(null, 'dark', 12) === 'dark', 'عمومی همیشه تاریک بدون انتخاب شخصی');
+assert(resolveColorMode(null, 'light', 1) === 'light', 'عمومی همیشه روشن بدون انتخاب شخصی');
+assert(resolveColorMode(null, 'auto', 22) === 'light', 'خودکار ساعت ۲۲ روشن است');
+assert(resolveColorMode(null, 'auto', 23) === 'dark', 'خودکار ساعت ۲۳ تاریک است');
+assert(resolveColorMode(null, 'auto', 6) === 'dark', 'خودکار ساعت ۶ تاریک است');
+assert(resolveColorMode(null, 'auto', 7) === 'light', 'خودکار ساعت ۷ روشن است');
+const retiredDesignId=['navy','stack'].join('');
+assert(normalizeDesignId(retiredDesignId, 'classic') === 'classic', 'شناسه طراحی بازنشسته فقط هنگام اجرا نگاشت می‌شود');
+assert(normalizeThemeId(retiredDesignId, 'dark') === 'dark', 'شناسه تم بازنشسته فقط هنگام اجرا نگاشت می‌شود');
 
 // ── phone ─────────────────────────────────────────────────────────
 // p2e converts Persian/Arabic digits to English

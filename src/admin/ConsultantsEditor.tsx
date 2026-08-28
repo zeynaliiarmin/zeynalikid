@@ -168,13 +168,13 @@ export default function ConsultantsEditor(props: any) {
             {!active.nameEn && <div style={{ fontSize: 10.5, color: T.warn || '#B45309', marginTop: 5 }}>نام انگلیسی را پر کنید تا کد لینک ساخته شود.</div>}
             {active.referralCode && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                <code dir="ltr" style={{ flex: 1, fontSize: 11.5, color: T.mut, background: T.badge, border: `1px solid ${T.brd}`, borderRadius: 8, padding: '6px 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{buildReferralLink(active.referralCode)}</code>
+                <code dir="ltr" style={{ flex: 1, fontSize: 11.5, color: T.txt, background: T.inp, border: `1px solid ${T.brd}`, borderRadius: 8, padding: '6px 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{buildReferralLink(active.referralCode)}</code>
                 <button
                   type="button"
                   onClick={() => copyReferralLink(active.referralCode)}
                   aria-label="کپی لینک"
                   title="کپی لینک"
-                  style={{ flexShrink: 0, minHeight: 34, padding: '0 12px', borderRadius: 9, border: `1px solid ${copiedId === active.referralCode ? '#16A34A' : T.brd}`, background: copiedId === active.referralCode ? '#16A34A' : T.soft, color: copiedId === active.referralCode ? '#fff' : T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5, transition: 'all .2s ease', animation: copiedId === active.referralCode ? 'zk-copy-pop .3s ease' : undefined }}
+                  style={{ flexShrink: 0, minHeight: 34, padding: '0 12px', borderRadius: 9, border: `1px solid ${copiedId === active.referralCode ? '#16A34A' : T.brd}`, background: copiedId === active.referralCode ? '#16A34A' : T.card, color: copiedId === active.referralCode ? '#fff' : T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5, transition: 'all .2s ease', animation: copiedId === active.referralCode ? 'zk-copy-pop .3s ease' : undefined }}
                 >
                   {copiedId === active.referralCode ? (
                     <>
@@ -222,7 +222,7 @@ export default function ConsultantsEditor(props: any) {
               {/* ۳ حساب بانکی */}
               <div style={{ fontWeight: 700, fontSize: 12, color: T.ttl, margin: '8px 0 6px' }}>حساب‌های بانکی (حداکثر ۳)</div>
               {(active.banks && active.banks.length ? active.banks : [{}]).slice(0, 3).map((bk: any, bi: number) => (
-                <div key={bi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.badge }}>
+                <div key={bi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.card }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <b style={{ fontSize: 11.5, color: T.mut }}>حساب {bi + 1}</b>
                     <button type="button" style={{ ...AdminBtn(), marginLeft: 'auto', padding: '4px 10px', color: T.err }} onClick={() => { const arr = (active.banks || []).filter((_: any, j: number) => j !== bi); chg(activeIdx, 'banks', arr); }}>حذف</button>
@@ -244,7 +244,7 @@ export default function ConsultantsEditor(props: any) {
               {/* ۲ کیف پول رمزارز */}
               <div style={{ fontWeight: 700, fontSize: 12, color: T.ttl, margin: '14px 0 6px' }}>کیف پول‌های رمزارز (حداکثر ۲)</div>
               {(active.wallets && active.wallets.length ? active.wallets : [{}]).slice(0, 2).map((w: any, wi: number) => (
-                <div key={wi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.badge }}>
+                <div key={wi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 9, marginBottom: 8, background: T.card }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <b style={{ fontSize: 11.5, color: T.mut }}>کیف پول {wi + 1}</b>
                     <button type="button" style={{ ...AdminBtn(), marginLeft: 'auto', padding: '4px 10px', color: T.err }} onClick={() => { const arr = (active.wallets || []).filter((_: any, j: number) => j !== wi); chg(activeIdx, 'wallets', arr); }}>حذف</button>

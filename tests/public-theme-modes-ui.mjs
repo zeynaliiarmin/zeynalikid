@@ -3,10 +3,10 @@ import puppeteer from 'puppeteer';
 
 const base=process.env.TEST_BASE_URL||'http://localhost:4173';
 const executablePath=process.env.PUPPETEER_EXECUTABLE_PATH||undefined;
+const retiredDesign=['navy','stack'].join('');
 const fixtures=[
  {design:'wellness',theme:'light'},
  {design:'kidlearn',theme:'light'},
- {design:'navystack',theme:'light'},
  {design:'classic',theme:'light'},
  {design:'classic',theme:'cream'},
  {design:'classic',theme:'ocean'},
@@ -15,15 +15,19 @@ const fixtures=[
  {design:'classic',theme:'blend'},
  {design:'blend',theme:'cream'},
  {design:'blend',theme:'dark'},
+ {design:retiredDesign,theme:'light',legacy:true},
 ];
 let mockedMode='light';
 let blockAppScript=false;
+let settingsWrites=0;
+let adminSettingsWrites=0;
+let adminSavePayload=null;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
 
 function assert(condition,message,detail){if(!condition)throw new Error(`${message}${detail?`\n${JSON.stringify(detail,null,2)}`:''}`)}
 async function setStorage(page,values){await page.evaluate(data=>{for(const [key,value] of Object.entries(data)){if(value==null)localStorage.removeItem(key);else localStorage.setItem(key,String(value))}sessionStorage.clear()},values)}
-async function waitForMode(page,mode){await page.waitForFunction(expected=>document.documentElement.dataset.publicTheme===expected,{timeout:15000},mode);await sleep(900)}
+async function waitForMode(page,mode){await page.waitForFunction(expected=>document.documentElement.dataset.publicTheme===expected,{timeout:15000},mode);await sleep(700)}
 async function readFormState(page){return page.evaluate(()=>{
  const visible=el=>!!el&&el instanceof HTMLElement&&el.offsetParent!==null;
  const input=[...document.querySelectorAll('input:not([type="hidden"]),textarea,select')].find(visible);
@@ -32,38 +36,42 @@ async function readFormState(page){return page.evaluate(()=>{
  const submit=[...document.querySelectorAll('button')].reverse().find(el=>{if(!visible(el))return false;const r=el.getBoundingClientRect();return r.width>280&&r.height>=44});
  const rect=el=>{const r=el?.getBoundingClientRect();return r?{x:+r.x.toFixed(2),y:+r.y.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2)}:null};
  const style=el=>{const s=getComputedStyle(el);return {background:s.backgroundColor,color:s.color,borderColor:s.borderColor,borderRadius:s.borderRadius,padding:s.padding}};
+ const root=document.documentElement;
  return {
-  path:location.pathname,mode:document.documentElement.dataset.publicTheme||'',theme:document.documentElement.dataset.theme||'',zkTheme:document.documentElement.dataset.zkTheme||'',colorScheme:getComputedStyle(document.documentElement).colorScheme,
+  path:location.pathname,mode:root.dataset.publicTheme||'',globalMode:root.dataset.publicThemeMode||'',source:root.dataset.colorModeSource||'',theme:root.dataset.theme||'',zkTheme:root.dataset.zkTheme||'',colorScheme:getComputedStyle(root).colorScheme,
   body:{background:getComputedStyle(document.body).backgroundColor,color:getComputedStyle(document.body).color},
   vars:{bg:getComputedStyle(document.body).getPropertyValue('--zk-bg').trim(),surface:getComputedStyle(document.body).getPropertyValue('--zk-surface').trim(),primary:getComputedStyle(document.body).getPropertyValue('--zk-primary').trim(),text:getComputedStyle(document.body).getPropertyValue('--zk-text').trim(),border:getComputedStyle(document.body).getPropertyValue('--zk-border').trim()},
   form:form?{rect:rect(form),...style(form)}:null,input:input?{rect:rect(input),...style(input)}:null,submit:submit?{rect:rect(submit),...style(submit)}:null,
  };
 })}
 const geometry=state=>({form:state.form&&{rect:state.form.rect,radius:state.form.borderRadius,padding:state.form.padding},input:state.input&&{rect:state.input.rect,radius:state.input.borderRadius,padding:state.input.padding},submit:state.submit&&{rect:state.submit.rect,radius:state.submit.borderRadius,padding:state.submit.padding}});
-function assertMode(state,expected,label){
- assert(state.mode===expected&&state.theme===expected&&state.colorScheme===expected,`${label}: theme was not resolved`,state);
+function assertMode(state,expected,label,source='global'){
+ assert(state.mode===expected&&state.theme===expected&&state.colorScheme===expected,`${label}: colour mode was not resolved`,state);
+ assert(state.source===source,`${label}: wrong precedence source`,state);
  assert(state.form&&state.input&&state.submit,`${label}: consultation controls were not rendered`,state);
  if(expected==='dark'){
-  assert(state.body.background===rgb(10,14,39)&&state.body.color===rgb(226,232,240),`${label}: shared NavyStack canvas mismatch`,state);
-  assert(state.vars.bg.toLowerCase()==='#0a0e27'&&state.vars.surface.toLowerCase()==='#111638'&&state.vars.primary.toLowerCase()==='#00d4ff'&&state.vars.text.toLowerCase()==='#e2e8f0',`${label}: shared dark variables mismatch`,state);
-  assert(state.input.background===rgb(10,14,39)&&state.input.color===rgb(226,232,240),`${label}: dark form field mismatch`,state);
+  assert(state.body.background===rgb(15,23,34)&&state.body.color===rgb(226,232,240),`${label}: restored dark canvas mismatch`,state);
+  assert(state.vars.bg.toLowerCase()==='#0f1722'&&state.vars.surface.toLowerCase()==='#1e293b'&&state.vars.primary.toLowerCase()==='#2dd4bf'&&state.vars.text.toLowerCase()==='#e2e8f0',`${label}: restored dark variables mismatch`,state);
+  assert(state.input.background===rgb(15,23,34)&&state.input.color===rgb(226,232,240),`${label}: dark form field mismatch`,state);
  }else{
-  assert(state.body.background!==rgb(10,14,39)&&state.input.background!==rgb(10,14,39),`${label}: dark colour leaked into forced light mode`,state);
+  assert(state.body.background!==rgb(15,23,34)&&state.input.background!==rgb(15,23,34),`${label}: dark colour leaked into resolved light mode`,state);
  }
 }
-async function openFixture(page,fixture,mode,hour=12){
+async function openFixture(page,fixture,mode,hour=12,personal=null){
  mockedMode=mode;
- await setStorage(page,{'zk_design_system':fixture.design,'zk_theme':fixture.theme,'zk_public_theme_mode':mode,'zkid_settings_v2':null,'zkid_settings_migrated_v2':null,'zkid_lang':'fa'});
- await page.goto(`${base}/form?test-hour=${hour}&design=${fixture.design}&theme=${fixture.theme}&mode=${mode}`,{waitUntil:'domcontentloaded',timeout:30000});
- const expected=mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light';
+ await setStorage(page,{'zk_design_system':fixture.design,'zk_theme':fixture.theme,'zk_personal_color_mode':personal,'zk_public_theme_mode':mode,'zkid_settings_v2':null,'zkid_settings_migrated_v2':null,'zkid_lang':'fa'});
+ await page.goto(`${base}/form?test-hour=${hour}&design=${encodeURIComponent(fixture.design)}&theme=${fixture.theme}&mode=${mode}`,{waitUntil:'domcontentloaded',timeout:30000});
+ const expected=personal||(mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light');
  await waitForMode(page,expected);return {expected,state:await readFormState(page)};
 }
 
-const index=fs.readFileSync('index.html','utf8'),prerender=fs.readFileSync('scripts/prerender.mjs','utf8'),app=fs.readFileSync('src/App.tsx','utf8'),support=fs.readFileSync('src/app/appSupport.tsx','utf8');
-assert(index.includes('__zkApplyPublicMode')&&index.includes("zk_public_theme_mode"),'Early public theme bootstrap is missing');
-assert(prerender.includes("window.__zkApplyPublicMode?.(window.__APP_SSG_SETTINGS__?.publicThemeMode)"),'SSG does not apply its server-provided mode before first paint');
-assert(app.includes('({...publicLightTheme,...PUBLIC_DARK_COLORS})'),'Public dark colours are not layered over the selected design geometry');
-assert(support.includes('export const PUBLIC_DARK_COLORS'),'Shared public dark palette is missing');
+const index=fs.readFileSync('index.html','utf8'),prerender=fs.readFileSync('scripts/prerender.mjs','utf8'),app=fs.readFileSync('src/App.tsx','utf8'),support=fs.readFileSync('src/app/appSupport.tsx','utf8'),designUi=fs.readFileSync('src/admin/AdminPanel.tsx','utf8'),themeSource=fs.readFileSync('src/theme.ts','utf8');
+assert(index.includes('__zkApplyPublicMode')&&index.includes('zk_personal_color_mode')&&index.includes('zk_public_theme_mode'),'Early precedence bootstrap is missing');
+assert(prerender.includes("if(mode==='light'||mode==='dark'||mode==='auto')window.__zkApplyPublicMode?.(mode)"),'SSG does not safely apply its server-provided global mode before first paint');
+assert(app.includes('resolveColorMode(personalColorMode,publicThemeMode'),'App does not resolve personal choice before global policy');
+assert(app.includes('({...publicLightTheme,...PUBLIC_DARK_COLORS})'),'Public dark colours are not layered over selected design geometry');
+assert(support.includes("bg:'#0F1722',card:'#1E293B'")&&support.includes("acc:'#2DD4BF'"),'Restored shared dark palette is missing');
+assert(![app,support,designUi,themeSource].join('\n').toLowerCase().includes(retiredDesign),'Retired design remains in active source or UI');
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
 try{
@@ -78,10 +86,22 @@ try{
  await page.setRequestInterception(true);
  page.on('request',request=>{
   const url=request.url();
-  if(blockAppScript&&/\/src\/main\.tsx(?:\?|$)/.test(url))return request.abort();
+  if(blockAppScript&&(/\/src\/main\.tsx(?:\?|$)/.test(url)||/\/assets\/index-[^/]+\.js(?:\?|$)/.test(url)))return request.abort();
   const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
+  if(url.includes('/functions/v1/admin-api')){
+   if(request.method()==='OPTIONS')return request.respond({status:204,headers:cors,body:''});
+   let body={};try{body=JSON.parse(request.postData()||'{}')}catch{}
+   if(body.action==='save_settings'){
+    adminSettingsWrites++;
+    adminSavePayload=body.settings||null;
+    mockedMode=adminSavePayload?.publicThemeMode||mockedMode;
+    return request.respond({status:200,headers:cors,contentType:'application/json',body:JSON.stringify({saved:true,blockedFields:[]})});
+   }
+   return request.respond({status:200,headers:cors,contentType:'application/json',body:JSON.stringify({ok:true,submissions:[],questions:[],reviews:[],devices:[],logs:[],total:0,page:1,limit:50})});
+  }
   if(url.includes('/functions/v1/public-settings')){
    if(request.method()==='OPTIONS')return request.respond({status:204,headers:cors,body:''});
+   if(request.method()!=='GET')settingsWrites++;
    return request.respond({status:200,headers:cors,contentType:'application/json',body:JSON.stringify({settings:{publicThemeMode:mockedMode}})});
   }
   if(url.includes('/functions/v1/assistant-public')){
@@ -92,14 +112,16 @@ try{
  });
  await page.goto(`${base}/?test-hour=12&setup=1`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(250);
 
- // Every visual design keeps its own dimensions/radii while consuming one dark colour layer.
+ // Every active design keeps dimensions/radii while consuming one restored dark colour layer.
  for(const fixture of fixtures){
   const light=await openFixture(page,fixture,'light');assertMode(light.state,'light',`light ${fixture.design}/${fixture.theme}`);
   const dark=await openFixture(page,fixture,'dark');assertMode(dark.state,'dark',`dark ${fixture.design}/${fixture.theme}`);
   assert(JSON.stringify(geometry(light.state))===JSON.stringify(geometry(dark.state)),`Geometry changed between modes for ${fixture.design}/${fixture.theme}`,{light:geometry(light.state),dark:geometry(dark.state)});
+  if(fixture.legacy){const stored=await page.evaluate(()=>localStorage.getItem('zk_design_system'));assert(stored===retiredDesign,'Runtime compatibility mutated the stored legacy value',{stored});}
  }
+ assert(settingsWrites===0,'Runtime compatibility attempted to mutate production settings',{settingsWrites});
 
- // Automatic boundaries, SPA navigation and refresh all keep the resolved mode.
+ // Global automatic boundaries survive SPA navigation and refresh when no personal choice exists.
  for(const [hour,expected] of [[0,'dark'],[6,'dark'],[7,'light'],[22,'light'],[23,'dark']]){
   const opened=await openFixture(page,fixtures[0],'auto',hour);assert(opened.expected===expected,`Bad auto fixture at ${hour}`);assertMode(opened.state,expected,`auto initial ${hour}`);
   await page.evaluate(()=>{history.pushState(null,'','/faq'+location.search);window.dispatchEvent(new PopStateEvent('popstate'))});
@@ -107,27 +129,81 @@ try{
   const navigated=await page.evaluate(()=>({path:location.pathname,mode:document.documentElement.dataset.publicTheme}));
   assert(navigated.path==='/faq'&&navigated.mode===expected,`Auto mode changed during navigation at ${hour}`,navigated);
   await page.reload({waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,expected);
-  const refreshed=await page.evaluate(()=>({path:location.pathname,mode:document.documentElement.dataset.publicTheme}));
-  assert(refreshed.path==='/faq'&&refreshed.mode===expected,`Auto mode changed after refresh at ${hour}`,refreshed);
+  const refreshed=await page.evaluate(()=>({path:location.pathname,mode:document.documentElement.dataset.publicTheme,source:document.documentElement.dataset.colorModeSource}));
+  assert(refreshed.path==='/faq'&&refreshed.mode===expected&&refreshed.source==='global',`Auto mode changed after refresh at ${hour}`,refreshed);
  }
 
- // A newer server setting wins over a stale cached preference after refresh.
- mockedMode='dark';await setStorage(page,{'zk_public_theme_mode':'light','zkid_settings_v2':null});
+ // A newer saved server policy refreshes the cache for browsers without a personal choice.
+ mockedMode='dark';await setStorage(page,{'zk_personal_color_mode':null,'zk_public_theme_mode':'light','zkid_settings_v2':null});
  await page.goto(`${base}/form?test-hour=12&remote-refresh=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'dark');assertMode(await readFormState(page),'dark','remote refresh');
 
- // The tiny inline bootstrap resolves a cached mode even if the React bundle has not loaded yet.
- await setStorage(page,{'zk_public_theme_mode':'dark'});blockAppScript=true;
- await page.goto(`${base}/?test-hour=12&bootstrap-only=1`,{waitUntil:'domcontentloaded',timeout:30000});
- const early=await page.evaluate(()=>({mode:document.documentElement.dataset.publicTheme,theme:document.documentElement.dataset.theme,rootBackground:document.documentElement.style.backgroundColor,bodyPublic:document.body.classList.contains('public-root')}));
- assert(early.mode==='dark'&&early.theme==='dark'&&early.rootBackground==='rgb(10, 14, 39)'&&early.bodyPublic,'Dark mode was not resolved before the app bundle',early);blockAppScript=false;
-
- // Public mode cannot leak into either admin mode.
- await page.goto(`${base}/?test-hour=12&restore=1`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(250);
- for(const adminMode of ['light','dark']){
-  await setStorage(page,{'zk_public_theme_mode':'dark','zk_theme':adminMode});
-  await page.goto(`${base}/admin/login?test-hour=12&admin=${adminMode}`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(950);
-  const admin=await page.evaluate(()=>({publicTheme:document.documentElement.dataset.publicTheme||'',theme:document.documentElement.dataset.theme||'',zkTheme:document.documentElement.dataset.zkTheme||'',body:getComputedStyle(document.body).backgroundColor}));
-  assert(!admin.publicTheme&&admin.theme===adminMode&&admin.zkTheme===(adminMode==='dark'?'navystack':'admin-light'),`Public mode leaked into admin ${adminMode}`,admin);
+ // Personal dark/light always wins over the opposite global policy, including refresh/navigation.
+ for(const [personal,global] of [['dark','light'],['light','dark']]){
+  const opened=await openFixture(page,fixtures[0],global,12,personal);assertMode(opened.state,personal,`personal ${personal} over ${global}`,'personal');
+  await page.evaluate(()=>{history.pushState(null,'','/faq'+location.search);window.dispatchEvent(new PopStateEvent('popstate'))});
+  await page.waitForFunction(mode=>document.documentElement.dataset.publicTheme===mode,{},personal);
+  await page.reload({waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,personal);
+  const persisted=await page.evaluate(()=>({mode:document.documentElement.dataset.publicTheme,stored:localStorage.getItem('zk_personal_color_mode')}));
+  assert(persisted.mode===personal&&persisted.stored===personal,`Personal ${personal} did not persist`,persisted);
  }
- console.log('Public light/dark/auto modes preserve design geometry, share one NavyStack dark palette, survive navigation and refresh, and remain isolated from admin modes.');
+
+ // The inline bootstrap applies both global policy and personal precedence before React loads.
+ await setStorage(page,{'zk_personal_color_mode':null,'zk_public_theme_mode':'dark'});blockAppScript=true;
+ await page.goto(`${base}/?test-hour=12&bootstrap-only=1`,{waitUntil:'domcontentloaded',timeout:30000});
+ let early=await page.evaluate(()=>({mode:document.documentElement.dataset.publicTheme,source:document.documentElement.dataset.colorModeSource,rootBackground:document.documentElement.style.backgroundColor,bodyPublic:document.body.classList.contains('public-root')}));
+ assert(early.mode==='dark'&&early.source==='global'&&early.rootBackground===rgb(15,23,34)&&early.bodyPublic,'Global dark mode was not resolved before the app bundle',early);
+ await setStorage(page,{'zk_personal_color_mode':'light','zk_public_theme_mode':'dark'});
+ await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+ early=await page.evaluate(()=>({mode:document.documentElement.dataset.publicTheme,source:document.documentElement.dataset.colorModeSource}));
+ assert(early.mode==='light'&&early.source==='personal','Personal light mode did not win in the early bootstrap',early);blockAppScript=false;
+
+ // The real admin header toggle persists locally, controls admin, then controls public pages.
+ await page.goto(`${base}/?test-hour=12&restore=1`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(250);
+ mockedMode='light';
+ await setStorage(page,{'zk_personal_color_mode':'light','zk_theme':'cream','zk_public_theme_mode':'light','zk_admin_authed':'true','zk_admin_session_token':'test-session','zk_admin_login_at':String(Date.now())});
+ await page.evaluate(()=>localStorage.setItem('zk_admin_login_at',String(Date.now())));
+ await page.goto(`${base}/admin/app?test-hour=12`,{waitUntil:'domcontentloaded',timeout:30000});
+ await page.waitForSelector('.zkth-toggle',{timeout:20000});
+ await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});
+ await page.click('.zkth-toggle');
+ await page.waitForFunction(()=>localStorage.getItem('zk_personal_color_mode')==='dark'&&document.documentElement.dataset.theme==='dark'&&document.documentElement.dataset.zkTheme==='admin-dark');
+ let admin=await page.evaluate(()=>({publicTheme:document.documentElement.dataset.publicTheme||'',stored:localStorage.getItem('zk_personal_color_mode'),theme:document.documentElement.dataset.theme,zkTheme:document.documentElement.dataset.zkTheme}));
+ assert(!admin.publicTheme&&admin.stored==='dark'&&admin.theme==='dark'&&admin.zkTheme==='admin-dark','Admin header toggle did not persist personal dark',admin);
+ await page.goto(`${base}/form?test-hour=12&from-admin=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'dark');assertMode(await readFormState(page),'dark','admin choice on public page','personal');
+
+ mockedMode='dark';
+ await page.goto(`${base}/admin/app?test-hour=12&toggle-light=1`,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('.zkth-toggle');await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});await page.click('.zkth-toggle');
+ await page.waitForFunction(()=>localStorage.getItem('zk_personal_color_mode')==='light'&&document.documentElement.dataset.theme==='light');
+ await page.goto(`${base}/form?test-hour=12&from-admin=2`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'light');assertMode(await readFormState(page),'light','admin light over global dark','personal');
+
+ // The design-page selector has the required three global policies and saves only through the explicit settings action.
+ await page.goto(`${base}/admin/app?global-save-test=1`,{waitUntil:'domcontentloaded',timeout:30000});
+ await page.waitForSelector('.admin-main',{timeout:20000});await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});
+ const openedSettings=await page.evaluate(()=>{const item=[...document.querySelectorAll('.zkad-nav-main')].find(node=>(node.textContent||'').trim()==='تنظیمات');if(!item)return false;item.click();return true});
+ assert(openedSettings,'Settings navigation was not available');await sleep(150);
+ const openedDesign=await page.evaluate(()=>{const item=[...document.querySelectorAll('.zkad-subitem')].find(node=>(node.textContent||'').trim()==='مدیریت دیزاین');if(!item)return false;item.click();return true});
+ assert(openedDesign,'Design navigation was not available');
+ await page.waitForFunction(()=>[...document.querySelectorAll('select')].some(select=>[...select.options].some(option=>option.value==='auto')),{timeout:20000});
+ const globalOptions=await page.evaluate(()=>{
+  const select=[...document.querySelectorAll('select')].find(item=>['dark','light','auto'].every(value=>[...item.options].some(option=>option.value===value)));
+  if(!select)return null;
+  const options=[...select.options].map(option=>({value:option.value,text:(option.textContent||'').trim()})).filter(option=>['dark','light','auto'].includes(option.value));
+  select.value='dark';select.dispatchEvent(new Event('change',{bubbles:true}));
+  return options;
+ });
+ assert(JSON.stringify(globalOptions)===JSON.stringify([{value:'dark',text:'همیشه دارک'},{value:'light',text:'همیشه وایت'},{value:'auto',text:'سفارشی بر اساس ساعت — دارک از ۲۳ تا ۰۷'}]),'Global design selector options do not match the required contract',globalOptions);
+ let beforeSave=await page.evaluate(()=>localStorage.getItem('zk_personal_color_mode'));
+ assert(beforeSave==='light'&&adminSettingsWrites===0,'Changing the global selector altered personal preference or saved before confirmation',{beforeSave,adminSettingsWrites});
+ await page.click('button[aria-label="منوی سریع"]');
+ const clickedSave=await page.evaluate(()=>{const button=[...document.querySelectorAll('button')].find(item=>(item.textContent||'').trim()==='ذخیره تنظیمات');if(!button)return false;button.click();return true});
+ assert(clickedSave,'Explicit global settings save action was not available');
+ await page.waitForFunction(()=>document.body.textContent?.includes('ذخیره شد'),{timeout:15000});
+ assert(adminSettingsWrites===1&&adminSavePayload?.publicThemeMode==='dark','Saved settings did not contain the selected global dark policy',{adminSettingsWrites,mode:adminSavePayload?.publicThemeMode});
+ const afterSave=await page.evaluate(()=>localStorage.getItem('zk_personal_color_mode'));
+ assert(afterSave==='light','Saving global policy mutated the personal preference',{afterSave});
+ await page.goto(`${base}/form?test-hour=12&saved-global-with-personal=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'light');assertMode(await readFormState(page),'light','saved global dark with personal light','personal');
+ await setStorage(page,{'zk_personal_color_mode':null});
+ await page.goto(`${base}/form?test-hour=12&saved-global-without-personal=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'dark');assertMode(await readFormState(page),'dark','saved global dark without personal choice','global');
+
+ console.log('Personal persistence and precedence, global light/dark/auto save, restored shared dark palette, navigation, refresh, early bootstrap, admin toggle, and runtime-only legacy mapping passed.');
 }finally{await browser.close()}

@@ -1,5 +1,6 @@
 import { useAppContext } from '../app/AppContext';
 import React, { useState, useEffect } from 'react';
+import { normalizeDesignId } from '../utils/colorMode';
 
 export default function SettingsPage(){
  const app=useAppContext();
@@ -8,7 +9,7 @@ export default function SettingsPage(){
   const currentDesign = (() => {
     try {
       const ls = localStorage.getItem('zk_design_system');
-      if (ls && ['wellness', 'kidlearn', 'navystack', 'blend', 'classic'].includes(ls)) return ls;
+      if (ls) return normalizeDesignId(ls, 'wellness');
     } catch {}
     return 'wellness';
   })();
@@ -98,7 +99,7 @@ export default function SettingsPage(){
             {[
               { id: 'wellness', label: 'Wellness (عمومی)' },
               { id: 'kidlearn', label: 'KidLearn (آموزش)' },
-              { id: 'navystack', label: 'NavyStack (ادمین)' },
+              { id: 'classic', label: 'Classic (کلاسیک)' },
               { id: 'blend', label: 'Blend (ترکیبی - ۶ تم)' }
             ].map(d => (
               <button
@@ -124,7 +125,7 @@ export default function SettingsPage(){
           <div style={{ fontSize: 13, color: T.mut, marginBottom: 6, fontWeight: 700 }}>
             {lang === 'en' ? 'Theme' : 'تم'}
           </div>
-          {['wellness', 'kidlearn', 'navystack'].includes(designSys) ? (
+          {['wellness', 'kidlearn'].includes(designSys) ? (
             <div style={{ padding: '12px 14px', borderRadius: cardRad, background: T.soft, border: `1px solid ${T.brd}`, color: T.ttl, fontWeight: 700, fontSize: 13, textAlign: 'center' }}>
               {lang === 'en' 
                 ? `Theme: ${designSys.charAt(0).toUpperCase() + designSys.slice(1)} — Fixed`

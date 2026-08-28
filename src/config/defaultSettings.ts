@@ -372,7 +372,7 @@ export const defaultSettings = {
     defaultThemes: {
       public: 'wellness',
       education: 'kidlearn',
-      admin: 'navystack',
+      admin: 'dark',
     },
     overrides: {} as Record<string, string>,
   },
@@ -405,7 +405,7 @@ export const defaultSettings = {
         theme: 'light',
       },
       admin: {
-        design: 'navystack',
+        design: 'classic',
         theme: 'dark',
       },
     },
@@ -506,7 +506,7 @@ export function migrateSettings(settings: any): any {
       sections: {
         public: { design: 'classic', theme: 'motherly-trust' },
         education: { design: 'kidlearn', theme: 'light' },
-        admin: { design: 'navystack', theme: 'dark' },
+        admin: { design: 'classic', theme: 'dark' },
       },
       classic: {
         themes: ['light', 'cream', 'ocean', 'dark', 'motherly', 'trust', 'blend', 'motherly-trust'],

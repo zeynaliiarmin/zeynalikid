@@ -8,7 +8,7 @@
  * ─ Clean horizontal flex layout with zero text/chevron overlap.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { applyZkTheme, getZkThemePref, resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './adminTheme';
+import { applyResolvedZkTheme, applyZkTheme, getLegacyZkThemePref, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './adminTheme';
 import AdminThemeToggle from './AdminThemeToggle';
 import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkCloseIcon, ZkStaffIcon } from './adminIcons';
 
@@ -29,7 +29,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ lang, groups, active, onNavigate, onLogout, onHome, version = '1.0.0', children }: AdminLayoutProps) {
   const rtl = lang !== 'en';
   const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState<boolean>(() => resolveZkDark());
+  const [dark, setDark] = useState<boolean>(() => (getZkThemePref() ?? getLegacyZkThemePref()) === 'dark');
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement | null>(null);
   const desktopMq = useRef<MediaQueryList | null>(null);
@@ -38,7 +38,9 @@ export default function AdminLayout({ lang, groups, active, onNavigate, onLogout
   useEffect(() => {
     document.body.classList.add('admin-root');
     document.body.classList.toggle('admin-ltr', !rtl);
-    setDark(applyZkTheme(getZkThemePref()));
+    const personal = getZkThemePref();
+    const legacy = personal ? null : getLegacyZkThemePref();
+    setDark(legacy ? applyZkTheme(legacy) : applyResolvedZkTheme(personal ?? 'light'));
     return () => {
       document.body.classList.remove('admin-root');
       document.body.classList.remove('admin-ltr');
@@ -49,9 +51,12 @@ export default function AdminLayout({ lang, groups, active, onNavigate, onLogout
   // keep body dir flag in sync when language changes
   useEffect(() => { document.body.classList.toggle('admin-ltr', !rtl); }, [rtl]);
 
-  // ── react to theme changes made elsewhere (SettingsPage, other tab) ──
+  // ── react to personal colour-mode changes in this or another tab ──
   useEffect(() => {
-    const sync = () => setDark(resolveZkDark());
+    const sync = () => {
+      const pref = getZkThemePref();
+      setDark(applyResolvedZkTheme(pref ?? 'light'));
+    };
     const onStorage = (e: StorageEvent) => { if (e.key === ZK_THEME_KEY) sync(); };
     window.addEventListener('storage', onStorage);
     window.addEventListener(ZK_THEME_EVENT, sync as EventListener);

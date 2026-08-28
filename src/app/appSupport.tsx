@@ -9,7 +9,6 @@ import { generateTrackingCode } from '../utils/tracking';
 import { optimizeForUpload } from '../utils/imageOptimizer';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { uploadAdminFile, uploadPublicFile } from '../lib/storageUpload';
-import { wellnessTheme, kidlearnTheme, navystackTheme } from '../theme';
 import { getAdminSessionToken } from '../utils/adminSession';
 import { reportError } from '../utils/errorLog';
 
@@ -127,17 +126,25 @@ const classicDefaults = {
 
 export const PUBLIC_DARK_COLORS:Any={
  id:'dark',name:'تاریک',
- bg:'#0A0E27',card:'#111638',brd:'#1E2756',acc:'#00D4FF',soft:'rgba(0,212,255,.08)',
- grad:'linear-gradient(135deg,#0E7490,#6D28D9)',txt:'#E2E8F0',mut:'#A7B4C5',ttl:'#7DD3FC',
- inp:'#0A0E27',sel:'#161D48',pop:'#111638',err:'#F87171',ok:'#34D399',warn:'#FBBF24',
- info:'#38BDF8',badge:'rgba(0,212,255,.10)',hdr:'rgba(13,19,51,.97)',hover:'rgba(0,212,255,.10)',
- sidebar:'#0D1333',cardHover:'#161D48',
- neuOut:'0 4px 16px rgba(0,0,0,.34)',
- neuIn:'inset 2px 2px 6px rgba(0,0,0,.38),inset -2px -2px 6px rgba(30,39,86,.24)',
- shadowLight:'0 4px 15px rgba(0,0,0,.24)',shadowMedium:'0 8px 24px rgba(0,0,0,.32)',
- shadowStrong:'0 18px 42px rgba(0,0,0,.44)',shadowFocus:'0 0 0 4px rgba(0,212,255,.28)',
- shadowGlow:'0 0 12px rgba(0,212,255,.15)',shadowCardHover:'0 4px 16px rgba(0,212,255,.08)',
- memphis:['rgba(0,212,255,.05)','rgba(124,58,237,.05)','rgba(16,185,129,.04)'],
+ bg:'#0F1722',card:'#1E293B',brd:'#334155',acc:'#2DD4BF',soft:'rgba(45,212,191,.12)',
+ grad:'linear-gradient(135deg,#0F766E,#0369A1)',txt:'#E2E8F0',mut:'#B0BED1',ttl:'#5EEAD4',
+ inp:'#0F1722',sel:'#1E293B',pop:'#1E293B',err:'#F87171',ok:'#34D399',warn:'#FBBF24',
+ info:'#38BDF8',badge:'rgba(45,212,191,.12)',hdr:'rgba(17,24,39,.97)',hover:'rgba(56,189,248,.10)',
+ sidebar:'#111827',cardHover:'#26364A',
+ neuOut:'0 4px 16px rgba(0,0,0,.32)',
+ neuIn:'inset 2px 2px 6px rgba(0,0,0,.34),inset -2px -2px 6px rgba(71,85,105,.18)',
+ shadowLight:'0 4px 15px rgba(0,0,0,.22)',shadowMedium:'0 8px 24px rgba(0,0,0,.30)',
+ shadowStrong:'0 18px 42px rgba(0,0,0,.42)',shadowFocus:'0 0 0 4px rgba(45,212,191,.28)',
+ shadowGlow:'0 0 12px rgba(45,212,191,.14)',shadowCardHover:'0 4px 16px rgba(56,189,248,.08)',
+ memphis:['rgba(45,212,191,.05)','rgba(56,189,248,.05)','rgba(255,255,255,.02)'],
+};
+
+const adminPanelDefaults:Any={
+ ...classicDefaults,
+ btnRadius:6,cardRadius:8,inputRadius:6,badgeRadius:4,avatarRadius:'50%',tagRadius:4,
+ btnPadding:'8px 14px',btnSmPadding:'4px 10px',btnLgPadding:'12px 20px',
+ cardPadding:16,inputPadding:'8px 12px',topbarHeight:60,sidebarWidth:220,
+ fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",
 };
 
 export const TH:Any={
@@ -224,70 +231,7 @@ export const TH:Any={
   topbarHeight: 56,
   fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
  },
- navystack:{
-  id: 'navystack', name: 'NavyStack',
-  bg: '#0A0E27',
-  card: '#111638',
-  brd: '#1E2756',
-  acc: '#00D4FF',
-  soft: 'rgba(0,212,255,0.06)',
-  grad: 'linear-gradient(135deg, #0E7490 0%, #6D28D9 100%)',
-  txt: '#E2E8F0',
-  mut: '#B0BED1',
-  ttl: '#00D4FF',
-  inp: '#0A0E27',
-  sel: 'rgba(0,212,255,0.06)',
-  pop: '#111638',
-  err: '#F87171',
-  ok: '#10B981',
-  warn: '#F59E0B',
-  badge: 'rgba(0,212,255,0.08)',
-  hdr: '#0D1333',
-  neuOut: '0 2px 8px rgba(0,0,0,0.3)',
-  neuIn: 'inset 1px 1px 4px rgba(0,0,0,0.3), inset -1px -1px 4px rgba(30,39,86,0.2)',
-  memphis: ['rgba(0,212,255,0.04)', 'rgba(124,58,237,0.04)', 'rgba(16,185,129,0.04)'],
-  sidebar: '#0D1333',
-  cardHover: '#161D48',
-  btnRadius: 6,
-  cardRadius: 8,
-  inputRadius: 6,
-  badgeRadius: 4,
-  avatarRadius: '50%',
-  tagRadius: 4,
-  shadowGlow: '0 0 12px rgba(0,212,255,0.15)',
-  shadowCardHover: '0 4px 16px rgba(0,212,255,0.08)',
-  shadowFocus: '0 0 0 4px rgba(0,212,255,0.35)',
-  btnPadding: '8px 14px',
-  btnSmPadding: '4px 10px',
-  btnLgPadding: '12px 20px',
-  cardPadding: 16,
-  inputPadding: '8px 12px',
-  topbarHeight: 60,
-  sidebarWidth: 220,
-  fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
- },
- 'navystack-dark':{
-  id: 'navystack-dark', name: 'NavyStack Dark',
-  bg: '#0F1722', card: '#1E293B', brd: '#334155', acc: '#2DD4BF', soft: 'rgba(45,212,191,0.10)', hover: 'rgba(14,165,233,0.10)', grad: 'linear-gradient(135deg,#0F766E,#0369A1)', txt: '#E2E8F0', mut: '#94A3B8', ttl: '#5EEAD4', inp: '#0F1722', sel: '#1E293B', pop: '#1E293B', err: '#F87171', ok: '#34D399', warn: '#FBBF24', info: '#38BDF8', badge: 'rgba(45,212,191,0.10)', hdr: '#111827', sidebar: '#111827', neuOut: '0 1px 3px rgba(0,0,0,0.35)', neuIn: 'inset 0 1px 2px rgba(0,0,0,0.30)', memphis: ['rgba(45,212,191,0.05)','rgba(56,189,248,0.05)','rgba(255,255,255,0.02)'],
-  cardHover: '#161D48',
-  btnRadius: 6,
-  cardRadius: 8,
-  inputRadius: 6,
-  badgeRadius: 4,
-  avatarRadius: '50%',
-  tagRadius: 4,
-  shadowGlow: '0 0 12px rgba(0,212,255,0.15)',
-  shadowCardHover: '0 4px 16px rgba(0,212,255,0.08)',
-  shadowFocus: '0 0 0 4px rgba(0,212,255,0.35)',
-  btnPadding: '8px 14px',
-  btnSmPadding: '4px 10px',
-  btnLgPadding: '12px 20px',
-  cardPadding: 16,
-  inputPadding: '8px 12px',
-  topbarHeight: 60,
-  sidebarWidth: 220,
-  fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
- },
+
 };
 
 Object.assign(TH, {
@@ -317,7 +261,7 @@ Object.assign(TH, {
   ...classicDefaults,
  },
  'admin-light':{
-  ...TH.navystack,
+  ...adminPanelDefaults,
   id:'admin-light',name:'Admin Light',
   bg:'#F8FAFC',card:'#FFFFFF',brd:'#E2E8F0',acc:'#0B5F59',soft:'rgba(15,118,110,.09)',
   grad:'linear-gradient(135deg,#0F766E,#0369A1)',txt:'#0F172A',mut:'#475569',ttl:'#0B5F59',
@@ -325,6 +269,10 @@ Object.assign(TH, {
   badge:'#F0FDFA',hdr:'rgba(255,255,255,.96)',sidebar:'#FFFFFF',cardHover:'#F1F5F9',
   neuOut:'0 1px 3px rgba(15,23,42,.08)',neuIn:'inset 0 1px 2px rgba(15,23,42,.06)',
   memphis:['rgba(15,118,110,.04)','rgba(14,165,233,.04)','rgba(15,23,42,.02)'],
+ },
+ 'admin-dark':{
+  ...adminPanelDefaults,...PUBLIC_DARK_COLORS,
+  id:'admin-dark',name:'Admin Dark',
  },
  'motherly-trust':{
   ...TH.light,

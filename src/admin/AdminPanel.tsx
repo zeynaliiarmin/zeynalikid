@@ -29,6 +29,7 @@ import SubCard, { LazySubCard } from './SubCard';
 // منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
+import { normalizeDesignId, normalizePublicColorMode, normalizeThemeId } from '../utils/colorMode';
 import ContentManager from './ContentManager';
 import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
@@ -1111,8 +1112,8 @@ function TaggedCoursesEditor(){
  // --- مدیریت تم‌ها ---
  // --- مدیریت دیزاین (مرحله ۴ - بازطراحی تدریجی) ---
 function DesignManagerEditor(){
- const ds=(editCfg as any).designSystem||{sections:{public:{design:'wellness',theme:'light'},education:{design:'kidlearn',theme:'light'},admin:{design:'navystack',theme:'dark'}},classic:{themes:['light','cream','ocean','dark'],defaultTheme:'light'}};
- const publicThemeMode=(editCfg as any).publicThemeMode||'auto';
+ const ds=(editCfg as any).designSystem||{sections:{public:{design:'wellness',theme:'light'},education:{design:'kidlearn',theme:'light'},admin:{design:'classic',theme:'dark'}},classic:{themes:['light','cream','ocean','dark'],defaultTheme:'light'}};
+ const publicThemeMode=normalizePublicColorMode((editCfg as any).publicThemeMode);
  const sections=ds.sections||{};
 
  const updateSection=(section:string,design:string,theme?:string)=>{
@@ -1122,7 +1123,7 @@ function DesignManagerEditor(){
  const designOptions=[
   {value:'wellness',label:'Wellness (بنفش)'},
   {value:'kidlearn',label:'KidLearn (کودکان)'},
-  {value:'navystack',label:'NavyStack (مدیریت)'},
+  {value:'blend',label:'Blend (ترکیبی)'},
   {value:'classic',label:'دیزاین ترکیبی (کلاسیک)'},
  ];
 
@@ -1137,29 +1138,29 @@ function DesignManagerEditor(){
   {value:'motherly-trust',label:'مادرانه-اعتمادساز'},
  ];
 
- return <><Box title="نمای ظاهری سایت برای کاربران"><p style={{fontSize:12,color:T.mut,lineHeight:1.8,marginTop:0}}>این تنظیم فقط صفحات عمومی سایت را کنترل می‌کند؛ دکمه ماه/خورشید پنل مدیریت همچنان کاملاً شخصی است.</p><label style={{...S.lbl}}>حالت نمایش سایت عمومی</label><select style={S.inp} value={publicThemeMode} onChange={e=>setEditCfg({...editCfg,publicThemeMode:e.target.value})}><option value="auto">خودکار — دارک از ساعت ۲۳ تا ۰۷</option><option value="light">وایت مود ثابت</option><option value="dark">دارک مود ثابت</option></select><p style={{fontSize:11,color:T.mut,lineHeight:1.7}}>کاربران دکمه تغییر تم نمی‌بینند؛ فقط مدیر از همین بخش ظاهر عمومی را تعیین می‌کند.</p></Box>
+ return <><Box title="نمای ظاهری سایت برای کاربران"><p style={{fontSize:12,color:T.mut,lineHeight:1.8,marginTop:0}}>این تنظیم عمومی برای کاربرانی اعمال می‌شود که در مرورگرشان انتخاب شخصی روشن/تاریک ندارند.</p><label style={{...S.lbl}}>حالت نمایش سایت عمومی</label><select style={S.inp} value={publicThemeMode} onChange={e=>setEditCfg({...editCfg,publicThemeMode:e.target.value})}><option value="dark">همیشه دارک</option><option value="light">همیشه وایت</option><option value="auto">سفارشی بر اساس ساعت — دارک از ۲۳ تا ۰۷</option></select><p style={{fontSize:11,color:T.mut,lineHeight:1.7}}>انتخاب شخصی ماه/خورشید در هدر پنل، پنل و صفحات عمومی همین مرورگر را با هم تغییر می‌دهد و بر این تنظیم اولویت دارد.</p></Box>
   <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت دیزاین و تم</>}>
    <p style={{fontSize:11,color:T.mut,margin:'0 0 14px',lineHeight:1.8}}>برای هر بخش، دیزاین مورد نظر را انتخاب کنید.</p>
    <div style={{display:'grid',gap:14}}>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}> صفحات عمومی</h4>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={sections.public?.design||'wellness'} onChange={e=>updateSection('public',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {sections.public?.design==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={sections.public?.theme||'light'} onChange={e=>updateSection('public','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
+      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.public?.design,'wellness')} onChange={e=>updateSection('public',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
+      {normalizeDesignId(sections.public?.design,'wellness')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.public?.theme,'light')} onChange={e=>updateSection('public','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}><ZkBookIcon size={14} color={T.ttl}/> بخش آموزش</h4>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={sections.education?.design||'kidlearn'} onChange={e=>updateSection('education',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {sections.education?.design==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={sections.education?.theme||'light'} onChange={e=>updateSection('education','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
+      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.education?.design,'kidlearn')} onChange={e=>updateSection('education',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
+      {normalizeDesignId(sections.education?.design,'kidlearn')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.education?.theme,'light')} onChange={e=>updateSection('education','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}><ZkSettingsIcon size={14} color={T.ttl}/> پنل مدیریت</h4>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={sections.admin?.design||'navystack'} onChange={e=>updateSection('admin',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {sections.admin?.design==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={sections.admin?.theme||'dark'} onChange={e=>updateSection('admin','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
+      <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.admin?.design,'classic')} onChange={e=>updateSection('admin',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
+      {normalizeDesignId(sections.admin?.design,'classic')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.admin?.theme,'dark')} onChange={e=>updateSection('admin','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
    </div>
@@ -1170,23 +1171,24 @@ function DesignManagerEditor(){
 }
 
 function ThemeManagerEditor(){
-  const tc=(editCfg as any).themeConfig||{defaultThemes:{public:'wellness',education:'kidlearn',admin:'navystack'},overrides:{}};
+  const tc=(editCfg as any).themeConfig||{defaultThemes:{public:'wellness',education:'kidlearn',admin:'dark'},overrides:{}};
   const defaults=tc.defaultThemes||{};
   const overrides=tc.overrides||{};
   const upTC=(patch:any)=>setEditCfg({...editCfg,themeConfig:{...tc,...patch}});
   const upDefault=(k:string,v:string)=>upTC({defaultThemes:{...defaults,[k]:v}});
   const addOverride=()=>{const path=prompt('مسیر را وارد کنید:');if(!path)return;upTC({overrides:{...overrides,[path]:'wellness'}})};
   const upOverride=(path:string,v:string)=>{const o={...overrides};if(v==='_remove_')delete o[path];else o[path]=v;upTC({overrides:o})};
-  const to=[['wellness','Wellness'],['kidlearn','KidLearn'],['navystack','NavyStack'],['light','روشن'],['cream','کرم'],['ocean','اقیانوسی'],['dark','تاریک'],['motherly','مادرانه'],['trust','اعتمادساز'],['blend','ترکیبی'],['motherly-trust','مادرانه-اعتمادساز']];
+  const to=[['wellness','Wellness'],['kidlearn','KidLearn'],['light','روشن'],['cream','کرم'],['ocean','اقیانوسی'],['dark','تاریک'],['motherly','مادرانه'],['trust','اعتمادساز'],['blend','ترکیبی'],['motherly-trust','مادرانه-اعتمادساز']];
+  const safeThemeChoice=(value:any,fallback:string)=>normalizeDesignId(value,'')||normalizeThemeId(value,fallback);
   const ss={padding:'14px 16px',borderRadius:12,background:T.soft,border:'1px solid '+T.brd,marginBottom:12};
   return <>
    <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت تم‌ها</>}>
     <div style={ss}>
      <h4 style={{margin:'0 0 12px',color:T.ttl,fontSize:13,fontWeight:800}}>تم پیش‌فرض هر بخش</h4>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-      <div><label style={S.lbl}>صفحات عمومی</label><select style={S.inp} value={defaults.public||'wellness'} onChange={e=>upDefault('public',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-      <div><label style={S.lbl}>بخش آموزش</label><select style={S.inp} value={defaults.education||'kidlearn'} onChange={e=>upDefault('education',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-      <div><label style={S.lbl}>پنل مدیریت</label><select style={S.inp} value={defaults.admin||'navystack'} onChange={e=>upDefault('admin',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+      <div><label style={S.lbl}>صفحات عمومی</label><select style={S.inp} value={safeThemeChoice(defaults.public,'wellness')} onChange={e=>upDefault('public',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+      <div><label style={S.lbl}>بخش آموزش</label><select style={S.inp} value={safeThemeChoice(defaults.education,'kidlearn')} onChange={e=>upDefault('education',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+      <div><label style={S.lbl}>پنل مدیریت</label><select style={S.inp} value={safeThemeChoice(defaults.admin,'dark')} onChange={e=>upDefault('admin',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
      </div>
     </div>
     <div style={ss}>
@@ -1194,7 +1196,7 @@ function ThemeManagerEditor(){
      {Object.entries(overrides).length===0&&<p style={{fontSize:11,color:T.mut,margin:0}}>تنظیم نشده.</p>}
      {Object.entries(overrides).map(([path,theme]:any)=><div key={path} style={{display:'grid',gridTemplateColumns:'1fr 180px 40px',gap:8,alignItems:'end',marginBottom:8,padding:'8px',background:T.card,borderRadius:10,border:'1px solid '+T.brd}}>
       <div><label style={S.lbl}>مسیر</label><input style={{...S.inp,fontFamily:'monospace'}} defaultValue={path} onBlur={e=>{if(e.target.value!==path){const o={...overrides};delete o[path];o[e.target.value]=theme;upTC({overrides:o})}}} dir="ltr"/></div>
-      <div><label style={S.lbl}>تم</label><select style={S.inp} value={theme} onChange={e=>upOverride(path,e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}<option value="_remove_">حذف</option></select></div>
+      <div><label style={S.lbl}>تم</label><select style={S.inp} value={safeThemeChoice(theme,'dark')} onChange={e=>upOverride(path,e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}<option value="_remove_">حذف</option></select></div>
       <button style={{...AdminBtn(),color:T.err,padding:'8px 0',marginBottom:0}} onClick={()=>upOverride(path,'_remove_')}><ZkCloseIcon size={13}/></button>
      </div>)}
      <button style={AdminBtn()} onClick={addOverride}><ZkPlusIcon size={13}/> افزودن</button>
@@ -1395,7 +1397,7 @@ function ThemeManagerEditor(){
      {items.map((it:any,i:number)=>{const globallyVisible=it.isVisible!==false&&it.active!==false;return <label key={it.id||i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',border:`1px solid ${T.brd}`,borderRadius:10,background:T.soft,opacity:globallyVisible?1:.58,cursor:globallyVisible?'pointer':'not-allowed'}}>
       <input type="checkbox" data-home-product-id={it.id||i} checked={globallyVisible&&it.showOnHome!==false} disabled={!globallyVisible} onChange={e=>patchItem(i,{showOnHome:e.target.checked})}/>
       <span style={{flex:1,fontSize:12,fontWeight:750,color:T.ttl}}>{it.title||it.name||'بدون عنوان'}</span>
-      {!globallyVisible&&<small style={{color:T.err}}>محصول مخفی است</small>}
+      {!globallyVisible&&<small style={{color:T.id==='admin-dark'?'#FCA5A5':T.err}}>محصول مخفی است</small>}
      </label>})}
     </div>
     <div style={{fontSize:11,color:T.mut,marginTop:9}}>تعداد موارد منتخب و قابل نمایش: <b style={{color:T.acc}}>{selectedHomeCount}</b></div>

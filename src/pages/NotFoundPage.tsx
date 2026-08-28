@@ -81,7 +81,7 @@ function HomeIcon(){
 export default function NotFoundPage(){
  const {T}=useAppContext();
  const themeId=String(T.id||'wellness');
- const dark=['dark','ocean','navystack','navystack-dark'].includes(themeId);
+ const dark=themeId==='dark'||themeId==='admin-dark';
  const surface=String(T.pop||T.card||(dark?'#111827':'#ffffff'));
  const text=String(T.txt||(dark?'#f1f5f9':'#312E55'));
  const accent=String(T.acc||'#7A12D4');

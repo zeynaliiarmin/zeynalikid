@@ -4,7 +4,7 @@
  * ویژگی‌ها:
  * - نمایش تصادفی جملات با اولویت‌بندی
  * - انیمیشن فید نرم هر ۸ ثانیه
- * - هماهنگ با دیزاین‌های مختلف (Wellness, KidLearn, NavyStack, Classic)
+ * - هماهنگ با دیزاین‌های مختلف (Wellness, KidLearn, Blend, Classic)
  * - بدون نشانگر تعداد و غیرقابل سوایپ
  * - اندازه فونت پویا بر اساس طول کاراکتر
  */
@@ -122,19 +122,15 @@ export default function TrustBoxNew({ sentences, interval, T, design, lang }: Tr
   const descSize = getTrustDescSize(curDesc);
 
   // تشخیص دیزاین
-  const isNavyStack = design === 'navystack';
   const isClassic = design === 'classic';
   const isKidLearn = design === 'kidlearn';
 
-  const boxBg = isNavyStack ? '#111638' : (isClassic ? T.card : '#FFFFFF');
-  const boxBorder = isNavyStack ? '1px solid #1E2756' : `1px solid ${T.brd || '#DFE1E5'}`;
-  const boxShadow = isNavyStack
-    ? '0 4px 12px rgba(0,0,0,0.2)'
-    : '0 4px 20px rgba(0,0,0,0.06)';
-  const boxRadius = isNavyStack ? 8 : 16;
-  const titleColor = isNavyStack ? '#E2E8F0' : T.ttl || T.txt || '#1F2937';
-  const descColor = isNavyStack ? '#94A3B8' : T.mut || '#6B7280';
-  const borderSubtle = isNavyStack ? 'rgba(0,212,255,0.08)' : 'rgba(122,18,212,0.04)';
+  const boxBg = isClassic ? T.card : (T.card || '#FFFFFF');
+  const boxBorder = `1px solid ${T.brd || '#DFE1E5'}`;
+  const boxShadow = T.shadowLight || '0 4px 20px rgba(0,0,0,0.06)';
+  const boxRadius = 16;
+  const titleColor = T.ttl || T.txt || '#1F2937';
+  const descColor = T.mut || '#6B7280';
 
   return (
     <div
@@ -162,34 +158,19 @@ export default function TrustBoxNew({ sentences, interval, T, design, lang }: Tr
       }}
     >
       {/* نوار تزئینی بالا */}
-      {!isNavyStack && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 4,
-            background: isKidLearn
-              ? 'linear-gradient(90deg, #EF4444, #3B82F6)'
-              : 'linear-gradient(90deg, #7A12D4, #DF1A6F)',
-            borderRadius: `${boxRadius}px ${boxRadius}px 0 0`,
-          }}
-        />
-      )}
-      {isNavyStack && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: 'linear-gradient(90deg, #00D4FF, #7C3AED)',
-            borderRadius: `${boxRadius}px ${boxRadius}px 0 0`,
-          }}
-        />
-      )}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          background: isKidLearn
+            ? 'linear-gradient(90deg, #EF4444, #3B82F6)'
+            : 'linear-gradient(90deg, #7A12D4, #DF1A6F)',
+          borderRadius: `${boxRadius}px ${boxRadius}px 0 0`,
+        }}
+      />
 
       {/* محتوای متحرک */}
       <div

@@ -83,7 +83,7 @@ No item above should be guessed or activated with placeholder values.
 
 ## Design-aware 404, horizontal products, and external operations — 2026-08-25
 
-- Client, single-segment server, and deep/static 404 pages now share a design-aware contract. The standalone 404 reads `zk_design_system`/`zk_theme` immediately and also refreshes its default design from `public-settings`; Wellness, KidLearn, NavyStack, Blend, Classic variants, and dark mode have distinct tokens.
+- Client, single-segment server, and deep/static 404 pages share one colour-mode contract. A persistent browser-local personal choice overrides the saved global `light`/`dark`/`auto` policy, and static 404 refreshes that global policy read-only from `public-settings`.
 - Featured Home products use one keyboard-accessible horizontal scroll-snap rail at every viewport, with swipe, scrollbar, and previous/next controls. No product or visibility setting is removed.
 - Responsive Home V2 is permanent; pre-V2 screenshots and Git history remain the rollback reference.
 - An active GitHub Actions backup is scheduled every two calendar days with 20-day Artifact retention. Each ZIP is encrypted client-side with AES-256-GCM before upload. A full encrypt/decrypt restore test succeeded with 15 tables and 56 Storage objects. The R2 implementation remains in code for future use but is inactive.

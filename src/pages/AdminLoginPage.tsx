@@ -32,7 +32,7 @@ export default function AdminLoginPage(){
    }else setAErr(en?'Biometric verification was not completed.':'تأیید بیومتریک انجام نشد');
  }catch{setAErr(en?'Fingerprint or Face ID was not verified.':'اثر انگشت یا Face ID تأیید نشد')}finally{setBioBusy(false)}};
  const mem=T.memphis||[T.soft,T.soft,T.soft];
- const darkGlass=T.id==='navystack'||T.id==='dark';
+ const darkGlass=T.id==='admin-dark'||T.id==='dark';
  const pageOverlay=darkGlass?'linear-gradient(160deg, rgba(15,23,42,.78), rgba(15,23,42,.58))':'linear-gradient(160deg, rgba(248,250,252,.90), rgba(240,253,250,.84))';
  return <main className={`zkgl-root zkgl-has-topbar zkgl-mode-${darkGlass?'dark':'light'}`} dir={en?'ltr':'rtl'} style={{['--zkgl-acc' as any]:T.acc||'#0F766E',position:'fixed',inset:0,zIndex:1500,alignItems:'center',overflowY:'auto'}} aria-labelledby="admin-login-title">
    <Helmet><title>{en?`Admin sign in | ${brand}`:`ورود مدیریت | ${brand}`}</title><meta name="robots" content="noindex, nofollow" /></Helmet>

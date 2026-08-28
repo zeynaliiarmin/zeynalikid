@@ -71,28 +71,45 @@
     </script>
     <script>
       (function () {
-        var key = 'zk_public_theme_mode';
-        var isAdmin = function () { return /^\/admin(?:\/|$)/.test(location.pathname); };
-        var apply = function (requested) {
+        var globalKey = 'zk_public_theme_mode';
+        var personalKey = 'zk_personal_color_mode';
+        var globalMode = 'auto';
+        var isAdmin = function () { return /^\/admin(?:[/-]|$)/.test(location.pathname); };
+        var validGlobal = function (value) { return value === 'light' || value === 'dark' || value === 'auto'; };
+        var validPersonal = function (value) { return value === 'light' || value === 'dark'; };
+        var readPersonal = function () {
+          try {
+            var personal = localStorage.getItem(personalKey);
+            return validPersonal(personal) ? personal : null;
+          } catch (_) { return null; }
+        };
+        var apply = function (requested, cache) {
+          globalMode = validGlobal(requested) ? requested : 'auto';
+          if (cache !== false) try { localStorage.setItem(globalKey, globalMode); } catch (_) {}
           if (isAdmin()) return;
-          var mode = requested === 'light' || requested === 'dark' || requested === 'auto' ? requested : 'auto';
+          var personal = readPersonal();
           var hour = new Date().getHours();
-          var resolved = mode === 'dark' || (mode === 'auto' && (hour >= 23 || hour < 7)) ? 'dark' : 'light';
+          var resolved = personal || (globalMode === 'dark' || (globalMode === 'auto' && (hour >= 23 || hour < 7)) ? 'dark' : 'light');
           var root = document.documentElement;
           root.setAttribute('data-theme', resolved);
           root.setAttribute('data-public-theme', resolved);
+          root.setAttribute('data-public-theme-mode', globalMode);
+          root.setAttribute('data-color-mode-source', personal ? 'personal' : 'global');
           root.style.colorScheme = resolved;
-          root.style.backgroundColor = resolved === 'dark' ? '#0A0E27' : '#F8FBFA';
+          root.style.backgroundColor = resolved === 'dark' ? '#0F1722' : '#F8FBFA';
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0A0E27' : '#F8FBFA');
-          try { localStorage.setItem(key, mode); } catch (_) {}
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0F1722' : '#F8FBFA');
           return resolved;
         };
         window.__zkApplyPublicMode = apply;
         var cached = null;
-        try { cached = localStorage.getItem(key); } catch (_) {}
-        apply(cached);
-        window.addEventListener('storage', function (event) { if (event.key === key) apply(event.newValue); });
+        try { cached = localStorage.getItem(globalKey); } catch (_) {}
+        apply(cached, false);
+        window.addEventListener('storage', function (event) {
+          if (event.key === globalKey) apply(event.newValue, false);
+          if (event.key === personalKey) apply(globalMode, false);
+        });
+        window.setInterval(function () { if (globalMode === 'auto' && !readPersonal()) apply(globalMode, false); }, 60000);
       })();
     </script>
   </head>

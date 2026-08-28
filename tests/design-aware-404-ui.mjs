@@ -9,7 +9,6 @@ const viewports=[
 const designs=[
  {design:'wellness',theme:'light'},
  {design:'kidlearn',theme:'light'},
- {design:'navystack',theme:'light'},
  {design:'classic',theme:'dark'},
  {design:'classic',theme:'ocean'},
  {design:'classic',theme:'motherly-trust'},
@@ -33,7 +32,7 @@ async function readLayout(page,{react}){
   const pageRect=pageEl.getBoundingClientRect(),shellRect=shell.getBoundingClientRect();
   const style=getComputedStyle(pageEl),shellStyle=getComputedStyle(shell),primaryStyle=getComputedStyle(primary);
   return {
-   htmlTheme:document.documentElement.dataset.theme||'',publicMode:document.documentElement.dataset.publicThemeMode||'',
+   htmlTheme:document.documentElement.dataset.theme||'',publicMode:document.documentElement.dataset.publicThemeMode||'',source:document.documentElement.dataset.colorModeSource||'',
    nfMode:isReact?pageEl.dataset.nfMode:document.documentElement.dataset.theme,
    nfTheme:isReact?pageEl.dataset.nfTheme:'static',colorScheme:style.colorScheme,
    pageWidth:pageRect.width,pageHeight:pageRect.height,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,
@@ -64,11 +63,11 @@ function assertGeometry(state,viewport,kind){
 function assertMode(state,mode,kind){
  if(state.htmlTheme!==mode||state.nfMode!==mode||state.colorScheme!==mode)throw new Error(`${kind}: unresolved ${mode} mode ${JSON.stringify(state)}`);
  if(mode==='dark'){
-  if(state.shellBg!==rgb(17,22,56)||state.textColor!==rgb(226,232,240)||state.mutedColor!==rgb(167,180,197))throw new Error(`${kind}: dark NavyStack surfaces mismatch ${JSON.stringify(state)}`);
-  const staticPrimary=state.primaryBg.includes('0, 212, 255')&&state.primaryColor===rgb(4,17,27);
-  const reactPrimary=state.primaryImage.includes('14, 116, 144')&&state.primaryImage.includes('109, 40, 217')&&state.primaryColor===rgb(255,255,255);
+  if(state.shellBg!==rgb(30,41,59)||state.textColor!==rgb(226,232,240)||state.mutedColor!==rgb(176,190,209))throw new Error(`${kind}: restored dark surfaces mismatch ${JSON.stringify(state)}`);
+  const staticPrimary=state.primaryBg.includes('45, 212, 191')&&state.primaryColor===rgb(15,23,34);
+  const reactPrimary=state.primaryImage.includes('15, 118, 110')&&state.primaryImage.includes('3, 105, 161')&&state.primaryColor===rgb(255,255,255);
   if(!staticPrimary&&!reactPrimary)throw new Error(`${kind}: dark primary contrast mismatch ${JSON.stringify(state)}`);
- }else if(state.shellBg===rgb(17,22,56)||state.textColor===rgb(226,232,240)){
+ }else if(state.shellBg===rgb(30,41,59)||state.textColor===rgb(226,232,240)){
   throw new Error(`${kind}: a dark surface leaked into light mode ${JSON.stringify(state)}`);
  }
 }
@@ -80,13 +79,13 @@ async function setStorage(page,values){
  },values);
 }
 
-async function openReact404(page,{mode,design='wellness',theme='light',hour=12,path='/client-side-404'}){
+async function openReact404(page,{mode,design='wellness',theme='light',hour=12,path='/client-side-404',personal=null}){
  mockedMode=mode;blockSettingsFetch=false;
  await page.goto(`${base}/?test-hour=${hour}`,{waitUntil:'domcontentloaded',timeout:30000});
- await setStorage(page,{'zk_design_system':design,'zk_theme':theme,'zkid_settings_v2':null,'zk_public_theme_mode':mode});
+ await setStorage(page,{'zk_design_system':design,'zk_theme':theme,'zk_personal_color_mode':personal,'zkid_settings_v2':null,'zk_public_theme_mode':mode});
  await page.reload({waitUntil:'networkidle0',timeout:30000});
  await page.evaluate(next=>{history.pushState(null,'',next);window.dispatchEvent(new PopStateEvent('popstate'))},`${path}?test-hour=${hour}`);
- const resolved=mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light';
+ const resolved=personal||(mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light');
  await page.waitForSelector('.zk-nf-shell',{timeout:20000});
  await page.waitForFunction(expected=>document.querySelector('.zk-nf-page')?.dataset.nfMode===expected,{timeout:20000},resolved);
  return resolved;
@@ -118,27 +117,36 @@ try{
   for(const viewport of viewports){
    await page.setViewport({...viewport,deviceScaleFactor:1});
    await page.goto(`${base}/404.html?test-hour=12&mode=${mode}&v=${viewport.width}`,{waitUntil:'domcontentloaded',timeout:30000});
-   await setStorage(page,{'zk_public_theme_mode':mode});await page.reload({waitUntil:'networkidle0',timeout:30000});
+   await setStorage(page,{'zk_personal_color_mode':null,'zk_public_theme_mode':mode});await page.reload({waitUntil:'networkidle0',timeout:30000});
    await page.waitForFunction(expected=>document.documentElement.dataset.theme===expected,{timeout:10000},mode);
    const state=await readLayout(page,{react:false});assertGeometry(state,viewport,`static ${mode}`);assertMode(state,mode,`static ${mode}`);
   }
  }
- mockedMode='dark';blockSettingsFetch=false;await setStorage(page,{'zk_public_theme_mode':'light'});
+ mockedMode='dark';blockSettingsFetch=false;await setStorage(page,{'zk_personal_color_mode':null,'zk_public_theme_mode':'light'});
  await page.goto(`${base}/404.html?remote-mode=dark&test-hour=12`,{waitUntil:'networkidle0'});
  await page.waitForFunction(()=>document.documentElement.dataset.publicThemeMode==='dark'&&document.documentElement.dataset.theme==='dark');
- mockedMode='auto';blockSettingsFetch=true;await setStorage(page,{'zk_public_theme_mode':'auto'});
+ mockedMode='auto';blockSettingsFetch=true;await setStorage(page,{'zk_personal_color_mode':null,'zk_public_theme_mode':'auto'});
  for(const [hour,expected] of [[12,'light'],[23,'dark']]){
   await page.goto(`${base}/404.html?test-hour=${hour}&auto=1`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(mode=>document.documentElement.dataset.theme===mode,{},expected);assertMode(await readLayout(page,{react:false}),expected,`static auto ${hour}`);
  }
  blockSettingsFetch=false;
 
+ // Static 404 also gives a persistent personal choice precedence over the opposite global policy.
+ for(const [personal,global] of [['dark','light'],['light','dark']]){
+  mockedMode=global;blockSettingsFetch=false;await setStorage(page,{'zk_personal_color_mode':personal,'zk_public_theme_mode':global});
+  await page.goto(`${base}/404.html?test-hour=12&personal=${personal}`,{waitUntil:'networkidle0'});
+  const state=await readLayout(page,{react:false});assertMode(state,personal,`static personal ${personal}`);
+  if(state.source!=='personal')throw new Error(`Static personal precedence source mismatch: ${JSON.stringify(state)}`);
+ }
+ await setStorage(page,{'zk_personal_color_mode':null});
+
  // React 404: forced dark is identical across every design; forced light never inherits legacy dark palettes.
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});
  for(const fixture of designs){
   let resolved=await openReact404(page,{mode:'dark',...fixture,path:`/react-dark-${fixture.design}-${fixture.theme}`});
   let state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React dark ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React dark ${fixture.design}/${fixture.theme}`);
-  if(normalize(state.vars.page)!=='#0a0e27'||normalize(state.vars.surface)!=='#111638'||normalize(state.vars.text)!=='#e2e8f0'||normalize(state.vars.accent)!=='#00d4ff')throw new Error(`React dark palette is not shared: ${JSON.stringify(state)}`);
+  if(normalize(state.vars.page)!=='#0f1722'||normalize(state.vars.surface)!=='#1e293b'||normalize(state.vars.text)!=='#e2e8f0'||normalize(state.vars.accent)!=='#2dd4bf')throw new Error(`React dark palette is not shared: ${JSON.stringify(state)}`);
 
   resolved=await openReact404(page,{mode:'light',...fixture,path:`/react-light-${fixture.design}-${fixture.theme}`});
   state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React light ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React light ${fixture.design}/${fixture.theme}`);
@@ -154,5 +162,5 @@ try{
   assertMode(await readLayout(page,{react:true}),expected,`React auto refresh ${hour}`);
  }
 
- console.log('Static and React 404 routes preserve geometry and follow light, shared NavyStack dark, and clock-based automatic modes.');
+ console.log('Static and React 404 routes preserve geometry and follow personal precedence, global light/dark/auto, and the restored shared dark palette.');
 }finally{await browser.close()}

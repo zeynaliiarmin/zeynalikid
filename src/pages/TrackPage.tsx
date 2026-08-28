@@ -212,7 +212,7 @@ export default function TrackPage(){
  const hexTint=(hex:string,a:number)=>{try{const h=String(hex||'').replace('#','').trim();if(!/^[0-9a-fA-F]{6}$/.test(h))return `rgba(15,118,110,${a})`;const n=parseInt(h,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`}catch{return `rgba(15,118,110,${a})`}};
  const mixWhite=(hex:string,t:number)=>{try{const h=String(hex||'').replace('#','').trim();if(!/^[0-9a-fA-F]{6}$/.test(h))return '#5ECDC4';const n=parseInt(h,16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;const m=(c:number)=>Math.round(c+(255-c)*t);return `rgb(${m(r)},${m(g)},${m(b)})`}catch{return '#5ECDC4'}};
  const acc=T.acc||'#0F766E';
- const darkGlass=T.id==='dark'||T.id==='navystack';
+ const darkGlass=T.id==='dark'||T.id==='admin-dark';
  const accLight=darkGlass?mixWhite(acc,0.55):acc;
  const glassFormBg=darkGlass?hexTint(acc,0.16):'rgba(255,255,255,.92)';
  const glassFormBorder=darkGlass?hexTint(acc,0.5):T.brd;

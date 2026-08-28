@@ -20,9 +20,9 @@ import { PUBLIC_SITE_URL, TRACKING_PREFIX } from './config/project';
 import { optimizeForUpload } from './utils/imageOptimizer';
 import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, saveSettings as saveSettingsRemote, trackPageView, type Submission } from './lib/supabase';
 import { uploadAdminFile, uploadPublicFile } from './lib/storageUpload';
-import { wellnessTheme, kidlearnTheme, navystackTheme } from './theme';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
-import { applyZkTheme, getZkThemePref, resolveZkDark, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
+import { applyResolvedZkTheme, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
+import { normalizeDesignId, normalizePublicColorMode, normalizeThemeId, resolveColorMode, type PersonalColorMode } from './utils/colorMode';
 // PWA admin: shared session utils (clear on logout, validate on /admin/app)
 import { clearAdminSession, getAdminSessionToken, validateAdminSession } from './utils/adminSession';
 import ErrorAlertHost from './components/ErrorAlert/ErrorAlertHost';
@@ -77,72 +77,68 @@ function App(){
  // ─── سیستم مدیریت دیزاین و تم (مرحله ۲ - بازطراحی تدریجی) ───
  const designSystem = cfg.designSystem || configDefaultSettings.designSystem;
 
- // تابع تعیین دیزاین فعال بر اساس مسیر
+ // Resolve design ids without ever writing compatibility changes back to stored settings.
  const getDesignForPath = (path: string, settings: DynamicRecord): string => {
-  if (path.startsWith('/admin') || path.startsWith('/admin-login')) {
-   return 'navystack';
-  }
+  if (path.startsWith('/admin') || path.startsWith('/admin-login')) return 'classic';
+  const configured = normalizeDesignId(settings?.sections?.public?.design, 'wellness');
   try {
-    const ls = localStorage.getItem('zk_design_system');
-    if (ls && ['wellness', 'kidlearn', 'navystack', 'blend', 'classic'].includes(ls)) return ls;
+   const localDesign = localStorage.getItem('zk_design_system');
+   if (localDesign) return normalizeDesignId(localDesign, configured);
   } catch {}
-  return settings?.sections?.public?.design || 'wellness';
+  return configured;
  };
 
- // تابع تعیین تم (فقط برای دیزاین ترکیبی)
  const getThemeForDesign = (design: string, settings: DynamicRecord): string => {
   if (design === 'classic' || design === 'blend') {
+   const configured = normalizeThemeId(settings?.sections?.public?.theme, design === 'blend' ? 'blend' : 'light');
    try {
-     const th = localStorage.getItem('zk_theme');
-     if (th && ['light', 'cream', 'ocean', 'dark', 'motherly-trust', 'blend'].includes(th)) return th;
+    const localTheme = localStorage.getItem('zk_theme');
+    if (localTheme) return normalizeThemeId(localTheme, configured);
    } catch {}
-   return settings?.sections?.public?.theme || 'blend';
+   return configured;
   }
-  // برای دیزاین‌های جدید، تم ثابت است
-  return design; // 'wellness', 'kidlearn', 'navystack'
+  return design;
  };
 
  // تعیین دیزاین و تم فعال
  const activeDesign = getDesignForPath(location.pathname, designSystem);
  const activeTheme = getThemeForDesign(activeDesign, designSystem);
 
- // Stage 7A: حالت تیره پنل مدیریت از Stage 6 پیروی می‌کند (zk_theme / data-theme)
- const [adminDark,setAdminDark]=useState<boolean>(()=>{try{return resolveZkDark()}catch{return false}});
+ // Personal header choice is local to this browser/domain and wins on admin + public routes.
+ const [personalColorMode,setPersonalColorMode]=useState<PersonalColorMode|null>(()=>getZkThemePref());
  useEffect(()=>{
-  const sync=()=>{try{setAdminDark(resolveZkDark())}catch{}};
-  // AdminLayout ممکن است قبل از ثبت listener تم را اعمال کند؛ یک‌بار هم در mount همگام‌سازی می‌کنیم.
-  sync();
-  const onStorage=(e:StorageEvent)=>{if(e.key===ZK_THEME_KEY)sync()};
+  const sync=()=>setPersonalColorMode(getZkThemePref());
+  const onStorage=(event:StorageEvent)=>{if(event.key===ZK_THEME_KEY)sync()};
   window.addEventListener('storage',onStorage);
   window.addEventListener(ZK_THEME_EVENT,sync as EventListener);
   return()=>{window.removeEventListener('storage',onStorage);window.removeEventListener(ZK_THEME_EVENT,sync as EventListener)};
  },[]);
 
- // تم عمومی مستقل از تم شخصی پنل: خودکار فقط برای بازدیدکنندگان، ساعت 23 تا 07.
+ // The saved global mode applies only when this browser has no personal choice.
  const [publicThemeTick,setPublicThemeTick]=useState(0);
  useEffect(()=>{const timer=window.setInterval(()=>setPublicThemeTick(x=>x+1),60000);return()=>window.clearInterval(timer)},[]);
- useEffect(()=>{const sync=(event:StorageEvent)=>{if(event.key!=='zk_public_theme_mode')return;const mode=event.newValue;if(mode==='light'||mode==='dark'||mode==='auto')setCfg((current:DynamicRecord)=>({...current,publicThemeMode:mode}))};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync)},[]);
+ useEffect(()=>{const sync=(event:StorageEvent)=>{if(event.key!=='zk_public_theme_mode')return;setCfg((current:DynamicRecord)=>({...current,publicThemeMode:normalizePublicColorMode(event.newValue)}))};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync)},[]);
  const isAdminRoute=location.pathname.startsWith('/admin');
- const publicThemeMode=cfg.publicThemeMode||'auto';
- const publicDark=!isAdminRoute&&(publicThemeMode==='dark'||(publicThemeMode==='auto'&&(()=>{const h=new Date().getHours();return h>=23||h<7})()));
- // پنل در روشن از توکن‌های روشن خودش و در تاریک دقیقاً از NavyStack استفاده می‌کند.
- // صفحات عمومی در حالت تاریک همیشه یک پالت واحد دارند و به دیزاین انتخابی وابسته نیستند.
+ const publicThemeMode=normalizePublicColorMode(cfg.publicThemeMode);
+ useEffect(()=>{try{localStorage.setItem('zk_public_theme_mode',publicThemeMode)}catch{}},[publicThemeMode]);
+ const effectivePublicMode=resolveColorMode(personalColorMode,publicThemeMode,new Date().getHours());
+ const publicDark=effectivePublicMode==='dark';
+ const adminDark=personalColorMode==='dark';
+ // Public dark colours are shared by every design while each design keeps its geometry.
  const selectedPublicTheme=(activeDesign === 'classic' || activeDesign === 'blend')
   ? (TH[activeTheme] || TH.blend)
   : (TH[activeDesign] || TH.wellness);
- // Legacy dark/ocean/navystack palettes cannot leak into an explicitly light public mode.
- // Their layout metrics are preserved while the colour layer resolves to a light counterpart.
- const publicLightTheme=selectedPublicTheme.id==='navystack'
-  ? TH['admin-light']
-  : (selectedPublicTheme.id==='dark'||selectedPublicTheme.id==='ocean')
+ // Explicit light mode must not inherit a legacy dark/ocean colour layer.
+ const publicLightTheme=(selectedPublicTheme.id==='dark'||selectedPublicTheme.id==='ocean')
   ? TH.light
   : selectedPublicTheme;
  const publicDarkTheme=useMemo(()=>({...publicLightTheme,...PUBLIC_DARK_COLORS}),[publicLightTheme]);
  const T = isAdminRoute
-  ? (adminDark ? TH.navystack : TH['admin-light'])
+  ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
   : publicDark
   ? publicDarkTheme
   : publicLightTheme;
+
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
  // ─── تایمر ۱۵ دقیقه‌ای روند ثبت دوره (اعتمادسازی — فقط نمایشی/هدایتی) ───
@@ -151,31 +147,38 @@ function App(){
  const flowExpiredRef=useRef(false);
  const expireCourseFlowRef=useRef<()=>void>(()=>{});
  useEffect(()=>{ try{ setLS('zkid_course_draft',course); }catch{} },[course]);
- useEffect(()=>{setLS(SK.settings,cfg); updateImageCompressionKB(cfg.imageCompressionKB); document.documentElement.dataset.zkTheme=isAdminRoute?(adminDark?'navystack':'admin-light'):T.id;},[cfg,isAdminRoute,adminDark,T.id]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
+ useEffect(()=>{setLS(SK.settings,cfg); updateImageCompressionKB(cfg.imageCompressionKB);},[cfg]); useEffect(()=>setLS('zkid_lang',lang),[lang]);
  // Stage 9: lang/dir پویا روی <html> برای SEO/RTL-LTR واقعی
  useEffect(()=>{document.documentElement.lang=lang==='fa'?'fa':'en';document.documentElement.dir=lang==='fa'?'rtl':'ltr';},[lang]);
- // پل یکتای تم: تنظیم شخصی مدیر فقط روی پنل و سیاست ذخیره‌شدهٔ عمومی فقط روی سایت اعمال می‌شود.
+ // One mode bridge: personal choice first, otherwise the saved global public policy.
  useLayoutEffect(()=>{
   const root=document.documentElement;
   const body=document.body;
   const adminInlineVars=['--zk-bg','--zk-surface','--zk-text','--zk-text-muted','--zk-border','--zk-primary'];
   if(isAdminRoute){
+   const final=adminDark?'dark':'light';
    body.classList.remove('public-root');
    root.removeAttribute('data-public-theme');
-   root.style.removeProperty('color-scheme');
-   applyZkTheme(getZkThemePref());
+   root.removeAttribute('data-public-theme-mode');
+   root.setAttribute('data-color-mode-source',personalColorMode?'personal':'default');
+   root.setAttribute('data-zk-theme',adminDark?'admin-dark':'admin-light');
+   root.style.backgroundColor=adminDark?'#0F1722':'#F8FAFC';
+   applyResolvedZkTheme(final);
    return;
   }
   body.classList.add('public-root');
-  const final=publicDark?'dark':'light';
-  root.setAttribute('data-theme',final);
-  root.setAttribute('data-public-theme',final);
-  root.style.setProperty('color-scheme',final);
+  root.setAttribute('data-theme',effectivePublicMode);
+  root.setAttribute('data-public-theme',effectivePublicMode);
+  root.setAttribute('data-public-theme-mode',publicThemeMode);
+  root.setAttribute('data-color-mode-source',personalColorMode?'personal':'global');
+  root.setAttribute('data-zk-theme',String(T.id));
+  root.style.setProperty('color-scheme',effectivePublicMode);
+  root.style.backgroundColor=publicDark?'#0F1722':'#F8FBFA';
   adminInlineVars.forEach(name=>root.style.removeProperty(name));
-  try{localStorage.setItem('zk_public_theme_mode',String(publicThemeMode))}catch{}
   const themeColor=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if(themeColor)themeColor.content=publicDark?'#0A0E27':'#F8FBFA';
- },[isAdminRoute,publicDark,publicThemeMode,publicThemeTick]);
+  if(themeColor)themeColor.content=publicDark?'#0F1722':'#F8FBFA';
+ },[isAdminRoute,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id]);
+
  useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage
  useEffect(()=>{const onStorage=(e:StorageEvent)=>{if(e.key==='zkid_lang'&&e.newValue){try{const v=JSON.parse(e.newValue);if(v==='fa'||v==='en')setLang(v)}catch{if(e.newValue==='fa'||e.newValue==='en')setLang(e.newValue as Lang)}}};window.addEventListener('storage',onStorage);return()=>window.removeEventListener('storage',onStorage)},[]);

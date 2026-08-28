@@ -2,8 +2,8 @@
    Zeynalikid Admin Panel — Stage 7A Design Tokens (--zkad-*)
    ─ Scoped strictly to `body.admin-root` so nothing leaks into the
      marketing pages, course flow, profile, settings or the form app.
-   ─ Light mode is the default. Dark mode follows Stage 6's system:
-     <html data-theme="dark"> (localStorage key: "zk_theme").
+   ─ Light mode is the default. The persistent personal header toggle sets:
+     <html data-theme="dark"> (localStorage key: "zk_personal_color_mode").
    ─ Palette: Zeynalikid teal/blue (#0F766E / #0EA5E9), cream and warm
      neutrals. No purple, no neon cyan, no SCADA-dark industrial bg.
    ═══════════════════════════════════════════════════════════════════ */

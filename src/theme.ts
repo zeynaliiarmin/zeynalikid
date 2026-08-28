@@ -4,7 +4,6 @@
  * Classic    — تم‌های ترکیبی قدیمی (نئومورفیسم + مینیمال + ممفیس)
  * Wellness   — Public pages (Home, Courses, Experience, Licenses, About, Contact)
  * KidLearn   — Education & Training pages
- * NavyStack  — Admin Panel
  *
  * Font: Vazirmatn (400, 500, 700) — replaces Google Sans / Fredoka / Nunito / system-sans
  * All designs share the brand purple (#7A12D4) for unified brand identity.
@@ -219,47 +218,6 @@ export const kidlearnTokens = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// NAVYSTACK TOKENS (از navystack-DESIGN.md)
-// ═══════════════════════════════════════════════════════════
-
-export const navystackTokens = {
-  colors: {
-    background: '#0A0E27',
-    sidebar: '#0D1333',
-    header: '#0D1333',
-    cardSurface: '#111638',
-    cardHover: '#161D48',
-    primary: '#00D4FF',
-    primaryHover: '#33DDFF',
-    purple: '#7C3AED',
-    green: '#10B981',
-    yellow: '#F59E0B',
-    red: '#EF4444',
-    textPrimary: '#E2E8F0',
-    textSecondary: '#94A3B8',
-    border: '#1E2756',
-    // Brand purple for consistency
-    brand: '#7A12D4',
-    brandLight: 'rgba(122,18,212,0.15)',
-  },
-  rounded: { sm: 4, md: 8, lg: 12, pill: 20, circle: '50%' },
-  spacing: {
-    '1': 4, '2': 6, '3': 8, '4': 10, '5': 12, '6': 14, '7': 16, '8': 18, '9': 20, '10': 24,
-    contentPaddingV: 20, contentPaddingH: 24,
-    cardPadding: 16, cardPaddingCompact: 14, cardPaddingKpi: 18,
-    gridGap: 16, gridGapTight: 12,
-  },
-  shadows: {
-    glow: '0 0 12px rgba(0,212,255,0.15)',
-    cardHover: '0 4px 16px rgba(0,212,255,0.08)',
-  },
-  typography: {
-    fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
-    weights: { regular: 400, medium: 500, semibold: 600, bold: 700 },
-  },
-};
-
-// ═══════════════════════════════════════════════════════════
 // THEME OBJECT GENERATORS (compatible with existing TH structure)
 // ═══════════════════════════════════════════════════════════
 
@@ -357,91 +315,6 @@ export function kidlearnTheme() {
   };
 }
 
-export function navystackTheme() {
-  const t = navystackTokens;
-  return {
-    id: 'navystack',
-    name: 'NavyStack',
-    bg: t.colors.background,
-    card: t.colors.cardSurface,
-    brd: t.colors.border,
-    acc: t.colors.primary,
-    soft: 'rgba(0,212,255,0.06)',
-    grad: `linear-gradient(135deg, ${t.colors.primary} 0%, ${t.colors.purple} 100%)`,
-    txt: t.colors.textPrimary,
-    mut: t.colors.textSecondary,
-    ttl: t.colors.primary,
-    inp: t.colors.background,
-    sel: 'rgba(0,212,255,0.06)',
-    pop: t.colors.cardSurface,
-    err: t.colors.red,
-    ok: t.colors.green,
-    warn: t.colors.yellow,
-    badge: 'rgba(0,212,255,0.08)',
-    hdr: t.colors.sidebar,
-    neuOut: '0 2px 8px rgba(0,0,0,0.3)',
-    neuIn: 'inset 1px 1px 4px rgba(0,0,0,0.3), inset -1px -1px 4px rgba(30,39,86,0.2)',
-    memphis: ['rgba(0,212,255,0.04)', 'rgba(124,58,237,0.04)', 'rgba(16,185,129,0.04)'],
-    // NavyStack-specific extras
-    sidebar: t.colors.sidebar,
-    header: t.colors.header,
-    cardHover: t.colors.cardHover,
-    primary: t.colors.primary,
-    primaryHover: t.colors.primaryHover,
-    purple: t.colors.purple,
-    green: t.colors.green,
-    yellow: t.colors.yellow,
-    red: t.colors.red,
-    cardRadius: t.rounded.md,
-    btnRadius: t.rounded.sm,
-    inputRadius: t.rounded.sm,
-    tagRadius: t.rounded.sm,
-    shadowGlow: t.shadows.glow,
-    shadowCardHover: t.shadows.cardHover,
-    // Brand consistency
-    brandPurple: t.colors.brand,
-    // Typography
-    fontFamily: t.typography.fontFamily,
-    fontWeight: t.typography.weights,
-    // Extra NavyStack tokens for admin panel
-    kpiFontSize: '26px',
-    kpiFontWeight: 700,
-    kpiLabelFontSize: '14px',
-    kpiLabelFontWeight: 400,
-    pageHeadingFontSize: '16px',
-    pageHeadingFontWeight: 600,
-    bodyFontSize: '13px',
-    labelFontSize: '11px',
-    sidebarWidth: 220,
-    sidebarActiveBg: 'rgba(0,212,255,0.08)',
-    sidebarActiveBorder: '3px solid #00D4FF',
-    sidebarItemPaddingV: 10,
-    sidebarItemPaddingH: 20,
-    sidebarItemFontSize: 13,
-    modalMaxWidth: 560,
-    modalRadius: 12,
-    tagPadding: '2px 8px',
-    tableFontSize: 13,
-    tableHeaderFontSize: 12,
-    tableCellPaddingV: 10,
-    tableCellPaddingH: 12,
-    tableBorderColor: 'rgba(30,39,86,0.5)',
-    cardHoverTransform: 'translateY(-2px)',
-    btnDangerBg: '#EF4444',
-    btnDangerText: '#FFFFFF',
-    btnSuccessBg: '#10B981',
-    btnSuccessText: '#FFFFFF',
-    btnSmallPadding: '4px 10px',
-    btnSmallFontSize: 11,
-    tabActiveBorder: '2px solid #00D4FF',
-    statusDotSize: 8,
-    timelineLineColor: '#1E2756',
-    timelineLineWidth: 2,
-    timelineDotSize: 10,
-    timelineDotBorder: '2px solid #00D4FF',
-  };
-}
-
 // ═══════════════════════════════════════════════════════════
 // EXPORT ALL THEME OBJECTS FOR DIRECT USE
 // ═══════════════════════════════════════════════════════════
@@ -455,7 +328,6 @@ export const classic = {
 
 export const wellness = wellnessTheme();
 export const kidlearn = kidlearnTheme();
-export const navystack = navystackTheme();
 
 // ═══════════════════════════════════════════════════════════
 // SHARED CONSTANTS
@@ -472,7 +344,7 @@ export const BRAND_PRIMARY = '#0F766E';
 export const BRAND_ACCENT = '#0EA5E9';
 
 // Available designs
-export const AVAILABLE_DESIGNS = ['classic', 'wellness', 'kidlearn', 'navystack'] as const;
+export const AVAILABLE_DESIGNS = ['classic', 'wellness', 'kidlearn', 'blend'] as const;
 export type DesignType = typeof AVAILABLE_DESIGNS[number];
 
 // Available classic themes
