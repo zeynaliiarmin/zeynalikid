@@ -403,7 +403,7 @@ function ArticleImagesEditor({ T, S, AdminBtn, StableAdminInput, uid, images, pa
         <div key={im.id || idx} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 8, marginBottom: 8, background: T.card }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             {extractDirectMediaUrl(im.url, 'image') ? (
-              <img src={extractDirectMediaUrl(im.url, 'image')} alt="" referrerPolicy="no-referrer" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 8, border: `1px solid ${T.brd}`, flexShrink: 0, background: '#000' }} />
+              <img src={extractDirectMediaUrl(im.url, 'image')} alt="" referrerPolicy="no-referrer" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 8, border: `1px solid ${T.brd}`, flexShrink: 0, background: T.inp }} />
             ) : (
               <span style={{ width: 72, height: 54, borderRadius: 8, border: `1px dashed ${T.brd}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.mut, fontSize: 11, flexShrink: 0, background: T.soft }}>عکس</span>
             )}

@@ -275,7 +275,7 @@ export default function ImageCropper({
             borderRadius: circular ? '50%' : 14,
             overflow: 'hidden',
             position: 'relative',
-            background: '#111827',
+            background: T.inp || T.soft || '#fff',
             touchAction: 'none',
             cursor: 'grab',
             boxShadow: `0 0 0 3px ${T.acc || '#0f766e'}`,
@@ -306,8 +306,8 @@ export default function ImageCropper({
           {img && !circular && (
             <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, transparent 33.1%, rgba(255,255,255,.38) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.38) 66.7%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgba(255,255,255,.38) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.38) 66.7%, transparent 66.9%)' }} />
           )}
-          {!img && !loadError && <div style={{ color: '#fff', fontSize: 12, position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>در حال آماده‌سازی تصویر…</div>}
-          {loadError && <div style={{ color: '#fff', fontSize: 12, lineHeight: 1.8, textAlign: 'center', padding: 20, position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>خواندن این تصویر ممکن نشد. دوباره آن را از حافظهٔ گوشی انتخاب کنید.</div>}
+          {!img && !loadError && <div style={{ color: T.mut, fontSize: 12, position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>در حال آماده‌سازی تصویر…</div>}
+          {loadError && <div style={{ color: T.err, fontSize: 12, lineHeight: 1.8, textAlign: 'center', padding: 20, position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>خواندن این تصویر ممکن نشد. دوباره آن را از حافظهٔ گوشی انتخاب کنید.</div>}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center', marginBottom: 12 }}>

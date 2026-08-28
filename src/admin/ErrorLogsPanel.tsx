@@ -230,7 +230,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
                   </button>
                 )}
                 {l.stack && expanded.has(l.id) && (
-                  <pre style={{ marginTop: 8, marginBottom: 0, padding: 10, background: '#0F1722', color: '#E2E8F0', borderRadius: 10, fontSize: 11, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', direction: 'ltr', textAlign: 'left', maxHeight: 300, overflowY: 'auto' }}>{l.stack}</pre>
+                  <pre style={{ marginTop: 8, marginBottom: 0, padding: 10, background: T.inp, color: T.txt, border: `1px solid ${T.brd}`, borderRadius: 10, fontSize: 11, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', direction: 'ltr', textAlign: 'left', maxHeight: 300, overflowY: 'auto' }}>{l.stack}</pre>
                 )}
               </div>
             );
