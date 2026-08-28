@@ -28,7 +28,8 @@ requireText(homeCss,'@media(max-width:699px)','Home V2 mobile layout is missing'
 requireText(telegram,"Deno.env.get('TELEGRAM_BOT_TOKEN')",'Telegram token is not server-side');
 requireText(telegram,"Deno.env.get('TELEGRAM_CHAT_ID')",'Telegram chat id is not server-side');
 requireText(logError,'sendTelegramErrorAlert(urgent)','urgent errors are not routed to Telegram');
-requireText(static404,'height:100dvh','static 404 does not lock itself to the dynamic viewport');
+requireText(static404,'min-height:100dvh','static 404 does not cover the dynamic viewport');
+requireText(static404,'overflow-y:auto','static 404 does not preserve natural vertical scrolling');
 requireText(static404,'-webkit-tap-highlight-color:transparent','static 404 does not suppress mobile tap highlighting');
 if(static404.includes('<script'))failures.push('static 404 unexpectedly executes client bootstrap code');
 if(/TURNSTILE_SECRET_KEY\s*=\s*['"][^'"]+/i.test([page,client,edge,widget,projectConfig,vercel,consent,launcher,home,homeCss,telegram,logError,static404].join('\n')))failures.push('Turnstile secret appears hard-coded');
