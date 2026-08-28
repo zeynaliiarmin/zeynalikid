@@ -1,6 +1,7 @@
-import type {ReactNode} from 'react';
+import type {CSSProperties,ReactNode} from 'react';
 import {Helmet} from 'react-helmet-async';
 import {Link} from 'react-router-dom';
+import {useAppContext} from '../app/AppContext';
 import './not-found-page.css';
 
 type Shortcut={
@@ -10,17 +11,18 @@ type Shortcut={
  tone:string;
  icon:ReactNode;
 };
+type NotFoundVars=CSSProperties&Record<`--nf-${string}`,string>;
 
 function Memphis404Artwork(){
  return <div className="zk-nf-art" role="img" aria-label="خطای ۴۰۴">
   <svg viewBox="0 0 400 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
    <defs>
     <filter id="neu-4-shadow" x="-20%" y="-20%" width="140%" height="140%">
-     <feDropShadow dx="4" dy="6" stdDeviation="5" floodColor="#cbd5e1" floodOpacity="0.75"/>
-     <feDropShadow dx="-3" dy="-3" stdDeviation="3" floodColor="#ffffff" floodOpacity="0.95"/>
+     <feDropShadow dx="4" dy="6" stdDeviation="5" floodColor="var(--nf-art-shadow)" floodOpacity="0.75"/>
+     <feDropShadow dx="-3" dy="-3" stdDeviation="3" floodColor="var(--nf-art-highlight)" floodOpacity="0.95"/>
     </filter>
     <filter id="donut-shadow" x="-20%" y="-20%" width="140%" height="140%">
-     <feDropShadow dx="3" dy="7" stdDeviation="6" floodColor="#94a3b8" floodOpacity="0.6"/>
+     <feDropShadow dx="3" dy="7" stdDeviation="6" floodColor="var(--nf-art-shadow)" floodOpacity="0.6"/>
     </filter>
     <mask id="donut-hole-mask">
      <rect width="400" height="170" fill="white"/>
@@ -28,37 +30,37 @@ function Memphis404Artwork(){
     </mask>
    </defs>
 
-   <path d="M 40 38 Q 50 25, 62 38 T 84 38 T 106 38" fill="none" stroke="#FBBF24" strokeWidth="4.5" strokeLinecap="round"/>
+   <path d="M 40 38 Q 50 25, 62 38 T 84 38 T 106 38" fill="none" stroke="var(--nf-yellow)" strokeWidth="4.5" strokeLinecap="round"/>
    <g transform="translate(305, 22) rotate(12) scale(0.85)">
-    <path d="M 0 15 L 42 0 L 24 32 L 18 18 Z" fill="#F472B6"/>
-    <path d="M 18 18 L 42 0 L 24 32 Z" fill="#EC4899"/>
-    <path d="M -25 30 Q -10 14, 0 16" fill="none" stroke="#818CF8" strokeWidth="2.2" strokeDasharray="3.5 3.5" strokeLinecap="round"/>
+    <path d="M 0 15 L 42 0 L 24 32 L 18 18 Z" fill="var(--nf-warm)"/>
+    <path d="M 18 18 L 42 0 L 24 32 Z" fill="var(--nf-accent)"/>
+    <path d="M -25 30 Q -10 14, 0 16" fill="none" stroke="var(--nf-blue)" strokeWidth="2.2" strokeDasharray="3.5 3.5" strokeLinecap="round"/>
    </g>
    <g transform="translate(48, 105)">
-    <circle cx="18" cy="18" r="16" fill="#8B5CF6"/>
-    <path d="M 3 13 Q 18 17 33 13" stroke="#EDE9FE" strokeWidth="2.5" fill="none"/>
-    <path d="M 3 22 Q 18 26 33 22" stroke="#EDE9FE" strokeWidth="2.5" fill="none"/>
+    <circle cx="18" cy="18" r="16" fill="var(--nf-violet)"/>
+    <path d="M 3 13 Q 18 17 33 13" stroke="var(--nf-art-highlight)" strokeWidth="2.5" fill="none"/>
+    <path d="M 3 22 Q 18 26 33 22" stroke="var(--nf-art-highlight)" strokeWidth="2.5" fill="none"/>
    </g>
-   <polygon points="325,120 345,150 305,150" fill="#10B981"/>
-   <circle cx="346" cy="112" r="3.5" fill="#EC4899"/>
+   <polygon points="325,120 345,150 305,150" fill="var(--nf-green)"/>
+   <circle cx="346" cy="112" r="3.5" fill="var(--nf-warm)"/>
 
-   <text x="92" y="122" fontFamily="sans-serif" fontSize="115" fontWeight="900" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
+   <text x="92" y="122" fontFamily="sans-serif" fontSize="115" fontWeight="900" fill="var(--nf-four)" stroke="var(--nf-four-stroke)" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
 
    <g mask="url(#donut-hole-mask)" filter="url(#donut-shadow)">
-    <path d="M 200 85 L 145 85 A 55 55 0 0 1 200 30 Z" fill="#0D9488"/>
-    <path d="M 200 85 L 200 30 A 55 55 0 0 1 255 85 Z" fill="#FB923C"/>
-    <path d="M 200 85 L 255 85 A 55 55 0 0 1 200 140 Z" fill="#FACC15"/>
-    <path d="M 200 85 L 200 140 A 55 55 0 0 1 145 85 Z" fill="#EC4899"/>
-    <circle cx="168" cy="112" r="3" fill="#FFFFFF"/>
-    <circle cx="184" cy="126" r="2.5" fill="#FFFFFF"/>
-    <line x1="218" y1="46" x2="234" y2="62" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
-    <line x1="228" y1="62" x2="244" y2="78" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
-    <circle cx="174" cy="60" r="2.8" fill="#A7F3D0"/>
+    <path d="M 200 85 L 145 85 A 55 55 0 0 1 200 30 Z" fill="var(--nf-accent)"/>
+    <path d="M 200 85 L 200 30 A 55 55 0 0 1 255 85 Z" fill="var(--nf-orange)"/>
+    <path d="M 200 85 L 255 85 A 55 55 0 0 1 200 140 Z" fill="var(--nf-yellow)"/>
+    <path d="M 200 85 L 200 140 A 55 55 0 0 1 145 85 Z" fill="var(--nf-warm)"/>
+    <circle cx="168" cy="112" r="3" fill="var(--nf-art-highlight)"/>
+    <circle cx="184" cy="126" r="2.5" fill="var(--nf-art-highlight)"/>
+    <line x1="218" y1="46" x2="234" y2="62" stroke="var(--nf-art-highlight)" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
+    <line x1="228" y1="62" x2="244" y2="78" stroke="var(--nf-art-highlight)" strokeWidth="2.8" strokeLinecap="round" opacity="0.85"/>
+    <circle cx="174" cy="60" r="2.8" fill="var(--nf-green-soft)"/>
    </g>
-   <circle cx="200" cy="85" r="26" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="2"/>
-   <circle cx="200" cy="85" r="55" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2"/>
+   <circle cx="200" cy="85" r="26" fill="none" stroke="var(--nf-donut-inner)" strokeWidth="2"/>
+   <circle cx="200" cy="85" r="55" fill="none" stroke="var(--nf-donut-outer)" strokeWidth="2"/>
 
-   <text x="308" y="122" fontFamily="sans-serif" fontSize="115" fontWeight="900" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
+   <text x="308" y="122" fontFamily="sans-serif" fontSize="115" fontWeight="900" fill="var(--nf-four)" stroke="var(--nf-four-stroke)" strokeWidth="2.5" filter="url(#neu-4-shadow)" textAnchor="middle">4</text>
   </svg>
  </div>;
 }
@@ -77,7 +79,38 @@ function HomeIcon(){
 }
 
 export default function NotFoundPage(){
- return <div className="zk-nf-page" dir="rtl">
+ const {T}=useAppContext();
+ const themeId=String(T.id||'wellness');
+ const dark=['dark','ocean','navystack','navystack-dark'].includes(themeId);
+ const surface=String(T.pop||T.card||(dark?'#111827':'#ffffff'));
+ const text=String(T.txt||(dark?'#f1f5f9':'#312E55'));
+ const accent=String(T.acc||'#7A12D4');
+ const vars:NotFoundVars={
+  '--nf-page-bg':String(T.bg||(dark?'#0f1722':'#faf5ff')),
+  '--nf-surface':surface,
+  '--nf-control':String(T.card||surface),
+  '--nf-text':text,
+  '--nf-muted':String(T.mut||(dark?'#94a3b8':'#64748b')),
+  '--nf-border':String(T.brd||(dark?'#334155':'#f1f5f9')),
+  '--nf-accent':accent,
+  '--nf-warm':String(T.err||'#EE776E'),
+  '--nf-blue':String(T.secondary||T.primaryHover||'#0284C7'),
+  '--nf-yellow':String(T.tertiary||'#FACC15'),
+  '--nf-green':String(T.success||T.green||T.ok||'#059669'),
+  '--nf-green-soft':dark?'#6ee7b7':'#A7F3D0',
+  '--nf-violet':String(T.purple||T.brandPurple||accent),
+  '--nf-orange':String(T.warn||'#EA580C'),
+  '--nf-gradient':String(T.grad||'linear-gradient(90deg,#6b21a8 0%,#db2777 100%)'),
+  '--nf-card-shadow':dark?'0 20px 28px -6px rgba(0,0,0,.48),0 8px 12px -7px rgba(0,0,0,.38)':'0 20px 25px -5px color-mix(in srgb,var(--nf-accent) 7%,transparent),0 8px 10px -6px rgba(15,23,42,.06)',
+  '--nf-control-shadow':dark?'0 1px 2px rgba(0,0,0,.34),0 4px 12px rgba(0,0,0,.22)':'0 1px 2px rgba(15,23,42,.07),0 4px 10px rgba(15,23,42,.035)',
+  '--nf-art-shadow':dark?'#020617':'#cbd5e1',
+  '--nf-art-highlight':dark?'#cbd5e1':'#ffffff',
+  '--nf-four':dark?`color-mix(in srgb,${surface} 76%,${text})`:'#F8FAFC',
+  '--nf-four-stroke':String(T.brd||(dark?'#475569':'#CBD5E1')),
+  '--nf-donut-inner':dark?'rgba(255,255,255,.24)':'rgba(0,0,0,.18)',
+  '--nf-donut-outer':dark?'rgba(255,255,255,.28)':'rgba(255,255,255,.45)',
+ };
+ return <div className="zk-nf-page" dir="rtl" style={vars} data-nf-theme={themeId}>
   <Helmet><title>صفحه پیدا نشد | زینالیکید</title><meta name="robots" content="noindex, nofollow"/></Helmet>
   <main className="zk-nf-shell" aria-labelledby="not-found-title">
    <header className="zk-nf-top">
