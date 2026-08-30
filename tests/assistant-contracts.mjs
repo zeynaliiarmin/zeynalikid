@@ -5,7 +5,7 @@ const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramA
  read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AdminAssistantWidget.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts')
 ]);
 const failures=[];
-const need=(source,text,label)=>{if(!source.includes(text))failures.push(label)};
+const need=(source,pattern,label)=>{const ok=pattern instanceof RegExp?pattern.test(source):source.includes(pattern);if(!ok)failures.push(label)};
 const forbid=(source,pattern,label)=>{if(pattern.test(source))failures.push(label)};
 
 need(migration,'assistant_admin_knowledge','physically separate admin knowledge table missing');
@@ -87,7 +87,7 @@ need(training,'sanitizeKnowledgeActions','knowledge action sanitizer missing');
 
 need(widget,'fetchAssistantStatus','assistant enabled status is not checked');
 need(widget,'ASSISTANT_SETTINGS_EVENT','immediate assistant toggle event missing');
-need(widget,'current.settings.revision','widget does not use lightweight revision invalidation');
+need(widget,/current\??\.settings\.revision/,'widget does not use lightweight revision invalidation');
 need(widget,'generateAssistantAnswer(question,lang)','widget does not send UI language');
 need(widget,'AssistantDiscoveryHint','assistant discovery hint missing');
 need(widget,'guidedIntent','guided course flow missing');

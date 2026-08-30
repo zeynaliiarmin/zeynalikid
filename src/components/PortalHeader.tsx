@@ -53,7 +53,7 @@ export default function PortalHeader({ brand, lang, setLang, T, darkGlass, onHom
   const miIcon = { width: 17, height: 17, stroke: darkGlass ? '#C9A2F8' : acc, fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
   const item = (label: string, path: string, cb?: () => void, back = false) => (
     <button type="button" className="zp-mi" style={{ ...menuItem, color: back ? (darkGlass ? '#C9A2F8' : acc) : menuItem.color, justifyContent: back ? 'flex-start' : undefined }}
-      onClick={() => { setOpen(false); cb && cb(); }}>
+      onClick={() => { setOpen(false); cb?.(); }}>
       <svg viewBox="0 0 24 24" style={miIcon}><path d={path} /></svg>
       {label}
     </button>
