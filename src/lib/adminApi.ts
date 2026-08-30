@@ -340,3 +340,100 @@ export async function adminCleanupReceiptsExecute(): Promise<{ deleted: number; 
     targetFiles: body.targetFiles ?? 0,
   };
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// API Keys Management for AI Agents (Security Panel)
+// ──────────────────────────────────────────────────────────────────────────
+
+export type ApiKeyInfo = {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  is_revoked: boolean;
+  expires_at: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  usage_count: number;
+  created_by: string | null;
+  status: "active" | "expired" | "revoked";
+};
+
+export async function adminCreateApiKey(opts: {
+  name: string;
+  scopes: string[];
+  expires_in?: string; // 1d,7d,30d,90d,365d,never
+  expires_at?: string | null;
+}): Promise<{ api_key: string; key_info: ApiKeyInfo; warning: string }> {
+  const body = await callAdminApi('create_api_key', opts);
+  return {
+    api_key: body.api_key,
+    key_info: body.key_info,
+    warning: body.warning,
+  };
+}
+
+export async function adminListApiKeys(): Promise<{ api_keys: ApiKeyInfo[] }> {
+  const body = await callAdminApi('list_api_keys');
+  return { api_keys: body.api_keys || [] };
+}
+
+export async function adminRevokeApiKey(id: string): Promise<{ revoked: boolean }> {
+  const body = await callAdminApi('revoke_api_key', { id, confirm: true });
+  return { revoked: body.revoked === true };
+}
+
+export type PendingApproval = {
+  id: string;
+  api_key_id: string;
+  operation_type: "bulk_delete" | "bulk_edit" | "bulk_add";
+  resource_type: string;
+  resource_ids: string[];
+  payload: any;
+  status: "pending" | "approved" | "rejected" | "expired";
+  requested_at: string;
+  expires_at: string;
+  decided_at: string | null;
+  decided_by: string | null;
+  count: number;
+  reason: string | null;
+  api_key?: { id: string; name: string; key_prefix: string } | null;
+};
+
+export async function adminListPendingApprovals(): Promise<{ pending: PendingApproval[] }> {
+  const body = await callAdminApi('list_pending_approvals');
+  return { pending: body.pending || [] };
+}
+
+export async function adminApprovePending(id: string): Promise<{ approved: boolean }> {
+  const body = await callAdminApi('approve_pending', { id, confirm: true });
+  return { approved: body.approved === true };
+}
+
+export async function adminRejectPending(id: string, reason?: string): Promise<{ rejected: boolean }> {
+  const body = await callAdminApi('reject_pending', { id, confirm: true, reason });
+  return { rejected: body.rejected === true };
+}
+
+export type ApiAuditLog = {
+  id: string;
+  api_key_id: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  details: any;
+  ip: string | null;
+  created_at: string;
+  success: boolean;
+  api_key?: { id: string; name: string; key_prefix: string } | null;
+};
+
+export async function adminListApiAuditLogs(opts: { page?: number; limit?: number } = {}): Promise<{ logs: ApiAuditLog[]; total: number; page: number; limit: number }> {
+  const body = await callAdminApi('list_api_audit_logs', opts);
+  return {
+    logs: body.logs || [],
+    total: body.total || 0,
+    page: body.page || 1,
+    limit: body.limit || 50,
+  };
+}

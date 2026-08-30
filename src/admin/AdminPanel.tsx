@@ -35,6 +35,8 @@ import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
 import ImageCropper from './ImageCropper';
 import CoursesEditor from './CoursesEditor';
+import ApiKeysManager from './ApiKeysManager';
+import ApiApprovalNotifier from './ApiApprovalNotifier';
 import { canonicalizeMediaInput, extractDirectMediaUrl, extractImageLinkList } from '../utils/mediaInput';
 import BulkStoryAdder from './BulkStoryAdder';
 import CoverCropModal from './CoverCropModal';
@@ -600,6 +602,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     </div>
   </div>
 </div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
+<ApiApprovalNotifier T={T} onNavigateToSecurity={()=>{ setATab('security'); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch{} }} />
 <AdminAssistantWidget T={T} onNavigate={navigateFromAssistant}/><div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>}
 
 
@@ -1236,7 +1239,11 @@ function DesignManagerEditor(){
     setCredErr(e?.message||'خطا در تغییر اطلاعات ورود.');
    }finally{ setCredBusy(false); }
   };
-  return <Box title="امنیت">
+  return <>
+   <Box title="🔑 API برای ایجنت‌های هوش مصنوعی (رایگان)">
+    <ApiKeysManager T={T} S={S} AdminBtn={AdminBtn} Box={Box} />
+   </Box>
+   <Box title="امنیت">
    <div style={{marginBottom:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
     <b style={{display:'block',color:T.ttl,marginBottom:4}}>تغییر رمز عبور و شماره تماس ورود</b>
     <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 12px'}}>شمارهٔ فعلی: <b style={{direction:'ltr',display:'inline-block'}}>{credPhoneMasked||'—'}</b>. برای تغییر، رمز فعلی را وارد کنید و حداقل یکی از موارد جدید را کامل کنید. بعد از تغییر، همهٔ نشست‌ها بسته می‌شود و با اطلاعات جدید وارد می‌شوید.</p>
@@ -1285,7 +1292,7 @@ function DesignManagerEditor(){
     <button type="button" style={{...AdminBtn(),color:T.err}} onClick={logoutEverywhere} disabled={revokeBusy}>{revokeBusy?'در حال بستن نشست‌ها…':'بستن همهٔ نشست‌ها'}</button>
    </div>
    <AdminInstallControl/>
-  </Box>}
+  </Box></>}
 
  function ProductsTabEditor(){
   // منبع واحد مدیریت محصولات و بخش «محصولات منتخب» صفحهٔ خانه.

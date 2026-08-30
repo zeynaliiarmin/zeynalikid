@@ -1,16 +1,6 @@
 // supabase/functions/admin-api/index.ts
-// Centralized admin API for the Zeynalikid admin panel.
-//
-// All admin CRUD operations go through this function. Each request must:
-//   1. Provide a sessionToken (Authorization Bearer or body.sessionToken)
-//   2. Be validated against admin_sessions (hash + expiry + revoked check)
-//   3. Update last_seen_at on session + device
-//   4. Then perform the requested action with service_role (server-side only)
-//
-// Service Role Key NEVER leaves this function. No token_hash, credential,
-// or sensitive data is ever returned in the response.
-//
-// Deploy: supabase functions deploy admin-api --no-verify-jwt
+// Centralized admin API for the Farzandman admin panel.
+// Extended with API Keys management for AI agents (content-api).
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
@@ -69,9 +59,6 @@ async function listSubmissions(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت فرم‌ها", origin, 500);
   }
 
-  // NOTE: admin-api returns FULL phone numbers to the admin panel — the admin needs
-  // them for contact/WhatsApp/follow-up. token_hash/credential_public_key are not
-  // in this table anyway, so no sensitive fields to strip here.
   return ok({
     submissions: data ?? [],
     total: count ?? 0,
@@ -94,7 +81,6 @@ async function getSubmission(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت فرم", origin, 500);
   }
   if (!data) return err("فرم یافت نشد", origin, 404);
-  // Admin needs the full record including phone for follow-up.
   return ok({ submission: data }, origin);
 }
 
@@ -399,7 +385,6 @@ async function listQuestions(body: any, origin: string): Promise<Response> {
     return err("خطا در دریافت سؤالات", origin, 500);
   }
 
-  // Admin needs full phone numbers to respond to questions.
   return ok({ questions: data ?? [], total: count ?? 0, page, limit }, origin);
 }
 
@@ -573,11 +558,7 @@ async function listPageViewStats(body:any,origin:string):Promise<Response>{
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Storage file deletion (Phase 5)
-// Deletes files from whitelisted buckets using service_role.
-// Only called by the admin panel after an admin session is validated.
-// Anonymous storage DELETE policy will be revoked in Phase 5 — this is the
-// only path that removes receipt / voice / tongue / PDF files.
+// Storage file deletion
 // ──────────────────────────────────────────────────────────────────────────
 
 const ALLOWED_STORAGE_BUCKETS = new Set(["images", "files", "voice-notes", "tongue-photos", "receipts"]);
@@ -609,14 +590,6 @@ async function deleteStorageFiles(body: any, origin: string, _session: any): Pro
   return ok({ deleted }, origin);
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Signed URLs for private storage (Phase 6)
-// Receives an array of public-format storage URLs (buckets: receipts,
-// tongue-photos, voice-notes, files) and returns a map of url -> short-lived
-// signed URL so the admin panel can display private files. Never returns
-// signed URLs for non-whitelisted buckets.
-// ──────────────────────────────────────────────────────────────────────────
-
 async function getSignedUrls(body: any, origin: string, _session: any): Promise<Response> {
   if (!Array.isArray(body.urls) || body.urls.length === 0) {
     return err("urls الزامی است", origin, 400);
@@ -644,10 +617,250 @@ async function getSignedUrls(body: any, origin: string, _session: any): Promise<
 async function runMaintenance(_body:any,origin:string):Promise<Response>{const {data,error}=await getSupabaseAdmin().rpc("admin_run_maintenance");if(error)return err("اجرای نگهداری انجام نشد",origin,500);return ok({maintenance:data},origin)}
 
 // ──────────────────────────────────────────────────────────────────────────
+// API Keys Management for AI Agents
+// ──────────────────────────────────────────────────────────────────────────
+
+const VALID_SCOPES = [
+  "reviews",
+  "faqs",
+  "courses",
+  "products",
+  "discounts",
+  "tags",
+  "featured",
+  "articles",
+  "stories",
+  "parent_experiences",
+  "multimedia",
+  "banners",
+  "seo",
+  "all"
+];
+
+async function sha256Hex(text: string): Promise<string> {
+  const data = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function generateRandomKey(): string {
+  // sk_live_ + 32 random alphanumeric + 8 hex
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const randomValues = new Uint8Array(32);
+  crypto.getRandomValues(randomValues);
+  let rand = "";
+  for (let i=0;i<32;i++) rand += chars[randomValues[i] % chars.length];
+  const suffix = crypto.randomUUID().replace(/-/g,"").slice(0,8);
+  return `sk_live_${rand}${suffix}`;
+}
+
+function parseExpiry(body: any): { expires_at: string | null, error?: string } {
+  // Supports: expires_in: "1d","7d","30d","90d","365d","never"
+  // Or expires_at: ISO string
+  // Or expires_in_days: number
+  if (body.expires_at) {
+    if (body.expires_at === "never" || body.expires_at === null) return { expires_at: null };
+    const d = new Date(body.expires_at);
+    if (isNaN(d.getTime())) return { expires_at: null, error: "تاریخ انقضا نامعتبر است" };
+    if (d.getTime() <= Date.now()) return { expires_at: null, error: "تاریخ انقضا باید در آینده باشد" };
+    return { expires_at: d.toISOString() };
+  }
+  if (body.expires_in) {
+    const v = String(body.expires_in).toLowerCase();
+    if (v === "never" || v === "unlimited") return { expires_at: null };
+    const map: Record<string, number> = { "1d":1, "7d":7, "30d":30, "90d":90, "365d":365, "1y":365 };
+    if (map[v]) {
+      const d = new Date(Date.now() + map[v]*24*60*60*1000);
+      return { expires_at: d.toISOString() };
+    }
+    return { expires_at: null, error: "مقدار expires_in نامعتبر است" };
+  }
+  if (typeof body.expires_in_days === "number") {
+    if (body.expires_in_days <=0) return { expires_at: null };
+    const d = new Date(Date.now() + body.expires_in_days*24*60*60*1000);
+    return { expires_at: d.toISOString() };
+  }
+  // default 30 days if not specified? But per spec user chooses, we default to 30d if not provided
+  return { expires_at: new Date(Date.now()+30*24*60*60*1000).toISOString() };
+}
+
+async function createApiKey(body: any, origin: string, session: any): Promise<Response> {
+  const name = typeof body.name === "string" ? body.name.trim().slice(0,100) : "";
+  if (!name) return err("نام API الزامی است", origin, 400);
+  let scopes: string[] = Array.isArray(body.scopes) ? body.scopes : [];
+  if (!scopes.length) scopes = ["all"];
+  // Validate scopes
+  scopes = scopes.map((s:string)=>String(s).toLowerCase()).filter(s=>VALID_SCOPES.includes(s));
+  if (!scopes.length) return err("حداقل یک scope معتبر انتخاب کنید", origin, 400);
+  if (scopes.includes("all")) scopes = ["all"];
+
+  const expiry = parseExpiry(body);
+  if (expiry.error) return err(expiry.error, origin, 400);
+
+  const plainKey = generateRandomKey();
+  const hash = await sha256Hex(plainKey);
+  const prefix = plainKey.slice(0,12); // sk_live_ + 4 chars
+
+  const supabase = getSupabaseAdmin();
+  // Expire old pending first
+  try { await supabase.rpc("expire_pending_approvals"); } catch {}
+
+  const { data, error } = await supabase.from("api_keys").insert({
+    name,
+    key_hash: hash,
+    key_prefix: prefix,
+    scopes,
+    expires_at: expiry.expires_at,
+    created_by: session.ownerPhone,
+  }).select("id,name,key_prefix,scopes,expires_at,created_at,is_revoked").single();
+
+  if (error) {
+    console.error("create_api_key error:", error);
+    if (error.code === "23505") return err("کلید تکراری، دوباره تلاش کنید", origin, 500);
+    return err("خطا در ایجاد کلید", origin, 500);
+  }
+
+  // Return plain key ONLY ONCE
+  return ok({
+    api_key: plainKey,
+    key_info: data,
+    warning: "این کلید فقط یک‌بار نمایش داده می‌شود. آن را در جای امن ذخیره کنید. در مراجعه بعدی فقط پیشوند و نام نمایش داده خواهد شد.",
+  }, origin);
+}
+
+async function listApiKeys(_body: any, origin: string): Promise<Response> {
+  const supabase = getSupabaseAdmin();
+  try { await supabase.rpc("expire_pending_approvals"); } catch {}
+  const { data, error } = await supabase.from("api_keys")
+    .select("id,name,key_prefix,scopes,is_revoked,expires_at,created_at,last_used_at,usage_count,created_by")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    console.error("list_api_keys error:", error);
+    return err("خطا در دریافت لیست کلیدها", origin, 500);
+  }
+  // Compute status
+  const now = Date.now();
+  const enriched = (data||[]).map((k:any)=>{
+    let status = "active";
+    if (k.is_revoked) status = "revoked";
+    else if (k.expires_at && new Date(k.expires_at).getTime() < now) status = "expired";
+    return { ...k, status };
+  });
+  return ok({ api_keys: enriched }, origin);
+}
+
+async function revokeApiKey(body: any, origin: string): Promise<Response> {
+  if (!body.id) return err("id الزامی است", origin, 400);
+  if (body.confirm !== true) return err("تأیید صریح لازم است", origin, 400);
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("api_keys")
+    .update({ is_revoked: true })
+    .eq("id", body.id)
+    .select("id,name,key_prefix,is_revoked")
+    .single();
+  if (error) {
+    console.error("revoke_api_key error:", error);
+    return err("خطا در ابطال کلید", origin, 500);
+  }
+  if (!data) return err("کلید یافت نشد", origin, 404);
+  // Also expire pending approvals for this key
+  try {
+    await supabase.from("api_pending_approvals").update({ status: "rejected", decided_at: new Date().toISOString(), reason: "کلید ابطال شد" }).eq("api_key_id", body.id).eq("status","pending");
+  } catch {}
+  return ok({ revoked: true, key: data }, origin);
+}
+
+async function listPendingApprovals(_body: any, origin: string): Promise<Response> {
+  const supabase = getSupabaseAdmin();
+  try { await supabase.rpc("expire_pending_approvals"); } catch {}
+  const { data, error } = await supabase.from("api_pending_approvals")
+    .select("id,api_key_id,operation_type,resource_type,resource_ids,payload,status,requested_at,expires_at,decided_at,decided_by,count,reason")
+    .order("requested_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    console.error("list_pending error:", error);
+    return err("خطا در دریافت درخواست‌ها", origin, 500);
+  }
+  // Join api_keys for display
+  const keyIds = [...new Set((data||[]).map((d:any)=>d.api_key_id))];
+  let keysMap: Record<string, any> = {};
+  if (keyIds.length) {
+    const { data: keys } = await supabase.from("api_keys").select("id,name,key_prefix").in("id", keyIds);
+    keysMap = Object.fromEntries((keys||[]).map((k:any)=>[k.id,k]));
+  }
+  const enriched = (data||[]).map((d:any)=>({ ...d, api_key: keysMap[d.api_key_id] || null }));
+  return ok({ pending: enriched }, origin);
+}
+
+async function approvePending(body: any, origin: string, session: any): Promise<Response> {
+  if (!body.id) return err("id الزامی است", origin, 400);
+  if (body.confirm !== true) return err("تأیید صریح لازم است", origin, 400);
+  const supabase = getSupabaseAdmin();
+  const { data: pending, error: fetchErr } = await supabase.from("api_pending_approvals").select("*").eq("id", body.id).maybeSingle();
+  if (fetchErr) return err("خطا در دسترسی", origin, 500);
+  if (!pending) return err("درخواست یافت نشد", origin, 404);
+  if (pending.status !== "pending") return err(`این درخواست قبلاً ${pending.status} شده است`, origin, 400);
+  if (new Date(pending.expires_at).getTime() < Date.now()) {
+    await supabase.from("api_pending_approvals").update({ status: "expired" }).eq("id", body.id);
+    return err("این درخواست منقضی شده است", origin, 400);
+  }
+  const { error: updErr } = await supabase.from("api_pending_approvals").update({
+    status: "approved",
+    decided_at: new Date().toISOString(),
+    decided_by: session.ownerPhone,
+  }).eq("id", body.id);
+  if (updErr) return err("خطا در تایید", origin, 500);
+  return ok({ approved: true, id: body.id }, origin);
+}
+
+async function rejectPending(body: any, origin: string, session: any): Promise<Response> {
+  if (!body.id) return err("id الزامی است", origin, 400);
+  if (body.confirm !== true) return err("تأیید صریح لازم است", origin, 400);
+  const supabase = getSupabaseAdmin();
+  const { data: pending, error: fetchErr } = await supabase.from("api_pending_approvals").select("id,status,expires_at").eq("id", body.id).maybeSingle();
+  if (fetchErr) return err("خطا در دسترسی", origin, 500);
+  if (!pending) return err("درخواست یافت نشد", origin, 404);
+  if (pending.status !== "pending") return err(`این درخواست قبلاً ${pending.status} شده است`, origin, 400);
+  const { error: updErr } = await supabase.from("api_pending_approvals").update({
+    status: "rejected",
+    decided_at: new Date().toISOString(),
+    decided_by: session.ownerPhone,
+    reason: typeof body.reason === "string" ? body.reason.slice(0,500) : "رد شده توسط ادمین",
+  }).eq("id", body.id);
+  if (updErr) return err("خطا در رد", origin, 500);
+  return ok({ rejected: true, id: body.id }, origin);
+}
+
+async function listApiAuditLogs(body: any, origin: string): Promise<Response> {
+  const supabase = getSupabaseAdmin();
+  const page = Math.max(1, parseInt(body.page ?? "1", 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(body.limit ?? "50", 10) || 50));
+  const offset = (page-1)*limit;
+  const { data, error, count } = await supabase.from("api_audit_logs")
+    .select("id,api_key_id,action,resource_type,resource_id,details,ip,created_at,success", { count:"exact" })
+    .order("created_at", { ascending:false })
+    .range(offset, offset+limit-1);
+  if (error) {
+    console.error("list_audit error:", error);
+    return err("خطا در دریافت لاگ‌ها", origin, 500);
+  }
+  // Join keys
+  const keyIds = [...new Set((data||[]).map((d:any)=>d.api_key_id).filter(Boolean))];
+  let keysMap: Record<string, any> = {};
+  if (keyIds.length) {
+    const { data: keys } = await supabase.from("api_keys").select("id,name,key_prefix").in("id", keyIds);
+    keysMap = Object.fromEntries((keys||[]).map((k:any)=>[k.id,k]));
+  }
+  const enriched = (data||[]).map((d:any)=>({ ...d, api_key: keysMap[d.api_key_id] || null }));
+  return ok({ logs: enriched, total: count ?? 0, page, limit }, origin);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
-const MUTATING_ACTIONS=new Set(['update_submission','soft_delete_submission','restore_submission','permanent_delete_submission','delete_storage_files','save_settings','update_question','delete_question','create_review','update_review','delete_review','run_maintenance']);
+const MUTATING_ACTIONS=new Set(['update_submission','soft_delete_submission','restore_submission','permanent_delete_submission','delete_storage_files','save_settings','update_question','delete_question','create_review','update_review','delete_review','run_maintenance','create_api_key','revoke_api_key','approve_pending','reject_pending']);
 const ACTION_HANDLERS:Record<string,(body:any,origin:string,session:any)=>Promise<Response>>={
   list_submissions: listSubmissions,
   get_submission: getSubmission,
@@ -668,6 +881,14 @@ const ACTION_HANDLERS:Record<string,(body:any,origin:string,session:any)=>Promis
   delete_review: deleteReview,
   list_page_view_stats:listPageViewStats,
   run_maintenance:runMaintenance,
+  // API Keys
+  create_api_key: createApiKey,
+  list_api_keys: listApiKeys,
+  revoke_api_key: revokeApiKey,
+  list_pending_approvals: listPendingApprovals,
+  approve_pending: approvePending,
+  reject_pending: rejectPending,
+  list_api_audit_logs: listApiAuditLogs,
 };
 
 serve(async (req) => {
@@ -709,7 +930,7 @@ serve(async (req) => {
   try{
     const response=await handler(body,origin,sessionResult.session);
     if(MUTATING_ACTIONS.has(body.action)){
-      try{await getSupabaseAdmin().from('admin_audit_logs').insert({actor_phone:sessionResult.session.ownerPhone,session_id:String(sessionResult.session.sessionId),action:body.action,target_type:String(body.bucket||body.action),target_id:body.id!=null?String(body.id):null,metadata:{status:response.status,count:Array.isArray(body.ids)?body.ids.length:undefined},success:response.ok})}catch{}
+      try{await getSupabaseAdmin().from('admin_audit_logs').insert({actor_phone:sessionResult.session.ownerPhone,session_id:String(sessionResult.session.sessionId),action:body.action,target_type:String(body.resource_type||body.action),target_id:body.id!=null?String(body.id):null,metadata:{status:response.status,count:Array.isArray(body.ids)?body.ids.length:undefined},success:response.ok})}catch{}
     }
     return response;
   }catch(e){
