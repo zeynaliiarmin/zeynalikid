@@ -28,8 +28,21 @@ serve(async(req)=>{
  if(type==="consultation"){payload.orderStatus=undefined;payload.consultationStatus=payload.consultationStatus==="ناقص"?"ناقص":"مشاوره اولیه"}
  else{payload.orderStatus=payload.incomplete===true?"ناقص":"جدید";payload.consultationStatus=payload.incomplete===true?"ناقص":"ثبتی"}
  const supabase=getSupabaseAdmin();
+ // اتحاد کد پیگیری: اگر برای این شماره، کاربر فعال ثبت‌نام‌شدهٔ پنل (payload.type==='user')
+ // وجود دارد، همان کد ثبت‌نام به‌عنوان کد پیگیری این فرم استفاده می‌شود (کد جدا صادر نمی‌شود).
+ // در صورت تداخل (23505) تلاش بعدی کد تصادفی می‌گیرد.
+ let unifiedCode="";
+ try{
+  const {data:userRow}=await supabase.from("submissions")
+   .select("payload")
+   .eq("full_phone",fullPhone)
+   .eq("payload->>type","user")
+   .eq("payload->>status","active")
+   .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(userRow?.payload?.code)unifiedCode=String(userRow.payload.code);
+ }catch{/* ignore */} 
  for(let attempt=0;attempt<5;attempt++){
-  payload.trackingCode=randomCode();
+  payload.trackingCode=unifiedCode||randomCode();
   const {data,error}=await supabase.from("submissions").insert({full_phone:fullPhone,payload,deleted_at:null}).select("id,full_phone,payload,created_at,updated_at,deleted_at").single();
   if(!error&&data)return jsonResponse({ok:true,submission:data},201,origin);
   if(error?.code!=="23505"){console.error("create-submission insert error:",error?.message||error);return jsonResponse({error:"ثبت فرم انجام نشد"},500,origin)}

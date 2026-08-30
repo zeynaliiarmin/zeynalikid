@@ -10,6 +10,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { TRACKING_PREFIX } from '../config/project';
+import { getUserSession, validateFullName } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -275,7 +276,11 @@ export default function ConsultationPage(){
     const maxAge = Number(ff?.age?.max ?? 17) || 17;
     if (!fd.topics.length) e.topics = lang === 'en' ? 'Select at least one topic' : 'حداقل یک موضوع مشاوره انتخاب کنید';
     // نام والد فقط وقتی الزامی است که از پنل مدیریت برای این فیلد Required فعال شده باشد.
-    if (ff?.parentName?.show !== false && ff?.parentName?.required === true && !String(fd.pName || '').trim()) e.pName = lang === 'en' ? 'Enter parent name' : 'نام و نام خانوادگی والد را وارد کنید';
+    const pnMin = Math.max(2, Math.min(6, Number((cfg as any)?.userPortal?.minNameWords) || 3));
+    if (ff?.parentName?.show !== false && ff?.parentName?.required === true) {
+      const pnChk = validateFullName(fd.pName, lang, pnMin);
+      if (!pnChk.ok) e.pName = lang === 'en' ? 'Enter a real full name (at least 3 words, name and surname).' : String(pnChk.error);
+    }
     if (ff?.parentPhone?.show !== false && ff?.parentPhone?.required !== false && !validPhone(fd.pPhone, country)) e.pPhone = lang === 'en' ? 'Phone number is invalid for selected country' : 'شماره تماس برای کشور انتخاب شده معتبر نیست';
     if (!fd.gender) e.gender = lang === 'en' ? 'Select gender' : 'جنسیت فرزند را انتخاب کنید';
     const ag = +p2e(fd.age);
@@ -314,9 +319,10 @@ export default function ConsultationPage(){
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       if (editId) {
         const prev = editEntryRef.current || {};
-        const trackingCode = prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean),TRACKING_PREFIX);
+        const us = getUserSession(); const trackingCode = us?.code || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean),TRACKING_PREFIX);
         const updated = {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
+          ...(us ? { userCode: us.code, userPhone: us.phone, userName: us.fullName } : {}),
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
         };
         if (isSupabaseConfigured && trackingCode) {
@@ -352,7 +358,7 @@ export default function ConsultationPage(){
         setLastTrack(String(trackingCode));
       } else {
         const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
-        const trackingCode = effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes,TRACKING_PREFIX) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes,TRACKING_PREFIX));
+        const us2 = getUserSession(); const trackingCode = us2?.code || (effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes,TRACKING_PREFIX) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes,TRACKING_PREFIX)));
         let similarTo: any = null;
         if (effectiveAllowNewChild) {
           const sim = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && similarityScore(x, fd) >= 0.7);
@@ -391,6 +397,7 @@ export default function ConsultationPage(){
         } catch {}
         const entry = {
           id: uid(), trackingCode, type: 'consultation', date: today(), time: now(),
+          ...(us2 ? { userCode: us2.code, userPhone: us2.phone, userName: us2.fullName } : {}),
           ...fd, notes: consultNotes, fullPhone: fp, voice_note_url,
           category: 'مشاوره اولیه', consultationStatus: 'مشاوره اولیه',
           consultationStatusChangedAt: new Date().toISOString(),

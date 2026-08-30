@@ -32,6 +32,7 @@ import { defaultSettings as configDefaultSettings } from '../config/defaultSetti
 import { normalizeDesignId, normalizePublicColorMode } from '../utils/colorMode';
 import ContentManager from './ContentManager';
 import SettingsManager from './SettingsManager';
+import EntryModeSettings from './EntryModeSettings';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
 import ImageCropper from './ImageCropper';
 import CoursesEditor from './CoursesEditor';
@@ -179,7 +180,8 @@ export default function AdminPanel(){
  // متن‌های bulk «افزودن دسته‌جمعی» هر هایلایت (key = id هایلایت) — باید اینجا نگه داشته شود تا
  // موقع «ذخیره هایلایت‌ها» قابل خواندن و تبدیل به اسلایدهای تکی باشد (بدون نقض Rules-of-Hooks).
  const [hlBulkTexts,setHlBulkTexts]=useState<Record<string,{internal:string;external:string}>>({});
- const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all'); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
+ const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all');
+ const [dataView,setDataView]=useState<'old'|'new'>((cfg as any)?.entryMode==='user'?'new':'old'); const [nvTab,setNvTab]=useState<'consult'|'course'>('consult'); const [nvPhone,setNvPhone]=useState(''); const [nvQ,setNvQ]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
  // تغییر رمز/شماره ورود (admin-credentials) — state ها در سطح بالای کامپوننت (قانون hooks)
  const [credBusy,setCredBusy]=useState(false); const [credMsg,setCredMsg]=useState(''); const [credErr,setCredErr]=useState(''); const [credPhoneMasked,setCredPhoneMasked]=useState('');
  const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{if(id)sessionStorage.setItem('zk_admin_open_form',String(id));else sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
@@ -306,7 +308,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const hay=(s:any)=>[s.pName,s.fullPhone,s.trackingCode,(s.topics||[]).join(' '),s.course?.title,s.course?.titleEn,s.shipping?.city,s.shipping?.country,s.shipping?.address,s.category,getStatus(s)].join(' ').toLowerCase();
   // اول روی همه فرم‌ها جستجو و فیلتر می‌کنیم، سپس نتیجه را صفحه‌بندی می‌کنیم.
   // بنابراین جستجو محدود به ۵۰ مورد صفحه فعلی نیست.
-  const filteredAll=subs.filter(s=>(typeF==='all'||s.type===typeF)&&(catF==='همه'||getCategory(s)===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
+  const filteredAll=subs.filter(s=>(typeF==='all'||s.type===typeF)&&s.type!=='user'&&(catF==='همه'||getCategory(s)===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
   const pageSize=50,totalPages=Math.max(1,Math.ceil(filteredAll.length/pageSize)); const safePage=Math.min(page,totalPages); const filtered=filteredAll.slice((safePage-1)*pageSize,safePage*pageSize);
   const groups=(()=>{const byPhone=new Map<string,any[]>();const singles:any[]=[];filtered.forEach(s=>{const key=digits(s.fullPhone||'');if(!key){singles.push({head:s,children:[]});return}if(!byPhone.has(key))byPhone.set(key,[]);byPhone.get(key)!.push(s)});const out:any[]=[...singles];byPhone.forEach(list=>{const sorted=[...list].sort((a,b)=>subTime(a)-subTime(b));out.push({head:sorted[0],children:sorted.slice(1)})});const latest=(g:any)=>Math.max(subTime(g.head),...g.children.map((c:any)=>subTime(c)));return out.sort((a,b)=>latest(b)-latest(a))})();
   // انتخاب همه روی تمام نتایج فیلترشده انجام می‌شود، نه فقط ۵۰ مورد صفحه فعلی.
@@ -374,12 +376,12 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const activity=useMemo(()=>[...subs].sort((a:any,b:any)=>subTime(b)-subTime(a)).slice(0,6).map((x:any)=>({id:x.id,t:subTime(x),tone:x.course?'t-info':'t-ok',txt:`${x.course?'ثبت‌نام دوره':'فرم مشاوره'} — ${x.pName||x.fullPhone||'بدون نام'}`})),[subs]);
   // اصلاح ۱۷+۳۵: تب‌های ناوبری با آیکون‌ها و دسته‌بندی
   const navIcon=(id:string)=>{const p={size:18,color:T.acc};if(id==='courses'||id==='featured'||id==='tagged')return <CoursesIcon {...p}/>;if(id==='content'||id==='highlights'||id==='images')return <EducationIcon {...p}/>;if(id==='contacts')return <ContactIcon {...p}/>;if(id==='licenses')return <LicensesIcon {...p}/>;if(id==='data'||id==='analytics')return <SearchIcon {...p}/>;if(id==='userQuestions'||id==='assistant'||id==='trust'||id==='trustbox')return <ChatIcon {...p}/>;if(id==='products')return <ProductsIcon {...p}/>;if(id==='settings'||id==='security'||id==='shipping'||id==='trash')return <BoxIcon {...p}/>;return <AdminIcon {...p}/>};
-  const navTabs:[string,React.ReactNode,string][]=[['dashboard',navIcon('dashboard'),'داشبورد'],['data',navIcon('data'),'داده‌ها'],['userQuestions',navIcon('userQuestions'),'سوالات مخاطبین'],['assistant',navIcon('assistant'),'دستیار'],['settings',navIcon('settings'),'تنظیمات'],['content',navIcon('content'),'مدیریت محتوا'],['contacts',navIcon('contacts'),'ارتباط'],['courses',navIcon('courses'),'دوره‌ها'],['featured',navIcon('featured'),'دوره‌های ویژه'],['tagged',navIcon('tagged'),'دوره‌های تگ‌دار'],['trust',navIcon('trust'),'جملات موفقیت'],['trustbox',navIcon('trustbox'),'جملات اعتمادساز'],['shipping',navIcon('shipping'),'ارسال و بانک'],['analytics',navIcon('analytics'),'آمار بازدید'],['security',navIcon('security'),'امنیت'],['trash',navIcon('trash'),'سطل آشغال'],['products',navIcon('products'),'محصولات'],['highlights',navIcon('highlights'),'هایلایت'],['licenses',navIcon('licenses'),'مجوزها'],['services',navIcon('services'),'خدمات'],['images',navIcon('images'),'تصاویر'],['design',navIcon('settings'),'مدیریت دیزاین']];
+  const navTabs:[string,React.ReactNode,string][]=[['dashboard',navIcon('dashboard'),'داشبورد'],['data',navIcon('data'),'فرم‌ها و دوره‌ها'],['userQuestions',navIcon('userQuestions'),'سوالات مخاطبین'],['assistant',navIcon('assistant'),'دستیار'],['settings',navIcon('settings'),'تنظیمات'],['entry',navIcon('settings'),'صفحهٔ ورودی سایت'],['content',navIcon('content'),'مدیریت محتوا'],['contacts',navIcon('contacts'),'ارتباط'],['courses',navIcon('courses'),'دوره‌ها'],['featured',navIcon('featured'),'دوره‌های ویژه'],['tagged',navIcon('tagged'),'دوره‌های تگ‌دار'],['trust',navIcon('trust'),'جملات موفقیت'],['trustbox',navIcon('trustbox'),'جملات اعتمادساز'],['shipping',navIcon('shipping'),'ارسال و بانک'],['analytics',navIcon('analytics'),'آمار بازدید'],['security',navIcon('security'),'امنیت'],['trash',navIcon('trash'),'سطل آشغال'],['products',navIcon('products'),'محصولات'],['highlights',navIcon('highlights'),'هایلایت'],['licenses',navIcon('licenses'),'مجوزها'],['services',navIcon('services'),'خدمات'],['images',navIcon('images'),'تصاویر'],['design',navIcon('settings'),'مدیریت دیزاین']];
   const activeNavLabel=navTabs.find(x=>x[0]===aTab)?.[2]||'داشبورد';
  // Stage 7A: گروه‌بندی منوی سایدبار — همه تب‌های موجود حفظ شده‌اند و هیچ route جدیدی ساخته نشده است.
  const navGroups:AdminNavGroup[]=[
   {id:'dashboard',label:'داشبورد',icon:<ZkDashboardIcon size={17}/>},
-  {id:'data',label:'فرم‌ها و سفارشات',icon:<ZkUsersIcon size={17}/>},
+  {id:'data',label:'فرم‌ها و دوره‌ها',icon:<ZkUsersIcon size={17}/>},
   {id:'userQuestions',label:'سوالات مخاطبین (سوال دارم)',icon:<ZkChatIcon size={17}/>},
   {id:'assistant',label:'دستیار',icon:<ZkChatIcon size={17}/>},
    {id:'reviews',label:'نظرات کاربران',icon:<ZkStarIcon size={17}/>},
@@ -389,7 +391,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   {id:'trustbox',label:'جملات اعتمادساز',icon:<ZkReviewsIcon size={17}/>,items:[{id:'trust',label:'جملات صفحه موفقیت'}]},
   {id:'shipping',label:'ارسال و پرداخت',icon:<ZkTruckIcon size={17}/>},
   {id:'content',label:'محتوا و صفحات',icon:<ZkContentIcon size={17}/>,items:[{id:'images',label:'تصاویر'},{id:'highlights',label:'هایلایت'},{id:'licenses',label:'مجوزها'},{id:'contacts',label:'راه‌های ارتباطی'}]},
-  {id:'settings',label:'تنظیمات',icon:<ZkSettingsIcon size={17}/>,items:[{id:'design',label:'مدیریت دیزاین'},{id:'security',label:'امنیت'},{id:'analytics',label:'آمار بازدید'},{id:'errors',label:'خطاهای سیستم'}]},
+  {id:'settings',label:'تنظیمات',icon:<ZkSettingsIcon size={17}/>,items:[{id:'design',label:'مدیریت دیزاین'},{id:'security',label:'امنیت'},{id:'analytics',label:'آمار بازدید'},{id:'entry',label:'صفحهٔ ورودی سایت'},{id:'errors',label:'خطاهای سیستم'}]},
   {id:'trash',label:'سطل بازیافت',icon:<ZkTrashIcon size={17}/>},
  ];
   // FIX: Stabilize StatCard and ChipGroup identity to prevent dashboard remount
@@ -562,9 +564,11 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   :<ul>{activity.map((ev:any)=><li key={ev.id}><div className="zkad-activity" style={{cursor:'default'}}><span className={`zkad-activity-dot ${ev.tone}`}/><span className="zkad-activity-txt"><b>{ev.txt}</b><span className="zkad-time">{relTime(ev.t)}</span></span></div></li>)}</ul>}
  </section>
 </div>
-{loadingSubs&&<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>}</>}{aTab==='data'&&<>{subs.length>1000&&<div className="zkad-tag t-warn" style={{marginBottom:10,fontSize:11,padding:'8px 10px'}}>برای نمایش همه فرم‌ها، از فیلتر استفاده کنید</div>}
-<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small title="کل ثبت‌شده‌ها / تعداد همین صفحه" style={{direction:'ltr',display:'inline-block'}}>{faNum(subs.length)} / {faNum(groups.length)}</small></h3></div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
-<div className="zkad-toolbar">
+{loadingSubs&&<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>}</>}{aTab==='entry'&&editCfg&&<EntryModeSettings app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='data'&&<>{subs.length>1000&&<div className="zkad-tag t-warn" style={{marginBottom:10,fontSize:11,padding:'8px 10px'}}>برای نمایش همه فرم‌ها، از فیلتر استفاده کنید</div>}
+<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small title="کل ثبت‌شده‌ها / تعداد همین صفحه" style={{direction:'ltr',display:'inline-block'}}>{faNum(subs.length)} / {faNum(groups.length)}</small></h3></div><div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
+   {(['old','new'] as const).map(v => <button key={v} type="button" onClick={() => setDataView(v)} style={{ padding: '7px 14px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 900, background: dataView === v ? T.acc : 'transparent', color: dataView === v ? '#fff' : T.mut }}>{v === 'old' ? (T.en ? 'Old view' : 'نمای قدیمی') : (T.en ? 'User view' : 'نمای جدید')}</button>)}
+  </div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
+{dataView==='old'?<><div className="zkad-toolbar">
  <div className="zkad-search"><ZkSearchIcon size={16}/><input placeholder="نام، شماره، کد پیگیری..." value={srch} onChange={e=>{setSrch(e.target.value);setPage(1)}} aria-label="جستجوی فرم‌ها"/></div>
  <div className="zkad-toolbar-actions">
   <button type="button" className="zkad-toolbtn" title="خروجی Excel" onClick={exportExcel}><ZkDownloadIcon size={14}/> Excel</button>
@@ -592,7 +596,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تصویر انتخاب‌شده</button>
   </div>}
 </div>
-{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
+{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>:<DataNewViewPanel/>}</>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
   <div style={{display:'flex',alignItems:'center',gap:10}}>
     <span style={{width:22,height:22,borderRadius:'50%',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:msgType==='err'?`${T.err}1f`:(msgType==='ok'?`${T.ok}1f`:T.soft),color:msgType==='err'?T.err:(msgType==='ok'?T.ok:T.acc),fontSize:12}}>{msgType==='err'?'✕':(msgType==='ok'?'✓':'…')}</span>
     <div style={{flex:1,minWidth:0}}>
@@ -603,13 +607,137 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   </div>
 </div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
 <ApiApprovalNotifier T={T} onNavigateToSecurity={()=>{ setATab('security'); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch{} }} />
-<AdminAssistantWidget T={T} onNavigate={navigateFromAssistant}/><div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>}
+<AdminAssistantWidget T={T} onNavigate={navigateFromAssistant}/><div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>
+function DataNewViewPanel(){
+ const dataUserByPhone: any = {};
+ const dataUserOrder: string[] = [];
+ {
+  const seen: any = {};
+  for (const x of subs) {
+   if ((x as any).type !== 'user') continue;
+   const k = digits(String((x as any).fullPhone || ''));
+   if (!k) continue;
+   const prev = seen[k];
+   if (!prev || String(prev.date || '') + String(prev.time || '') < String(x.date || '') + String(x.time || '')) seen[k] = x;
+  }
+  for (const k of Object.keys(seen)) { dataUserByPhone[k] = seen[k]; dataUserOrder.push(k); }
+ }
+ const dataMask = (ph: string) => {
+  const d = digits(String(ph || ''));
+  if (d.length < 7) return String(ph || '');
+  return d.slice(0, 4) + '••••' + d.slice(-3);
+ };
+ const dataName = (k: string, head: any) => String(dataUserByPhone[k]?.fullName || head?.pName || head?.userName || 'بدون نام');
+ const dataCode = (k: string, head: any) => String(dataUserByPhone[k]?.code || head?.userCode || head?.trackingCode || '');
+ const dataGroups = () => {
+  const byPhone: any = {};
+  for (const x of filteredAll) {
+   if ((x as any).type !== 'consultation' && (x as any).type !== 'course') continue;
+   const k = digits(String((x as any).fullPhone || ''));
+   if (!k) continue;
+   (byPhone[k] = byPhone[k] || []).push(x);
+  }
+  const out: { key: string; items: any[] }[] = [];
+  for (const k of Object.keys(byPhone)) {
+   const sorted = [...byPhone[k]].sort((a: any, b: any) => (String(b.date || '') + String(b.time || '') > String(a.date || '') + String(a.time || '') ? 1 : -1));
+   out.push({ key: k, items: sorted });
+  }
+  out.sort((a, b) => (String(b.items[0].date || '') + String(b.items[0].time || '') > String(a.items[0].date || '') + String(a.items[0].time || '') ? 1 : -1));
+  return out;
+ };
+ const dataGroupsCached = dataGroups();
+ const consultCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'consultation'));
+ const courseCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'course'));
+ const q = nvQ.trim().toLowerCase();
+ const filterCards = (arr: typeof consultCards) => arr.filter((g) => {
+  if (!q) return true;
+  const head = g.items[0];
+  return dataName(g.key, head).toLowerCase().includes(q) || digits(g.key).includes(q.replace(/\D/g, '')) || dataCode(g.key, head).toLowerCase().includes(q);
+ });
+ const consultList = filterCards(consultCards);
+ const courseList = filterCards(courseCards);
+ const consultStatuses = ['مشاوره اولیه', 'پیگیری', 'مشاوره شده', 'ناقص'];
+ const card = (g: { key: string; items: any[] }, kind: 'consult' | 'course') => {
+  const head = g.items.find((x: any) => x.type === kind) || g.items[0];
+  const hasOther = kind === 'consult' ? g.items.some((x: any) => x.type === 'course') : g.items.some((x: any) => x.type === 'consultation');
+  const isUser = !!dataUserByPhone[g.key];
+  const statLbl = kind === 'consult' ? (head.consultationStatus || 'مشاوره اولیه') : getStatus(head);
+  const count = g.items.filter((x: any) => x.type === kind).length;
+  const isHi = nvPhone === g.key;
+  return (
+   <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${isHi ? T.acc : T.brd}`, borderRadius: 14, background: T.card, boxShadow: isHi ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 10, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+     <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color: T.acc, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(dataName(g.key, head) || '؟').trim().charAt(0)}</span>
+     <span style={{ minWidth: 0, flex: 1 }}>
+      <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
+      <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(g.key)} · <b style={{ color: T.acc, fontFamily: 'monospace' }}>{dataCode(g.key, head)}</b></span>
+     </span>
+     <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <span className={`zkad-tag ${kind === 'consult' ? 't-warn' : 't-info'}`} style={{ fontSize: 10.5 }}>{kind === 'consult' ? `مشاوره ×${faNum(count)}` : `دوره ×${faNum(count)}`}</span>
+      <select value={statLbl} onChange={(e) => { if (kind === 'consult') changeConsultStatus(head.id, e.target.value); else changeStatus(head.id, e.target.value); }}
+        style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 8, padding: '5px 8px', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, outline: 'none', cursor: 'pointer', maxWidth: 150 }}>
+        {(kind === 'consult' ? consultStatuses : statusOptions).map((s: string) => <option key={s} value={s}>{s}</option>)}
+       </select>
+     </span>
+    </div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 14px 12px', alignItems: 'center' }}>
+     <span className="zkad-tag" style={{ fontSize: 10.5 }}>{kind === 'consult' ? 'فرزند/موضوع' : 'دوره'}: {kind === 'consult' ? String(head.pName || head.topics || '—') : String(head.course?.title || 'ثبت دوره')}</span>
+     <span style={{ fontSize: 10.5, color: T.mut }}>{fmtWhen(head)}</span>
+     <span style={{ marginInlineStart: 'auto', display: 'flex', gap: 6 }}>
+      {hasOther && (
+       <button type="button" className="zkad-toolbtn" style={{ fontSize: 11, cursor: 'pointer' }}
+        onClick={() => { setNvTab(kind === 'consult' ? 'course' : 'consult'); setNvPhone(g.key); setTimeout(() => { const el = document.getElementById('nvc-' + g.key); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); }}>
+        {kind === 'consult' ? (T.en ? 'Also registered a course →' : 'ثبت دوره هم کرده ←') : (T.en ? 'Also sent a consultation →' : 'درخواست مشاوره هم داده ←')}
+       </button>
+      )}
+      <button type="button" className="zkad-toolbtn" style={{ fontSize: 11, cursor: 'pointer' }} onClick={() => setModalSub(head)}>{T.en ? 'Details' : 'جزئیات'}</button>
+     </span>
+    </div>
+   </div>
+  );
+ };
+ const section = (title: string, note: string, list: typeof consultList, kind: 'consult' | 'course') => (
+  <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
+   <h3 style={{ fontSize: 14, color: T.ttl, margin: '0 0 4px', fontWeight: 900 }}>{title} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(list.length)})</small></h3>
+   <div style={{ fontSize: 11.5, color: T.mut, marginBottom: 12, lineHeight: 1.8 }}>{note}</div>
+   {list.length ? list.map((g) => card(g, kind)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
+  </section>
+ );
+ return (
+  <div>
+   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+    <div className="zkad-seg" style={{ display: 'flex', gap: 6, padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
+     {(['consult', 'course'] as const).map((t) => (
+      <button key={t} type="button" onClick={() => setNvTab(t)}
+       style={{ padding: '8px 16px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 900, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
+       {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست‌های مشاوره') : (T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها')}
+      </button>
+     ))}
+    </div>
+    <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 9, padding: '9px 12px', fontFamily: 'inherit', fontSize: 12.5, width: '100%', maxWidth: 320, outline: 'none' }}
+     placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
+    <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(consultList.length + courseList.length)}</span>
+   </div>
+   {nvTab === 'consult'
+    ? section(T.en ? 'Consultation requests' : 'درخواست‌های مشاوره', T.en ? 'One card per user. Each card shows when the same person also registered a course.' : 'هر کارت = یک کاربر؛ اگر همین شخص دوره هم ثبت کرده باشد، روی کارت مشخص است.', consultList, 'consult')
+    : section(T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها', T.en ? 'One card per user. Each card shows when the same person also sent a consultation.' : 'هر کارت = یک کاربر؛ اگر همین شخص مشاوره هم داده باشد، روی کارت مشخص است.', courseList, 'course')}
+   {modalSub && <Modal T={T} onClose={() => setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO} /></Modal>}
+  </div>
+ );
+}
+}
 
 
  // بازطراحی: بخش‌های ادیتور پنل مدیریت با کارت نئومورفیک (سایه نرم به‌جای بردر ساده)
  // FIX: Stabilize Box component identity — used 59+ times, remount caused all nested inputs/details to reset
  const Box=useMemo(()=>({title,children}:any)=><section className="zkad-panel-card" style={{marginBottom:12}}><h3 style={{fontSize:13.5,color:T.ttl,margin:'0 0 12px',fontWeight:800,lineHeight:1.6,display:'flex',alignItems:'center',gap:7}}>{title}</h3>{children}</section>,[T.ttl]);
- function SettingsEditor(){
+  const changeConsultStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,consultationStatus:status,category:status,changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${status}`)}:x)),[setSubs]);
+
+ // ─────────────────────────────────────────────────────────────────────────
+ // نمای جدید «فرم‌ها و دوره‌ها»: کارت به ازای هر کاربر (تلفیق مشاوره/دوره)
+ // دو بخش کاملاً جدا: درخواست‌های مشاوره / ثبت‌نام دوره‌ها + لینک متقابل
+ // ─────────────────────────────────────────────────────────────────────────
+  function SettingsEditor(){
   // بازطراحی کامل — SettingsManager مستقل با state محلی (رفع fg / پرش صفحه)
   return <SettingsManager
     T={T} S={S} AdminBtn={AdminBtn} Box={Box}

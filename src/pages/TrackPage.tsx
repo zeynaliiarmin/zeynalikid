@@ -1,287 +1,324 @@
+// TrackPage — پیگیری دوره (نسخهٔ A: نئومورفیک گرم + هدر کامل سایت + بازگشت داخل همبرگر)
+// همهٔ منطق قبلی حفظ شده: جستجوی Supabase/localStorage، ورود مهمان، تب‌ها (ویرایش/غذا/مصرف/اصلاحی)،
+// PDFها، نکات کارشناس، پنل تماس — فقط لایهٔ نمایشی به زبان طراحی جدید ترجمه شد.
 import { useAppContext } from '../app/AppContext';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import GlassTopBar from '../components/GlassTopBar';
+import PortalHeader from '../components/PortalHeader';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { TRACKING_PREFIX } from '../config/project';
 import { normalizeTrackingCode } from '../utils/tracking';
 import { PhoneIcon, PinIcon, ChatIcon, productVectorIcon } from '../components/Icons';
+import './portal.css';
 
-const getLS=(k:string,f:any)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}};
-const SUPABASE_URL=(import.meta.env.VITE_SUPABASE_URL as string|undefined)||'';
-const SUPABASE_ANON_KEY=(import.meta.env.VITE_SUPABASE_ANON_KEY as string|undefined)||'';
-const digitsOnly=(v:any)=>String(v??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()).replace(/\D/g,'');
+const getLS = (k: string, f: any) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch { return f; } };
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || '';
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || '';
+const digitsOnly = (v: any) => String(v ?? '').replace(/[۰-۹]/g, (d: any) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()).replace(/[٠-٩]/g, (d: any) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString()).replace(/\D/g, '');
 
-// اصلاح ۳ (مرحله ۵): خواندن ساده و بدون اثر جانبی از sessionStorage (حذف مقادیر در useEffect انجام می‌شود، نه داخل initializer)
-// تا در React.StrictMode که initializer های useState دوبار فراخوانی می‌شوند، مقدار پیش‌فرض به‌اشتباه خالی نشود (باگ ورود به صفحه پیگیری).
-const readSessionOnce=(key:string)=>{try{return sessionStorage.getItem(key)||''}catch{return ''}};
+const readSessionOnce = (key: string) => { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } };
 
-// اصلاح ۳ (مرحله ۵): پیش‌نمایش شماره اکنون فقط بر اساس نتیجه واقعی (result.maskedPhone) ساخته می‌شود، نه ورودی خام کاربر.
-// ماسک شمارهٔ تماس: ۰۹۱۹xxxx۵۴۶ (ایران) یا +CC123xxxx456 (بین‌المللی) — فقط بخش ابتدایی و ۳ رقم آخر
-const maskPhonePreview=(stored:string)=>{const d=digitsOnly(stored);if(!d||d.length<7)return '';const last3=d.slice(-3);if(d.startsWith('98')){const local='0'+d.slice(2);return local.slice(0,4)+'xxxx'+last3;}if(d.startsWith('09')){return d.slice(0,4)+'xxxx'+last3;}const prefix=String(stored||'').match(/^(\+\d{1,3})/)?.[0]||'';if(prefix){const rest=d.slice(prefix.replace('+','').length);return prefix+rest.slice(0,3)+'xxxx'+last3;}return d.slice(0,4)+'xxxx'+last3;};
-const resultPhonePreview=(result:any)=>{if(!result)return ''; if(result.maskedPhone)return result.maskedPhone; return maskPhonePreview(String(result.fullPhone||''));};
+const maskPhonePreview = (stored: string) => {
+  const d = digitsOnly(stored);
+  if (!d || d.length < 7) return '';
+  const last3 = d.slice(-3);
+  if (d.startsWith('98')) { const local = '0' + d.slice(2); return local.slice(0, 4) + 'xxxx' + last3; }
+  if (d.startsWith('09')) return d.slice(0, 4) + 'xxxx' + last3;
+  const prefix = String(stored || '').match(/^(\+\d{1,3})/)?.[0] || '';
+  if (prefix) { const rest = d.slice(prefix.replace('+', '').length); return prefix + rest.slice(0, 3) + 'xxxx' + last3; }
+  return d.slice(0, 4) + 'xxxx' + last3;
+};
+const resultPhonePreview = (result: any) => { if (!result) return ''; if (result.maskedPhone) return result.maskedPhone; return maskPhonePreview(String(result.fullPhone || '')); };
 
-export default function TrackPage(){
- const app=useAppContext();
- const {cfg,T,S,css,lang,setLang,setView,APP_A_URL,publicText,p2e,showContactOn,ContactPanel}=app;
- // اصلاح ۳ (مرحله ۵): failCountRef/failMsg مبتنی بر ورودی خام کاربر حذف شد (نمایش شماره تأییدنشده روی خطا گمراه‌کننده بود)
- // رفع باگ ورود به صفحه پیگیری: initializer های useState قبلی هم می‌خواندند و هم بلافاصله sessionStorage را پاک می‌کردند؛
- // در React.StrictMode (توسعه) این initializer دوبار فراخوانی می‌شود و بار دوم مقدار را خالی می‌بیند. اکنون فقط خوانده می‌شود
- // و پاک‌سازی sessionStorage به useEffect زیر (که فقط یک‌بار در mount واقعی اجرا می‌شود) منتقل شده است.
- const [num,setNum]=useState(()=>readSessionOnce('zkid_track_prefill')); const [phone,setPhone]=useState(()=>readSessionOnce('zkid_track_phone_prefill')); const [result,setResult]=useState<any>(null); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false); const [rtab,setRtab]=useState<'edit'|'meal'|'usage'|'corrective'>('edit');
- // اصلاح ۱۲: فیلدهای فرم اصلاحی — قابل ویرایش توسط کاربر در صورت فعال بودن showCorrectiveTab
- const [correctiveDraft,setCorrectiveDraft]=useState<any>({});
- const [correctiveSaving,setCorrectiveSaving]=useState(false);
- const [correctiveMsg,setCorrectiveMsg]=useState('');
- const [isGuest,setIsGuest]=useState(false);
- // پیش‌نمایش ماسک‌شدهٔ شمارهٔ ثبت‌نام، به‌محض کامل شدن کد پیگیری (قبل از زدن دکمهٔ پیگیری)
- // ورودی: فقط اعداد بعد از ZK (ZK ثابت و غیرقابل حذف) — کد قدیمی هگز هم پذیرفته می‌شود
- // اصلاح ۳ (مرحله ۶): ورود مخفی به پنل مدیریت — اگر کاربر دقیقاً «639» را در فیلد کد پیگیری وارد کند، مستقیماً به صفحه ورود ادمین هدایت می‌شود.
- const onNumChange=(v:string)=>{const clean=p2e(v).replace(/^(zk|fm)-?/i,'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);if(clean==='639'){setNum('');setView('admin-login');return}setNum(clean)};
- const buildCode=()=>normalizeTrackingCode(num,TRACKING_PREFIX);
- // اصلاح: جستجو از Supabase اگر فعال است، وگرنه localStorage
- const localLookup=async(c:string,ph:string)=>{
-  // اگر Supabase فعال است، از API استفاده کن
-  if(isSupabaseConfigured && SUPABASE_URL && SUPABASE_ANON_KEY) {
+export default function TrackPage() {
+  const app = useAppContext();
+  const { cfg, T, S, css, lang, setLang, setView, publicText, p2e, showContactOn, ContactPanel } = app;
+  const [num, setNum] = useState(() => readSessionOnce('zkid_track_prefill'));
+  const [phone, setPhone] = useState(() => readSessionOnce('zkid_track_phone_prefill'));
+  const [result, setResult] = useState<any>(null);
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [rtab, setRtab] = useState<'edit' | 'meal' | 'usage' | 'corrective'>('edit');
+  const [correctiveDraft, setCorrectiveDraft] = useState<any>({});
+  const [correctiveSaving, setCorrectiveSaving] = useState(false);
+  const [correctiveMsg, setCorrectiveMsg] = useState('');
+  const [isGuest, setIsGuest] = useState(false);
+
+  const onNumChange = (v: string) => {
+    const clean = p2e(v).replace(/^(zk|fm)-?/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 20);
+    if (clean === '639') { setNum(''); setView('admin-login'); return; }
+    setNum(clean);
+  };
+  const buildCode = () => normalizeTrackingCode(num, TRACKING_PREFIX);
+
+  const localLookup = async (c: string, ph: string) => {
+    if (isSupabaseConfigured && SUPABASE_URL && SUPABASE_ANON_KEY) {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/track-submission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ trackingCode: c, fullPhone: ph }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return { ...data, _trackingCodeRaw: c, _phoneRaw: ph };
+        }
+      } catch (e) {
+        console.error('Supabase lookup failed:', e);
+        reportError('track_lookup', 'Supabase lookup failed', String((e as any)?.message || e)); triggerErrorAlert('track');
+      }
+    }
+    const list: any[] = getLS('zkid_submissions_v2', []);
+    const wanted = c.toLowerCase(); const legacy = wanted.startsWith('fm') ? 'zk' + wanted.slice(2) : wanted;
+    const found = list.find((x: any) => { const code = String(x.trackingCode || '').toLowerCase(); return code === wanted || code === legacy; });
+    if (!found) return { error: lang === 'en' ? 'Phone number or tracking code is incorrect. Please try again.' : 'شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید.' };
+    const sd = digitsOnly(found.fullPhone || ''), id = digitsOnly(ph);
+    const match = sd.length >= 7 && id.length >= 7 && (sd.endsWith(id) || id.endsWith(sd) || sd.slice(-10) === id.slice(-10));
+    if (!match) return { error: lang === 'en' ? 'Phone number or tracking code is incorrect. Please try again.' : 'شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید.' };
+    const stored = String(found.fullPhone || '');
+    const maskedPhone = maskPhonePreview(stored);
+    const eh = found.editHistory || [];
+    return {
+      trackingCode: found.trackingCode, status: found.orderStatus || (found.payment?.receipt ? 'پرداختشده' : found.course ? 'در انتظار پرداخت' : 'جدید'),
+      date: `${found.date || ''} ${found.time || ''}`.trim(), course: found.course ? { title: found.course.title, titleEn: found.course.titleEn } : null,
+      usage: found.usageInstructions || '', mealPlan: found.mealPlan || '', showMealPlan: found.showMealPlan === true,
+      usagePdfUrl: found.usagePdfUrl || '', mealPdfUrl: found.mealPdfUrl || '', userNotes: found.userNotes || '', productUsage: found.productUsage || {},
+      lastEdit: eh.length ? `${eh[eh.length - 1].date || ''} ${eh[eh.length - 1].time || ''}`.trim() : '', maskedPhone, canEdit: true,
+      corrective: found.corrective || null, showCorrectiveTab: !!found.showCorrectiveTab, correctiveData: found.correctiveData || {},
+      _trackingCodeRaw: c, _phoneRaw: ph,
+    };
+  };
+
+  const normalizePhone = (raw: string) => { let d = digitsOnly(raw); if (d.startsWith('0098')) d = d.slice(2); if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2); if (!d.startsWith('0') && d.startsWith('9') && d.length === 10) d = '0' + d; return d.length >= 7 ? `+98${d.startsWith('0') ? d.slice(1) : d}` : raw; };
+
+  const search = async () => {
+    const c = buildCode(); const rawPh = p2e(phone).replace(/[\s\-().]/g, '').trim(); const ph = normalizePhone(rawPh);
+    setErr(''); setResult(null);
+    if (!/^(ZK|FM)\d{4,8}$/i.test(c) && !/^(ZK|FM)-[A-F0-9]{6}$/i.test(c) && !/^(ZK|FM)-[0-9][a-z0-9]{6,8}$/i.test(c) && !/^(ZK|FM)-[A-Z0-9]{12,20}$/i.test(c)) { setErr(lang === 'en' ? 'Enter the tracking code exactly as shown after registration.' : 'کد پیگیری را دقیقاً مطابق کد نمایشدادهشده بعد از ثبت وارد کنید.'); return; }
+    if (digitsOnly(ph).length < 7) { setErr(lang === 'en' ? 'Please enter the phone number used at registration.' : 'لطفاً شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'); return; }
+    setLoading(true);
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/track-submission`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify({ trackingCode: c, fullPhone: ph })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return { ...data, _trackingCodeRaw: c, _phoneRaw: ph };
+      if (isSupabaseConfigured && SUPABASE_URL) {
+        try {
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/track-submission`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY }, body: JSON.stringify({ trackingCode: c, fullPhone: ph }) });
+          const data = await response.json().catch(() => ({ error: 'خطای سرور. لطفاً مجدداً تلاش کنید.' }));
+          if (!response.ok) { setErr(data?.error || (lang === 'en' ? 'Not found.' : 'یافت نشد.')); return; }
+          setResult({ ...data, _trackingCodeRaw: c, _phoneRaw: ph }); setIsGuest(false); setRtab('edit'); return;
+        } catch (e) {
+          reportError('track_search', 'track-submission failed, falling back to local', String((e as any)?.message || e)); triggerErrorAlert('track');
+          const r: any = await localLookup(c, ph); if (r.error) setErr(r.error); else { setResult(r); setIsGuest(false); setRtab('edit'); } return;
+        }
+      }
+      const r: any = await localLookup(c, ph); if (r.error) setErr(r.error); else { setResult(r); setIsGuest(false); setRtab('edit'); }
+    } finally { setLoading(false); }
+  };
+
+  const enterGuest = () => {
+    setIsGuest(true); setErr('');
+    setResult({
+      trackingCode: 'GUEST', status: lang === 'en' ? 'Guest' : 'مهمان', date: '', course: null,
+      usage: '', mealPlan: '', showMealPlan: true, userNotes: '', productUsage: {}, maskedPhone: '', canEdit: false, corrective: null,
+    });
+    setRtab('meal');
+  };
+
+  const mealTab: ['meal', string] = ['meal', lang === 'en' ? 'Meal Plan' : 'برنامه غذایی'];
+  const rtabs: [('edit' | 'meal' | 'usage' | 'corrective'), string][] = isGuest
+    ? [...(result?.showMealPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف']]
+    : [['edit', lang === 'en' ? 'Last Edit' : 'آخرین ویرایش'], ...(result?.showMealPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف'], ...(result?.showCorrectiveTab ? [['corrective', lang === 'en' ? 'Corrective' : 'اصلاحی'] as ['corrective', string]] : [])];
+
+  useEffect(() => { if (result?.correctiveData) setCorrectiveDraft({ ...result.correctiveData }); }, [result]);
+
+  const correctiveFields: [string, string, string][] = [
+    ['height', lang === 'en' ? 'Height (cm)' : 'قد (سانتیمتر)', ''], ['weight', lang === 'en' ? 'Weight (kg)' : 'وزن (کیلوگرم)', ''],
+    ['appetite', lang === 'en' ? 'Appetite' : 'اشتها', ''], ['sleep', lang === 'en' ? 'Sleep' : 'خواب', ''],
+    ['activity', lang === 'en' ? 'Activity' : 'فعالیت', ''], ['exercise', lang === 'en' ? 'Exercise' : 'ورزش', ''],
+    ['puberty', lang === 'en' ? 'Puberty' : 'بلوغ', ''], ['waterIntake', lang === 'en' ? 'Water intake' : 'مصرف آب', ''],
+    ['snacks', lang === 'en' ? 'Snacks' : 'تنقلات', ''], ['parentsHeight', lang === 'en' ? "Parents' height" : 'قد والدین', ''],
+    ['allergies', lang === 'en' ? 'Allergies' : 'حساسیتها', ''], ['diseases', lang === 'en' ? 'Diseases' : 'بیماریها', ''],
+    ['medications', lang === 'en' ? 'Medications' : 'داروها', ''], ['temperament', lang === 'en' ? 'Temperament' : 'طبع', ''],
+  ];
+
+  const saveCorrective = async () => {
+    if (!result?._trackingCodeRaw || !result?._phoneRaw) { setCorrectiveMsg(lang === 'en' ? 'Unable to save; please search again.' : 'ذخیره ممکن نشد؛ لطفاً دوباره جستجو کنید.'); setTimeout(() => setCorrectiveMsg(''), 3000); return; }
+    setCorrectiveSaving(true); setCorrectiveMsg('');
+    try {
+      if (isSupabaseConfigured && SUPABASE_URL) {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/update-corrective`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY }, body: JSON.stringify({ trackingCode: result._trackingCodeRaw, fullPhone: result._phoneRaw, correctiveData: correctiveDraft }) });
+        const data = await response.json().catch(() => ({ error: 'خطای سرور' }));
+        if (!response.ok) { setCorrectiveMsg(data?.error || (lang === 'en' ? 'Could not save.' : 'ذخیره انجام نشد.')); return; }
+        setResult((r: any) => ({ ...r, correctiveData: data.correctiveData || correctiveDraft }));
+        setCorrectiveMsg(lang === 'en' ? 'Saved successfully' : 'با موفقیت ذخیره شد');
+      } else {
+        const list = getLS('zkid_submissions_v2', []);
+        const updated = list.map((x: any) => String(x.trackingCode || '').toUpperCase() === result.trackingCode ? { ...x, correctiveData: { ...(x.correctiveData || {}), ...correctiveDraft } } : x);
+        localStorage.setItem('zkid_submissions_v2', JSON.stringify(updated));
+        setResult((r: any) => ({ ...r, correctiveData: { ...(r.correctiveData || {}), ...correctiveDraft } }));
+        setCorrectiveMsg(lang === 'en' ? 'Saved successfully' : 'با موفقیت ذخیره شد');
       }
     } catch (e) {
-      console.error('Supabase lookup failed:', e);
-      reportError('track_lookup', 'Supabase lookup failed', String((e as any)?.message||e));triggerErrorAlert('track');
+      reportError('track_corrective', 'Could not save corrective info', String((e as any)?.message || e)); triggerErrorAlert('track');
+      setCorrectiveMsg(lang === 'en' ? 'Could not save.' : 'ذخیره انجام نشد.');
+    } finally {
+      setCorrectiveSaving(false);
+      setTimeout(() => setCorrectiveMsg(''), 3000);
     }
-  }
-  
-  // Fallback به localStorage
-  const list:any[]=getLS('zkid_submissions_v2',[]);
-  const wanted=c.toLowerCase();const legacy=wanted.startsWith('fm')?'zk'+wanted.slice(2):wanted;
-  const found=list.find((x:any)=>{const code=String(x.trackingCode||'').toLowerCase();return code===wanted||code===legacy});
-  if(!found)return {error:lang==='en'?'Phone number or tracking code is incorrect. Please try again.':'شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید.'};
-  const sd=digitsOnly(found.fullPhone||''),id=digitsOnly(ph);
-  const match=sd.length>=7&&id.length>=7&&(sd.endsWith(id)||id.endsWith(sd)||sd.slice(-10)===id.slice(-10));
-  if(!match)return {error:lang==='en'?'Phone number or tracking code is incorrect. Please try again.':'شماره تماس یا کد پیگیری اشتباه است. لطفاً مجدداً بررسی کنید.'};
-  const stored=String(found.fullPhone||'');
-  const maskedPhone=maskPhonePreview(stored);
-  const eh=found.editHistory||[];
-  return {trackingCode:found.trackingCode,status:found.orderStatus||(found.payment?.receipt?'پرداخت‌شده':found.course?'در انتظار پرداخت':'جدید'),date:`${found.date||''} ${found.time||''}`.trim(),course:found.course?{title:found.course.title,titleEn:found.course.titleEn}:null,usage:found.usageInstructions||'',mealPlan:found.mealPlan||'',showMealPlan:found.showMealPlan===true,usagePdfUrl:found.usagePdfUrl||'',mealPdfUrl:found.mealPdfUrl||'',userNotes:found.userNotes||'',productUsage:found.productUsage||{},lastEdit:eh.length?`${eh[eh.length-1].date||''} ${eh[eh.length-1].time||''}`.trim():'',maskedPhone,canEdit:true, corrective: found.corrective||null, showCorrectiveTab: !!found.showCorrectiveTab, correctiveData: found.correctiveData||{}, _trackingCodeRaw:c, _phoneRaw:ph};
-};
- // اصلاح ۳ (مرحله ۵): منطق جستجو ساده‌سازی شد — پیام خطا دیگر شماره خام واردشده کاربر را برنمی‌گرداند (چون تأییدنشده و می‌تواند
- // گمراه‌کننده باشد)؛ پیش‌نمایش شماره واقعی («شماره ثبت‌شده») فقط از result.maskedPhone بعد از جستجوی موفق ساخته می‌شود (رجوع به resultPhonePreview).
- // اصلاح ۳۹: نرمال‌سازی شماره تماس + لاگ دیباگ
- const normalizePhone=(raw:string)=>{let d=digitsOnly(raw); if(d.startsWith('0098'))d=d.slice(2); if(d.startsWith('98')&&d.length===12)d='0'+d.slice(2); if(!d.startsWith('0')&&d.startsWith('9')&&d.length===10)d='0'+d; return d.length>=7?`+98${d.startsWith('0')?d.slice(1):d}`:raw};
- const search=async()=>{const c=buildCode(); const rawPh=p2e(phone).replace(/[\s\-().]/g,'').trim(); const ph=normalizePhone(rawPh); setErr(''); setResult(null);
-  if(!/^(ZK|FM)\d{4,8}$/i.test(c)&&!/^(ZK|FM)-[A-F0-9]{6}$/i.test(c)&&!/^(ZK|FM)-[0-9][a-z0-9]{6,8}$/i.test(c)&&!/^(ZK|FM)-[A-Z0-9]{12,20}$/i.test(c)){setErr(lang==='en'?'Enter the tracking code exactly as shown after registration.':'کد پیگیری را دقیقاً مطابق کد نمایش‌داده‌شده بعد از ثبت وارد کنید.');return}
-  if(digitsOnly(ph).length<7){setErr(lang==='en'?'Please enter the phone number used at registration.':'لطفاً شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.');return}
-  setLoading(true);
-  try{
-   if(isSupabaseConfigured&&SUPABASE_URL){
-    try{
-     const response=await fetch(`${SUPABASE_URL}/functions/v1/track-submission`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({trackingCode:c,fullPhone:ph})});
-     const data=await response.json().catch(()=>({error:'خطای سرور. لطفاً مجدداً تلاش کنید.'}));
-     if(!response.ok){setErr(data?.error||(lang==='en'?'Not found.':'یافت نشد.'));return}
-     setResult({...data,_trackingCodeRaw:c,_phoneRaw:ph});setIsGuest(false);setRtab('edit');return
-    }catch(e){
-     reportError('track_search', 'track-submission failed, falling back to local', String((e as any)?.message||e));triggerErrorAlert('track');
-     const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')} return
-    }
-   }
-   const r:any=await localLookup(c,ph); if(r.error){setErr(r.error)}else {setResult(r);setIsGuest(false);setRtab('edit')}
-  }finally{setLoading(false)}};
- // برای جلوگیری از حدس‌زدن کدهای معتبر و افشای بخشی از شماره تماس،
- // هیچ جستجوی خودکاری فقط با کد انجام نمی‌شود؛ جستجو همیشه کد + شماره کامل می‌خواهد.
+  };
 
- const enterGuest=()=>{
-   // ورود مهمان — محتوای عمومی برنامه غذایی برای مهمان همیشه نمایش داده می‌شود (کنترل ادمین فقط برای فرم‌های ثبت‌شده واقعی است)
-   setIsGuest(true);
-   setErr('');
-   setResult({
-     trackingCode: 'GUEST',
-     status: lang==='en'?'Guest':'مهمان',
-     date: '',
-     course: null,
-     usage: '',
-     mealPlan: '',
-     showMealPlan: true,
-     userNotes: '',
-     productUsage: {},
-     maskedPhone: '',
-     canEdit: false,
-     corrective: null
-   });
-   setRtab('meal');
- };
+  useEffect(() => {
+    try {
+      const isGuestFlag = sessionStorage.getItem('zkid_track_guest');
+      const isAutoFlag = sessionStorage.getItem('zkid_track_auto');
+      sessionStorage.removeItem('zkid_track_guest');
+      sessionStorage.removeItem('zkid_track_auto');
+      sessionStorage.removeItem('zkid_track_prefill');
+      sessionStorage.removeItem('zkid_track_phone_prefill');
+      if (isGuestFlag) { enterGuest(); return; }
+      if (isAutoFlag && num && digitsOnly(phone).length >= 7) { search(); }
+    } catch { }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
- // اصلاح ۱۲: تب «اصلاحی» فقط وقتی نمایش داده می‌شود که ادمین آن را برای این فرم فعال کرده باشد (result.showCorrectiveTab)
- // اصلاح ۴: تب «برنامه غذایی» فقط وقتی نمایش داده می‌شود که ادمین آن را برای این فرم فعال کرده باشد (result.showMealPlan===true)
- const mealTab:['meal',string]=['meal',lang==='en'?'Meal Plan':'برنامه غذایی'];
- const rtabs:[('edit'|'meal'|'usage'|'corrective'),string][] = isGuest
-   ? [...(result?.showMealPlan?[mealTab]:[]),['usage',lang==='en'?'Usage':'طریقه مصرف']]
-   : [['edit',lang==='en'?'Last Edit':'آخرین ویرایش'],...(result?.showMealPlan?[mealTab]:[]),['usage',lang==='en'?'Usage':'طریقه مصرف'],...(result?.showCorrectiveTab?[['corrective',lang==='en'?'Corrective':'اصلاحی'] as ['corrective',string]]:[])];
+  const getGuestMeal = () => {
+    if (cfg.guestMealPlan) return cfg.guestMealPlan;
+    const products = (cfg.products?.list || []) as any[];
+    return products.map((p: any) => `${p.name}: ${p.description || ''}`).filter(Boolean).join('\n\n') || (lang === 'en' ? 'The meal plan has not been added yet.' : 'برنامه غذایی هنوز ثبت نشده است.');
+  };
+  const getGuestUsage = () => {
+    if (cfg.guestUsage) return cfg.guestUsage;
+    const products = (cfg.products?.list || []) as any[];
+    return products.map((p: any) => `${p.name}: ${p.description || ''}`).filter(Boolean).join('\n\n') || (lang === 'en' ? 'Usage instructions have not been added yet.' : 'طریقه مصرف هنوز ثبت نشده است.');
+  };
 
- // اصلاح ۱۲: فیلدهای فرم اصلاحی — با بازشدن نتیجه، مقادیر ذخیره‌شده قبلی در فرم بارگذاری می‌شود.
- useEffect(()=>{ if(result?.correctiveData) setCorrectiveDraft({...result.correctiveData}); },[result]);
- const correctiveFields:[string,string,string][]=[
-  ['height', lang==='en'?'Height (cm)':'قد (سانتیمتر)', ''],
-  ['weight', lang==='en'?'Weight (kg)':'وزن (کیلوگرم)', ''],
-  ['appetite', lang==='en'?'Appetite':'اشتها', ''],
-  ['sleep', lang==='en'?'Sleep':'خواب', ''],
-  ['activity', lang==='en'?'Activity':'فعالیت', ''],
-  ['exercise', lang==='en'?'Exercise':'ورزش', ''],
-  ['puberty', lang==='en'?'Puberty':'بلوغ', ''],
-  ['waterIntake', lang==='en'?'Water intake':'مصرف آب', ''],
-  ['snacks', lang==='en'?'Snacks':'تنقلات', ''],
-  ['parentsHeight', lang==='en'?"Parents' height":'قد والدین', ''],
-  ['allergies', lang==='en'?'Allergies':'حساسیت‌ها', ''],
-  ['diseases', lang==='en'?'Diseases':'بیماری‌ها', ''],
-  ['medications', lang==='en'?'Medications':'داروها', ''],
-  ['temperament', lang==='en'?'Temperament':'طبع', ''],
- ];
- const saveCorrective=async()=>{
-  if(!result?._trackingCodeRaw||!result?._phoneRaw){setCorrectiveMsg(lang==='en'?'Unable to save; please search again.':'ذخیره ممکن نشد؛ لطفاً دوباره جستجو کنید.');setTimeout(()=>setCorrectiveMsg(''),3000);return}
-  setCorrectiveSaving(true); setCorrectiveMsg('');
-  try{
-   if(isSupabaseConfigured&&SUPABASE_URL){
-    const response=await fetch(`${SUPABASE_URL}/functions/v1/update-corrective`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({trackingCode:result._trackingCodeRaw,fullPhone:result._phoneRaw,correctiveData:correctiveDraft})});
-    const data=await response.json().catch(()=>({error:'خطای سرور'}));
-    if(!response.ok){setCorrectiveMsg(data?.error||(lang==='en'?'Could not save.':'ذخیره انجام نشد.'));return}
-    setResult((r:any)=>({...r,correctiveData:data.correctiveData||correctiveDraft}));
-    setCorrectiveMsg(lang==='en'?'Saved successfully':'با موفقیت ذخیره شد');
-   }else{
-    // بدون Supabase: ذخیره محلی روی همان رکورد localStorage
-    const list=getLS('zkid_submissions_v2',[]);
-    const updated=list.map((x:any)=>String(x.trackingCode||'').toUpperCase()===result.trackingCode?{...x,correctiveData:{...(x.correctiveData||{}),...correctiveDraft}}:x);
-    localStorage.setItem('zkid_submissions_v2',JSON.stringify(updated));
-    setResult((r:any)=>({...r,correctiveData:{...(r.correctiveData||{}),...correctiveDraft}}));
-    setCorrectiveMsg(lang==='en'?'Saved successfully':'با موفقیت ذخیره شد');
-   }
-  }catch(e){
-   reportError('track_corrective', 'Could not save corrective info', String((e as any)?.message||e));triggerErrorAlert('track');
-   setCorrectiveMsg(lang==='en'?'Could not save.':'ذخیره انجام نشد.');
-  }finally{
-   setCorrectiveSaving(false);
-   setTimeout(()=>setCorrectiveMsg(''),3000);
-  }
- };
+  const acc = T.acc || '#7A12D4';
+  const darkGlass = String(T.id || '').includes('dark');
+  const mem = T.memphis || [T.soft, T.soft, T.soft];
+  const rootVars: any = {
+    '--zp-acc': acc, '--zp-g2': T.grad2 || '#DF1A6F', '--zp-deep': darkGlass ? '#7C3AED' : '#5B0FA6',
+    '--zp-ink': darkGlass ? '#F2EAFC' : T.txt, '--zp-sub': darkGlass ? '#A79BC0' : T.mut,
+    '--zp-bg': darkGlass ? '#151021' : (T.bg === '#FFFFFF' ? '#F5EFE7' : T.bg),
+    '--zp-soft': darkGlass ? '#2A1B3E' : T.soft, '--zp-card0': darkGlass ? '#241C33' : '#fff',
+    '--zp-card1': darkGlass ? '#1D1627' : '#FBF8F3', '--zp-cardbd': darkGlass ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.8)',
+    '--zp-fbg': darkGlass ? '#1B1327' : '#F3EDE4', '--zp-fsh1': darkGlass ? 'rgba(0,0,0,.5)' : 'rgba(74,58,96,.10)',
+    '--zp-fsh2': darkGlass ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.9)', '--zp-ph': darkGlass ? '#6E6390' : '#B4AABE',
+    '--zp-track': darkGlass ? '#2B2140' : '#EFE9F4', '--zp-mem0': mem[0] || '#F1E4FC', '--zp-mem1': mem[1] || '#DCEFFC', '--zp-mem2': mem[2] || '#E2F6EC',
+    '--zp-warnbg': darkGlass ? '#3A2A10' : '#FFF6E4', '--zp-warnbd': darkGlass ? '#6E5115' : '#F3DDAB', '--zp-warnfg': darkGlass ? '#F4C766' : '#96660A',
+    '--zp-errbg': darkGlass ? '#3A1A1E' : '#FDF0EF', '--zp-errbd': darkGlass ? '#5E2A2F' : '#F6D0CB', '--zp-errfg': darkGlass ? '#F2A9A2' : '#B4403A',
+    '--zp-okc': T.ok || '#047857', '--zp-famop': darkGlass ? '.08' : '.16', '--zp-softg': darkGlass ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.025)',
+  };
 
- // اصلاح ۱۳ و ۱۴: اگر از فیلد شناور هوم آمده باشیم، به‌صورت خودکار کد+شماره را ارسال یا حالت مهمان را فعال می‌کنیم.
- // اصلاح ۳ (مرحله ۵): رفع باگ ورود به صفحه پیگیری — پاک‌سازی تمام کلیدهای موقت sessionStorage (شامل prefill های کد/شماره)
- // اکنون یک‌جا و فقط در این useEffect (که تنها یک‌بار در mount واقعی اجرا می‌شود، نه در initializer های useState) انجام می‌شود.
- useEffect(()=>{
-  try{
-   const isGuestFlag=sessionStorage.getItem('zkid_track_guest');
-   const isAutoFlag=sessionStorage.getItem('zkid_track_auto');
-   sessionStorage.removeItem('zkid_track_guest');
-   sessionStorage.removeItem('zkid_track_auto');
-   sessionStorage.removeItem('zkid_track_prefill');
-   sessionStorage.removeItem('zkid_track_phone_prefill');
-   if(isGuestFlag){ enterGuest(); return; }
-   if(isAutoFlag && num && digitsOnly(phone).length>=7){ search(); }
-  }catch{}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
- },[]);
+  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (lang === 'en' ? 'Farzandman' : 'فرزند من')).replace(/[“”"]/g, '').trim();
+  const glassCard: any = { background: darkGlass ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,.90)', border: `1px solid ${darkGlass ? 'rgba(255,255,255,.2)' : T.brd}`, borderRadius: 16 };
 
- // محتوای مهمان با fallback
- const getGuestMeal=()=>{
-   if(cfg.guestMealPlan) return cfg.guestMealPlan;
-   // fallback: توضیحات عمومی محصولات
-   const products=(cfg.products?.list||[]) as any[];
-   return products.map((p:any)=>`${p.name}: ${p.description||''}`).filter(Boolean).join('\n\n') || (lang==='en'?'The meal plan has not been added yet.':'برنامه غذایی هنوز ثبت نشده است.');
- };
- const getGuestUsage=()=>{
-   if(cfg.guestUsage) return cfg.guestUsage;
-   const products=(cfg.products?.list||[]) as any[];
-   return products.map((p:any)=>`${p.name}: ${p.description||''}`).filter(Boolean).join('\n\n') || (lang==='en'?'Usage instructions have not been added yet.':'طریقه مصرف هنوز ثبت نشده است.');
- };
+  const infoRows: [string, string][] = [
+    [lang === 'en' ? 'Tracking code' : 'کد پیگیری', String(result?.trackingCode || '')],
+    [lang === 'en' ? 'Status' : 'وضعیت دوره', String(result?.status || '')],
+    [lang === 'en' ? 'Registration date' : 'تاریخ ثبت', String(result?.date || '—')],
+    ...(result?.course ? ([[lang === 'en' ? 'Course' : 'دورهٔ ثبتشده', lang === 'en' ? (result.course.titleEn || result.course.title) : result.course.title]] as [string, string][]) : []),
+    ...(resultPhonePreview(result) ? ([[lang === 'en' ? 'Registered phone' : 'شمارهٔ ثبتشده', resultPhonePreview(result)]] as [string, string][]) : []),
+  ];
+  const progressWidth = String(result?.status || '').includes('پرداخت') || String(result?.status || '').includes('done') ? '100%' : String(result?.status || '').includes('جدید') ? '25%' : '65%';
 
- const mem=T.memphis||[T.soft,T.soft,T.soft];
- // ── گلسمورفیسم هم‌خانواده با تم: رنگ‌های شیشه از اکسنت تم ساخته می‌شوند ──
- const hexTint=(hex:string,a:number)=>{try{const h=String(hex||'').replace('#','').trim();if(!/^[0-9a-fA-F]{6}$/.test(h))return `rgba(15,118,110,${a})`;const n=parseInt(h,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`}catch{return `rgba(15,118,110,${a})`}};
- const mixWhite=(hex:string,t:number)=>{try{const h=String(hex||'').replace('#','').trim();if(!/^[0-9a-fA-F]{6}$/.test(h))return '#5ECDC4';const n=parseInt(h,16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;const m=(c:number)=>Math.round(c+(255-c)*t);return `rgb(${m(r)},${m(g)},${m(b)})`}catch{return '#5ECDC4'}};
- const acc=T.acc||'#0F766E';
- const darkGlass=T.id==='dark'||T.id==='admin-dark';
- const accLight=darkGlass?mixWhite(acc,0.55):acc;
- const glassFormBg=darkGlass?hexTint(acc,0.16):'rgba(255,255,255,.92)';
- const glassFormBorder=darkGlass?hexTint(acc,0.5):T.brd;
- const glassStrong=darkGlass?'#FFFFFF':T.txt;
- const lightLabel=darkGlass?'rgba(255,255,255,.78)':T.mut;
- const lightText=darkGlass?'rgba(255,255,255,.94)':T.txt;
- const glassLine=darkGlass?'rgba(255,255,255,.22)':T.brd;
- const glassSoft=darkGlass?'rgba(255,255,255,.07)':T.soft;
- const glassCard:any={background:darkGlass?'rgba(15,23,42,0.55)':'rgba(255,255,255,.90)',border:`1px solid ${darkGlass?hexTint(acc,0.32):T.brd}`,borderRadius:14,backdropFilter:'blur(14px) saturate(140%)',WebkitBackdropFilter:'blur(14px) saturate(140%)',boxShadow:darkGlass?'0 10px 30px rgba(0,0,0,.28)':'0 10px 30px rgba(15,23,42,.10)'};
- const pageOverlay=darkGlass?'linear-gradient(160deg, rgba(15,23,42,.78), rgba(15,23,42,.58))':'linear-gradient(160deg, rgba(253,248,243,.88), rgba(234,245,243,.82))';
- return <div className={`zkgl-root zkgl-has-topbar zkgl-mode-${darkGlass?'dark':'light'}`} dir={lang==='fa'?'rtl':'ltr'} style={{['--zkgl-acc' as any]:acc}}><Helmet><title>پیگیری ثبت‌نام | زینالیکید</title><meta name="description" content="وارد کردن کد پیگیری و مشاهده وضعیت ثبت‌نام دوره یا فرم مشاوره زینالیکید" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><GlassTopBar brand={lang==='en'?'zeynalikid':'زینالیکید'} lang={lang} setLang={setLang} T={T} onBack={()=>setView('home')} backLabel={lang==='en'?'Back':'بازگشت'} /><div className="zkgl-bg" style={{background:`linear-gradient(150deg, ${T.bg}, ${T.sel||T.soft||T.bg})`}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} preserveAspectRatio="xMidYMid slice"><circle cx="8%" cy="14%" r="80" fill={mem[0]} opacity=".3"/><circle cx="92%" cy="20%" r="52" fill={mem[1]} opacity=".24"/><circle cx="86%" cy="84%" r="96" fill={mem[2]} opacity=".22"/><circle cx="12%" cy="90%" r="40" fill={mem[0]} opacity=".24"/><path d="M -5 60 Q 25 44 50 60 T 105 60" stroke={mem[1]} strokeWidth="3" fill="none" opacity=".26"/><circle cx="50%" cy="8%" r="4" fill={mem[2]} opacity=".4"/><circle cx="24%" cy="48%" r="3" fill={mem[0]} opacity=".35"/></svg><div style={{position:'absolute',inset:0,backgroundImage:'url(/images/hero-default.webp)',backgroundSize:'cover',backgroundPosition:'center',filter:'blur(7px)',opacity:darkGlass?.4:.12}}/><div style={{position:'absolute',inset:0,background:pageOverlay}}/></div><div className="zkgl-col"><div style={{background:glassFormBg,border:`1.5px solid ${glassFormBorder}`,borderRadius:20,padding:'26px 20px',backdropFilter:'blur(18px) saturate(160%)',WebkitBackdropFilter:'blur(18px) saturate(160%)',boxShadow:'0 22px 60px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.25)',position:'relative',overflow:'hidden'}}><svg aria-hidden="true" style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}} preserveAspectRatio="xMidYMid slice"><circle cx="94%" cy="4%" r="46" fill={mem[0]} opacity=".25"/><circle cx="4%" cy="96%" r="30" fill={mem[1]} opacity=".2"/><circle cx="10%" cy="10%" r="10" fill={mem[2]} opacity=".28"/></svg><div style={{position:'relative'}}><span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:10.5,fontWeight:800,color:darkGlass?'#fff':T.acc,background:darkGlass?hexTint(acc,.34):T.soft,border:`1px solid ${glassFormBorder}`,borderRadius:999,padding:'2px 10px',marginBottom:10}}>{lang==='en'?'TRACK ORDER':'پیگیری سفارش'}</span><h1 style={{color:glassStrong,fontSize:20,fontWeight:900,margin:'0 0 6px'}}>{lang==='en'?'Track your registration':'پیگیری ثبت‌نام'}</h1><p style={{color:lightLabel,fontSize:12.5,lineHeight:1.9,margin:'0 0 20px'}}>{lang==='en'?'Enter your tracking code and the phone number used at registration.':'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.'}</p>
-  <div className="zkgl-field" dir="ltr">
-   <span className="zkgl-prefix" style={{color:accLight}}>{TRACKING_PREFIX}</span>
-   <input className="zkgl-input zkgl-has-prefix" id="zkgl-track-num" dir="ltr" inputMode="text" placeholder=" " value={num} onChange={e=>onNumChange(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}} maxLength={20} style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',letterSpacing:'3px'}}/>
-   <label className="zkgl-label" htmlFor="zkgl-track-num" style={{insetInlineStart:34}}>{lang==='en'?'Tracking code':'کد پیگیری'}</label>
-  </div>
-  <div className="zkgl-field" dir="ltr">
-   <input className="zkgl-input" id="zkgl-track-phone" dir="ltr" inputMode="tel" placeholder=" " value={phone} onChange={e=>setPhone(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')search()}}/>
-   <label className="zkgl-label" htmlFor="zkgl-track-phone">{lang==='en'?'Phone number':'شماره تماس'}</label>
-  </div>
-  {/* اصلاح ۳ (مرحله ۵): پیام خطا دیگر شماره خام واردشده کاربر (تأییدنشده) را نمایش نمی‌دهد */}
-  {err&&<div style={{marginTop:12,padding:'10px 12px',borderRadius:12,background:'rgba(248,113,113,.18)',border:'1px solid rgba(248,113,113,.5)',color:darkGlass?'#FECACA':'#B91C1C',fontSize:12.5,lineHeight:1.7}}>{err}</div>}
-  <button onClick={search} disabled={loading} style={{width:'100%',minHeight:52,padding:'14px',borderRadius:14,border:0,background:T.acc,color:darkGlass?'#04111B':'#fff',fontWeight:800,cursor:'pointer',fontFamily:'inherit',fontSize:15,opacity:loading?.6:1,boxShadow:'0 12px 28px rgba(0,0,0,.28)'}}>{loading?'...':(lang==='en'?'Track':'پیگیری')}</button>
-  <button onClick={enterGuest} style={{width:'100%',marginTop:10,minHeight:46,padding:'12px',borderRadius:14,background:darkGlass?hexTint(acc,.2):T.soft,border:`1.5px solid ${glassFormBorder}`,color:darkGlass?'#fff':T.acc,cursor:'pointer',fontFamily:'inherit',fontSize:13.5,fontWeight:700}}>{lang==='en'?'Guest login':'ورود مهمان'}</button>
-  </div></div>
-  {result&&<div style={{animation:'fadeSlide .65s ease both',marginTop:16}}>
-   {/* اصلاح: شمارهٔ ثبت‌نام اکنون به‌محض کامل شدن کد پیگیری (قبل از جستجو) نمایش داده می‌شود؛ نمایش تکراری بعد از جستجو حذف شد. */}
-   {/* کارت‌های شیشه‌ای هم‌خانواده با تم */}
-   {!isGuest && <div style={{display:'grid',gap:9,fontSize:12,lineHeight:1.9,marginBottom:12}}>{[[lang==='en'?'Tracking code':'کد پیگیری',result.trackingCode],[lang==='en'?'Status':'وضعیت سفارش',result.status],[lang==='en'?'Registration date':'تاریخ ثبت',result.date],...(result.course?[[lang==='en'?'Course':'دوره ثبت‌شده',lang==='en'?(result.course.titleEn||result.course.title):result.course.title]]:[])].map(([k,v]:any)=><div key={k} style={{...glassCard,padding:'10px 13px'}}><span style={{color:lightLabel}}>{k}: </span><b style={{whiteSpace:'pre-wrap',color:lightText}}>{v||'—'}</b></div>)}</div>}
+  return (
+    <div className="zp-root" dir={lang === 'fa' ? 'rtl' : 'ltr'} style={{ ...rootVars, ['--zkgl-acc' as any]: acc }} aria-label="track-page">
+      <Helmet><title>{lang === 'en' ? `Track your course | ${brand}` : `پیگیری دوره | ${brand}`}</title><meta name="description" content={lang === 'en' ? 'Track your course registration with your tracking code and phone number.' : `وارد کردن کد پیگیری و مشاهدهٔ وضعیت دورهٔ ${brand}`} /><meta name="robots" content="noindex, follow" /></Helmet>
+      <style>{css}</style>
+      <div className="zp-bg"><div className="zp-fam" /><svg viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <circle cx="8%" cy="12%" r="62" fill={mem[0] || '#F1E4FC'} opacity=".6" />
+        <circle cx="94%" cy="30%" r="40" fill={mem[1] || '#DCEFFC'} opacity=".5" />
+        <path d="M -5 100 Q 30 78 65 100 T 135 100" stroke={mem[1] || '#DCEFFC'} strokeWidth="3" fill="none" opacity=".5" />
+        <circle cx="18%" cy="80%" r="8" fill={mem[2] || '#E2F6EC'} opacity=".6" />
+        <path d="M 40 -5 Q 48 30 40 60" stroke={mem[0] || '#F1E4FC'} strokeWidth="3" fill="none" opacity=".5" />
+      </svg></div>
+      <PortalHeader brand={brand} lang={lang} setLang={setLang} T={T} darkGlass={darkGlass}
+        onHome={() => setView('home')} onCourses={() => setView('courses')} onSupport={() => setView('contact')}
+        onBack={() => setView('home')} backLabel={lang === 'en' ? 'Back' : 'بازگشت'} />
 
-   {/* Stage 6: Progress bar + timeline (UI harmonization only) */}
-   {!isGuest && result.status && (
-     <div style={{...glassCard,marginBottom:12,padding:'10px 13px'}}>
-       <div style={{fontSize:11,color:lightLabel,marginBottom:6,fontWeight:700}}>{lang==='en'?'Progress' : 'پیشرفت'}</div>
-       <div style={{height:6,background:glassLine,borderRadius:999,overflow:'hidden'}}>
-         <div style={{height:'100%', width: result.status.includes('پرداخت') || result.status.includes('done') ? '100%' : result.status.includes('جدید') ? '25%' : '65%', background:accLight, transition:'width .4s'}} />
-       </div>
-       <div style={{fontSize:10,color:lightLabel,marginTop:4}}>{result.status}</div>
-     </div>
-   )}
+      <div className="zp-content">
+        <div className="zp-card" style={{ maxWidth: 400 }}>
+          <div style={{ textAlign: 'center' }}><span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3" /><circle cx="12" cy="12" r="9" /></svg>{lang === 'en' ? 'TRACK COURSE' : 'پیگیری دوره'}</span></div>
+          <h1 className="zp-h1">{lang === 'en' ? 'Track your course' : 'پیگیری ثبتنام'}</h1>
+          <p className="zp-sub">{lang === 'en' ? 'Enter your tracking code and the phone number used at registration.' : <>کد پیگیری و شمارهٔ تماس هنگام ثبت را وارد کنید تا <b>وضعیت دوره</b> و <b>گام بعدی</b> را ببینید.</>}</p>
+          <div className="zp-field">
+            <span className="zp-lbl">{lang === 'en' ? 'Tracking code' : 'کد پیگیری'}</span>
+            <div className="zp-box"><span className="zp-fic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="6" /><path d="M9 9h6v6H9z" /></svg></span><input dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
+          </div>
+          <div className="zp-field">
+            <span className="zp-lbl">{lang === 'en' ? 'Phone number' : 'شماره تماس'}</span>
+            <div className="zp-box"><span className="zp-fic"><PhoneIcon size={19} /></span><input dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
+          </div>
+          {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
+          <button className="zp-btn" onClick={search} disabled={loading}>{loading ? '…' : (lang === 'en' ? 'Track course' : 'پیگیری دوره')}</button>
+          <button className="zp-ghost" onClick={enterGuest}><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" /></svg>{lang === 'en' ? 'Guest access (no code)' : 'ورود مهمان (بدون کد)'}</button>
+        </div>
 
-   {/* Stage 6 harmonized: Next actions card */}
-   {!isGuest && <div style={{...glassCard,marginBottom:8,padding:'11px 13px'}}>
-     <div style={{fontSize:11,fontWeight:700,color:glassStrong,marginBottom:6}}>{lang==='en' ? 'Next steps' : 'اقدامات بعدی'}</div>
-     <div style={{fontSize:12,color:lightText,lineHeight:1.5}}>
-       {lang==='en' ? 'Check your email or wait for specialist contact within 24-48h.' : 'ایمیل خود را چک کنید یا منتظر تماس کارشناس در ۲۴-۴۸ ساعت باشید.'}
-     </div>
-   </div>}
-   <div style={{display:'grid',gridTemplateColumns:`repeat(${rtabs.length},1fr)`,gap:6,marginBottom:10}}>{rtabs.map(([id,label])=><button key={id} onClick={()=>setRtab(id)} style={{padding:'9px 6px',borderRadius:12,border:`1px solid ${rtab===id?hexTint(acc,.6):glassLine}`,background:rtab===id?(darkGlass?hexTint(acc,.32):T.soft):glassSoft,color:rtab===id?(darkGlass?'#fff':T.acc):lightLabel,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,transition:'all .3s ease'}}>{label}</button>)}</div>
-   <div style={{...glassCard,padding:12,fontSize:12.5,lineHeight:2,whiteSpace:'pre-wrap',minHeight:64,animation:'fade .65s ease both',color:lightText}}>
-    {rtab==='edit' && !isGuest && (result.lastEdit?`${lang==='en'?'Last edit:':'آخرین ویرایش:'} ${result.lastEdit}`:(lang==='en'?'No edits have been recorded for this form.':'تاکنون ویرایشی برای این فرم ثبت نشده است.'))}
-    {rtab==='meal'&&(isGuest ? getGuestMeal() : (result.mealPlan||(lang==='en'?'The meal plan has not been added by the specialist yet.':'برنامه غذایی هنوز توسط کارشناس ثبت نشده است.')))}
-    {rtab==='usage'&&(()=>{if(isGuest){return getGuestUsage()} const products=(cfg.products?.list||[]) as any[];const pu=result.productUsage||{};const active=products.filter((pr:any)=>pu[pr.id]?.enabled);if(!active.length&&!result.usage)return lang==='en'?'Usage instructions have not been added by the specialist yet.':'طریقه مصرف هنوز توسط کارشناس ثبت نشده است.';return <div style={{display:'grid',gap:9}}>{active.map((pr:any)=>{const u=pu[pr.id]||{};const rows:[string,string][]=[[lang==='en'?'Dosage':'مقدار مصرف',u.dosage],[lang==='en'?'When':'زمان مصرف',u.time],[lang==='en'?'Hour':'ساعت مصرف',u.hour],[lang==='en'?'Take with':'با چی بخوره',u.withWhat]].filter(([,v]:any)=>v) as [string,string][];const ProdIcon=productVectorIcon(pr.icon); return <div key={pr.id} style={{background:glassSoft,border:`1px solid ${glassLine}`,borderRadius:11,padding:'9px 11px'}}><div style={{display:'flex',alignItems:'center',gap:7,marginBottom:rows.length||u.note||pr.description?5:0}}><span style={{fontSize:18,display:'flex',alignItems:'center'}}>{ProdIcon?<ProdIcon size={18} color={accLight}/>:(pr.icon||'')}</span><b style={{fontSize:13,color:glassStrong}}>{pr.name}</b></div>{pr.description&&<div style={{fontSize:11,color:lightLabel,lineHeight:1.8,marginBottom:rows.length?5:0}}>{pr.description}</div>}{rows.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:5}}>{rows.map(([k,v])=><div key={k} style={{fontSize:11,lineHeight:1.8}}><span style={{color:lightLabel}}>{k}: </span><b style={{color:lightText}}>{v}</b></div>)}</div>}{u.note&&<div style={{fontSize:11,color:lightText,lineHeight:1.8,marginTop:5,whiteSpace:'pre-wrap',display:'flex',gap:5,alignItems:'flex-start'}}><span style={{display:'flex',marginTop:3}}><ChatIcon size={12} color={accLight} /></span><span>{u.note}</span></div>}</div>})}{result.usage&&<div style={{fontSize:12,lineHeight:2,whiteSpace:'pre-wrap',borderTop:active.length?`1px dashed ${glassLine}`:'none',paddingTop:active.length?8:0}}>{result.usage}</div>}</div>})()}
-    {/* اصلاح ۱۲: تب اصلاحی — با تمام فیلدهای درخواستی، قابل ویرایش توسط کاربر */}
-    {rtab==='corrective'&&!isGuest&&<div style={{display:'grid',gap:9}}>
-     {correctiveFields.map(([key,label])=><div key={key}><label style={{fontSize:12,color:lightLabel,marginBottom:4,fontWeight:700}}>{label}</label><input style={{...S.inp,background:T.inp}} value={correctiveDraft[key]||''} onChange={e=>setCorrectiveDraft((d:any)=>({...d,[key]:e.target.value}))}/></div>)}
-     <button style={{...S.btn,marginTop:6}} disabled={correctiveSaving} onClick={saveCorrective}>{correctiveSaving?(lang==='en'?'Saving...':'در حال ذخیره...'):(lang==='en'?'Save corrective info':'ذخیره اطلاعات اصلاحی')}</button>
-     {correctiveMsg&&<div style={{fontSize:12,color:correctiveMsg.includes('نشد')||correctiveMsg.toLowerCase().includes('could not')?T.err:T.ok,textAlign:'center'}}>{correctiveMsg}</div>}
-    </div>}
-   </div>
-   {/* اصلاح ۶: لینک دانلود فایل PDF طریقه مصرف/برنامه غذایی — فقط برای همان کاربر (نتیجه استعلام‌شده) نمایش داده می‌شود */}
-   {!isGuest && (result.usagePdfUrl||result.mealPdfUrl)&&<div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
-    {result.usagePdfUrl&&<a href={result.usagePdfUrl} target="_blank" rel="noreferrer" onClick={(e:any)=>{const u=result.usagePdfUrl;try{fetch(u,{method:"HEAD"}).then((rr)=>{if(rr.status>=400){e.preventDefault();triggerErrorAlert("pdf")}}).catch(()=>{})}catch{}}} style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:darkGlass?hexTint(acc,.2):T.soft,color:darkGlass?'#fff':T.acc,fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download usage PDF':'دانلود PDF طریقه مصرف'}</a>}
-    {result.mealPdfUrl&&<a href={result.mealPdfUrl} target="_blank" rel="noreferrer" onClick={(e:any)=>{const u=result.mealPdfUrl;try{fetch(u,{method:"HEAD"}).then((rr)=>{if(rr.status>=400){e.preventDefault();triggerErrorAlert("pdf")}}).catch(()=>{})}catch{}}} style={{textDecoration:'none',flex:'1 1 160px',padding:'9px 11px',borderRadius:10,border:`1px solid ${hexTint(acc,.6)}`,background:darkGlass?hexTint(acc,.2):T.soft,color:darkGlass?'#fff':T.acc,fontSize:12,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}> {lang==='en'?'Download meal plan PDF':'دانلود PDF برنامه غذایی'}</a>}
-   </div>}
-   {!isGuest && result.userNotes&&<div style={{...glassCard,padding:'9px 11px',fontSize:12,lineHeight:2,whiteSpace:'pre-wrap',marginTop:10,color:lightText}}><b style={{fontSize:11.5,color:glassStrong,marginBottom:3,display:'flex',alignItems:'center',gap:6}}><PinIcon size={14} color={accLight} /> {lang==='en'?'Notes from the specialist':'نکات کارشناس برای شما'}</b>{result.userNotes}</div>}
-   {!isGuest && result.corrective && <div style={{...glassCard,padding:'9px 11px',fontSize:12,lineHeight:1.9,marginTop:10,color:lightText}}><b style={{color:glassStrong,marginBottom:4,display:'block'}}>{lang==='en'?'Corrective info':'اطلاعات اصلاحی'}</b><pre style={{whiteSpace:'pre-wrap',margin:0,fontFamily:'inherit',fontSize:11}}>{typeof result.corrective==='string'?result.corrective:JSON.stringify(result.corrective,null,2)}</pre></div>}
-  </div>}
-  {/* اصلاح ۴-۴ (مرحله ۴): افزودن ContactPanel به این صفحه (طبق تنظیمات نمایش) */}
-  {showContactOn('track')&&<ContactPanel cfg={cfg} T={T} lang={lang} glass={darkGlass} />}
-  <button style={{width:'100%',marginTop:14,minHeight:46,borderRadius:14,background:darkGlass?'rgba(255,255,255,.1)':T.card,border:`1px solid ${darkGlass?'rgba(255,255,255,.28)':T.brd}`,color:glassStrong,cursor:'pointer',fontFamily:'inherit',fontSize:13.5,fontWeight:700,backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)'}} onClick={()=>setView('home')}>{publicText('backBtn','بازگشت')}</button></div></div>
+        {result && (<div style={{ animation: 'fadeSlide .65s ease both', width: '100%', marginTop: 16, display: 'grid', gap: 13 }}>
+          {!isGuest && (
+            <div className="zp-rc">
+              <div className="zp-k"><span className="zp-ki"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>{lang === 'en' ? 'Course status' : 'وضعیت دوره'}</div>
+              <div style={{ display: 'grid', gap: 7, fontSize: 12.5, lineHeight: 1.9 }}>
+                {infoRows.map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}><span style={{ color: 'var(--zp-sub)', fontWeight: 700, flexShrink: 0 }}>{k}:</span><b style={{ color: 'var(--zp-ink)', whiteSpace: 'pre-wrap' }}>{v || '—'}</b></div>
+                ))}
+              </div>
+              <div className="zp-meter" style={{ marginTop: 14 }}><i style={{ width: progressWidth }} /><div className="zp-mcap"><span>{lang === 'en' ? 'Progress' : 'پیشرفت مسیر'}</span><b>{String(result?.status || '').includes('پرداخت') || String(result?.status || '').includes('done') ? '۱۰۰٪' : String(result?.status || '').includes('جدید') ? '۲۵٪' : '۶۵٪'}</b></div></div>
+              <div className="zp-steps"><span className="ln"><i style={{ width: '50%' }} /></span>
+                <div className="s done"><span className="d"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10" /></svg></span><b>{lang === 'en' ? 'Registered' : 'ثبت اطلاعات'}</b></div>
+                <div className="s cur"><span className="d">۲</span><b>{lang === 'en' ? 'Payment' : 'تکمیل پرداخت'}</b></div>
+                <div className="s"><span className="d">۳</span><b>{lang === 'en' ? 'Program' : 'دریافت برنامه'}</b></div>
+              </div>
+            </div>
+          )}
+          {!isGuest && result.status && (
+            <div className="zp-rc">
+              <div className="zp-k"><span className="zp-ki"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span>{lang === 'en' ? 'Next steps' : 'اقدامات بعدی'}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--zp-ink)', lineHeight: 2 }}>{lang === 'en' ? 'Check your email or wait for specialist contact within 24-48h.' : 'ایمیل خود را چک کنید یا منتظر تماس کارشناس در ۲۴-۴۸ ساعت باشید.'}</div>
+            </div>
+          )}
+          <div className="zp-tabs" style={{ gridTemplateColumns: `repeat(${rtabs.length},1fr)` }}>{rtabs.map(([id, label]) => (
+            <button key={id} className={`zp-tab ${rtab === id ? 'on' : ''}`} onClick={() => setRtab(id)} style={{ ['--zp-tbd' as any]: 'transparent' }}>{label}</button>
+          ))}</div>
+          <div className="zp-rc" style={{ padding: '14px 16px', fontSize: 12.5, lineHeight: 2, minHeight: 64, whiteSpace: 'pre-wrap', color: 'var(--zp-ink)' }}>
+            {rtab === 'edit' && !isGuest && (result.lastEdit ? `${lang === 'en' ? 'Last edit:' : 'آخرین ویرایش:'} ${result.lastEdit}` : (lang === 'en' ? 'No edits have been recorded for this form.' : 'تاکنون ویرایشی برای این فرم ثبت نشده است.'))}
+            {rtab === 'meal' && (isGuest ? getGuestMeal() : (result.mealPlan || (lang === 'en' ? 'The meal plan has not been added by the specialist yet.' : 'برنامه غذایی هنوز توسط کارشناس ثبت نشده است.')))}
+            {rtab === 'usage' && (() => {
+              if (isGuest) return getGuestUsage();
+              const products = (cfg.products?.list || []) as any[];
+              const pu = result.productUsage || {};
+              const active = products.filter((pr: any) => pu[pr.id]?.enabled);
+              if (!active.length && !result.usage) return lang === 'en' ? 'Usage instructions have not been added by the specialist yet.' : 'طریقه مصرف هنوز توسط کارشناس ثبت نشده است.';
+              return <div style={{ display: 'grid', gap: 9 }}>{active.map((pr: any) => {
+                const u = pu[pr.id] || {}; const rows: [string, string][] = [[lang === 'en' ? 'Dosage' : 'مقدار مصرف', u.dosage], [lang === 'en' ? 'When' : 'زمان مصرف', u.time], [lang === 'en' ? 'Hour' : 'ساعت مصرف', u.hour], [lang === 'en' ? 'Take with' : 'با چی بخوره', u.withWhat]].filter(([, v]: any) => v) as [string, string][];
+                const ProdIcon = productVectorIcon(pr.icon);
+                return <div key={pr.id} style={{ background: 'var(--zp-softg)', border: '1px solid var(--zp-fsh1)', borderRadius: 11, padding: '9px 11px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: rows.length || u.note || pr.description ? 5 : 0 }}><span style={{ fontSize: 18, display: 'flex', alignItems: 'center' }}>{ProdIcon ? <ProdIcon size={18} color={acc} /> : (pr.icon || '')}</span><b style={{ fontSize: 13, color: 'var(--zp-ink)' }}>{pr.name}</b></div>
+                  {pr.description && <div style={{ fontSize: 11, color: 'var(--zp-sub)', lineHeight: 1.8, marginBottom: rows.length ? 5 : 0 }}>{pr.description}</div>}
+                  {rows.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 5 }}>{rows.map(([k, v]) => <div key={k} style={{ fontSize: 11, lineHeight: 1.8 }}><span style={{ color: 'var(--zp-sub)' }}>{k}: </span><b style={{ color: 'var(--zp-ink)' }}>{v}</b></div>)}</div>}
+                  {u.note && <div style={{ fontSize: 11, color: 'var(--zp-ink)', lineHeight: 1.8, marginTop: 5, whiteSpace: 'pre-wrap', display: 'flex', gap: 5, alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: 3 }}><ChatIcon size={12} color={acc} /></span><span>{u.note}</span></div>}
+                </div>;
+              })}{result.usage && <div style={{ fontSize: 12, lineHeight: 2, whiteSpace: 'pre-wrap', borderTop: active.length ? `1px dashed var(--zp-fsh1)` : 'none', paddingTop: active.length ? 8 : 0 }}>{result.usage}</div>}</div>;
+            })()}
+            {rtab === 'corrective' && !isGuest && <div style={{ display: 'grid', gap: 9 }}>
+              {correctiveFields.map(([key, label]) => (
+                <div key={key}><label style={{ fontSize: 12, color: 'var(--zp-sub)', marginBottom: 4, fontWeight: 700, display: 'block' }}>{label}</label><input style={{ ...S.inp, background: 'var(--zp-fbg)', boxShadow: 'inset 3px 3px 7px var(--zp-fsh1),inset -3px -3px 7px var(--zp-fsh2)', border: 0, borderRadius: 12, color: 'var(--zp-ink)' }} value={correctiveDraft[key] || ''} onChange={(e) => setCorrectiveDraft((d: any) => ({ ...d, [key]: e.target.value }))} /></div>
+              ))}
+              <button className="zp-btn" style={{ minHeight: 46, fontSize: 13.5 }} disabled={correctiveSaving} onClick={saveCorrective}>{correctiveSaving ? (lang === 'en' ? 'Saving...' : 'در حال ذخیره...') : (lang === 'en' ? 'Save corrective info' : 'ذخیره اطلاعات اصلاحی')}</button>
+              {correctiveMsg && <div className="zp-ok" style={{ color: correctiveMsg.includes('نشد') || correctiveMsg.toLowerCase().includes('could not') ? 'var(--zp-errfg)' : 'var(--zp-okc)' }}>{correctiveMsg}</div>}
+            </div>}
+          </div>
+          {!isGuest && (result.usagePdfUrl || result.mealPdfUrl) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {result.usagePdfUrl && <a href={result.usagePdfUrl} target="_blank" rel="noreferrer" onClick={(e: any) => { const u = result.usagePdfUrl; try { fetch(u, { method: "HEAD" }).then((rr) => { if (rr.status >= 400) { e.preventDefault(); triggerErrorAlert("pdf"); } }).catch(() => { }); } catch { } }} style={{ textDecoration: 'none', flex: '1 1 160px', padding: '10px 11px', borderRadius: 12, border: '1px solid color-mix(in srgb,var(--zp-acc) 40%,transparent)', background: 'var(--zp-soft)', color: 'var(--zp-acc)', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{lang === 'en' ? 'Download usage PDF' : 'دانلود PDF طریقه مصرف'}</a>}
+            {result.mealPdfUrl && <a href={result.mealPdfUrl} target="_blank" rel="noreferrer" onClick={(e: any) => { const u = result.mealPdfUrl; try { fetch(u, { method: "HEAD" }).then((rr) => { if (rr.status >= 400) { e.preventDefault(); triggerErrorAlert("pdf"); } }).catch(() => { }); } catch { } }} style={{ textDecoration: 'none', flex: '1 1 160px', padding: '10px 11px', borderRadius: 12, border: '1px solid color-mix(in srgb,var(--zp-acc) 40%,transparent)', background: 'var(--zp-soft)', color: 'var(--zp-acc)', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{lang === 'en' ? 'Download meal plan PDF' : 'دانلود PDF برنامه غذایی'}</a>}
+          </div>}
+          {!isGuest && result.userNotes && <div className="zp-rc" style={{ fontSize: 12, lineHeight: 2, whiteSpace: 'pre-wrap', color: 'var(--zp-ink)' }}><b style={{ fontSize: 11.5, color: 'var(--zp-acc)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}><PinIcon size={14} color={acc} /> {lang === 'en' ? 'Notes from the specialist' : 'نکات کارشناس برای شما'}</b>{result.userNotes}</div>}
+          {!isGuest && result.corrective && <div className="zp-rc" style={{ fontSize: 12, lineHeight: 1.9, color: 'var(--zp-ink)' }}><b style={{ color: 'var(--zp-acc)', marginBottom: 4, display: 'block' }}>{lang === 'en' ? 'Corrective info' : 'اطلاعات اصلاحی'}</b><pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit', fontSize: 11 }}>{typeof result.corrective === 'string' ? result.corrective : JSON.stringify(result.corrective, null, 2)}</pre></div>}
+        </div>)}
+
+        {showContactOn('track') && <div style={{ width: '100%', marginTop: 16 }}><ContactPanel cfg={cfg} T={T} lang={lang} glass={darkGlass} /></div>}
+        <div className="zp-secure" style={{ marginTop: 14 }}><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{lang === 'en' ? 'Your information is only visible with your code and phone number.' : 'اطلاعات شما فقط با کد و شمارهٔ شما قابل مشاهده است'}</div>
+      </div>
+    </div>
+  );
 }

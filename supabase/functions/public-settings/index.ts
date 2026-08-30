@@ -113,6 +113,9 @@ const PUBLIC_SETTINGS_WHITELIST = [
   "courseInstructor",
   "consultants",
   "referral",
+  // Public entry mode (track vs user portal) + safe portal prefs — smsApiKey stripped below
+  "entryMode",
+  "userPortal",
 ];
 
 // Fields within 'banks' array items that are public (everything else stripped).
@@ -311,6 +314,17 @@ function sanitizeSettings(settings: Record<string, any>): Record<string, any> {
       if (key === "courseInstructor") val = Object.fromEntries(["show", "name", "nameEn", "desc", "descEn", "photoUrl"].filter((field) => field in (val || {})).map((field) => [field, val[field]]));
       if (key === "consultants") val = sanitizeConsultants(val);
       if (key === "referral") val = sanitizeReferral(val);
+      if (key === "userPortal" && val && typeof val === "object") {
+        // هرگز کلید یا اطلاعات حساس پنل پیامکی به عموم برنگردد
+        val = {
+          otpMode: ["off", "test", "live"].includes(val.otpMode) ? val.otpMode : "test",
+          captchaEnabled: val.captchaEnabled === true,
+          smsProvider: ["kavenegar", "smsir", "melipayamak"].includes(val.smsProvider) ? val.smsProvider : "kavenegar",
+          smsSender: String(val.smsSender || ""),
+          minNameWords: Math.max(2, Math.min(6, Number(val.minNameWords) || 3)),
+        };
+      }
+      if (key === "entryMode" && !["track", "user"].includes(val)) val = "track";
       if (key === "mediaCountryMode" && !["auto", "iran", "intl"].includes(val)) val = "auto";
       out[key] = val;
     }

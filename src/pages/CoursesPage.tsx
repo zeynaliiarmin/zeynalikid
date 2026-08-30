@@ -1,5 +1,6 @@
 import { PUBLIC_SITE_URL } from '../config/project';
 import { useAppContext } from '../app/AppContext';
+import { getUserSession, setPortalNext } from '../utils/userPortal';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
@@ -322,6 +323,7 @@ export default function CoursesPage(){
               } else if (chooseDest) {
                 chooseDest('iran', selectedCourse);
               } else {
+                if ((cfg as any)?.entryMode === 'user' && !getUserSession()) { setPortalNext('/courses'); app.setView('track'); return; }
                 app.setView('child-info');
               }
             }}
