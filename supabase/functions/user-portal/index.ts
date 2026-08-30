@@ -176,8 +176,8 @@ serve(async (req) => {
 
   // ─────────────── اکشن: start (ثبتنام مرحله ۱ — ارسال کد) ───────────────
   if (action === "start") {
-    const rl = await centralRateLimit(req, "user-portal-start", { maxRequests: 10, windowMs: 10 * 60_000, blockMs: 30 * 60_000 });
-    if (!rl.ok) return jsonResponse({ error: "تعداد درخواستها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
+    const rl = await centralRateLimit(req, "user-portal-start", { maxRequests: 100, windowMs: 10 * 60_000, blockMs: 5 * 60_000 });
+    if (!rl.ok) return jsonResponse({ error: "حجم ثبت‌نام بالاست؛ لطفاً ۵ دقیقه دیگر دوباره تلاش کنید." }, 429, origin);
 
     if (portalCfg.captchaEnabled) {
       const cap = await verifyCaptcha(body?.captchaToken);
@@ -227,8 +227,8 @@ serve(async (req) => {
 
   // ─────────────── اکشن: confirm (تأیید کد پیامکی + ساخت کد پیگیری) ───────────────
   if (action === "confirm") {
-    const rl = await centralRateLimit(req, "user-portal-confirm", { maxRequests: 20, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
-    if (!rl.ok) return jsonResponse({ error: "تعداد تلاشها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
+    const rl = await centralRateLimit(req, "user-portal-confirm", { maxRequests: 100, windowMs: 10 * 60_000, blockMs: 5 * 60_000 });
+    if (!rl.ok) return jsonResponse({ error: "چند بار تلاش کرده‌اید؛ لطفاً ۵ دقیقه دیگر دوباره امتحان کنید." }, 429, origin);
 
     const supabase = getSupabaseAdmin();
     const pending = await getUserRecord(supabase, phone);
@@ -259,7 +259,7 @@ serve(async (req) => {
 
   // ─────────────── اکشن: login ───────────────
   if (action === "login" || action === "me") {
-    const rl = await centralRateLimit(req, "user-portal-login", { maxRequests: 30, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
+    const rl = await centralRateLimit(req, "user-portal-login", { maxRequests: 100, windowMs: 10 * 60_000, blockMs: 5 * 60_000 });
     if (!rl.ok) return jsonResponse({ error: "تعداد درخواستها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
 
     const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
@@ -289,7 +289,7 @@ serve(async (req) => {
 
   // ─────────────── اکشن: history (دورهها و مشاورههای کاربر) ───────────────
   if (action === "history") {
-    const rl = await centralRateLimit(req, "user-portal-history", { maxRequests: 40, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
+    const rl = await centralRateLimit(req, "user-portal-history", { maxRequests: 400, windowMs: 10 * 60_000, blockMs: 5 * 60_000 });
     if (!rl.ok) return jsonResponse({ error: "تعداد درخواستها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
 
     const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
