@@ -113,7 +113,7 @@ export function ExperiencePage(){
  const introText=lang==='en'?(cfg.experienceIntroTextEn||''):(cfg.experienceIntroText||'');
  const showIntro=cfg.pageContentOrder?.experience?.showIntro!==false&&!!introText;
  const contactFirst=cfg.pageContentOrder?.experience?.order==='contactFirst';
- const IntroBlock=showIntro?<div style={{marginTop:16,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.mut,lineHeight:1.9}}>{introText}</div>:null;
+ const IntroBlock=showIntro?<div style={{marginTop:16,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.txt,lineHeight:1.9}}>{introText}</div>:null;
  const ContactBlock=showContactOn('experience')?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
  const experienceItems=getMediaItemsForDestination(cfg,'experience');
  const experienceRotationSignature=JSON.stringify(experienceItems);
@@ -182,7 +182,7 @@ export function EducationPage(){
  const introText=en?(cfg.educationIntroTextEn||''):(cfg.educationIntroText||'');
  const showIntro=cfg.pageContentOrder?.education?.showIntro!==false&&!!introText;
  const contactFirst=cfg.pageContentOrder?.education?.order==='contactFirst';
- const IntroBlock=showIntro?<div style={{marginTop:22,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.mut,lineHeight:1.9}}>{introText}</div>:null;
+ const IntroBlock=showIntro?<div style={{marginTop:22,padding:'12px 16px',background:T.soft,border:`1px solid ${T.brd}`,borderRadius:14,fontSize:13,color:T.txt,lineHeight:1.9}}>{introText}</div>:null;
  const ContactBlock=showContactOn('education')?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
  const chips:[('all'|'article'|'video'|'audio'|'faq'),string,any][]=[
   ['all',en?'All':'همه',null],
