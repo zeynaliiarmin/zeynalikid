@@ -81,7 +81,9 @@ function HomeIcon(){
 export default function NotFoundPage(){
  const {T}=useAppContext();
  const themeId=String(T.id||'wellness');
- const dark=themeId==='dark'||themeId==='admin-dark';
+ // حالت تاریک عمومی از «پالت تاریک مشترک» می‌آید؛ شناسهٔ تم به شکل `<design>-dark` است، پس
+ // صرفاً بررسی `themeId==='dark'` باعث می‌شد صفحهٔ ۴۰۴ همیشه روشن بماند.
+ const dark=/(-|^)dark$/.test(themeId);
  const surface=String(T.pop||T.card||(dark?'#111827':'#ffffff'));
  const text=String(T.txt||(dark?'#f1f5f9':'#312E55'));
  const accent=String(T.acc||'#7A12D4');
