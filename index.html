@@ -101,7 +101,13 @@
           if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0F1722' : '#F8FBFA');
           return resolved;
         };
-        window.__zkApplyPublicMode = apply;
+        window.__zkApplyPublicMode = function (requested) {
+          // A choice the visitor already made on this device beats the baked server default; only the personal/light-dark pick and an explicit global mode are protected.
+          var stored = null;
+          try { stored = localStorage.getItem(globalKey); } catch (_) {}
+          if (stored === 'light' || stored === 'dark') return apply(stored, false);
+          return apply(requested);
+        };
         var cached = null;
         try { cached = localStorage.getItem(globalKey); } catch (_) {}
         apply(cached, false);
