@@ -53,21 +53,23 @@ const maskPhone = (phone: string): string => {
   return d.slice(0, 3) + "xxxx" + last3;
 };
 
-/** نام واقعی: حداقل minNameWords کلمه، فقط حروف فارسی/عربی، بدون رقم و لاتین */
-const validateFullName = (raw: string, minWords: number): { ok: boolean; error?: string } => {
-  const cleaned = String(raw ?? "").replace(/[‌\u200c]/g, " ").trim().replace(/\s+/g, " ");
-  const words = cleaned.split(" ").filter(Boolean);
-  if (words.length < minWords) {
-    return { ok: false, error: `نام و نام خانوادگی باید حداقل ${minWords} کلمه باشد.` };
+/** نام واقعی: minimum LETTER count, mirroring src/utils/userPortal.ts — fa: 3 letters (e.g. «علی»), en: 2 Latin letters. */
+const PERSIAN_TOKEN_RE = /^[\u0600-\u06FF\u0750-\u077F]+$/;
+const LATIN_NAME_RE = /^[A-Za-z][A-Za-z '.-]*$/;
+const validateFullName = (raw: string, minLetters?: number): { ok: boolean; error?: string } => {
+  const cleaned = String(raw ?? "").replace(/[\u200c\u0640]/g, " ").replace(/\s+/g, " ").trim();
+  if (!cleaned) return { ok: false, error: "نام را وارد کنید." };
+  const letters = cleaned.replace(/[\s'.,-]/g, "");
+  if (/[A-Za-z]/.test(cleaned)) {
+    if (!LATIN_NAME_RE.test(cleaned)) return { ok: false, error: "The name must contain English letters only." };
+    if (letters.length < 2) return { ok: false, error: "The name must be at least 2 letters." };
+    return { ok: true };
   }
-  for (const w of words) {
-    if (!/^[\u0600-\u06FF\u0750-\u077F]+$/.test(w)) {
-      return { ok: false, error: "نام فقط باید شامل حروف فارسی باشد (بدون رقم و علامت)." };
-    }
-    if (w.length < 2) {
-      return { ok: false, error: "هر بخش از نام باید حداقل ۲ حرف باشد." };
-    }
+  for (const part of cleaned.split(" ").filter(Boolean)) {
+    if (!PERSIAN_TOKEN_RE.test(part)) return { ok: false, error: "نام فقط باید شامل حروف فارسی باشد (بدون رقم و علامت)." };
   }
+  const min = Math.max(2, Math.min(8, Number(minLetters) || 3));
+  if (letters.length < min) return { ok: false, error: `نام باید حداقل ${min} حرف باشد.` };
   return { ok: true };
 };
 
