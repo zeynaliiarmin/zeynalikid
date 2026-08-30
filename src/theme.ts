@@ -1,108 +1,14 @@
-/**
- * Design Tokens — Complete Design System for Zeynalikid
- *
- * Classic    — تم‌های ترکیبی قدیمی (نئومورفیسم + مینیمال + ممفیس)
- * Wellness   — Public pages (Home, Courses, Experience, Licenses, About, Contact)
- * KidLearn   — Education & Training pages
- *
- * Font: Vazirmatn (400, 500, 700) — replaces Google Sans / Fredoka / Nunito / system-sans
- * All designs share the brand purple (#7A12D4) for unified brand identity.
- */
-
-// ═══════════════════════════════════════════════════════════
-// CLASSIC THEMES (تم‌های ترکیبی قدیمی)
-// ═══════════════════════════════════════════════════════════
-
-export const classicThemes = {
-  light: {
-    bg: '#eaf1f7',
-    card: '#fff',
-    brd: 'rgba(35,100,165,.16)',
-    acc: '#2564a8',
-    soft: 'rgba(35,100,165,.09)',
-    grad: 'linear-gradient(135deg,#1a4f8a,#2578c8)',
-    txt: '#162435',
-    mut: '#5a7282',
-    ttl: '#2564a8',
-    inp: '#f4f8fc',
-    sel: '#eaf1f7',
-    pop: '#fff',
-    err: '#dc2626',
-    ok: '#059669',
-    warn: '#ca8a04',
-    badge: '#f0f5fb',
-    hdr: 'rgba(234,241,247,.96)',
-    neuOut: '6px 6px 12px rgba(35,100,165,.14),-6px -6px 12px rgba(255,255,255,.75)',
-    neuIn: 'inset 3px 3px 7px rgba(35,100,165,.12),inset -3px -3px 7px rgba(255,255,255,.7)',
-    memphis: ['#bfdbfe','#93c5fd','#dbeafe'],
-  },
-  cream: {
-    bg: 'linear-gradient(155deg,#fdf6ee,#f4e4d0)',
-    card: '#fff',
-    brd: 'rgba(175,108,45,.18)',
-    acc: '#9c5820',
-    soft: 'rgba(156,88,32,.09)',
-    grad: 'linear-gradient(135deg,#7a4015,#c87028)',
-    txt: '#3a1e0a',
-    mut: '#8a5832',
-    ttl: '#9c5820',
-    inp: '#fdf8f0',
-    sel: '#fdf6ee',
-    pop: '#fffaf3',
-    err: '#dc2626',
-    ok: '#059669',
-    warn: '#ca8a04',
-    badge: '#f5eade',
-    hdr: 'rgba(253,246,238,.96)',
-    neuOut: '6px 6px 12px rgba(156,88,32,.14),-6px -6px 12px rgba(255,255,255,.75)',
-    neuIn: 'inset 3px 3px 7px rgba(156,88,32,.12),inset -3px -3px 7px rgba(255,255,255,.7)',
-    memphis: ['#f4e4d0','#eecfa3','#fbe8cf'],
-  },
-  ocean: {
-    bg: 'linear-gradient(135deg,#0f2027,#1a3a4a,#0f2027)',
-    card: 'rgba(255,255,255,.045)',
-    brd: 'rgba(0,201,255,.18)',
-    acc: '#00c9ff',
-    soft: 'rgba(0,201,255,.12)',
-    grad: 'linear-gradient(135deg,#0077b6,#00c9ff)',
-    txt: '#e8f4f8',
-    mut: '#7ecfe8',
-    ttl: '#2ac9f5',
-    inp: 'rgba(255,255,255,.07)',
-    sel: '#102638',
-    pop: '#0f2535',
-    err: '#f87171',
-    ok: '#6ee7b7',
-    warn: '#facc15',
-    badge: 'rgba(255,255,255,.045)',
-    hdr: 'rgba(10,28,42,.94)',
-    neuOut: '6px 6px 14px rgba(0,0,0,.35),-6px -6px 14px rgba(255,255,255,.04)',
-    neuIn: 'inset 3px 3px 7px rgba(0,0,0,.3),inset -3px -3px 7px rgba(255,255,255,.03)',
-    memphis: ['#0e3a4a','#124a5e','#0a2c38'],
-  },
-  dark: {
-    bg: '#0d0d0d',
-    card: 'rgba(255,255,255,.055)',
-    brd: 'rgba(129,140,248,.22)',
-    acc: '#818cf8',
-    soft: 'rgba(99,102,241,.11)',
-    grad: 'linear-gradient(135deg,#4f46e5,#818cf8)',
-    txt: '#f1f5f9',
-    mut: '#94a3b8',
-    ttl: '#a5b4fc',
-    inp: 'rgba(255,255,255,.065)',
-    sel: '#111',
-    pop: '#111827',
-    err: '#f87171',
-    ok: '#34d399',
-    warn: '#facc15',
-    badge: 'rgba(255,255,255,.045)',
-    hdr: 'rgba(8,8,8,.96)',
-    neuOut: '6px 6px 14px rgba(0,0,0,.5),-6px -6px 14px rgba(255,255,255,.03)',
-    neuIn: 'inset 3px 3px 7px rgba(0,0,0,.45),inset -3px -3px 7px rgba(255,255,255,.02)',
-    memphis: ['#1e1b3a','#241f4a','#171430'],
-  },
-};
+// ============================================================================
+// Design Tokens — Complete Design System for Zeynalikid
+//
+// Wellness   — Public pages (Home, Courses, Experience, Licenses, About, Contact)
+// KidLearn   — Education & Training pages
+// Classic    — تم روشن (کلاسیک)
+// Blend      — تم ترکیبی
+//
+// Font: Vazirmatn (400, 500, 700) — replaces Google Sans / Fredoka / Nunito / system-sans
+// All designs share the brand purple (#7A12D4) for unified brand identity.
+// ============================================================================
 
 // ═══════════════════════════════════════════════════════════
 // WELLNESS TOKENS (از wellness-DESIGN.md)
@@ -221,15 +127,6 @@ export const kidlearnTokens = {
 // THEME OBJECT GENERATORS (compatible with existing TH structure)
 // ═══════════════════════════════════════════════════════════
 
-export function classicTheme(id: keyof typeof classicThemes) {
-  const t = classicThemes[id];
-  return {
-    id,
-    name: id === 'light' ? 'روشن' : id === 'cream' ? 'کرم' : id === 'ocean' ? 'اقیانوسی' : 'تاریک',
-    ...t,
-  };
-}
-
 export function wellnessTheme() {
   const t = wellnessTokens;
   return {
@@ -319,13 +216,6 @@ export function kidlearnTheme() {
 // EXPORT ALL THEME OBJECTS FOR DIRECT USE
 // ═══════════════════════════════════════════════════════════
 
-export const classic = {
-  light: classicTheme('light'),
-  cream: classicTheme('cream'),
-  ocean: classicTheme('ocean'),
-  dark: classicTheme('dark'),
-};
-
 export const wellness = wellnessTheme();
 export const kidlearn = kidlearnTheme();
 
@@ -344,12 +234,8 @@ export const BRAND_PRIMARY = '#0F766E';
 export const BRAND_ACCENT = '#0EA5E9';
 
 // Available designs
-export const AVAILABLE_DESIGNS = ['classic', 'wellness', 'kidlearn', 'blend'] as const;
+export const AVAILABLE_DESIGNS = ['wellness', 'kidlearn', 'blend', 'classic'] as const;
 export type DesignType = typeof AVAILABLE_DESIGNS[number];
-
-// Available classic themes
-export const AVAILABLE_CLASSIC_THEMES = ['light', 'cream', 'ocean', 'dark', 'motherly-trust', 'blend'] as const;
-export type ClassicThemeType = typeof AVAILABLE_CLASSIC_THEMES[number];
 
 // Stage 7 semantic Foundation tokens. Legacy theme shapes above remain for compatibility.
 export const semanticTokens = {
@@ -366,7 +252,3 @@ export const semanticTokens = {
   motion: { fast: 140, base: 200, slow: 320, easing: 'cubic-bezier(.2,0,0,1)' },
   zIndex: { header: 1000, drawer: 3000, modal: 9000 },
 };
-
-export const themeVariants = ['light', 'cream', 'ocean', 'dark', 'motherly-trust', 'blend'] as const;
-export type ThemeVariant = typeof themeVariants[number];
-export const AVAILABLE_CLASSIC_THEMES_V2 = themeVariants;

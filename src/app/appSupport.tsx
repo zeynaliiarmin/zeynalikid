@@ -149,9 +149,6 @@ const adminPanelDefaults:Any={
 
 export const TH:Any={
  light:{id:'light',name:'روشن',bg:'#eaf1f7',card:'#fff',brd:'rgba(35,100,165,.16)',acc:'#2564a8',soft:'rgba(35,100,165,.09)',grad:'linear-gradient(135deg,#1a4f8a,#2578c8)',txt:'#162435',mut:'#5a7282',ttl:'#2564a8',inp:'#f4f8fc',sel:'#eaf1f7',pop:'#fff',err:'#B91C1C',ok:'#047857',warn:'#854D0E',badge:'#f0f5fb',hdr:'rgba(234,241,247,.96)',neuOut:'6px 6px 12px rgba(35,100,165,.14),-6px -6px 12px rgba(255,255,255,.75)',neuIn:'inset 3px 3px 7px rgba(35,100,165,.12),inset -3px -3px 7px rgba(255,255,255,.7)',memphis:['#bfdbfe','#93c5fd','#dbeafe'],...classicDefaults},
- cream:{id:'cream',name:'کرم',bg:'linear-gradient(155deg,#fdf6ee,#f4e4d0)',card:'#fff',brd:'rgba(175,108,45,.18)',acc:'#9c5820',soft:'rgba(156,88,32,.09)',grad:'linear-gradient(135deg,#7A4015,#9A3412)',txt:'#3a1e0a',mut:'#8a5832',ttl:'#9c5820',inp:'#fdf8f0',sel:'#fdf6ee',pop:'#fffaf3',err:'#B91C1C',ok:'#047857',warn:'#854D0E',badge:'#f5eade',hdr:'rgba(253,246,238,.96)',neuOut:'6px 6px 12px rgba(156,88,32,.14),-6px -6px 12px rgba(255,255,255,.75)',neuIn:'inset 3px 3px 7px rgba(156,88,32,.12),inset -3px -3px 7px rgba(255,255,255,.7)',memphis:['#f4e4d0','#eecfa3','#fbe8cf'],...classicDefaults},
- ocean:{id:'ocean',name:'اقیانوسی',bg:'linear-gradient(135deg,#0f2027,#1a3a4a,#0f2027)',card:'rgba(255,255,255,.045)',brd:'rgba(0,201,255,.18)',acc:'#00c9ff',soft:'rgba(0,201,255,.12)',grad:'linear-gradient(135deg,#0077b6,#00c9ff)',txt:'#e8f4f8',mut:'#7ecfe8',ttl:'#2ac9f5',inp:'rgba(255,255,255,.07)',sel:'#102638',pop:'#0f2535',err:'#f87171',ok:'#6ee7b7',warn:'#facc15',badge:'rgba(255,255,255,.045)',hdr:'rgba(10,28,42,.94)',neuOut:'6px 6px 14px rgba(0,0,0,.35),-6px -6px 14px rgba(255,255,255,.04)',neuIn:'inset 3px 3px 7px rgba(0,0,0,.3),inset -3px -3px 7px rgba(255,255,255,.03)',memphis:['#0e3a4a','#124a5e','#0a2c38'],...classicDefaults},
- dark:{...classicDefaults,...PUBLIC_DARK_COLORS},
  wellness:{
   id: 'wellness', name: 'Wellness',
   bg: '#FFFFFF',
@@ -231,11 +228,35 @@ export const TH:Any={
   topbarHeight: 56,
   fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
  },
+ classic:{
+  id: 'classic', name: 'کلاسیک',
+  bg: '#eaf1f7',
+  card: '#fff',
+  brd: 'rgba(35,100,165,.16)',
+  acc: '#2564a8',
+  soft: 'rgba(35,100,165,.09)',
+  grad: 'linear-gradient(135deg,#1a4f8a,#2578c8)',
+  txt: '#162435',
+  mut: '#5a7282',
+  ttl: '#2564a8',
+  inp: '#f4f8fc',
+  sel: '#eaf1f7',
+  pop: '#fff',
+  err: '#B91C1C',
+  ok: '#047857',
+  warn: '#854D0E',
+  badge: '#f0f5fb',
+  hdr: 'rgba(234,241,247,.96)',
+  neuOut: '6px 6px 12px rgba(35,100,165,.14),-6px -6px 12px rgba(255,255,255,.75)',
+  neuIn: 'inset 3px 3px 7px rgba(35,100,165,.12),inset -3px -3px 7px rgba(255,255,255,.7)',
+  memphis: ['#bfdbfe','#93c5fd','#dbeafe'],
+  ...classicDefaults,
+ },
 
 };
 
-Object.assign(TH, {
- blend:{
+// Add blend after TH is fully defined
+TH.blend = {
   ...TH.light,
   id: 'blend', name: 'ترکیبی',
   bg: '#f7fafb',
@@ -259,7 +280,9 @@ Object.assign(TH, {
   neuIn: 'inset 2px 2px 5px rgba(15,38,60,.05), inset -2px -2px 5px rgba(255,255,255,.8)',
   memphis: ['#e7f2fc','#fff0e8','#eaf5f3'],
   ...classicDefaults,
- },
+};
+
+Object.assign(TH, {
  'admin-light':{
   ...adminPanelDefaults,
   id:'admin-light',name:'Admin Light',
@@ -273,6 +296,76 @@ Object.assign(TH, {
  'admin-dark':{
   ...adminPanelDefaults,...PUBLIC_DARK_COLORS,
   id:'admin-dark',name:'Admin Dark',
+ },
+ 'classic-dark':{
+  ...classicDefaults,...PUBLIC_DARK_COLORS,
+  id:'classic-dark',name:'Classic Dark',
+  neuOut:'0 4px 16px rgba(0,0,0,.32)',
+  neuIn:'inset 2px 2px 6px rgba(0,0,0,.34),inset -2px -2px 6px rgba(71,85,105,.18)',
+  shadowLight:'0 4px 15px rgba(0,0,0,.22)',shadowMedium:'0 8px 24px rgba(0,0,0,.30)',
+  shadowStrong:'0 18px 42px rgba(0,0,0,.42)',shadowFocus:'0 0 0 4px rgba(45,212,191,.28)',
+  shadowGlow:'0 0 12px rgba(45,212,191,.14)',shadowCardHover:'0 4px 16px rgba(56,189,248,.08)',
+  memphis:['rgba(45,212,191,.05)','rgba(56,189,248,.05)','rgba(255,255,255,.02)'],
+ },
+ 'wellness-dark':{
+  ...classicDefaults,...PUBLIC_DARK_COLORS,
+  id:'wellness-dark',name:'Wellness Dark',
+  acc: '#A78BFA',
+  grad: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)',
+  soft: 'rgba(167,139,250,.12)',
+  badge: 'rgba(167,139,250,.12)',
+  neuOut: '0 4px 15px 0 rgba(0,0,0,0.3)',
+  neuIn: 'inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(45,55,72,0.1)',
+  shadowLight: '0 4px 15px 0 rgba(0,0,0,0.3)',
+  shadowMedium: '0 5px 20px 0 rgba(0,0,0,0.4)',
+  shadowStrong: '0 15px 30px 0 rgba(0,0,0,0.5)',
+  memphis: ['rgba(167,139,250,.05)','rgba(196,181,253,.05)','rgba(190,242,100,.03)'],
+  btnRadius: 128,
+  cardRadius: 16,
+  inputRadius: 8,
+  badgeRadius: 128,
+  avatarRadius: '50%',
+  btnPadding: '14px 28px',
+  btnSmPadding: '10px 18px',
+  btnLgPadding: '18px 36px',
+  cardPadding: 24,
+  inputPadding: '14px 16px',
+  topbarHeight: 64,
+  fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
+ },
+ 'blend-dark':{
+  ...classicDefaults,...PUBLIC_DARK_COLORS,
+  id:'blend-dark',name:'Blend Dark',
+  acc: '#38BDF8',
+  soft: 'rgba(56,189,248,.12)',
+  grad: 'linear-gradient(135deg,#1769c2,#356b62)',
+  badge: 'rgba(56,189,248,.12)',
+  neuOut: '0 4px 15px rgba(15,38,60,.3)',
+  neuIn: 'inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(45,55,72,0.1)',
+  memphis: ['rgba(56,189,248,.05)','rgba(255,255,255,.02)','rgba(17,24,39,.02)'],
+ },
+ 'kidlearn-dark':{
+  ...classicDefaults,...PUBLIC_DARK_COLORS,
+  id:'kidlearn-dark',name:'KidLearn Dark',
+  btnRadius: 20,
+  cardRadius: 20,
+  inputRadius: 20,
+  badgeRadius: 9999,
+  avatarRadius: '50%',
+  btnPadding: '14px 28px',
+  btnSmPadding: '10px 18px',
+  btnLgPadding: '18px 36px',
+  cardPadding: 24,
+  inputPadding: '16px 16px',
+  topbarHeight: 56,
+  fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
+  neuOut: '6px 6px 0px #4B5563',
+  neuIn: 'inset 2px 2px 6px rgba(0,0,0,0.3), inset -2px -2px 6px rgba(71,85,105,0.1)',
+  shadowLight: '2px 2px 4px rgba(0,0,0,0.4)',
+  shadowMedium: '4px 4px 12px rgba(0,0,0,0.5)',
+  shadowStrong: '8px 8px 24px rgba(0,0,0,0.6)',
+  shadowPlayful: '6px 6px 0px #4B5563',
+  memphis: ['#4B5563', '#374151', '#1F2937'],
  },
  'motherly-trust':{
   ...TH.light,
@@ -320,7 +413,7 @@ const defTabs=[
  ]}
 ];
 const defaultSettings:Any={
- theme:'light',publicThemeMode:'auto',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,showLicensesPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
+ publicThemeMode:'auto',siteTitle:'زینالیکید',browserTitle:'زینالیکید',specialistName:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',showSpecialistPhoto:true,photoUrl:PROFILE_PHOTO,showProductsPage:true,showLicensesPage:true,adminLoginText:'ورود به پنل مدیریت',adminPhone:'',emergencyToken:'',
  // اصلاح ۱-۶ (مرحله ۴): عناوین کنار عکس پروفایل — دو زبانه، قابل ویرایش از پنل مدیریت
  specialistTitle:'کارشناس رشد و تغذیه کودک و نوجوان زینالیکید',specialistTitleEn:'Child and Adolescent Growth and Nutrition Specialist at Zeynalikid',heroSubtitle:'ضمن آرزوی اوقاتی خوش برای شما',heroSubtitleEn:'Wishing you a pleasant time',
  heroTitle:'ضمن آرزوی اوقاتی خوش برای شما',heroDesc:'این فرم برای بررسی شرایط فرزند شما و تعیین نوبت مشاوره خصوصی طراحی شده است.',noticeText:'این مشاوره فقط به والدین یا سرپرست قانونی فرزند ارائه می‌شود. لطفاً اطلاعات را با دقت تکمیل فرمایید.',phoneNote:'مشاوره فقط به‌صورت تلفنی',submitBtnText:'ثبت درخواست مشاوره',successMsg:'اطلاعات فرزند شما با موفقیت ثبت شد',successSubMsg:'طی ۲۴ الی ۴۸ ساعت آینده با شما تماس می‌گیریم',timeSlotLabel:'بازه زمانی مناسب برای تماس (اختیاری)',

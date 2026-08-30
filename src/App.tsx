@@ -22,7 +22,7 @@ import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, saveSe
 import { uploadAdminFile, uploadPublicFile } from './lib/storageUpload';
 // Stage 7A: هماهنگی تم روشن/تیره پنل مدیریت با سیستم تم Stage 6
 import { applyResolvedZkTheme, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
-import { normalizeDesignId, normalizePublicColorMode, normalizeThemeId, resolveColorMode, type PersonalColorMode } from './utils/colorMode';
+import { normalizeDesignId, normalizePublicColorMode, resolveColorMode, type PersonalColorMode } from './utils/colorMode';
 // PWA admin: shared session utils (clear on logout, validate on /admin/app)
 import { clearAdminSession, getAdminSessionToken, validateAdminSession } from './utils/adminSession';
 import ErrorAlertHost from './components/ErrorAlert/ErrorAlertHost';
@@ -88,21 +88,8 @@ function App(){
   return configured;
  };
 
- const getThemeForDesign = (design: string, settings: DynamicRecord): string => {
-  if (design === 'classic' || design === 'blend') {
-   const configured = normalizeThemeId(settings?.sections?.public?.theme, design === 'blend' ? 'blend' : 'light');
-   try {
-    const localTheme = localStorage.getItem('zk_theme');
-    if (localTheme) return normalizeThemeId(localTheme, configured);
-   } catch {}
-   return configured;
-  }
-  return design;
- };
-
- // تعیین دیزاین و تم فعال
+ // تعیین دیزاین فعال
  const activeDesign = getDesignForPath(location.pathname, designSystem);
- const activeTheme = getThemeForDesign(activeDesign, designSystem);
 
  // Personal header choice is local to this browser/domain and wins on admin + public routes.
  const [personalColorMode,setPersonalColorMode]=useState<PersonalColorMode|null>(()=>getZkThemePref());
@@ -124,20 +111,10 @@ function App(){
  const effectivePublicMode=resolveColorMode(personalColorMode,publicThemeMode,new Date().getHours());
  const publicDark=effectivePublicMode==='dark';
  const adminDark=personalColorMode==='dark';
- // Public dark colours are shared by every design while each design keeps its geometry.
- const selectedPublicTheme=(activeDesign === 'classic' || activeDesign === 'blend')
-  ? (TH[activeTheme] || TH.blend)
-  : (TH[activeDesign] || TH.wellness);
- // Explicit light mode must not inherit a legacy dark/ocean colour layer.
- const publicLightTheme=(selectedPublicTheme.id==='dark'||selectedPublicTheme.id==='ocean')
-  ? TH.light
-  : selectedPublicTheme;
- const publicDarkTheme=useMemo(()=>({...publicLightTheme,...PUBLIC_DARK_COLORS}),[publicLightTheme]);
+ // Get theme for current design (designs now have their own themes, no separate theme selection)
  const T = isAdminRoute
   ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
-  : publicDark
-  ? publicDarkTheme
-  : publicLightTheme;
+  : (publicDark ? TH[`${activeDesign}-dark`] : TH[activeDesign]);
 
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
@@ -177,7 +154,7 @@ function App(){
   adminInlineVars.forEach(name=>root.style.removeProperty(name));
   const themeColor=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if(themeColor)themeColor.content=publicDark?'#0F1722':'#F8FBFA';
- },[isAdminRoute,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id]);
+ },[isAdminRoute,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id,activeDesign]);
 
  useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage

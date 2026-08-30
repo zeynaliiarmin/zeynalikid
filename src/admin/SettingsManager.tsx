@@ -99,10 +99,6 @@ export default function SettingsManager(props: Props) {
   const SecondaryTab = (
     <>
       <Box title="تنظیمات ظاهری (فرم مشاوره)">
-        <label style={S.lbl}>تم</label>
-        <select style={S.inp} value={draft.theme || 'light'} onChange={(e) => up('theme', e.target.value)}>
-          {Object.values(TH).map((th: any) => <option key={th.id} value={th.id}>{th.name}</option>)}
-        </select>
         {['siteTitle', 'browserTitle', 'specialistName', 'heroTitle', 'heroDesc', 'noticeText', 'phoneNote', 'submitBtnText', 'successMsg', 'successSubMsg', 'timeSlotLabel'].map((k) => (
           <TextField key={k} label={k} defaultValue={draft[k] || ''} onCommit={(v: string) => up(k, v)} S={S} />
         ))}
@@ -170,6 +166,22 @@ export default function SettingsManager(props: Props) {
   const PrimaryTab = (
     <>
       <Box title="تنظیمات ظاهری (دوره‌ها + پنل)">
+        <label style={S.lbl}>دیزاین پیش‌فرض سایت عمومی</label>
+        <select style={S.inp} value={draft.designSystem?.sections?.public?.design || 'wellness'} onChange={(e) => upNested(['designSystem', 'sections', 'public', 'design'], e.target.value)}>
+          <option value="wellness">Wellness</option>
+          <option value="kidlearn">KidLearn</option>
+          <option value="classic">Classic</option>
+          <option value="blend">Blend</option>
+        </select>
+        <p style={{ fontSize: 11, color: T.mut, margin: '4px 0 12px' }}>دیزاین پیش‌فرض برای صفحات عمومی سایت (به جز صفحه آموزش‌ها).</p>
+        <label style={S.lbl}>دیزاین صفحه آموزش‌ها</label>
+        <select style={S.inp} value={draft.designSystem?.sections?.education?.design || 'kidlearn'} onChange={(e) => upNested(['designSystem', 'sections', 'education', 'design'], e.target.value)}>
+          <option value="wellness">Wellness</option>
+          <option value="kidlearn">KidLearn</option>
+          <option value="classic">Classic</option>
+          <option value="blend">Blend</option>
+        </select>
+        <p style={{ fontSize: 11, color: T.mut, margin: '4px 0 12px' }}>دیزاین اختصاصی برای صفحه آموزش‌ها.</p>
         <TextField label="adminLoginText" defaultValue={draft.adminLoginText || ''} onCommit={(v: string) => up('adminLoginText', v)} S={S} />
         <label style={S.lbl}>حداکثر حجم فیش واریزی (کیلوبایت)</label>
         <input style={S.inp} inputMode="numeric" type="number" min={100} max={1000} defaultValue={draft.imageCompressionKB || 500} onBlur={(e) => up('imageCompressionKB', Math.min(1000, Math.max(100, +p2e(e.target.value) || 500)))} />

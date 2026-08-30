@@ -29,7 +29,7 @@ import SubCard, { LazySubCard } from './SubCard';
 // منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
-import { normalizeDesignId, normalizePublicColorMode, normalizeThemeId } from '../utils/colorMode';
+import { normalizeDesignId, normalizePublicColorMode } from '../utils/colorMode';
 import ContentManager from './ContentManager';
 import SettingsManager from './SettingsManager';
 import ImagesManager, { LibraryPicker, FrameControls } from './ImagesManager';
@@ -426,7 +426,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     .zkad-storage-banner{padding:12px 14px}
   }
   `}</style><AdminLayout lang={lang} groups={navGroups} active={aTab} onNavigate={(id:string)=>{setATab(id);setEditCfg(JSON.parse(JSON.stringify(cfg)))}} onLogout={onLogout} onHome={goHome} version="1.0.0">
-  <div className="admin-main"><div style={{maxWidth:1100,margin:'0 auto'}}>{aTab!=='dashboard'&&aTab!=='data'&&<div className="zkad-page-head"><div><h2>{(navGroups.find(g=>g.id===aTab||(g.items||[]).some(i=>i.id===aTab))||{}).label||''}</h2><p>{({assistant:'آموزش، آزمایش و مدیریت پاسخ‌های دستیار راهنمای زینالیکید',userQuestions:'مدیریت سوالات و درخواست‌های تماس مخاطبین (بخش سوال دارم) همراه با شماره تماس، ویس و متن سوال',settings:'پیکربندی فرم‌ها، فیلدها و رفتار سایت',content:'متن‌های صفحات، سوالات متداول و ترجمه‌ها',consultants:'مدیریت مشاورین، لینک‌های ارجاع اختصاصی، اطلاعات بانکی/کیف پول و نمایش در صفحه درباره ما و صفحه هوم',contacts:'شماره‌ها، شبکه‌های اجتماعی و راه‌های ارتباطی',courses:'تب‌ها، دوره‌ها و واحد پول',featured:'بخش دوره‌های ویژه صفحه اصلی',tagged:'دوره‌های ویژه با تگ',trustbox:'جملات اعتمادساز باکس صفحه اصلی',trust:'جملات صفحات موفقیت',shipping:'روش‌های ارسال، حساب‌های بانکی و درگاه‌ها',analytics:'بازدید صفحات به تفکیک زمان',security:'شماره تماس و رمز عبور پنل',products:'محصولات فروشگاه',highlights:'هایلایت استوری‌ها',licenses:'مجوزها و گواهی‌ها',services:'خدمات و کاروسل صفحه اصلی',images:'تصاویر صفحه اصلی و فرم مشاوره',design:'دیزاین هر بخش از سایت',themes:'تم‌های پیش‌فرض و overrides',trash:'موارد حذف‌شده قابل بازیابی'} as any)[aTab]||''}</p></div></div>}
+  <div className="admin-main"><div style={{maxWidth:1100,margin:'0 auto'}}>{aTab!=='dashboard'&&aTab!=='data'&&<div className="zkad-page-head"><div><h2>{(navGroups.find(g=>g.id===aTab||(g.items||[]).some(i=>i.id===aTab))||{}).label||''}</h2><p>{({assistant:'آموزش، آزمایش و مدیریت پاسخ‌های دستیار راهنمای زینالیکید',userQuestions:'مدیریت سوالات و درخواست‌های تماس مخاطبین (بخش سوال دارم) همراه با شماره تماس، ویس و متن سوال',settings:'پیکربندی فرم‌ها، فیلدها و رفتار سایت',content:'متن‌های صفحات، سوالات متداول و ترجمه‌ها',consultants:'مدیریت مشاورین، لینک‌های ارجاع اختصاصی، اطلاعات بانکی/کیف پول و نمایش در صفحه درباره ما و صفحه هوم',contacts:'شماره‌ها، شبکه‌های اجتماعی و راه‌های ارتباطی',courses:'تب‌ها، دوره‌ها و واحد پول',featured:'بخش دوره‌های ویژه صفحه اصلی',tagged:'دوره‌های ویژه با تگ',trustbox:'جملات اعتمادساز باکس صفحه اصلی',trust:'جملات صفحات موفقیت',shipping:'روش‌های ارسال، حساب‌های بانکی و درگاه‌ها',analytics:'بازدید صفحات به تفکیک زمان',security:'شماره تماس و رمز عبور پنل',products:'محصولات فروشگاه',highlights:'هایلایت استوری‌ها',licenses:'مجوزها و گواهی‌ها',services:'خدمات و کاروسل صفحه اصلی',images:'تصاویر صفحه اصلی و فرم مشاوره',design:'دیزاین هر بخش از سایت',trash:'موارد حذف‌شده قابل بازیابی'} as any)[aTab]||''}</p></div></div>}
   {aTab==='dashboard'&&<><div className="zkad-page-head"><div><h2>داشبورد</h2><p>نمای کلی عملکرد و درخواست‌های امروز</p></div><button type="button" className="zkad-head-btn" onClick={goHome}><ZkHomeIcon size={14}/> بازدید از سایت</button></div>
 
 {/* بنر هوشمند پایش و هشدار ظرفیت دیتابیس و استوریج (هایلایت قرمز بولد در صورت کمبود فضا) */}
@@ -590,7 +590,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تصویر انتخاب‌شده</button>
   </div>}
 </div>
-{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='themes'&&editCfg&&ThemeManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
+{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
   <div style={{display:'flex',alignItems:'center',gap:10}}>
     <span style={{width:22,height:22,borderRadius:'50%',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:msgType==='err'?`${T.err}1f`:(msgType==='ok'?`${T.ok}1f`:T.soft),color:msgType==='err'?T.err:(msgType==='ok'?T.ok:T.acc),fontSize:12}}>{msgType==='err'?'✕':(msgType==='ok'?'✓':'…')}</span>
     <div style={{flex:1,minWidth:0}}>
@@ -1109,58 +1109,43 @@ function TaggedCoursesEditor(){
   </div>)}
   <button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,[path[0]]:{...editCfg[path[0]],[path[1]]:[...arr,{id:'m'+uid(),title:'روش جدید',titleEn:'New method',active:true,requiresPostal:false,default:false,order:arr.length+1,help:'',tag:'',tagEn:''}]}})}>افزودن</button>
   </div>}
- // --- مدیریت تم‌ها ---
  // --- مدیریت دیزاین (مرحله ۴ - بازطراحی تدریجی) ---
 function DesignManagerEditor(){
- const ds=(editCfg as any).designSystem||{sections:{public:{design:'wellness',theme:'light'},education:{design:'kidlearn',theme:'light'},admin:{design:'classic',theme:'dark'}},classic:{themes:['light','cream','ocean','dark'],defaultTheme:'light'}};
+ const ds=(editCfg as any).designSystem||{sections:{public:{design:'wellness'},education:{design:'kidlearn'},admin:{design:'classic'}}};
  const publicThemeMode=normalizePublicColorMode((editCfg as any).publicThemeMode);
  const sections=ds.sections||{};
 
- const updateSection=(section:string,design:string,theme?:string)=>{
-  setEditCfg({...editCfg,designSystem:{...ds,sections:{...sections,[section]:{design,theme:theme||sections[section]?.theme||'light'}}}});
+ const updateSection=(section:string,design:string)=>{
+  setEditCfg({...editCfg,designSystem:{...ds,sections:{...sections,[section]:{design}}}});
  };
 
  const designOptions=[
   {value:'wellness',label:'Wellness (بنفش)'},
   {value:'kidlearn',label:'KidLearn (کودکان)'},
   {value:'blend',label:'Blend (ترکیبی)'},
-  {value:'classic',label:'دیزاین ترکیبی (کلاسیک)'},
- ];
-
- const classicThemes=[
-  {value:'light',label:'روشن'},
-  {value:'cream',label:'کرم'},
-  {value:'ocean',label:'اقیانوسی'},
-  {value:'dark',label:'تاریک'},
-  {value:'motherly',label:'مادرانه'},
-  {value:'trust',label:'اعتمادساز'},
-  {value:'blend',label:'ترکیبی'},
-  {value:'motherly-trust',label:'مادرانه-اعتمادساز'},
+  {value:'classic',label:'کلاسیک'},
  ];
 
  return <><Box title="نمای ظاهری سایت برای کاربران"><p style={{fontSize:12,color:T.mut,lineHeight:1.8,marginTop:0}}>این تنظیم عمومی برای کاربرانی اعمال می‌شود که در مرورگرشان انتخاب شخصی روشن/تاریک ندارند.</p><label style={{...S.lbl}}>حالت نمایش سایت عمومی</label><select style={S.inp} value={publicThemeMode} onChange={e=>setEditCfg({...editCfg,publicThemeMode:e.target.value})}><option value="dark">همیشه دارک</option><option value="light">همیشه وایت</option><option value="auto">سفارشی بر اساس ساعت — دارک از ۲۳ تا ۰۷</option></select><p style={{fontSize:11,color:T.mut,lineHeight:1.7}}>انتخاب شخصی ماه/خورشید در هدر پنل، پنل و صفحات عمومی همین مرورگر را با هم تغییر می‌دهد و بر این تنظیم اولویت دارد.</p></Box>
-  <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت دیزاین و تم</>}>
+  <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت دیزاین</>}>
    <p style={{fontSize:11,color:T.mut,margin:'0 0 14px',lineHeight:1.8}}>برای هر بخش، دیزاین مورد نظر را انتخاب کنید.</p>
    <div style={{display:'grid',gap:14}}>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}> صفحات عمومی</h4>
-     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+     <div style={{display:'grid',gridTemplateColumns:'1fr',gap:10}}>
       <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.public?.design,'wellness')} onChange={e=>updateSection('public',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {normalizeDesignId(sections.public?.design,'wellness')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.public?.theme,'light')} onChange={e=>updateSection('public','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}><ZkBookIcon size={14} color={T.ttl}/> بخش آموزش</h4>
-     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+     <div style={{display:'grid',gridTemplateColumns:'1fr',gap:10}}>
       <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.education?.design,'kidlearn')} onChange={e=>updateSection('education',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {normalizeDesignId(sections.education?.design,'kidlearn')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.education?.theme,'light')} onChange={e=>updateSection('education','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
     <div style={{padding:14,background:T.soft,borderRadius:12,border:`1px solid ${T.brd}`}}>
      <h4 style={{margin:'0 0 10px',color:T.ttl,fontSize:13,fontWeight:800}}><ZkSettingsIcon size={14} color={T.ttl}/> پنل مدیریت</h4>
-     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+     <div style={{display:'grid',gridTemplateColumns:'1fr',gap:10}}>
       <div><label style={S.lbl}>دیزاین</label><select style={S.inp} value={normalizeDesignId(sections.admin?.design,'classic')} onChange={e=>updateSection('admin',e.target.value)}>{designOptions.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>
-      {normalizeDesignId(sections.admin?.design,'classic')==='classic'&&<div><label style={S.lbl}>تم</label><select style={S.inp} value={normalizeThemeId(sections.admin?.theme,'dark')} onChange={e=>updateSection('admin','classic',e.target.value)}>{classicThemes.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></div>}
      </div>
     </div>
    </div>
@@ -1169,42 +1154,6 @@ function DesignManagerEditor(){
   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تنظیمات دیزاین</button>
  </>;
 }
-
-function ThemeManagerEditor(){
-  const tc=(editCfg as any).themeConfig||{defaultThemes:{public:'wellness',education:'kidlearn',admin:'dark'},overrides:{}};
-  const defaults=tc.defaultThemes||{};
-  const overrides=tc.overrides||{};
-  const upTC=(patch:any)=>setEditCfg({...editCfg,themeConfig:{...tc,...patch}});
-  const upDefault=(k:string,v:string)=>upTC({defaultThemes:{...defaults,[k]:v}});
-  const addOverride=()=>{const path=prompt('مسیر را وارد کنید:');if(!path)return;upTC({overrides:{...overrides,[path]:'wellness'}})};
-  const upOverride=(path:string,v:string)=>{const o={...overrides};if(v==='_remove_')delete o[path];else o[path]=v;upTC({overrides:o})};
-  const to=[['wellness','Wellness'],['kidlearn','KidLearn'],['light','روشن'],['cream','کرم'],['ocean','اقیانوسی'],['dark','تاریک'],['motherly','مادرانه'],['trust','اعتمادساز'],['blend','ترکیبی'],['motherly-trust','مادرانه-اعتمادساز']];
-  const safeThemeChoice=(value:any,fallback:string)=>normalizeDesignId(value,'')||normalizeThemeId(value,fallback);
-  const ss={padding:'14px 16px',borderRadius:12,background:T.soft,border:'1px solid '+T.brd,marginBottom:12};
-  return <>
-   <Box title={<><ZkPaletteIcon size={16} color={T.ttl}/> مدیریت تم‌ها</>}>
-    <div style={ss}>
-     <h4 style={{margin:'0 0 12px',color:T.ttl,fontSize:13,fontWeight:800}}>تم پیش‌فرض هر بخش</h4>
-     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-      <div><label style={S.lbl}>صفحات عمومی</label><select style={S.inp} value={safeThemeChoice(defaults.public,'wellness')} onChange={e=>upDefault('public',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-      <div><label style={S.lbl}>بخش آموزش</label><select style={S.inp} value={safeThemeChoice(defaults.education,'kidlearn')} onChange={e=>upDefault('education',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-      <div><label style={S.lbl}>پنل مدیریت</label><select style={S.inp} value={safeThemeChoice(defaults.admin,'dark')} onChange={e=>upDefault('admin',e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-     </div>
-    </div>
-    <div style={ss}>
-     <h4 style={{margin:'0 0 12px',color:T.ttl,fontSize:13,fontWeight:800}}>Overrideهای دستی</h4>
-     {Object.entries(overrides).length===0&&<p style={{fontSize:11,color:T.mut,margin:0}}>تنظیم نشده.</p>}
-     {Object.entries(overrides).map(([path,theme]:any)=><div key={path} style={{display:'grid',gridTemplateColumns:'1fr 180px 40px',gap:8,alignItems:'end',marginBottom:8,padding:'8px',background:T.card,borderRadius:10,border:'1px solid '+T.brd}}>
-      <div><label style={S.lbl}>مسیر</label><input style={{...S.inp,fontFamily:'monospace'}} defaultValue={path} onBlur={e=>{if(e.target.value!==path){const o={...overrides};delete o[path];o[e.target.value]=theme;upTC({overrides:o})}}} dir="ltr"/></div>
-      <div><label style={S.lbl}>تم</label><select style={S.inp} value={safeThemeChoice(theme,'dark')} onChange={e=>upOverride(path,e.target.value)}>{to.map(([v,l])=><option key={v} value={v}>{l}</option>)}<option value="_remove_">حذف</option></select></div>
-      <button style={{...AdminBtn(),color:T.err,padding:'8px 0',marginBottom:0}} onClick={()=>upOverride(path,'_remove_')}><ZkCloseIcon size={13}/></button>
-     </div>)}
-     <button style={AdminBtn()} onClick={addOverride}><ZkPlusIcon size={13}/> افزودن</button>
-    </div>
-   </Box>
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تم‌ها</button>
-  </>;
- }
 
  // --- نصب پنل مدیریت به شکل اپلیکیشن ---
  function AdminInstallControl(){

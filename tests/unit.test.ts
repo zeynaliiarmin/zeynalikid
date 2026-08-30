@@ -18,7 +18,7 @@ import { PaymentService,SUPPORTED_GATEWAYS,isGatewayProductionReady } from '../s
 import type { PaymentMetadata } from '../src/services/payment/drivers';
 import { parseReferralRaw, findConsultantByCode, findTabByCode } from '../src/utils/referral';
 import { paymentShareText, resolvePaymentLaunchInfo } from '../src/utils/paymentLauncher';
-import { normalizeDesignId, normalizePersonalColorMode, normalizePublicColorMode, normalizeThemeId, resolveColorMode } from '../src/utils/colorMode';
+import { normalizeDesignId, normalizePersonalColorMode, normalizePublicColorMode, resolveColorMode } from '../src/utils/colorMode';
 import { compatibleAssistantIntent, findAssistantRule, matchAssistantKnowledge, normalizeAssistantText, sameAssistantIntent, scoreAssistantKnowledge, shareAssistantIntentToken, type AssistantKnowledge } from '../src/utils/assistantMatch';
 
 let passed = 0;
@@ -45,7 +45,6 @@ assert(resolveColorMode(null, 'auto', 6) === 'dark', 'خودکار ساعت ۶ �
 assert(resolveColorMode(null, 'auto', 7) === 'light', 'خودکار ساعت ۷ روشن است');
 const retiredDesignId=['navy','stack'].join('');
 assert(normalizeDesignId(retiredDesignId, 'classic') === 'classic', 'شناسه طراحی بازنشسته فقط هنگام اجرا نگاشت می‌شود');
-assert(normalizeThemeId(retiredDesignId, 'dark') === 'dark', 'شناسه تم بازنشسته فقط هنگام اجرا نگاشت می‌شود');
 
 // ── phone ─────────────────────────────────────────────────────────
 // p2e converts Persian/Arabic digits to English

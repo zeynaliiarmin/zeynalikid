@@ -367,16 +367,6 @@ export const defaultSettings = {
     },
   },
 
-  // ─── سیستم مدیریت تم‌ها ───
-  themeConfig: {
-    defaultThemes: {
-      public: 'wellness',
-      education: 'kidlearn',
-      admin: 'dark',
-    },
-    overrides: {} as Record<string, string>,
-  },
-
   // ─── سیستم پرداخت چنددرگاهی (ساختار جدید — مرحله ۴) ───
   paymentConfig: {
     gateways: [
@@ -397,22 +387,14 @@ export const defaultSettings = {
     // انتخاب دیزاین برای هر بخش
     sections: {
       public: {
-        design: 'classic',        // shared semantic Foundation theme
-        theme: 'motherly-trust',            // فقط در حالت 'classic' معنی دارد
+        design: 'wellness',
       },
       education: {
         design: 'kidlearn',
-        theme: 'light',
       },
       admin: {
         design: 'classic',
-        theme: 'dark',
       },
-    },
-    // تنظیمات دیزاین ترکیبی (کلاسیک)
-    classic: {
-      themes: ['light', 'cream', 'ocean', 'dark'],
-      defaultTheme: 'light',
     },
   },
 } as Record<string, unknown>;
@@ -504,15 +486,24 @@ export function migrateSettings(settings: any): any {
   if (!migrated.designSystem) {
     migrated.designSystem = {
       sections: {
-        public: { design: 'classic', theme: 'motherly-trust' },
-        education: { design: 'kidlearn', theme: 'light' },
-        admin: { design: 'classic', theme: 'dark' },
-      },
-      classic: {
-        themes: ['light', 'cream', 'ocean', 'dark', 'motherly', 'trust', 'blend', 'motherly-trust'],
-        defaultTheme: 'motherly-trust',
+        public: { design: 'wellness' },
+        education: { design: 'kidlearn' },
+        admin: { design: 'classic' },
       },
     };
+  } else {
+    // حذف فیلدهای مربوط به تم از designSystem
+    if (migrated.designSystem.sections) {
+      Object.keys(migrated.designSystem.sections).forEach(key => {
+        if (migrated.designSystem.sections[key] && typeof migrated.designSystem.sections[key] === 'object') {
+          delete migrated.designSystem.sections[key].theme;
+        }
+      });
+    }
+    // حذف فیلدهای مربوط به تم از دیزاین‌ها
+    if (migrated.designSystem.classic) {
+      delete migrated.designSystem.classic;
+    }
   }
 
   // ─── مهاجرت images: ساختار قدیمی (heroImage, trustBoxImage) — ساختار جدید (hero, trustBox, courseDefault, specialist) ───
