@@ -112,10 +112,13 @@ function App(){
  const effectivePublicMode=resolveColorMode(personalColorMode,publicThemeMode,new Date().getHours());
  const publicDark=effectivePublicMode==='dark';
  const adminDark=personalColorMode==='dark';
- // Get theme for current design (designs now have their own themes, no separate theme selection)
+ // حالت تاریک عمومی: یک پالت مشترک (فیروزه‌ای) روی هندسهٔ همان دیزاین انتخابی سوار می‌شود.
+ // طبق تصمیم مالک: برای هر دیزاین دارک‌مود اختصاصی طراحی نشده، پس همه دیزاین‌ها در حالت تاریک
+ // فقط همان «پالت تاریک مشترک» را می‌خوانند؛ هندسه/شعاع/فاصله از دیزاین روشن گرفته می‌شود.
+ const publicLightTheme = TH[activeDesign];
  const T = isAdminRoute
   ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
-  : (publicDark ? TH[`${activeDesign}-dark`] : TH[activeDesign]);
+  : (publicDark ? ({...publicLightTheme,...PUBLIC_DARK_COLORS}) : publicLightTheme);
 
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
