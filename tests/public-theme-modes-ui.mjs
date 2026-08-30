@@ -6,16 +6,13 @@ const executablePath=process.env.PUPPETEER_EXECUTABLE_PATH||undefined;
 const retiredDesign=['navy','stack'].join('');
 const fixtures=[
  {design:'wellness',theme:'light'},
+ {design:'wellness',theme:'wellness-dark'},
  {design:'kidlearn',theme:'light'},
+ {design:'kidlearn',theme:'kidlearn-dark'},
  {design:'classic',theme:'light'},
- {design:'classic',theme:'cream'},
- {design:'classic',theme:'ocean'},
- {design:'classic',theme:'dark'},
- {design:'classic',theme:'motherly-trust'},
- {design:'classic',theme:'blend'},
- {design:'blend',theme:'cream'},
- {design:'blend',theme:'dark'},
- {design:retiredDesign,theme:'light',legacy:true},
+ {design:'classic',theme:'classic-dark'},
+ {design:'blend',theme:'light'},
+ {design:'blend',theme:'blend-dark'},
 ];
 let mockedMode='light';
 let blockAppScript=false;
@@ -160,7 +157,7 @@ try{
  // The real admin header toggle persists locally, controls admin, then controls public pages.
  await page.goto(`${base}/?test-hour=12&restore=1`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(250);
  mockedMode='light';
- await setStorage(page,{'zk_personal_color_mode':'light','zk_theme':'cream','zk_public_theme_mode':'light','zk_admin_authed':'true','zk_admin_session_token':'test-session','zk_admin_login_at':String(Date.now())});
+ await setStorage(page,{'zk_personal_color_mode':'light','zk_theme':'classic','zk_public_theme_mode':'light','zk_admin_authed':'true','zk_admin_session_token':'test-session','zk_admin_login_at':String(Date.now())});
  await page.evaluate(()=>localStorage.setItem('zk_admin_login_at',String(Date.now())));
  await page.goto(`${base}/admin/app?test-hour=12`,{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForSelector('.zkth-toggle',{timeout:20000});

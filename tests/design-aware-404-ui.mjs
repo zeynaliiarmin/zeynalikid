@@ -8,11 +8,13 @@ const viewports=[
 ];
 const designs=[
  {design:'wellness',theme:'light'},
+ {design:'wellness',theme:'wellness-dark'},
  {design:'kidlearn',theme:'light'},
- {design:'classic',theme:'dark'},
- {design:'classic',theme:'ocean'},
- {design:'classic',theme:'motherly-trust'},
- {design:'blend',theme:'cream'},
+ {design:'kidlearn',theme:'kidlearn-dark'},
+ {design:'classic',theme:'light'},
+ {design:'classic',theme:'classic-dark'},
+ {design:'blend',theme:'light'},
+ {design:'blend',theme:'blend-dark'},
 ];
 const labels=['درخواست مشاوره','معرفی دوره‌ها','تجربه والدین','مجوزها و نمادها','مقالات آموزشی','ارتباط با ما و پشتیبانی'];
 const paths=['/consultation','/courses','/experience','/licenses','/education','/contact'];
