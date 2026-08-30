@@ -50,8 +50,8 @@ export default function EntryModeSettings({ app }: { app: any }) {
           { id: 'track', label: en ? 'Course tracking (guest, no login)' : 'پیگیری دوره (بدون ورود — حالت فعلی)' },
           { id: 'user', label: en ? 'User portal (login required)' : 'پنل کاربر (ثبتنام/ورود اجباری)' },
         ], (v) => set({ entryMode: v })),
-        en ? 'Only one mode can be active. In user-portal mode, course registration and consultations require sign-in; registrations appear under «فرمها و دورهها → کاربران».'
-          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، ثبت دوره و مشاوره بدون ورود ممکن نیست و همهٔ ثبتها به «فرمها و دورهها ← کاربران» منتقل میشوند.'
+        en ? 'Only one mode can be active. In user-portal mode, course registration and consultations require sign-in; entries stay in “Forms & orders” with the new view, split into consultation and course sections.'
+          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، ثبت دوره و مشاوره بدون ورود ممکن نیست؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
       )}
 
       {row(
