@@ -41,6 +41,10 @@
       "destination": "/spa.html"
     },
     {
+      "source": "/portal",
+      "destination": "/spa.html"
+    },
+    {
       "source": "/profile",
       "destination": "/spa.html"
     },
