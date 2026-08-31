@@ -98,11 +98,12 @@ export const isHtmlEmbedCode=(code:any)=>/^<\s*[a-zA-Z!]/.test(normalizeEmbedCod
 // هیچ HTML یا اسکریپت ورودی مستقیماً اجرا نمی‌شود. از کدهای iframe/video فقط src امن
 // http(s) استخراج و در عنصر محدود خودمان رندر می‌شود؛ بنابراین کد آپارات/یوتیوب قدیمی
 // همچنان پخش می‌شود ولی style/script/handlerهای همراه آن وارد DOM نمی‌شوند.
-export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'video'|'audio'|'image',minHeight?:number}){
+export function ManualEmbed({code,type='video',minHeight,lang='fa'}:{code:string,type?:'video'|'audio'|'image',minHeight?:number,lang?:string}){
   const normalized=normalizeEmbedCode(code);
   // اگر لینک تصویر (مثل ImgURL) از کار بیفتد/منقضی شود، به‌جای باکس سیاه، یک placeholder ملایم نشان می‌دهیم.
   const [imgFailed,setImgFailed]=useState(false);
-  useEffect(()=>{setImgFailed(false)},[code]);
+  const [frameOpen,setFrameOpen]=useState(false);
+  useEffect(()=>{setImgFailed(false);setFrameOpen(false)},[code]);
   if(type==='image'){
     const safeSrc=extractDirectMediaUrl(normalized,'image');
     if(!safeSrc)return null;
@@ -118,6 +119,15 @@ export function ManualEmbed({code,type='video',minHeight}:{code:string,type?:'vi
   if(!safeSrc)return null;
   const isDirectVideo=/<\s*(?:video|source)\b/i.test(normalized)||/\.(?:mp4|webm|ogv|mov)(?:[?#].*)?$/i.test(safeSrc);
   if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000',borderRadius:14,overflow:'hidden'}}/>;
+  // فریم بیرونی خودش دکمه و لینک دارد؛ اگر همان اول بارگذاری شود کنترل‌هایش داخل
+  // کنترل صفحهٔ ما می‌افتد (خطای nested-interactive در تست WCAG) و صفحه را هم سنگین می‌کند.
+  // پس نخست یک پیش‌نمای کلیک‌کردنی خودمان نشان داده می‌شود و فریم فقط با خواست کاربر باز می‌شود.
+  if (!frameOpen) return <div data-manual-embed="iframe-facade" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}>
+    <button type="button" onClick={() => setFrameOpen(true)} aria-label={lang === 'en' ? 'Play video' : 'پخش ویدیو'} style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,border:0,background:'rgba(0,0,0,.28)',color:'#fff',fontFamily:'inherit',fontSize:13,fontWeight:800,cursor:'pointer'}}>
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z"/></svg>
+      {lang === 'en' ? 'Play video' : 'پخش ویدیو'}
+    </button>
+  </div>;
   return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
@@ -185,7 +195,7 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=
  const imgRestrict = secure ? { draggable: false, onContextMenu: (e: React.MouseEvent) => e.preventDefault() } : {};
  return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column',height:'100%',minWidth:0}}>
   {type==='video'&&(hasManual
-   ?<ManualEmbed code={manualCode} type="video"/>
+   ?<ManualEmbed code={manualCode} type="video" lang={lang}/>
    :(playing
     ?<div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={url} frameBorder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" title={item.title||'video'} style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>
     :<button onClick={()=>setPlaying(true)} style={{position:'relative',width:'100%',paddingTop:'56.25%',background:T.soft,border:0,cursor:'pointer'}}>{item.thumbnail?<img src={item.thumbnail} alt="" loading="lazy" decoding="async" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} draggable={false}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc} /></span>}<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{width:52,height:52,borderRadius:'50%',background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,paddingInlineStart:4}}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></span></span></button>))}

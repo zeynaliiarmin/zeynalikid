@@ -76,7 +76,7 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
     }
     return (
       <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>
-        <ManualEmbed code={code} type={kind} minHeight={kind === 'audio' ? 90 : 220} />
+        <ManualEmbed code={code} type={kind} lang={lang} minHeight={kind === 'audio' ? 90 : 220} />
       </div>
     );
   }
