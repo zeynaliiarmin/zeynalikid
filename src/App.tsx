@@ -102,7 +102,8 @@ function App(){
  };
 
  // تعیین دیزاین فعال
- const activeDesign = getDesignForPath(location.pathname, designSystem);
+ const isAdminLoginView = ['/admin-login','/admin/login'].includes(location.pathname.replace(/\/+$/,''));
+ const activeDesign = isAdminLoginView ? resolvePublicDesign() : getDesignForPath(location.pathname, designSystem);
 
  // Personal header choice is local to this browser/domain and wins on admin + public routes.
  const [personalColorMode,setPersonalColorMode]=useState<PersonalColorMode|null>(()=>getZkThemePref());
@@ -119,6 +120,7 @@ function App(){
  useEffect(()=>{const timer=window.setInterval(()=>setPublicThemeTick(x=>x+1),60000);return()=>window.clearInterval(timer)},[]);
  useEffect(()=>{const sync=(event:StorageEvent)=>{if(event.key!=='zk_public_theme_mode')return;setCfg((current:DynamicRecord)=>({...current,publicThemeMode:normalizePublicColorMode(event.newValue)}))};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync)},[]);
  const isAdminRoute=location.pathname.startsWith('/admin');
+
  const publicThemeMode=normalizePublicColorMode(cfg.publicThemeMode);
  useEffect(()=>{try{localStorage.setItem('zk_public_theme_mode',publicThemeMode)}catch{}},[publicThemeMode]);
  const effectivePublicMode=resolveColorMode(personalColorMode,publicThemeMode,new Date().getHours());
@@ -129,7 +131,7 @@ function App(){
  // منبع رنگ‌ها: src/theme/warmPalettes.ts (برگرفته از design-A-warm).
  const publicLightTheme = TH[activeDesign];
  const publicDarkTheme = TH[`${activeDesign}-dark`] || {...publicLightTheme,...PUBLIC_DARK_COLORS};
- const T_base = isAdminRoute
+ const T_base = (isAdminRoute && !isAdminLoginView)
   ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
   : (publicDark ? publicDarkTheme : publicLightTheme);
  // accText = رنگ متن‌های رنگی (لینک، برچسب، دکمهٔ نرم). در پالت تاریک یک درجه روشن‌تر از
@@ -152,7 +154,7 @@ function App(){
   const root=document.documentElement;
   const body=document.body;
   const adminInlineVars=['--zk-bg','--zk-surface','--zk-text','--zk-text-muted','--zk-border','--zk-primary'];
-  if(isAdminRoute){
+  if(isAdminRoute&&!isAdminLoginView){
    const final=adminDark?'dark':'light';
    body.classList.remove('public-root');
    root.removeAttribute('data-public-theme');
@@ -168,13 +170,14 @@ function App(){
   root.setAttribute('data-public-theme',effectivePublicMode);
   root.setAttribute('data-public-theme-mode',publicThemeMode);
   root.setAttribute('data-color-mode-source',personalColorMode?'personal':'global');
-  root.setAttribute('data-zk-theme',String(T.id));
+  root.setAttribute('data-zk-theme',isAdminLoginView?(publicDark?'admin-dark':'admin-light'):String(T.id));
+  if(isAdminLoginView&&publicDark)root.setAttribute('data-zk-design',String(activeDesign)+'-dark');else root.removeAttribute('data-zk-design');
   root.style.setProperty('color-scheme',effectivePublicMode);
-  root.style.backgroundColor=publicDark?(String(T.bg||'#0F1620')):'#F8FBFA';
+  root.style.backgroundColor=publicDark?(String(T.bg||'#0F1A19')):'#F8FBFA';
   adminInlineVars.forEach(name=>root.style.removeProperty(name));
   const themeColor=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if(themeColor)themeColor.content=publicDark?(String(T.bg||'#0F1620')):'#F8FBFA';
- },[isAdminRoute,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id,activeDesign]);
+  if(themeColor)themeColor.content=publicDark?(String(T.bg||'#0F1A19')):'#F8FBFA';
+ },[isAdminRoute,isAdminLoginView,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id,activeDesign]);
 
  useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage

@@ -26,10 +26,10 @@ const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
 const normalize=value=>String(value||'').replaceAll(' ','').toLowerCase();
 // پالت تاریک اختصاصی هر دیزاین (design-A-warm → src/theme/warmPalettes.ts)
 const DARK_DESIGN={
- wellness:{bg:'#151021',surface:'#1D1627',text:'#F2EAFC',muted:'#A79BC0',accent:'#A855F7'},
- kidlearn:{bg:'#1B1112',surface:'#1D1627',text:'#FBE9E4',muted:'#A79BC0',accent:'#F87171'},
- blend:{bg:'#0F1A19',surface:'#1D1627',text:'#E6F2F1',muted:'#A79BC0',accent:'#38BDF8'},
- classic:{bg:'#0F1620',surface:'#1D1627',text:'#E3EDF7',muted:'#A79BC0',accent:'#60A5FA'},
+ wellness:{bg:'#0F1A19',surface:'#121C1A',text:'#ECE9F2',muted:'#A6B8B2',accent:'#A855F7'},
+ kidlearn:{bg:'#0F1A19',surface:'#121C1A',text:'#F0EAE2',muted:'#A6B8B2',accent:'#F87171'},
+ blend:{bg:'#0F1A19',surface:'#121C1A',text:'#E6F2F1',muted:'#A6B8B2',accent:'#38BDF8'},
+ classic:{bg:'#0F1A19',surface:'#121C1A',text:'#E3EDF7',muted:'#A6B8B2',accent:'#60A5FA'},
 };
 const brandDefaultDesign='wellness';
 const hexRgb=hex=>{const h=String(hex).replace('#','');return rgb(parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16));};

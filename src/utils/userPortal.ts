@@ -18,12 +18,19 @@ export function getUserSession(): PortalSession | null {
   } catch { return null; }
 }
 
+/** رویداد سبکِ محلی تا برچسب منوی همبرگری با ورود/خروج کاربر تازه شود */
+function announceSessionChange() {
+  try { if (typeof window !== 'undefined') window.dispatchEvent(new Event('zk-portal-session')); } catch { /* ignore */ }
+}
+
 export function setUserSession(s: PortalSession) {
   try { sessionStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  announceSessionChange();
 }
 
 export function clearUserSession() {
   try { sessionStorage.removeItem(PORTAL_SESSION_KEY); } catch { /* ignore */ }
+  announceSessionChange();
 }
 
 export function setPortalNext(path: string) {

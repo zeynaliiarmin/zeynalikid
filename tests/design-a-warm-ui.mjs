@@ -13,12 +13,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* پالت‌ها — کپی مستقل از فایل design-A-warm.html تا اگر کد از فایل فاصله گرفت، این تست قرمز شود */
 const SHARED_LIGHT = { card0: '#FFFFFF', card1: '#FBF8F3', fbg: '#F3EDE4', track: '#EFE9F4', errfg: '#B4403A', warnfg: '#96660A', btnfg: '#FFFFFF' };
-const SHARED_DARK = { card0: '#241C33', card1: '#1D1627', fbg: '#1B1327', track: '#2B2140', errfg: '#F2A9A2', warnfg: '#F4C766', btnfg: '#12101C' };
+const SHARED_DARK = { card0: '#182422', card1: '#121C1A', fbg: '#101A18', track: '#1E2C29', errfg: '#F2A9A2', warnfg: '#F2C968', btnfg: '#12101C' };
 const ACCENTS = {
-  wellness: { light: { acc: '#7A12D4', g2: '#DF1A6F', deep: '#5B0FA6', soft: '#F8EFFF', bg: '#F5EFE7', ink: '#3A2B4E', ttl: '#7A12D4' }, dark: { acc: '#A855F7', g2: '#EC4899', deep: '#7C3AED', soft: '#2A1B3E', bg: '#151021', ink: '#F2EAFC', ttl: '#C9A2F8' } },
-  kidlearn: { light: { acc: '#B91C1C', g2: '#1D4ED8', deep: '#8C1212', soft: '#FEF3C7', bg: '#F8F0E8', ink: '#4A3022', ttl: '#B91C1C' }, dark: { acc: '#F87171', g2: '#60A5FA', deep: '#DC2626', soft: '#3B2416', bg: '#1B1112', ink: '#FBE9E4', ttl: '#F5A29B' } },
+  wellness: { light: { acc: '#7A12D4', g2: '#DF1A6F', deep: '#5B0FA6', soft: '#F8EFFF', bg: '#F5EFE7', ink: '#3A2B4E', ttl: '#7A12D4' }, dark: { acc: '#A855F7', g2: '#EC4899', deep: '#7C3AED', soft: '#221F2E', bg: '#0F1A19', ink: '#ECE9F2', ttl: '#C6A8EF' } },
+  kidlearn: { light: { acc: '#B91C1C', g2: '#1D4ED8', deep: '#8C1212', soft: '#FEF3C7', bg: '#F8F0E8', ink: '#4A3022', ttl: '#B91C1C' }, dark: { acc: '#F87171', g2: '#60A5FA', deep: '#DC2626', soft: '#262019', bg: '#0F1A19', ink: '#F0EAE2', ttl: '#F0BFA1' } },
   blend: { light: { acc: '#1769C2', g2: '#2F7D6D', deep: '#104E92', soft: '#E3F1EE', bg: '#F2F6F4', ink: '#22384B', ttl: '#1769C2' }, dark: { acc: '#38BDF8', g2: '#34D399', deep: '#1769C2', soft: '#15302B', bg: '#0F1A19', ink: '#E6F2F1', ttl: '#7CC4E8' } },
-  classic: { light: { acc: '#2564A8', g2: '#2E8CD8', deep: '#1B4D86', soft: '#E1ECF6', bg: '#F1F5F8', ink: '#243A52', ttl: '#2564A8' }, dark: { acc: '#60A5FA', g2: '#93C5FD', deep: '#2564A8', soft: '#1B2A3D', bg: '#0F1620', ink: '#E3EDF7', ttl: '#7DB3E8' } },
+  classic: { light: { acc: '#2564A8', g2: '#2E8CD8', deep: '#1B4D86', soft: '#E1ECF6', bg: '#F1F5F8', ink: '#243A52', ttl: '#2564A8' }, dark: { acc: '#60A5FA', g2: '#93C5FD', deep: '#2564A8', soft: '#1C2733', bg: '#0F1A19', ink: '#E3EDF7', ttl: '#8FBBE9' } },
 };
 const designs = Object.keys(ACCENTS);
 const modes = ['light', 'dark'];

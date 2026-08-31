@@ -11,7 +11,7 @@
 //   - ارسال واقعی پیامک فقط با otpMode='live' و کلید پنل؛ در حالت 'test' کد به‌عنوان پیش‌نمایش برمی‌گردد
 //
 // Deploy: supabase functions deploy user-portal --no-verify-jwt
-// Secrets: TURNSTILE_SECRET (اختیاری — فقط وقتی captchaEnabled باشد الزامی است)
+// Secrets: TURNSTILE_SECRET_KEY (اختیاری — فقط وقتی captchaEnabled باشد الزامی است)
 //          KAVENEGAR_API_KEY / SMSIR_API_KEY / MELIPAYAMAK_* (پس از خرید پنل پیامکی)
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -126,8 +126,10 @@ const sendSms = async (provider: string, apiKey: string, sender: string, phone: 
 /** بررسی کپچای Turnstile اگر فعال باشد */
 const verifyCaptcha = async (token: string | undefined): Promise<{ ok: boolean; error?: string }> => {
   if (!token) return { ok: false, error: "تأیید امنیتی (کپچا) الزامی است." };
-  const secret = Deno.env.get("TURNSTILE_SECRET") || "";
-  if (!secret) return { ok: false, error: "کپچا فعال است اما کلید تأیید سرور تنظیم نشده است." };
+  // نام کلید باید با سکرتِ ذخیره‌شده در Supabase یکی باشد (TURNSTILE_SECRET_KEY).
+  // مقدار جایگزینِ قدیمی (placeholder) که با 0x شروع نمی‌شود «تنظیم‌نشده» شمرده می‌شود تا پیامِ روشن بدهد.
+  const secret = (Deno.env.get("TURNSTILE_SECRET_KEY") || Deno.env.get("TURNSTILE_SECRET") || "").trim();
+  if (!secret || !/^0x/i.test(secret)) return { ok: false, error: "کپچا فعال است اما کلید تأیید سرور تنظیم نشده است." };
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",

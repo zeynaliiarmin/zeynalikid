@@ -7,7 +7,7 @@ import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { portalStart, portalConfirm, portalLogin, portalHistory } from '../lib/userPortalApi';
-import { TRACKING_PREFIX, TURNSTILE_SITE_KEY } from '../config/project';
+import { TURNSTILE_SITE_KEY } from '../config/project';
 import TurnstileGate from '../components/TurnstileGate';
 import {
   getUserSession, setUserSession, clearUserSession, normalizePhoneForServer, validateFullName,
@@ -94,7 +94,7 @@ export default function UserPortalPage() {
       if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
       if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
       const c = String(code).trim().toUpperCase();
-      if (!/^(FM|ZK)[-]?[a-z0-9]{4,20}$/i.test(c)) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
+      if (!/^(?:(?:FM|ZK)-?)?[A-Z0-9]{4,20}$/i.test(c)) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
       const r = await portalLogin(phone, c, captchaToken);
       const s = { code: String(r.code), fullName: String(r.fullName), phone: ph, loginAt: Date.now() };
       setUserSession(s); setSession(s);
@@ -187,7 +187,7 @@ export default function UserPortalPage() {
               </div>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M9 9h6v6H9z M4 4h16v16H4z" /></span><input dir="ltr" inputMode="text" placeholder={`${TRACKING_PREFIX}-12739`} value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{(cfg as any)?.trackingPrefix || TRACKING_PREFIX}</span></div>
+                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}

@@ -38,25 +38,25 @@ const SHARED_LIGHT = {
 };
 
 const SHARED_DARK = {
-  card0: '#241C33', card1: '#1D1627', cardbd: 'rgba(255,255,255,.08)',
-  fbg: '#1B1327', fsh1: 'rgba(0,0,0,.5)', fsh2: 'rgba(255,255,255,.055)',
-  sub: '#A79BC0', ph: '#8D81AE', track: '#2B2140',
-  warnbg: '#3A2A10', warnbd: '#6E5115', warnfg: '#F4C766',
-  errbg: '#3A1A1E', errbd: '#5E2A2F', errfg: '#F2A9A2',
+  card0: '#182422', card1: '#121C1A', cardbd: 'rgba(255,255,255,.08)',
+  fbg: '#101A18', fsh1: 'rgba(0,0,0,.5)', fsh2: 'rgba(255,255,255,.055)',
+  sub: '#A6B8B2', ph: '#7E938D', track: '#1E2C29',
+  warnbg: '#33280F', warnbd: '#66501B', warnfg: '#F2C968',
+  errbg: '#33191D', errbd: '#5C2A30', errfg: '#F2A9A2',
   okc: '#5EEAD4', btnfg: '#12101C',
   gtbg: 'rgba(255,255,255,.09)', gtbd: 'rgba(255,255,255,.14)',
-  famop: '.08', island: '#0D0817',
+  famop: '.08', island: '#0A1211',
 
 };
 
 const ACCENTS: Record<WarmDesignId, { light: WarmAccent; dark: WarmAccent }> = {
   wellness: {
     light: { acc: '#7A12D4', deep: '#5B0FA6', g2: '#DF1A6F', soft: '#F8EFFF', mem0: '#F1E4FC', mem1: '#DCEFFC', mem2: '#E2F6EC', bg: '#F5EFE7', ink: '#3A2B4E', ttl: '#7A12D4' },
-    dark: { acc: '#A855F7', deep: '#7C3AED', g2: '#EC4899', soft: '#2A1B3E', mem0: '#2C1C44', mem1: '#1B2A42', mem2: '#173527', bg: '#151021', ink: '#F2EAFC', ttl: '#C9A2F8' },
+    dark: { acc: '#A855F7', deep: '#7C3AED', g2: '#EC4899', soft: '#221F2E', mem0: '#191825', mem1: '#14201D', mem2: '#151B21', bg: '#0F1A19', ink: '#ECE9F2', ttl: '#C6A8EF' },
   },
   kidlearn: {
     light: { acc: '#B91C1C', deep: '#8C1212', g2: '#1D4ED8', soft: '#FEF3C7', mem0: '#FDE9C8', mem1: '#DCEAFC', mem2: '#DEF4E7', bg: '#F8F0E8', ink: '#4A3022', ttl: '#B91C1C' },
-    dark: { acc: '#F87171', deep: '#DC2626', g2: '#60A5FA', soft: '#3B2416', mem0: '#3E2617', mem1: '#1D2A45', mem2: '#1C3526', bg: '#1B1112', ink: '#FBE9E4', ttl: '#F5A29B' },
+    dark: { acc: '#F87171', deep: '#DC2626', g2: '#60A5FA', soft: '#262019', mem0: '#1C1A15', mem1: '#151D1C', mem2: '#151A21', bg: '#0F1A19', ink: '#F0EAE2', ttl: '#F0BFA1' },
   },
   blend: {
     light: { acc: '#1769C2', deep: '#104E92', g2: '#2F7D6D', soft: '#E3F1EE', mem0: '#DFECF8', mem1: '#E5F3F0', mem2: '#E5F3EC', bg: '#F2F6F4', ink: '#22384B', ttl: '#1769C2' },
@@ -64,7 +64,7 @@ const ACCENTS: Record<WarmDesignId, { light: WarmAccent; dark: WarmAccent }> = {
   },
   classic: {
     light: { acc: '#2564A8', deep: '#1B4D86', g2: '#2E8CD8', soft: '#E1ECF6', mem0: '#D8E7F6', mem1: '#DDEBF7', mem2: '#E4F1F8', bg: '#F1F5F8', ink: '#243A52', ttl: '#2564A8' },
-    dark: { acc: '#60A5FA', deep: '#2564A8', g2: '#93C5FD', soft: '#1B2A3D', mem0: '#1B2A42', mem1: '#1C2C44', mem2: '#1D2E46', bg: '#0F1620', ink: '#E3EDF7', ttl: '#7DB3E8' },
+    dark: { acc: '#60A5FA', deep: '#2564A8', g2: '#93C5FD', soft: '#1C2733', mem0: '#16232A', mem1: '#152426', mem2: '#15231F', bg: '#0F1A19', ink: '#E3EDF7', ttl: '#8FBBE9' },
   },
 };
 

@@ -23,10 +23,10 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
 // پالت تاریک اختصاصی هر دیزاین (design-A-warm → src/theme/warmPalettes.ts)
 const DARK_PALETTE={
- 'wellness-dark':{bg:'#151021',surface:'#241C33',primary:'#A855F7',text:'#F2EAFC',border:'#ffffff14'},
- 'kidlearn-dark':{bg:'#1B1112',surface:'#241C33',primary:'#F87171',text:'#FBE9E4',border:'#ffffff14'},
- 'blend-dark':{bg:'#0F1A19',surface:'#241C33',primary:'#38BDF8',text:'#E6F2F1',border:'#ffffff14'},
- 'classic-dark':{bg:'#0F1620',surface:'#241C33',primary:'#60A5FA',text:'#E3EDF7',border:'#ffffff14'},
+ 'wellness-dark':{bg:'#0F1A19',surface:'#182422',primary:'#A855F7',text:'#ECE9F2',border:'#ffffff14'},
+ 'kidlearn-dark':{bg:'#0F1A19',surface:'#182422',primary:'#F87171',text:'#F0EAE2',border:'#ffffff14'},
+ 'blend-dark':{bg:'#0F1A19',surface:'#182422',primary:'#38BDF8',text:'#E6F2F1',border:'#ffffff14'},
+ 'classic-dark':{bg:'#0F1A19',surface:'#182422',primary:'#60A5FA',text:'#E3EDF7',border:'#ffffff14'},
 };
 const hexRgb=hex=>{const h=hex.replace('#','');return rgb(parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16));};
 
@@ -81,7 +81,7 @@ assert(app.includes('resolveColorMode(personalColorMode,publicThemeMode'),'App d
 assert(app.includes("TH[`${activeDesign}-dark`]"),'Public dark mode does not resolve the selected design own dark palette');
 assert(support.includes("...TH.wellness,...publicDarkPatch('wellness')")&&support.includes("...TH.kidlearn,...publicDarkPatch('kidlearn')")&&support.includes("...TH.blend,...publicDarkPatch('blend')")&&support.includes("...TH.classic,...publicDarkPatch('classic')"),'A design is missing its dedicated dark palette');
 const palettesSource=fs.readFileSync('src/theme/warmPalettes.ts','utf8');
-for(const [hex,label] of [['#151021','wellness dark canvas'],['#1B1112','kidlearn dark canvas'],['#0F1A19','blend dark canvas'],['#0F1620','classic dark canvas']]) assert(palettesSource.includes(hex),`missing ${label} (${hex})`);
+for(const [hex,label] of [['#0F1A19','unified dark canvas (all designs)'],['#182422','dark card surface'],['#ECE9F2','wellness dark ink'],['#F0EAE2','kidlearn dark ink'],['#C6A8EF','wellness dark title'],['#F0BFA1','kidlearn dark title']]) assert(palettesSource.includes(hex),`missing ${label} (${hex})`);
 assert(![app,support,designUi,themeSource].join('\n').toLowerCase().includes(retiredDesign),'Retired design remains in active source or UI');
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
