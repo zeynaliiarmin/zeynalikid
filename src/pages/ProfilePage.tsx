@@ -21,7 +21,7 @@ export default function ProfilePage(){
       </Helmet>
       <style>{css}</style>
       <section style={{ ...S.card, maxWidth: 560, marginTop: 18 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 20, margin: '0 auto 14px', display: 'grid', placeItems: 'center', background: T.soft, color: T.acc, fontSize: 28 }} aria-hidden="true">⌕</div>
+        <div style={{ width: 64, height: 64, borderRadius: 20, margin: '0 auto 14px', display: 'grid', placeItems: 'center', background: T.soft, color:T.accText, fontSize: 28 }} aria-hidden="true">⌕</div>
         <h1 id="profile-page-title" style={{ margin: '0 0 8px', color: T.ttl, fontSize: 22, textAlign: 'center' }}>
           {en ? 'View your real records' : 'مشاهده پرونده‌های واقعی شما'}
         </h1>

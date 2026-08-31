@@ -17,7 +17,7 @@ export default function PrivacyConsent({accepted,attempted,lang,T,textFa,textEn,
   <input type="checkbox" checked={accepted} onChange={event=>onChange(event.target.checked)} style={{marginTop:2,accentColor:T.acc,width:17,height:17,flex:'0 0 auto'}}/>
   <span style={{display:'block',minWidth:0,whiteSpace:'normal',lineHeight:1.65,margin:0,padding:0}}>
    <span>{lang==='en'?textEn:textFa}</span>{' '}
-   <button type="button" onClick={event=>{event.preventDefault();event.stopPropagation();onOpenPrivacy()}} style={{display:'inline',verticalAlign:'baseline',border:0,background:'transparent',padding:0,margin:0,color:T.acc,fontFamily:'inherit',fontSize:'inherit',lineHeight:'inherit',fontWeight:800,cursor:'pointer'}}>{lang==='en'?'Privacy notice':'متن حریم خصوصی'}</button>
+   <button type="button" onClick={event=>{event.preventDefault();event.stopPropagation();onOpenPrivacy()}} style={{display:'inline',verticalAlign:'baseline',border:0,background:'transparent',padding:0,margin:0,color:T.accText,fontFamily:'inherit',fontSize:'inherit',lineHeight:'inherit',fontWeight:800,cursor:'pointer'}}>{lang==='en'?'Privacy notice':'متن حریم خصوصی'}</button>
    {invalid&&<strong role="alert" style={{display:'block',marginTop:5,fontSize:11,lineHeight:1.55,color:T.err}}>{lang==='en'?'To continue, confirm this option if you agree.':'برای ادامه، در صورت موافقت این گزینه را فعال کنید.'}</strong>}
   </span>
  </label>;

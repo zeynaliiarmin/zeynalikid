@@ -95,7 +95,7 @@ export default function ProductsPage(){
             borderRadius: '999px', opacity: 0.35, pointerEvents: 'none'
           }} />
 
-          <button onClick={() => window.history.back()} style={{ minHeight: 44, background: 'transparent', border: 0, color: 'var(--zk-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={() => window.history.back()} style={{ minHeight: 44, background: 'transparent', border: 0, color:'var(--zk-primary-text)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
             {lang === 'en' ? 'Back' : 'بازگشت'}
           </button>
 
@@ -109,9 +109,9 @@ export default function ProductsPage(){
               : 'محصولات و برنامه‌های زینالیکید همراهان اندیشمند در مسیر رشد فرزند شما هستند — نه جایگزین مشاوره تخصصی.'}
           </p>
 
-          <p style={{ fontSize: 12.5, color: 'var(--zk-primary)', marginTop: 4 }}>
+          <p style={{ fontSize: 12.5, color:'var(--zk-primary-text)', marginTop: 4 }}>
             {lang === 'en' ? 'We recommend starting with a free consultation to choose the best option.' : 'برای انتخاب بهترین گزینه، پیشنهاد می‌کنیم ابتدا مشاوره رایگان را تکمیل کنید.'}
-            <button onClick={goConsult} style={{ marginInlineStart: 8, background: 'transparent', border: 0, color: 'var(--zk-primary)', fontWeight: 700, fontSize: 12.5, textDecoration: 'underline' }}>
+            <button onClick={goConsult} style={{ marginInlineStart: 8, background: 'transparent', border: 0, color:'var(--zk-primary-text)', fontWeight: 700, fontSize: 12.5, textDecoration: 'underline' }}>
               {lang === 'en' ? 'Start consultation' : 'شروع مشاوره'}
             </button>
           </p>
@@ -129,7 +129,7 @@ export default function ProductsPage(){
                 borderRadius: 999,
                 border: filter === f.id ? '1px solid var(--zk-primary)' : '1px solid var(--zk-border)',
                 background: filter === f.id ? 'var(--zk-primary-light)' : 'var(--zk-surface)',
-                color: filter === f.id ? 'var(--zk-primary)' : 'var(--zk-text)',
+                color: filter === f.id ? 'var(--zk-primary-text)' : 'var(--zk-text)',
                 fontWeight: 700,
                 fontSize: 12.5,
                 whiteSpace: 'nowrap',

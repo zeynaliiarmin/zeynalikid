@@ -12,6 +12,7 @@ import { TRACKING_PREFIX } from '../config/project';
 import { normalizeTrackingCode } from '../utils/tracking';
 import { PhoneIcon, PinIcon, ChatIcon, productVectorIcon } from '../components/Icons';
 import './portal.css';
+import { designModeFromThemeId, warmZpVars } from '../theme/warmPalettes';
 
 const getLS = (k: string, f: any) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch { return f; } };
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || '';
@@ -191,22 +192,13 @@ export default function TrackPage() {
     return products.map((p: any) => `${p.name}: ${p.description || ''}`).filter(Boolean).join('\n\n') || (lang === 'en' ? 'Usage instructions have not been added yet.' : 'طریقه مصرف هنوز ثبت نشده است.');
   };
 
-  const acc = T.acc || '#7A12D4';
-  const darkGlass = String(T.id || '').includes('dark');
-  const mem = T.memphis || [T.soft, T.soft, T.soft];
-  const rootVars: any = {
-    '--zp-acc': acc, '--zp-g2': T.grad2 || '#DF1A6F', '--zp-deep': darkGlass ? '#7C3AED' : '#5B0FA6',
-    '--zp-ink': darkGlass ? '#F2EAFC' : T.txt, '--zp-sub': darkGlass ? '#A79BC0' : T.mut,
-    '--zp-bg': darkGlass ? '#151021' : (T.bg === '#FFFFFF' ? '#F5EFE7' : T.bg),
-    '--zp-soft': darkGlass ? '#2A1B3E' : T.soft, '--zp-card0': darkGlass ? '#241C33' : '#fff',
-    '--zp-card1': darkGlass ? '#1D1627' : '#FBF8F3', '--zp-cardbd': darkGlass ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.8)',
-    '--zp-fbg': darkGlass ? '#1B1327' : '#F3EDE4', '--zp-fsh1': darkGlass ? 'rgba(0,0,0,.5)' : 'rgba(74,58,96,.10)',
-    '--zp-fsh2': darkGlass ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.9)', '--zp-ph': darkGlass ? '#6E6390' : '#B4AABE',
-    '--zp-track': darkGlass ? '#2B2140' : '#EFE9F4', '--zp-mem0': mem[0] || '#F1E4FC', '--zp-mem1': mem[1] || '#DCEFFC', '--zp-mem2': mem[2] || '#E2F6EC',
-    '--zp-warnbg': darkGlass ? '#3A2A10' : '#FFF6E4', '--zp-warnbd': darkGlass ? '#6E5115' : '#F3DDAB', '--zp-warnfg': darkGlass ? '#F4C766' : '#96660A',
-    '--zp-errbg': darkGlass ? '#3A1A1E' : '#FDF0EF', '--zp-errbd': darkGlass ? '#5E2A2F' : '#F6D0CB', '--zp-errfg': darkGlass ? '#F2A9A2' : '#B4403A',
-    '--zp-okc': T.ok || '#047857', '--zp-famop': darkGlass ? '.08' : '.16', '--zp-softg': darkGlass ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.025)',
-  };
+  // پالت اختصاصی همین دیزاین در همین حالت (روشن/تاریک) — دقیقاً از فایل design-A-warm
+  const zpTheme = designModeFromThemeId(T.id);
+  const zp = warmZpVars(zpTheme.design, zpTheme.dark);
+  const darkGlass = zpTheme.dark;
+  const acc = zp['--zp-acc'];
+  const mem = [zp['--zp-mem0'], zp['--zp-mem1'], zp['--zp-mem2']];
+  const rootVars: any = { ...zp };
 
   const brand = String(cfg?.browserTitle || cfg?.siteTitle || (lang === 'en' ? 'Farzandman' : 'فرزند من')).replace(/[“”"]/g, '').trim();
   const glassCard: any = { background: darkGlass ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,.90)', border: `1px solid ${darkGlass ? 'rgba(255,255,255,.2)' : T.brd}`, borderRadius: 16 };

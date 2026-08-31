@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import puppeteer from 'puppeteer';
 
 const base=process.env.TEST_BASE_URL||'http://localhost:4173';
@@ -23,6 +24,15 @@ let blockSettingsFetch=false;
 
 const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
 const normalize=value=>String(value||'').replaceAll(' ','').toLowerCase();
+// پالت تاریک اختصاصی هر دیزاین (design-A-warm → src/theme/warmPalettes.ts)
+const DARK_DESIGN={
+ wellness:{bg:'#151021',surface:'#1D1627',text:'#F2EAFC',muted:'#A79BC0',accent:'#A855F7'},
+ kidlearn:{bg:'#1B1112',surface:'#1D1627',text:'#FBE9E4',muted:'#A79BC0',accent:'#F87171'},
+ blend:{bg:'#0F1A19',surface:'#1D1627',text:'#E6F2F1',muted:'#A79BC0',accent:'#38BDF8'},
+ classic:{bg:'#0F1620',surface:'#1D1627',text:'#E3EDF7',muted:'#A79BC0',accent:'#60A5FA'},
+};
+const brandDefaultDesign='wellness';
+const hexRgb=hex=>{const h=String(hex).replace('#','');return rgb(parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16));};
 
 async function readLayout(page,{react}){
  return page.evaluate(isReact=>{
@@ -62,14 +72,16 @@ function assertGeometry(state,viewport,kind){
  if(state.brand!==brand)throw new Error(`${where}: wrong brand ${state.brand}`);
 }
 
-function assertMode(state,mode,kind){
+function assertMode(state,mode,kind,design=brandDefaultDesign){
  if(state.htmlTheme!==mode||state.nfMode!==mode||state.colorScheme!==mode)throw new Error(`${kind}: unresolved ${mode} mode ${JSON.stringify(state)}`);
  if(mode==='dark'){
-  if(state.shellBg!==rgb(30,41,59)||state.textColor!==rgb(226,232,240)||state.mutedColor!==rgb(176,190,209))throw new Error(`${kind}: restored dark surfaces mismatch ${JSON.stringify(state)}`);
-  const staticPrimary=state.primaryBg.includes('45, 212, 191')&&state.primaryColor===rgb(15,23,34);
-  const reactPrimary=state.primaryImage.includes('15, 118, 110')&&state.primaryImage.includes('3, 105, 161')&&state.primaryColor===rgb(255,255,255);
-  if(!staticPrimary&&!reactPrimary)throw new Error(`${kind}: dark primary contrast mismatch ${JSON.stringify(state)}`);
- }else if(state.shellBg===rgb(30,41,59)||state.textColor===rgb(226,232,240)){
+  const p=DARK_DESIGN[design];
+  if(!p)throw new Error(`${kind}: no dedicated dark palette expectation for design ${design}`);
+  if(state.shellBg!==hexRgb(p.surface)||state.textColor!==hexRgb(p.text)||state.mutedColor!==hexRgb(p.muted))throw new Error(`${kind}: ${design} dedicated dark surfaces mismatch ${JSON.stringify(state)}`);
+  if(state.primaryColor!==hexRgb('#12101C'))throw new Error(`${kind}: dark primary label is not the readable dark ink ${JSON.stringify(state)}`);
+  const vars=state.vars||{};
+  if(Object.keys(vars).length&&(normalize(vars.page)!==normalize(p.bg)||normalize(vars.text)!==normalize(p.text)||normalize(vars.accent)!==normalize(p.accent)))throw new Error(`${kind}: dark design variables mismatch ${JSON.stringify({want:p,got:vars})}`);
+ }else if(state.shellBg===hexRgb('#1D1627')||state.textColor===hexRgb('#F2EAFC')||state.textColor===hexRgb('#FBE9E4')){
   throw new Error(`${kind}: a dark surface leaked into light mode ${JSON.stringify(state)}`);
  }
 }
@@ -143,15 +155,22 @@ try{
  }
  await setStorage(page,{'zk_personal_color_mode':null});
 
- // React 404: forced dark is identical across every design; forced light never inherits legacy dark palettes.
+ const gen404Script=fs.readFileSync('scripts/generate-404.mjs','utf8'),paletteSource=fs.readFileSync('src/theme/warmPalettes.ts','utf8'),staticHtml=fs.readFileSync('public/404.html','utf8');
+for(const [design,p] of Object.entries(DARK_DESIGN)){
+ for(const [name,hex] of Object.entries({canvas:p.bg,text:p.text,muted:p.muted,accent:p.accent})){
+  if(!gen404Script.includes(hex)||!paletteSource.toLowerCase().includes(hex.toLowerCase()))throw new Error(`static 404 ${design} ${name} palette drifted from src/theme/warmPalettes.ts (${hex})`);
+  if(design===brandDefaultDesign&&!normalize(staticHtml).includes(normalize(hex)))throw new Error(`static 404 html lacks the ${design} dark ${name} colour (${hex})`);
+ }
+}
+
+// React 404: forced dark takes the dedicated dark palette of the selected design; forced light never inherits legacy dark palettes.
  await page.setViewport({width:390,height:844,deviceScaleFactor:1});
  for(const fixture of designs){
   let resolved=await openReact404(page,{mode:'dark',...fixture,path:`/react-dark-${fixture.design}-${fixture.theme}`});
-  let state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React dark ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React dark ${fixture.design}/${fixture.theme}`);
-  if(normalize(state.vars.page)!=='#0f1722'||normalize(state.vars.surface)!=='#1e293b'||normalize(state.vars.text)!=='#e2e8f0'||normalize(state.vars.accent)!=='#2dd4bf')throw new Error(`React dark palette is not shared: ${JSON.stringify(state)}`);
+  let state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React dark ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React dark ${fixture.design}/${fixture.theme}`,fixture.design);
 
   resolved=await openReact404(page,{mode:'light',...fixture,path:`/react-light-${fixture.design}-${fixture.theme}`});
-  state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React light ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React light ${fixture.design}/${fixture.theme}`);
+  state=await readLayout(page,{react:true});assertGeometry(state,{width:390,height:844},`React light ${fixture.design}/${fixture.theme}`);assertMode(state,resolved,`React light ${fixture.design}/${fixture.theme}`,fixture.design);
  }
 
  // Automatic mode resolves on initial load, client navigation, and refresh at both time boundaries.
@@ -164,5 +183,5 @@ try{
   assertMode(await readLayout(page,{react:true}),expected,`React auto refresh ${hour}`);
  }
 
- console.log('Static and React 404 routes preserve geometry and follow personal precedence, global light/dark/auto, and the restored shared dark palette.');
+ console.log('Static and React 404 routes preserve geometry and follow personal precedence, global light/dark/auto, and the dedicated dark palette of each design (light and dark).');
 }finally{await browser.close()}

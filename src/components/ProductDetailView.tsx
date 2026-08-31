@@ -123,11 +123,11 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           {hasDiscount ? (
             <>
-              <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--zk-primary)' }}>{discounted.toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
+              <span style={{ fontSize: 19, fontWeight: 800, color:'var(--zk-primary-text)' }}>{discounted.toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
               <span style={{ textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: 13 }}>{priceNum.toLocaleString()}</span>
             </>
           ) : product.price ? (
-            <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--zk-primary)' }}>{product.price} {isFa ? 'تومان' : 'T'}</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color:'var(--zk-primary-text)' }}>{product.price} {isFa ? 'تومان' : 'T'}</span>
           ) : null}
         </div>
       </div>

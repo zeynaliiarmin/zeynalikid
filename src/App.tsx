@@ -79,6 +79,17 @@ function App(){
  // ─── سیستم مدیریت دیزاین و تم (مرحله ۲ - بازطراحی تدریجی) ───
  const designSystem = cfg.designSystem || configDefaultSettings.designSystem;
 
+ // دیزاین انتخابی مالک برای صفحات عمومی (با اولویت انتخابِ خود کاربر در localStorage).
+ // صفحهٔ /admin* عمداً به کلاسیک قفل می‌شود، اما پوستهٔ «ورود مدیریت» باید همان دیزاین
+ // انتخابی سایت را بگیرد — پس این تابع جدا از getDesignForPath نگه داشته شده است.
+ const resolvePublicDesign = (): string => {
+  const configured = normalizeDesignId(designSystem?.sections?.public?.design, 'wellness');
+  try {
+   const localDesign = localStorage.getItem('zk_design_system');
+   if (localDesign) return normalizeDesignId(localDesign, configured);
+  } catch {}
+  return configured;
+ };
  // Resolve design ids without ever writing compatibility changes back to stored settings.
  const getDesignForPath = (path: string, settings: DynamicRecord): string => {
   if (path.startsWith('/admin') || path.startsWith('/admin-login')) return 'classic';
@@ -113,13 +124,17 @@ function App(){
  const effectivePublicMode=resolveColorMode(personalColorMode,publicThemeMode,new Date().getHours());
  const publicDark=effectivePublicMode==='dark';
  const adminDark=personalColorMode==='dark';
- // حالت تاریک عمومی: یک پالت مشترک (فیروزه‌ای) روی هندسهٔ همان دیزاین انتخابی سوار می‌شود.
- // طبق تصمیم مالک: برای هر دیزاین دارک‌مود اختصاصی طراحی نشده، پس همه دیزاین‌ها در حالت تاریک
- // فقط همان «پالت تاریک مشترک» را می‌خوانند؛ هندسه/شعاع/فاصله از دیزاین روشن گرفته می‌شود.
+ // حالت تاریک عمومی: هر دیزاین پالت تاریکِ اختصاصی خودش را دارد (wellness / kidlearn / blend / classic).
+ // هندسه (شعاع، فاصله، سایه‌های ساختاری) از همان دیزاین می‌آید و رنگ‌ها از پالت تیرهٔ خودش؛
+ // منبع رنگ‌ها: src/theme/warmPalettes.ts (برگرفته از design-A-warm).
  const publicLightTheme = TH[activeDesign];
- const T = isAdminRoute
+ const publicDarkTheme = TH[`${activeDesign}-dark`] || {...publicLightTheme,...PUBLIC_DARK_COLORS};
+ const T_base = isAdminRoute
   ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
-  : (publicDark ? ({...publicLightTheme,...PUBLIC_DARK_COLORS}) : publicLightTheme);
+  : (publicDark ? publicDarkTheme : publicLightTheme);
+ // accText = رنگ متن‌های رنگی (لینک، برچسب، دکمهٔ نرم). در پالت تاریک یک درجه روشن‌تر از
+ // acc انتخاب می‌شود تا روی کارت‌های تیره هم-AA بماند؛ در حالت روشن همان acc است.
+ const T = {...T_base, accText: T_base.accText || T_base.acc};
 
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
@@ -155,10 +170,10 @@ function App(){
   root.setAttribute('data-color-mode-source',personalColorMode?'personal':'global');
   root.setAttribute('data-zk-theme',String(T.id));
   root.style.setProperty('color-scheme',effectivePublicMode);
-  root.style.backgroundColor=publicDark?'#0F1722':'#F8FBFA';
+  root.style.backgroundColor=publicDark?(String(T.bg||'#0F1620')):'#F8FBFA';
   adminInlineVars.forEach(name=>root.style.removeProperty(name));
   const themeColor=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if(themeColor)themeColor.content=publicDark?'#0F1722':'#F8FBFA';
+  if(themeColor)themeColor.content=publicDark?(String(T.bg||'#0F1620')):'#F8FBFA';
  },[isAdminRoute,adminDark,personalColorMode,effectivePublicMode,publicDark,publicThemeMode,publicThemeTick,T.id,activeDesign]);
 
  useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
@@ -340,7 +355,7 @@ function App(){
    // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [referralTarget, cfg]);
  // بازطراحی ظاهری: نئومورفیسم (سایه‌های نرم دوطرفه) + مینیمال (فضای باز، بدون شلوغی) + ممفیس (اشکال هندسی پاستلی در پس‌زمینه)
- const S=useMemo(()=>({page:{minHeight:'100dvh',fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",direction:lang==='fa'?'rtl':'ltr',padding:'calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',display:'flex',justifyContent:'center',alignItems:'flex-start',color:T.txt,position:'relative' as const,overflowX:'hidden' as const},card:{width:'100%',maxWidth:600,background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||18,padding:T.cardPadding||20,boxShadow:T.shadowLight||T.neuOut,boxSizing:'border-box' as const,position:'relative' as const,zIndex:1},lbl:{display:'block',fontSize:14,color:T.mut,marginBottom:7,fontWeight:700},inp:{width:'100%',padding:T.inputPadding||'13px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,minHeight:48,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',boxShadow:T.neuIn,transition:'box-shadow .25s ease, border-color .25s ease'},ta:{width:'100%',padding:T.inputPadding||'12px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,minHeight:100,resize:'vertical' as const,fontFamily:'inherit',boxShadow:T.neuIn},btn:{width:'100%',minHeight:48,padding:T.btnPadding||'14px 28px',background:T.grad,border:0,borderRadius:T.btnRadius||14,color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:T.shadowMedium||`4px 4px 10px rgba(0,0,0,.1),-2px -2px 8px rgba(255,255,255,.15), 0 6px 18px ${T.acc}2e`,fontFamily:'inherit',transition:'all .3s ease'},btnGhost:{width:'100%',minHeight:48,padding:T.btnPadding||'12px 26px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||14,color:T.acc,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:T.neuOut,fontFamily:'inherit',transition:'all .3s ease'},sec:{fontSize:14,fontWeight:800,color:T.ttl,margin:'14px 0 11px',display:'flex',gap:8,alignItems:'center'},div:{height:1,background:`linear-gradient(to right,transparent,${T.brd},transparent)`,margin:'16px 0'}}),[T,lang]);
+ const S=useMemo(()=>({page:{minHeight:'100dvh',fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",direction:lang==='fa'?'rtl':'ltr',padding:'calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',display:'flex',justifyContent:'center',alignItems:'flex-start',color:T.txt,position:'relative' as const,overflowX:'hidden' as const},card:{width:'100%',maxWidth:600,background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.cardRadius||18,padding:T.cardPadding||20,boxShadow:T.shadowLight||T.neuOut,boxSizing:'border-box' as const,position:'relative' as const,zIndex:1},lbl:{display:'block',fontSize:14,color:T.mut,marginBottom:7,fontWeight:700},inp:{width:'100%',padding:T.inputPadding||'13px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,minHeight:48,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',boxShadow:T.neuIn,transition:'box-shadow .25s ease, border-color .25s ease'},ta:{width:'100%',padding:T.inputPadding||'12px 14px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:T.inputRadius||12,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,minHeight:100,resize:'vertical' as const,fontFamily:'inherit',boxShadow:T.neuIn},btn:{width:'100%',minHeight:48,padding:T.btnPadding||'14px 28px',background:T.grad,border:0,borderRadius:T.btnRadius||14,color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:T.shadowMedium||`4px 4px 10px rgba(0,0,0,.1),-2px -2px 8px rgba(255,255,255,.15), 0 6px 18px ${T.acc}2e`,fontFamily:'inherit',transition:'all .3s ease'},btnGhost:{width:'100%',minHeight:48,padding:T.btnPadding||'12px 26px',background:T.card,border:`1px solid ${T.brd}`,borderRadius:T.btnRadius||14,color:T.accText,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:T.neuOut,fontFamily:'inherit',transition:'all .3s ease'},sec:{fontSize:14,fontWeight:800,color:T.ttl,margin:'14px 0 11px',display:'flex',gap:8,alignItems:'center'},div:{height:1,background:`linear-gradient(to right,transparent,${T.brd},transparent)`,margin:'16px 0'}}),[T,lang]);
  const countries=cfg.countryCodes||baseCountries; const hasCt=Object.values(cfg.contacts||{}).some((v)=>Array.isArray(v)?v.length:v);
  // اصلاح ۱۸: هدایت به پروژه ثانویه (فرم مشاوره)
  const goToSecondaryApp=()=>{
@@ -371,7 +386,7 @@ function App(){
   return <EnrollmentStepper step={step} lang={lang} T={T} />;
 }
  // اصلاح ۱-۳ (مرحله ۴): برچسب‌های Tag اکنون از trVal برای ترجمه استفاده می‌کنند
- function Tag({x}:{x:string}){return <span style={{fontSize:10,padding:'3px 7px',borderRadius:T.badgeRadius||12,background:T.soft,color:T.acc,border:`1px solid ${T.brd}`}}>{trVal(x)}</span>}
+ function Tag({x}:{x:string}){return <span style={{fontSize:10,padding:'3px 7px',borderRadius:T.badgeRadius||12,background:T.soft,color:T.accText,border:`1px solid ${T.brd}`}}>{trVal(x)}</span>}
  // اصلاح ۱-۵ (مرحله ۴): مقدار پیش‌فرض کشور مقصد (برای dest==='iran') اکنون بر اساس زبان انتخاب‌شده نمایش داده می‌شود (فارسی: «ایران»، انگلیسی: «Iran»)
  function chooseDest(dest:string,cr:DynamicRecord){if((cfg as any)?.entryMode==='user'&&!getUserSession()){setPortalNext('/courses');setView('track');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
  function deliveryText(){if(!course.dest)return `${trVal(cfg.delivery.iranFastText)} / ${trVal(cfg.delivery.iranOtherText)} / ${trVal(cfg.delivery.intlText)}`; if(course.dest==='intl')return trVal(cfg.delivery.intlText); if(course.shippingMethod === 'mahaks') return lang === 'en' ? '48-hour delivery' : 'تحویل ۴۸ ساعته'; const city=String(course.form.city||'').trim(); if(!city)return publicText('deliveryAddressRequired','برای تخمین زمان تحویل، ابتدا باید قسمت آدرس تکمیل شود.'); return cfg.delivery.iranFastCities.some((x:string)=>city.includes(x))?trVal(cfg.delivery.iranFastText):trVal(cfg.delivery.iranOtherText)}
@@ -434,7 +449,7 @@ const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data
   return()=>window.clearTimeout(t);
  },[view,flowDeadline]);
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
- const app:AppContextValue={cfg,saveCfg,mergeSettings,T,TH,S,css,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code))};
+ const app:AppContextValue={cfg,saveCfg,mergeSettings,T,TH,S,css, publicDesign: resolvePublicDesign(), publicColorMode: effectivePublicMode,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code))};
  // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
  // اصلاح چانک-۱: Suspense برای Lazy Loading
  
@@ -474,7 +489,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
     }
   }
   setView('courses');
-}} onConsultClick={()=>{ requestConsult(); }}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}{referralConsultOpen&&referralConsultant&&(()=>{
+}} onConsultClick={()=>{ requestConsult(); }}/>}{shipModal&&<Modal T={T} onClose={()=>setShipModal(null)} closeLabel={publicText('backBtn','بازگشت')}><div style={{textAlign:'center',padding:'10px 6px'}}><div style={{width:64,height:64,borderRadius:'50%',background:`${T.acc}15`,color:T.accText,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><MiniIcon type="truck" T={T}/></div><h3 style={{color:T.ttl,fontSize:18,margin:'0 0 8px',fontWeight:800}}>{publicText('chooseDest','لطفاً مقصد ارسال را انتخاب کنید')}</h3><p style={{fontSize:13,color:T.mut,margin:'0 0 20px',lineHeight:1.8}}>{lang==='en'?'Please select whether the order will be shipped inside Iran or internationally. Payment and shipping options will adjust based on your selection.':'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}</p><div style={{display:'flex',flexDirection:'column',gap:12}}><button type="button" onClick={()=>chooseDest('iran',shipModal)} style={{...S.btn,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🇮🇷</span><span>{publicText('sendIran','ارسال برای ایران')}</span></button><button type="button" onClick={()=>chooseDest('intl',shipModal)} style={{...S.btnGhost,display:'flex',alignItems:'center',justifyContent:'center',gap:10,minHeight:52,fontSize:15}}><span>🌐</span><span>{publicText('sendIntl','ارسال برای خارج از ایران')}</span></button></div></div></Modal>}{referralConsultOpen&&referralConsultant&&(()=>{
   const tab = referralTarget?.tabCode ? findTabByCode(cfg.courseTabs||[], referralTarget.tabCode) : null;
   const isDir = tab && typeof referralTarget?.courseIndex === 'number';
   const mainLabel = isDir && tab
@@ -501,7 +516,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
   return (
     <Modal T={T} onClose={()=>{setReferralConsultOpen(false);setReferralConsultShowReason(false);}} closeLabel={lang==='en'?'Close':'بستن'} max={480}>
       <div style={{textAlign:'center',padding:'6px 2px'}}>
-        <div style={{width:52,height:52,borderRadius:'50%',background:`${T.acc}15`,color:T.acc,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}><MiniIcon type="course" T={T}/></div>
+        <div style={{width:52,height:52,borderRadius:'50%',background:`${T.acc}15`,color:T.accText,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}><MiniIcon type="course" T={T}/></div>
         <h3 style={{color:T.ttl,fontSize:16,margin:'0 0 8px',fontWeight:800,lineHeight:1.6}}>
           {(cfg.referral?.texts?.popupTitle
             ? fillReferralText(cfg.referral.texts.popupTitle, { consultant: lang==='en' ? (referralConsultant.nameEn||referralConsultant.name) : referralConsultant.name })

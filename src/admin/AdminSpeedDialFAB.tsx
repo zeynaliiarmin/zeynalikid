@@ -93,7 +93,7 @@ export default function AdminSpeedDialFAB({
                 whiteSpace: 'nowrap',
               }}
             >
-              <span style={{ color: T.acc }}>{it.icon}</span>
+              <span style={{ color:T.accText }}>{it.icon}</span>
               <span>{it.label}</span>
             </button>
           ))}

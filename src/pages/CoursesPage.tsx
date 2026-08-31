@@ -356,7 +356,7 @@ export default function CoursesPage(){
         {/* Header */}
         <div style={{ paddingTop: 18, paddingBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: lang === 'fa' ? 'flex-end' : 'flex-start', marginBottom: 4 }}>
-            <button onClick={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else { window.history.back(); } }} style={{ minHeight: 44, background: 'transparent', border: 0, color: 'var(--zk-primary)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <button onClick={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else { window.history.back(); } }} style={{ minHeight: 44, background: 'transparent', border: 0, color:'var(--zk-primary-text)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               {lang === 'en' ? 'Back' : 'بازگشت'}
             </button>
           </div>
@@ -419,7 +419,7 @@ export default function CoursesPage(){
                 borderRadius: 999,
                 border: filter === f.id ? '1px solid var(--zk-primary)' : '1px solid var(--zk-border)',
                 background: filter === f.id ? 'var(--zk-primary-light)' : 'var(--zk-surface)',
-                color: filter === f.id ? 'var(--zk-primary)' : 'var(--zk-text)',
+                color: filter === f.id ? 'var(--zk-primary-text)' : 'var(--zk-text)',
                 fontWeight: 700,
                 fontSize: 13,
                 whiteSpace: 'nowrap',
@@ -527,7 +527,7 @@ export default function CoursesPage(){
                 <section key={tab.id} style={{ marginTop: 28, marginBottom: 22 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
                     <h2 style={{ fontSize: 16, color: 'var(--zk-text)', margin: 0, fontWeight: 800 }}>{lang === 'en' ? (tab.titleEn || tab.title) : tab.title}</h2>
-                    <button type="button" onClick={() => { setFilter(tab.id); setCourseTab(tab.id); }} style={{ minHeight: 34, padding: '6px 13px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'transparent', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <button type="button" onClick={() => { setFilter(tab.id); setCourseTab(tab.id); }} style={{ minHeight: 34, padding: '6px 13px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'transparent', color:'var(--zk-primary-text)', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {lang === 'en' ? 'View all' : 'مشاهده همه'} ({tabCourses.length})
                     </button>
                   </div>
@@ -563,10 +563,10 @@ export default function CoursesPage(){
                   aria-label={lang === 'en' ? 'View all' : 'مشاهده همه'}
                   style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
                 >
-                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color:'var(--zk-primary-text)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
                 </button>
               )}
             </div>
@@ -590,10 +590,10 @@ export default function CoursesPage(){
                   aria-label={lang === 'en' ? 'View all' : 'مشاهده همه'}
                   style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14, direction: lang === 'en' ? 'ltr' : 'rtl', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both', animationDelay: '300ms' }}
                 >
-                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color:'var(--zk-primary-text)' }}>{lang === 'en' ? 'View all' : 'مشاهده همه'}</span>
                 </button>
               )}
             </div>

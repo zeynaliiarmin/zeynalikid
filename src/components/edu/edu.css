@@ -25,9 +25,9 @@ html[data-theme="dark"] .zke-hero::before { opacity: .5; }
   font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; margin-bottom: 14px;
   transition: background .2s ease, color .2s ease;
 }
-.zke-back:hover { background: color-mix(in srgb, var(--zk-primary) 8%, var(--zk-surface)); color: var(--zk-primary); }
+.zke-back:hover { background: color-mix(in srgb, var(--zk-primary) 8%, var(--zk-surface)); color: var(--zk-primary-text, var(--zk-primary, #0F766E)); }
 .zke-title { margin: 0 0 8px; font-size: clamp(22px, 5vw, 32px); font-weight: 800; color: var(--zk-text); line-height: 1.5; }
-.zke-title em { font-style: normal; color: var(--zk-primary, #0F766E); }
+.zke-title em { font-style: normal; color: var(--zk-primary-text, var(--zk-primary, #0F766E)); }
 .zke-sub { margin: 0; max-width: 640px; font-size: 13.5px; line-height: 2.1; color: var(--zk-text-muted); }
 .zke-notice {
   display: flex; align-items: flex-start; gap: 10px; margin-top: 16px;
@@ -69,14 +69,14 @@ html[data-theme="dark"] .zke-notice { background: color-mix(in srgb, var(--zk-ac
 }
 .zke-chip:hover { background: color-mix(in srgb, var(--zk-primary) 7%, var(--zk-surface)); color: var(--zk-text); }
 .zke-chip.on { background: var(--zk-primary, #0F766E); border-color: var(--zk-primary, #0F766E); color: #fff; font-weight: 800; }
-html[data-theme="dark"] .zke-chip.on { color: #0F1722; }
+html[data-theme="dark"] .zke-chip.on { color: var(--zk-text-inverse, #0F1722); }
 .zke-kw { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .zke-kw button {
   min-height: 32px; padding: 5px 12px; border-radius: var(--zk-radius-pill, 999px);
   border: 1px dashed var(--zk-border-strong, #bbb); background: transparent; color: var(--zk-text-muted);
   font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
 }
-.zke-kw button:hover { border-color: var(--zk-primary); color: var(--zk-primary); }
+.zke-kw button:hover { border-color: var(--zk-primary); color: var(--zk-primary-text, var(--zk-primary, #0F766E)); }
 
 /* ── گرید محتوا ── */
 .zke-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: flex-start; }
@@ -102,7 +102,7 @@ html[data-theme="dark"] .zke-chip.on { color: #0F1722; }
   border-radius: 8px; font-size: 10.5px; font-weight: 800; color: #fff;
   backdrop-filter: blur(4px);
 }
-html[data-theme="dark"] .zke-badge { color: #0F1722; }
+html[data-theme="dark"] .zke-badge { color: var(--zk-text-inverse, #0F1722); }
 .zke-badge.t-text { background: #0F766E; }
 .zke-badge.t-video { background: #B42318; }
 .zke-badge.t-audio { background: #6D28D9; }
@@ -123,14 +123,14 @@ html[data-theme="dark"] .zke-badge.t-image { background: #E7D8B8; }
 .zke-card-desc { margin: 0; font-size: 12px; color: var(--zk-text-muted); line-height: 1.9; }
 .zke-meta { display: flex; align-items: center; gap: 10px; font-size: 10.5px; color: var(--zk-text-muted); margin-top: 2px; }
 .zke-meta span { display: inline-flex; align-items: center; gap: 4px; }
-.zke-meta-views { color: var(--zk-primary, #0F766E); font-weight: 700; white-space: nowrap; }
+.zke-meta-views { color: var(--zk-primary-text, var(--zk-primary, #0F766E)); font-weight: 700; white-space: nowrap; }
 .zke-card-cta {
   margin-top: auto; padding-top: 10px; display: flex;
 }
 .zke-pillbtn {
   min-height: 44px; padding: 9px 20px; border-radius: var(--zk-radius-pill, 999px);
   border: 1px solid color-mix(in srgb, var(--zk-primary) 45%, var(--zk-border));
-  background: color-mix(in srgb, var(--zk-primary) 7%, transparent); color: var(--zk-primary, #0F766E);
+  background: color-mix(in srgb, var(--zk-primary) 7%, transparent); color: var(--zk-primary-text, var(--zk-primary, #0F766E));
   font-family: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
   transition: background .2s ease;
@@ -170,7 +170,7 @@ html[data-theme="dark"] .zke-pillbtn { color: #5EEAD4; }
 .zke-cta b { font-size: 13.5px; color: var(--zk-text); }
 .zke-cta p { margin: 0; font-size: 12px; color: var(--zk-text-muted); line-height: 2; }
 .zke-cta .zke-pillbtn { background: var(--zk-primary, #0F766E); color: #fff; border: 0; }
-html[data-theme="dark"] .zke-cta .zke-pillbtn { color: #0F1722; }
+html[data-theme="dark"] .zke-cta .zke-pillbtn { color: var(--zk-text-inverse, #0F1722); }
 .zke-related { margin-top: 18px; }
 .zke-related h4 { margin: 0 0 10px; font-size: 13px; font-weight: 800; color: var(--zk-text); }
 .zke-related-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
@@ -181,13 +181,13 @@ html[data-theme="dark"] .zke-cta .zke-pillbtn { color: #0F1722; }
 .zke-player-top { display: flex; align-items: center; gap: 12px; }
 .zke-playbtn { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--zk-primary, #0F766E); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 35%, transparent); transition: transform .18s ease; }
 .zke-playbtn:active { transform: scale(.96); }
-html[data-theme="dark"] .zke-playbtn { color: #0F1722; }
+html[data-theme="dark"] .zke-playbtn { color: var(--zk-text-inverse, #0F1722); }
 .zke-progress { flex: 1; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--zk-primary) 15%, var(--zk-border)); overflow: hidden; }
 .zke-progress i { display: block; height: 100%; width: 0%; background: var(--zk-primary, #0F766E); border-radius: 999px; transition: width .3s linear; }
 .zke-times { font-size: 11px; color: var(--zk-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .zke-player-tools { display: flex; gap: 8px; }
 .zke-tool { min-height: 40px; padding: 7px 14px; border: 1px solid var(--zk-border); border-radius: var(--zk-radius-pill, 999px); background: transparent; color: var(--zk-text-muted); font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-.zke-tool:hover { color: var(--zk-primary); border-color: var(--zk-primary); }
+.zke-tool:hover { color: var(--zk-primary-text, var(--zk-primary, #0F766E)); border-color: var(--zk-primary); }
 .zke-player-note { font-size: 11px; color: var(--zk-text-muted); line-height: 1.9; }
 
 /* ── FAQ ── */

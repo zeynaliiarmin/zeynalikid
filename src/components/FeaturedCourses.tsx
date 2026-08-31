@@ -56,7 +56,7 @@ export default function FeaturedCourses({
         <div>
           <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--zk-text)', margin: 0 }}>{title}</h2>
         </div>
-        <span style={{ fontSize: 10, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', padding: '3px 10px', borderRadius: 999, fontWeight: 700 }}>
+        <span style={{ fontSize: 10, background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', padding: '3px 10px', borderRadius: 999, fontWeight: 700 }}>
           {lang === 'en' ? 'Featured' : 'منتخب'}
         </span>
       </div>

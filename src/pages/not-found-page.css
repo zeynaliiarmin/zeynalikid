@@ -253,7 +253,7 @@ body:has(.zk-nf-page) #root>div{
   gap:8px;
   background:var(--nf-gradient);
   box-shadow:0 10px 15px -3px color-mix(in srgb,var(--nf-accent) 24%,transparent),0 4px 6px -4px color-mix(in srgb,var(--nf-warm) 22%,transparent);
-  color:#ffffff!important;
+  color:var(--nf-on-accent,#ffffff)!important;
   font-size:14px;
   font-weight:700;
   line-height:1.4;
@@ -298,7 +298,7 @@ body:has(.zk-nf-page) #root>div{
 
 .zk-nf-primary:active{
   background:linear-gradient(rgba(15,23,42,.14),rgba(15,23,42,.14)),var(--nf-gradient);
-  color:#ffffff!important;
+  color:var(--nf-on-accent,#ffffff)!important;
   filter:none!important;
 }
 

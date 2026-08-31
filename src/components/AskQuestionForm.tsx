@@ -77,7 +77,7 @@ function CountrySelect({
           background: T.inp || '#fff',
           border: `1px solid ${T.brd || '#E5E0D8'}`,
           borderRadius: T.inputRadius || 12,
-          color: T.acc || '#0F766E',
+          color:T.accText || '#0F766E',
           cursor: 'pointer',
           fontSize: 13.5,
           fontFamily: 'inherit',
@@ -131,7 +131,7 @@ function CountrySelect({
                 background: value === c.code ? (T.soft || '#CCFBF1') : 'transparent',
                 border: 0,
                 borderRadius: 9,
-                color: value === c.code ? (T.acc || '#0F766E') : (T.txt || '#1F2937'),
+                color: value === c.code ? (T.accText || '#0F766E') : (T.txt || '#1F2937'),
                 cursor: 'pointer',
                 textAlign: 'right',
                 fontFamily: 'inherit',
@@ -260,7 +260,7 @@ export default function AskQuestionForm({
             paddingBottom: 12,
           }}
         >
-          <div style={{ fontSize: 17, fontWeight: 800, color: T.ttl || T.acc || '#0F766E' }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: T.ttl || T.accText || '#0F766E' }}>
             {isFa ? 'سؤال دارید؟ بپرسید' : 'Ask a Question'}
           </div>
           <button
@@ -273,7 +273,7 @@ export default function AskQuestionForm({
               borderRadius: T.btnRadius || 12,
               border: `1px solid ${T.brd || '#E5E0D8'}`,
               background: T.soft || 'transparent',
-              color: T.acc || T.txt || '#0F766E',
+              color:T.accText || T.txt || '#0F766E',
               cursor: 'pointer',
               fontSize: 20,
               display: 'flex',

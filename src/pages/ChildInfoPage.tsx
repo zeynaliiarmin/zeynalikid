@@ -100,7 +100,7 @@ export default function ChildInfoPage(){
       <div style={{width:26,height:26,borderRadius:999,background:`${T.acc}12`,display:'flex',alignItems:'center',justifyContent:'center'}}><MiniIcon type="user" T={T}/></div>
       <div><div style={{fontSize:10.5,color:T.mut,fontWeight:600}}>{lang==='en'?'Step 2 of 5 • Child Information':'مرحله ۲ از ۵ • اطلاعات فرزند'}</div><div style={{fontSize:16.5,fontWeight:800,color:T.ttl}}>{publicText('childInfo','اطلاعات فرزند')}</div></div>
     </div>
-    <div style={{background:`${T.acc}08`,borderRadius:14,padding:'7px 11px',fontSize:13,boxShadow:T.neuIn}}><span style={{color:T.mut}}>{lang==='en'?'Selected course':'دوره انتخاب‌شده'}: </span><b style={{color:T.acc}}>{selectedTitle||'—'}</b></div>
+    <div style={{background:`${T.acc}08`,borderRadius:14,padding:'7px 11px',fontSize:13,boxShadow:T.neuIn}}><span style={{color:T.mut}}>{lang==='en'?'Selected course':'دوره انتخاب‌شده'}: </span><b style={{color:T.accText}}>{selectedTitle||'—'}</b></div>
   </div>
 
  {fromConsultForm ? <>
@@ -281,7 +281,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
      <div style={{height:8,borderRadius:6,background:T.inp,boxShadow:T.neuIn,overflow:'hidden'}}>
       <div style={{height:'100%',width:`${progress}%`,borderRadius:6,background:T.grad,transition:'width .2s ease'}}/>
      </div>
-     <div style={{fontSize:10.5,color:T.acc,marginTop:4,textAlign:'center',fontWeight:700}}>{publicText('uploadProgress',`در حال آپلود... ${progress}%`).replace('{percent}',String(progress))}</div>
+     <div style={{fontSize:10.5,color:T.accText,marginTop:4,textAlign:'center',fontWeight:700}}>{publicText('uploadProgress',`در حال آپلود... ${progress}%`).replace('{percent}',String(progress))}</div>
     </div>
    )}
 

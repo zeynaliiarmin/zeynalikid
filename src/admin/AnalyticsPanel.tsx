@@ -122,7 +122,7 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
       <h3 style={{ color: T.ttl, marginBottom: 16, fontWeight: 800, display:'flex', alignItems:'center', gap:8, justifyContent:'space-between', flexWrap:'wrap' }}>
         <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><ZkChartIcon size={16} color={T.ttl}/> آمار بازدید</span>
         <button type="button" onClick={doRefresh} disabled={refreshing} title="به‌روزرسانی آمار"
-          style={{ minHeight:36, padding:'6px 14px', borderRadius:8, border:`1px solid ${T.brd}`, background:T.card, color:T.acc, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:6 }}>
+          style={{ minHeight:36, padding:'6px 14px', borderRadius:8, border:`1px solid ${T.brd}`, background:T.card, color:T.accText, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:6 }}>
           {refreshing ? 'در حال به‌روزرسانی…' : '↻ به‌روزرسانی'}
         </button>
       </h3>

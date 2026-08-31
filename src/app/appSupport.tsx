@@ -6,6 +6,7 @@ import { PATH_TO_VIEW,VIEW_TO_PATH } from '../config/routes';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from '../utils/trustFont';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { generateTrackingCode } from '../utils/tracking';
+import { publicDarkPatch } from '../theme/warmPalettes';
 import { optimizeForUpload } from '../utils/imageOptimizer';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { uploadAdminFile, uploadPublicFile } from '../lib/storageUpload';
@@ -148,7 +149,7 @@ const adminPanelDefaults:Any={
 };
 
 export const TH:Any={
- light:{id:'light',name:'روشن',bg:'#eaf1f7',card:'#fff',brd:'rgba(35,100,165,.16)',acc:'#2564a8',soft:'rgba(35,100,165,.09)',grad:'linear-gradient(135deg,#1a4f8a,#2578c8)',txt:'#162435',mut:'#5a7282',ttl:'#2564a8',inp:'#f4f8fc',sel:'#eaf1f7',pop:'#fff',err:'#B91C1C',ok:'#047857',warn:'#854D0E',badge:'#f0f5fb',hdr:'rgba(234,241,247,.96)',neuOut:'6px 6px 12px rgba(35,100,165,.14),-6px -6px 12px rgba(255,255,255,.75)',neuIn:'inset 3px 3px 7px rgba(35,100,165,.12),inset -3px -3px 7px rgba(255,255,255,.7)',memphis:['#bfdbfe','#93c5fd','#dbeafe'],...classicDefaults},
+ light:{id:'light',name:'روشن',bg:'#eaf1f7',card:'#fff',brd:'rgba(35,100,165,.16)',acc:'#2564a8',soft:'rgba(35,100,165,.09)',grad:'linear-gradient(135deg,#1a4f8a,#2578c8)',txt:'#162435',mut:'#4E6472',ttl:'#2564a8',inp:'#f4f8fc',sel:'#eaf1f7',pop:'#fff',err:'#B91C1C',ok:'#047857',warn:'#854D0E',badge:'#f0f5fb',hdr:'rgba(234,241,247,.96)',neuOut:'6px 6px 12px rgba(35,100,165,.14),-6px -6px 12px rgba(255,255,255,.75)',neuIn:'inset 3px 3px 7px rgba(35,100,165,.12),inset -3px -3px 7px rgba(255,255,255,.7)',memphis:['#bfdbfe','#93c5fd','#dbeafe'],...classicDefaults},
  wellness:{
   id: 'wellness', name: 'Wellness',
   bg: '#FFFFFF',
@@ -197,7 +198,7 @@ export const TH:Any={
   soft: '#FEF3C7',
   grad: 'linear-gradient(135deg, #B91C1C 0%, #1D4ED8 100%)',
   txt: '#1F2937',
-  mut: '#6B7280',
+  mut: '#5F6774',
   ttl: '#B91C1C',
   inp: '#FFFFFF',
   sel: '#FEF3C7',
@@ -237,7 +238,7 @@ export const TH:Any={
   soft: 'rgba(35,100,165,.09)',
   grad: 'linear-gradient(135deg,#1a4f8a,#2578c8)',
   txt: '#162435',
-  mut: '#5a7282',
+  mut: '#4E6472',
   ttl: '#2564a8',
   inp: '#f4f8fc',
   sel: '#eaf1f7',
@@ -298,74 +299,20 @@ Object.assign(TH, {
   id:'admin-dark',name:'Admin Dark',
  },
  'classic-dark':{
-  ...classicDefaults,...PUBLIC_DARK_COLORS,
-  id:'classic-dark',name:'Classic Dark',
-  neuOut:'0 4px 16px rgba(0,0,0,.32)',
-  neuIn:'inset 2px 2px 6px rgba(0,0,0,.34),inset -2px -2px 6px rgba(71,85,105,.18)',
-  shadowLight:'0 4px 15px rgba(0,0,0,.22)',shadowMedium:'0 8px 24px rgba(0,0,0,.30)',
-  shadowStrong:'0 18px 42px rgba(0,0,0,.42)',shadowFocus:'0 0 0 4px rgba(45,212,191,.28)',
-  shadowGlow:'0 0 12px rgba(45,212,191,.14)',shadowCardHover:'0 4px 16px rgba(56,189,248,.08)',
-  memphis:['rgba(45,212,191,.05)','rgba(56,189,248,.05)','rgba(255,255,255,.02)'],
+  ...TH.classic,...publicDarkPatch('classic'),
+  id:'classic-dark',name:'کلاسیک — تیره',
  },
  'wellness-dark':{
-  ...classicDefaults,...PUBLIC_DARK_COLORS,
-  id:'wellness-dark',name:'Wellness Dark',
-  acc: '#A78BFA',
-  grad: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)',
-  soft: 'rgba(167,139,250,.12)',
-  badge: 'rgba(167,139,250,.12)',
-  neuOut: '0 4px 15px 0 rgba(0,0,0,0.3)',
-  neuIn: 'inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(45,55,72,0.1)',
-  shadowLight: '0 4px 15px 0 rgba(0,0,0,0.3)',
-  shadowMedium: '0 5px 20px 0 rgba(0,0,0,0.4)',
-  shadowStrong: '0 15px 30px 0 rgba(0,0,0,0.5)',
-  memphis: ['rgba(167,139,250,.05)','rgba(196,181,253,.05)','rgba(190,242,100,.03)'],
-  btnRadius: 128,
-  cardRadius: 16,
-  inputRadius: 8,
-  badgeRadius: 128,
-  avatarRadius: '50%',
-  btnPadding: '14px 28px',
-  btnSmPadding: '10px 18px',
-  btnLgPadding: '18px 36px',
-  cardPadding: 24,
-  inputPadding: '14px 16px',
-  topbarHeight: 64,
-  fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
+  ...TH.wellness,...publicDarkPatch('wellness'),
+  id:'wellness-dark',name:'Wellness — تیره',
  },
  'blend-dark':{
-  ...classicDefaults,...PUBLIC_DARK_COLORS,
-  id:'blend-dark',name:'Blend Dark',
-  acc: '#38BDF8',
-  soft: 'rgba(56,189,248,.12)',
-  grad: 'linear-gradient(135deg,#1769c2,#356b62)',
-  badge: 'rgba(56,189,248,.12)',
-  neuOut: '0 4px 15px rgba(15,38,60,.3)',
-  neuIn: 'inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(45,55,72,0.1)',
-  memphis: ['rgba(56,189,248,.05)','rgba(255,255,255,.02)','rgba(17,24,39,.02)'],
+  ...TH.blend,...publicDarkPatch('blend'),
+  id:'blend-dark',name:'ترکیبی — تیره',
  },
  'kidlearn-dark':{
-  ...classicDefaults,...PUBLIC_DARK_COLORS,
-  id:'kidlearn-dark',name:'KidLearn Dark',
-  btnRadius: 20,
-  cardRadius: 20,
-  inputRadius: 20,
-  badgeRadius: 9999,
-  avatarRadius: '50%',
-  btnPadding: '14px 28px',
-  btnSmPadding: '10px 18px',
-  btnLgPadding: '18px 36px',
-  cardPadding: 24,
-  inputPadding: '16px 16px',
-  topbarHeight: 56,
-  fontFamily: "'Vazirmatn','Tahoma',Arial,sans-serif",
-  neuOut: '6px 6px 0px #4B5563',
-  neuIn: 'inset 2px 2px 6px rgba(0,0,0,0.3), inset -2px -2px 6px rgba(71,85,105,0.1)',
-  shadowLight: '2px 2px 4px rgba(0,0,0,0.4)',
-  shadowMedium: '4px 4px 12px rgba(0,0,0,0.5)',
-  shadowStrong: '8px 8px 24px rgba(0,0,0,0.6)',
-  shadowPlayful: '6px 6px 0px #4B5563',
-  memphis: ['#4B5563', '#374151', '#1F2937'],
+  ...TH.kidlearn,...publicDarkPatch('kidlearn'),
+  id:'kidlearn-dark',name:'KidLearn — تیره',
  },
  'motherly-trust':{
   ...TH.light,
@@ -967,7 +914,7 @@ export function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onS
         <div className="zk-footer-col">
           <button className="zk-footer-acc-head" data-open={openAcc==='reach'} onClick={()=>toggleAcc('reach')} aria-expanded={openAcc==='reach'}>{lang==='en'?'Reach Us':'تماس با ما'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div className="zk-footer-acc-body" data-open={openAcc==='reach'} style={{flexDirection:'column',gap:9,paddingTop:'12px'}}>
-            {c.phone && <a href={`tel:${c.phone}`} style={{display:'flex',alignItems:'center',gap:9,color:T.acc,fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z"/></svg> <span>{c.phone}</span></a>}
+            {c.phone && <a href={`tel:${c.phone}`} style={{display:'flex',alignItems:'center',gap:9,color:T.accText,fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.5 2.1L8 9.4a16 16 0 0 0 6.6 6.6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.4.6A2 2 0 0 1 22 16.9z"/></svg> <span>{c.phone}</span></a>}
             {c.whatsapp && <a href={`https://wa.me/${digits(c.whatsapp)}`} target="_blank" style={{display:'flex',alignItems:'center',gap:9,color:whatsappAccessible,fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5zM8.5 7.8c.2 3.7 3.1 6.4 6.7 6.8l1-1.7-2.2-1-1 1c-1.3-.5-2.2-1.4-2.8-2.7l1-1-1-2.2-1.7.8z"/></svg> <span>WhatsApp</span></a>}
             {c.telegram && <a href={`https://t.me/${String(c.telegram).replace('@','')}`} target="_blank" style={{display:'flex',alignItems:'center',gap:9,color:telegramAccessible,fontSize:14,fontWeight:600,minHeight:44,padding:'2px 0'}}><PlatformIcon type="telegram" color={telegramAccessible} size={18}/> <span>Telegram</span></a>}
           </div>
@@ -976,7 +923,7 @@ export function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onS
         <div className="zk-footer-col">
           <button className="zk-footer-acc-head" data-open={openAcc==='trust'} onClick={()=>toggleAcc('trust')} aria-expanded={openAcc==='trust'}>{lang==='en'?'Trust & Legal':'اعتماد و حقوقی'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div className="zk-footer-acc-body" data-open={openAcc==='trust'} style={{fontSize:13,color:T.mut,lineHeight:1.85,paddingTop:'12px'}}>{lang==='en'?'• 100% confidential • Science-backed TC method':'• کاملاً محرمانه • روش TC علمی'}<br/><br/>{lang==='en'?'Parents-first approach':'رویکرد والد-محور'}</div>
-          {socialLinks.length>0 && <div className="zk-footer-acc-body" data-open={openAcc==='trust'} style={{marginTop:16,gap:10,flexWrap:'wrap',paddingTop:'12px'}}>{socialLinks.map((s,i)=><a key={i} href={s.url!} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:999,border:`1px solid ${T.brd}`,background:T.card,color:T.acc}}>{s.icon}</a>)}</div>}
+          {socialLinks.length>0 && <div className="zk-footer-acc-body" data-open={openAcc==='trust'} style={{marginTop:16,gap:10,flexWrap:'wrap',paddingTop:'12px'}}>{socialLinks.map((s,i)=><a key={i} href={s.url!} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',width:42,height:42,borderRadius:999,border:`1px solid ${T.brd}`,background:T.card,color:T.accText}}>{s.icon}</a>)}</div>}
         </div>
       </div>
       </div>

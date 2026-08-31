@@ -109,7 +109,7 @@ export default function SettingsPage(){
                   padding: '11px 10px', borderRadius: btnRad,
                   background: designSys === d.id ? `${T.acc}15` : T.card,
                   border: `2px solid ${designSys === d.id ? T.acc : T.brd}`,
-                  color: designSys === d.id ? T.acc : T.txt,
+                  color: designSys === d.id ? T.accText : T.txt,
                   fontWeight: 700, minHeight: 48, cursor: 'pointer',
                   fontFamily: 'inherit'
                 }}
@@ -149,7 +149,7 @@ export default function SettingsPage(){
                     padding: '11px 10px', borderRadius: btnRad,
                     background: blendTheme === t.id ? `${T.acc}15` : T.card,
                     border: `2px solid ${blendTheme === t.id ? T.acc : T.brd}`,
-                    color: blendTheme === t.id ? T.acc : T.txt,
+                    color: blendTheme === t.id ? T.accText : T.txt,
                     fontWeight: 700, minHeight: 48, cursor: 'pointer',
                     fontFamily: 'inherit'
                   }}

@@ -67,7 +67,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
       }}>
         <div style={{
           display:'inline-flex', alignItems:'center', gap:6,
-          fontSize:11, fontWeight:700, color:'var(--zk-primary)',
+          fontSize:11, fontWeight:700, color:'var(--zk-primary-text)',
           background:'var(--zk-primary-light)', padding:'3px 11px', borderRadius:999,
           marginBottom:'9px', letterSpacing:'.2px'
         }}>

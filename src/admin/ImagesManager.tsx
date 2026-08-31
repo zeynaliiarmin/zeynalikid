@@ -437,7 +437,7 @@ export default function ImagesManager(props: Props) {
                   </select>
                   <button
                     type="button"
-                    style={{ ...AdminBtn(), width: '100%', color: T.acc }}
+                    style={{ ...AdminBtn(), width: '100%', color:T.accText }}
                     onClick={() => openLibraryCrop(it)}
                   >
                     <ZkImageIcon size={14} /> تنظیم کادر لمسی
@@ -619,7 +619,7 @@ function SingleImageEditor({
       {note && <p style={{ fontSize: 11, color: T.mut, margin: '0 0 8px', lineHeight: 1.9 }}>{note}</p>}
       {sourceFile && (
         <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 9 }}>
-          فایل پیش‌فرض: <code dir="ltr" style={{ color: T.acc, fontWeight: 700 }}>{sourceFile}</code>
+          فایل پیش‌فرض: <code dir="ltr" style={{ color:T.accText, fontWeight: 700 }}>{sourceFile}</code>
         </div>
       )}
       {displayUrl && (
@@ -659,7 +659,7 @@ function SingleImageEditor({
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
           <button
             type="button"
-            style={{ ...AdminBtn(), color: T.acc }}
+            style={{ ...AdminBtn(), color:T.accText }}
             onClick={() => { setReplaceOld(val.url); setCropObjectUrl(false); setCropSrc(displayUrl); }}
           >
             <ZkImageIcon size={14} /> تنظیم کادر لمسی
@@ -667,7 +667,7 @@ function SingleImageEditor({
           {fallbackUrl && !isUsingFallback && (
             <button
               type="button"
-              style={{ ...AdminBtn(), color: T.acc }}
+              style={{ ...AdminBtn(), color:T.accText }}
               onClick={() => upd({
                 url: fallbackUrl,
                 alt: fallbackAlt || val.alt || '',

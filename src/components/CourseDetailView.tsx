@@ -25,7 +25,7 @@ function FaqPreviewCard({ item, isFa, T, onMore }: { item: any; isFa: boolean; T
     <div onClick={onMore} style={{ flex: '0 0 78%', maxWidth: 300, scrollSnapAlign: 'start', background: T.card || 'var(--zk-surface)', border: `1px solid ${T.brd || 'var(--zk-border)'}`, borderRadius: 14, padding: 14, cursor: 'pointer', minHeight: 150, display: 'flex', flexDirection: 'column', boxShadow: T.neuOut || '0 4px 15px rgba(15,23,42,.05)', direction: isFa ? 'rtl' : 'ltr', animation: 'fadeSlide .5s ease both', WebkitAnimation: 'fadeSlide .5s ease both' }}>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: T.txt || 'var(--zk-text)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: qLines, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q}</div>
       <div style={{ marginTop: 8, fontSize: 12.5, color: T.mut || 'var(--zk-text-muted)', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: aLines, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>{a || (isFa ? 'پاسخ…' : 'Answer…')}</div>
-      <div style={{ marginTop: 8, fontSize: 11.5, color: T.acc || 'var(--zk-primary)', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginTop: 8, fontSize: 11.5, color:T.accText || 'var(--zk-primary)', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>{needMore ? (isFa ? 'بیشتر' : 'More') : (isFa ? 'مشاهده پاسخ' : 'View answer')}</span>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
       </div>
@@ -372,7 +372,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       {/* Header info */}
       <div style={{ padding: '16px 16px 12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 999, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontWeight: 700 }}>{isFa ? 'دوره تخصصی' : 'Specialized Course'}</span>
+          <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 999, background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', fontWeight: 700 }}>{isFa ? 'دوره تخصصی' : 'Specialized Course'}</span>
           {course.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{course.duration}</span>}
         </div>
 
@@ -391,11 +391,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           <div>
             {hasActiveDiscount ? (
               <>
-                <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--zk-primary)' }}>{(course.discountedPrice || 0).toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
+                <span style={{ fontSize: 19, fontWeight: 800, color:'var(--zk-primary-text)' }}>{(course.discountedPrice || 0).toLocaleString()} {isFa ? 'تومان' : 'T'}</span>
                 <span style={{ marginLeft: 8, textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: 13 }}>{course.price}</span>
               </>
             ) : (
-              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--zk-primary)' }}>{course.price || '—'}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color:'var(--zk-primary-text)' }}>{course.price || '—'}</span>
             )}
           </div>
 
@@ -642,10 +642,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   onClick={openShowAllEdu}
                   style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 120 }}
                 >
-                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid var(--zk-primary)`, background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color:'var(--zk-primary-text)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
                 </button>
               )}
             </div>
@@ -720,10 +720,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   onClick={openShowAllFaq}
                   style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 110, direction: isFa ? 'rtl' : 'ltr' }}
                 >
-                  <span style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--zk-primary)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color:'var(--zk-primary-text)' }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
                 </button>
               )}
             </div>
@@ -736,7 +736,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               <b style={{ display: 'block', color: 'var(--zk-text)', fontSize: 13.5, marginBottom: 3 }}>{isFa ? 'پاسخ پرسش خود را پیدا نکردید؟' : 'Could not find your answer?'}</b>
               <span style={{ color: 'var(--zk-text-muted)', fontSize: 12, lineHeight: 1.7 }}>{isFa ? 'سؤال متنی یا صوتی خود را همراه شماره تماس برای کارشناس ارسال کنید.' : 'Send your text or voice question and phone number to our specialist.'}</span>
             </div>
-            <button type="button" onClick={() => setAskOpen(true)} style={{ minHeight: 44, padding: '9px 18px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'var(--zk-surface)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button type="button" onClick={() => setAskOpen(true)} style={{ minHeight: 44, padding: '9px 18px', borderRadius: 999, border: '1px solid var(--zk-primary)', background: 'var(--zk-surface)', color:'var(--zk-primary-text)', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {isFa ? 'سؤال دارم' : 'Ask a question'}
             </button>
           </div>
@@ -776,7 +776,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 </details>
               ))}
               {/* دکمهٔ «سوال دارم» در انتهای همه پرسش‌ها — باز شدن پاپ‌آپ پرسش */}
-              <button type="button" onClick={() => setAskOpen(true)} style={{ marginTop: 8, minHeight: 48, borderRadius: 14, border: '1px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+              <button type="button" onClick={() => setAskOpen(true)} style={{ marginTop: 8, minHeight: 48, borderRadius: 14, border: '1px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                 {isFa ? 'سوال دارم' : 'Ask a question'}
               </button>
             </div>

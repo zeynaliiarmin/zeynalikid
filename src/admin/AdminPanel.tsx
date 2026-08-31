@@ -235,7 +235,7 @@ export default function AdminPanel(){
 
  // FIX: Stabilize component identity with useMemo to prevent remount on every re-render
  // This fixes: (fg) double-tap on input fields, (sj) page jump / details collapse
- const AdminBtn=useCallback(():any=>({minHeight:44,padding:'9px 14px',border:`1px solid ${T.brd}`,background:T.card,borderRadius:6,color:T.acc,cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',boxShadow:T.neuOut,transition:'all .25s ease'}),[T.brd,T.card,T.acc,T.neuOut]);
+ const AdminBtn=useCallback(():any=>({minHeight:44,padding:'9px 14px',border:`1px solid ${T.brd}`,background:T.card,borderRadius:6,color:T.accText,cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',boxShadow:T.neuOut,transition:'all .25s ease'}),[T.brd,T.card,T.acc,T.neuOut]);
  const Err=useMemo(()=>({x}:{x:any})=><div className="zkad-err"><ZkWarnIcon size={13}/>{x}</div>,[]);
  const Tag=useMemo(()=>({x,tone='mut'}:{x:string,tone?:string})=><span className={`zkad-tag t-${tone}`}>{x}</span>,[]);
 // scrollFocus removed — was causing scroll jumps
@@ -375,7 +375,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const pendingList=subs.filter((x:any)=>x.unread||x.isNew||(x.type==='course'&&(x.orderStatus||'جدید')==='جدید')||(x.type==='consultation'&&(x.consultationStatus||'مشاوره اولیه')==='مشاوره اولیه'));
   const activity=useMemo(()=>[...subs].sort((a:any,b:any)=>subTime(b)-subTime(a)).slice(0,6).map((x:any)=>({id:x.id,t:subTime(x),tone:x.course?'t-info':'t-ok',txt:`${x.course?'ثبت‌نام دوره':'فرم مشاوره'} — ${x.pName||x.fullPhone||'بدون نام'}`})),[subs]);
   // اصلاح ۱۷+۳۵: تب‌های ناوبری با آیکون‌ها و دسته‌بندی
-  const navIcon=(id:string)=>{const p={size:18,color:T.acc};if(id==='courses'||id==='featured'||id==='tagged')return <CoursesIcon {...p}/>;if(id==='content'||id==='highlights'||id==='images')return <EducationIcon {...p}/>;if(id==='contacts')return <ContactIcon {...p}/>;if(id==='licenses')return <LicensesIcon {...p}/>;if(id==='data'||id==='analytics')return <SearchIcon {...p}/>;if(id==='userQuestions'||id==='assistant'||id==='trust'||id==='trustbox')return <ChatIcon {...p}/>;if(id==='products')return <ProductsIcon {...p}/>;if(id==='settings'||id==='security'||id==='shipping'||id==='trash')return <BoxIcon {...p}/>;return <AdminIcon {...p}/>};
+  const navIcon=(id:string)=>{const p={size:18,color:T.accText};if(id==='courses'||id==='featured'||id==='tagged')return <CoursesIcon {...p}/>;if(id==='content'||id==='highlights'||id==='images')return <EducationIcon {...p}/>;if(id==='contacts')return <ContactIcon {...p}/>;if(id==='licenses')return <LicensesIcon {...p}/>;if(id==='data'||id==='analytics')return <SearchIcon {...p}/>;if(id==='userQuestions'||id==='assistant'||id==='trust'||id==='trustbox')return <ChatIcon {...p}/>;if(id==='products')return <ProductsIcon {...p}/>;if(id==='settings'||id==='security'||id==='shipping'||id==='trash')return <BoxIcon {...p}/>;return <AdminIcon {...p}/>};
   const navTabs:[string,React.ReactNode,string][]=[['dashboard',navIcon('dashboard'),'داشبورد'],['data',navIcon('data'),'فرم‌ها و دوره‌ها'],['userQuestions',navIcon('userQuestions'),'سوالات مخاطبین'],['assistant',navIcon('assistant'),'دستیار'],['settings',navIcon('settings'),'تنظیمات'],['entry',navIcon('settings'),'صفحهٔ ورودی سایت'],['content',navIcon('content'),'مدیریت محتوا'],['contacts',navIcon('contacts'),'ارتباط'],['courses',navIcon('courses'),'دوره‌ها'],['featured',navIcon('featured'),'دوره‌های ویژه'],['tagged',navIcon('tagged'),'دوره‌های تگ‌دار'],['trust',navIcon('trust'),'جملات موفقیت'],['trustbox',navIcon('trustbox'),'جملات اعتمادساز'],['shipping',navIcon('shipping'),'ارسال و بانک'],['analytics',navIcon('analytics'),'آمار بازدید'],['security',navIcon('security'),'امنیت'],['trash',navIcon('trash'),'سطل آشغال'],['products',navIcon('products'),'محصولات'],['highlights',navIcon('highlights'),'هایلایت'],['licenses',navIcon('licenses'),'مجوزها'],['services',navIcon('services'),'خدمات'],['images',navIcon('images'),'تصاویر'],['design',navIcon('settings'),'مدیریت دیزاین']];
   const activeNavLabel=navTabs.find(x=>x[0]===aTab)?.[2]||'داشبورد';
  // Stage 7A: گروه‌بندی منوی سایدبار — همه تب‌های موجود حفظ شده‌اند و هیچ route جدیدی ساخته نشده است.
@@ -667,10 +667,10 @@ function DataNewViewPanel(){
   return (
    <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${isHi ? T.acc : T.brd}`, borderRadius: 14, background: T.card, boxShadow: isHi ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 10, overflow: 'hidden' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
-     <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color: T.acc, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(dataName(g.key, head) || '؟').trim().charAt(0)}</span>
+     <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color:T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(dataName(g.key, head) || '؟').trim().charAt(0)}</span>
      <span style={{ minWidth: 0, flex: 1 }}>
       <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
-      <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(g.key)} · <b style={{ color: T.acc, fontFamily: 'monospace' }}>{dataCode(g.key, head)}</b></span>
+      <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(g.key)} · <b style={{ color:T.accText, fontFamily: 'monospace' }}>{dataCode(g.key, head)}</b></span>
      </span>
      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <span className={`zkad-tag ${kind === 'consult' ? 't-warn' : 't-info'}`} style={{ fontSize: 10.5 }}>{kind === 'consult' ? `مشاوره ×${faNum(count)}` : `دوره ×${faNum(count)}`}</span>
@@ -1008,7 +1008,7 @@ function TaggedCoursesEditor(){
      <p style={{fontSize:10,color:T.mut,margin:'2px 0 6px'}}>تگ‌ها را با کاما جدا کنید. دوره‌هایی که حداقل یکی از این تگ‌ها را داشته باشند نمایش داده می‌شوند.</p>
      <input style={S.inp} defaultValue={(tc.tags||[]).join(', ')} onBlur={e=>{const tags=e.target.value.split(',').map((t:string)=>t.trim()).filter(Boolean);up({tags})}} placeholder="پرفروش, پرطرفدار, محبوب"/>
      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-      {tagOptions.map(tag=><span key={tag} style={{padding:'4px 10px',borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`,fontSize:11,fontWeight:700,color:T.acc}}>{tag}</span>)}
+      {tagOptions.map(tag=><span key={tag} style={{padding:'4px 10px',borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`,fontSize:11,fontWeight:700,color:T.accText}}>{tag}</span>)}
      </div>
     </div>
 
@@ -1484,7 +1484,7 @@ function DesignManagerEditor(){
       {!globallyVisible&&<small style={{color:T.id==='admin-dark'?'#FCA5A5':T.err}}>محصول مخفی است</small>}
      </label>})}
     </div>
-    <div style={{fontSize:11,color:T.mut,marginTop:9}}>تعداد موارد منتخب و قابل نمایش: <b style={{color:T.acc}}>{selectedHomeCount}</b></div>
+    <div style={{fontSize:11,color:T.mut,marginTop:9}}>تعداد موارد منتخب و قابل نمایش: <b style={{color:T.accText}}>{selectedHomeCount}</b></div>
    </Box>
 
    <Box title={`لیست و تنظیمات محصولات (${items.length})`}>
@@ -1492,7 +1492,7 @@ function DesignManagerEditor(){
      <summary style={{cursor:'pointer',fontWeight:800,fontSize:12,display:'flex',alignItems:'center',gap:8}}>
       <span>{it.isVisible!==false?<ZkEyeIcon size={14} color={T.ok}/>:<ZkEyeOffIcon size={14} color={T.err}/>}</span>
       <span style={{flex:1}}>{it.title||it.name||'بدون عنوان'}</span>
-      {it.showOnHome!==false&&it.isVisible!==false&&<span style={{fontSize:10,color:T.acc}}>منتخب خانه</span>}
+      {it.showOnHome!==false&&it.isVisible!==false&&<span style={{fontSize:10,color:T.accText}}>منتخب خانه</span>}
      </summary>
      <div style={{marginTop:10}}>
       <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:8,flexWrap:'wrap'}}>
@@ -1530,14 +1530,14 @@ function DesignManagerEditor(){
         {(it.homeImage||it.homeImageUrl||it.image||it.imageUrl)&&<img data-home-image-preview src={it.homeImage||it.homeImageUrl||it.image||it.imageUrl} alt={it.name||it.title||''} style={{width:138,aspectRatio:it.homeImageAspectRatio||'4 / 3',objectFit:'cover',objectPosition:it.homeImageObjectPosition||'center',borderRadius:10,border:`1px solid ${T.brd}`}}/>}
         <span style={{fontSize:10.5,color:(it.homeImage||it.homeImageUrl)?T.ok:T.mut,fontWeight:800}}>{(it.homeImage||it.homeImageUrl)?'عکس اختصاصی خانه فعال است':'فعلاً عکس اصلی محصول استفاده می‌شود'}</span>
        </div>
-       <label aria-label={`بارگذاری عکس منتخب خانه ${it.name||it.title||''}`} style={{...AdminBtn(),display:'flex',alignItems:'center',justifyContent:'center',gap:7,cursor:'pointer',color:T.acc,marginBottom:8}}>
+       <label aria-label={`بارگذاری عکس منتخب خانه ${it.name||it.title||''}`} style={{...AdminBtn(),display:'flex',alignItems:'center',justifyContent:'center',gap:7,cursor:'pointer',color:T.accText,marginBottom:8}}>
         <ZkUploadIcon size={15}/> انتخاب عکس دیگر و تنظیم کادر لمسی
         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)startProductHomeCrop(it,i,f)}}/>
        </label>
        <input aria-label={`لینک عکس منتخب خانه ${it.name||it.title||''}`} style={{...S.inp,marginBottom:8}} defaultValue={it.homeImage||it.homeImageUrl||''} onBlur={e=>patchItem(i,{homeImage:e.target.value.trim(),homeImageUrl:e.target.value.trim()})} placeholder="لینک مستقیم عکس مخصوص صفحه خانه (اختیاری)"/>
        <FrameControls key={`home-frame-${it.homeImageAspectRatio||'4 / 3'}-${it.homeImageObjectPosition||'center'}`} T={T} S={S} value={{aspectRatio:it.homeImageAspectRatio||'4 / 3',objectPosition:it.homeImageObjectPosition||'center'}} onChange={(p:any)=>patchItem(i,p.aspectRatio!==undefined?{homeImageAspectRatio:p.aspectRatio}:{homeImageObjectPosition:p.objectPosition})}/>
        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-        {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.acc}} onClick={()=>startProductHomeCrop(it,i)}><ZkImageIcon size={14}/> تنظیم مجدد کادر لمسی</button>}
+        {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.accText}} onClick={()=>startProductHomeCrop(it,i)}><ZkImageIcon size={14}/> تنظیم مجدد کادر لمسی</button>}
         {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.err}} onClick={async()=>{try{await deleteStoredImage(it.homeImage||it.homeImageUrl)}catch{}patchItem(i,{homeImage:'',homeImageUrl:'',homeImageAspectRatio:'4 / 3',homeImageObjectPosition:'center'})}}>حذف عکس اختصاصی و استفاده از عکس اصلی</button>}
        </div>
       </div>
@@ -1755,7 +1755,7 @@ function DesignManagerEditor(){
     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
      {item.icon&&<span style={{width:32,height:32,borderRadius:10,background:T.card,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,boxShadow:T.neuOut}}>{item.icon}</span>}
      <b style={{fontSize:12,color:T.txt,flex:1}}>{item.title||'آیتم جدید'}</b>
-     {item.isDefault&&<span style={{fontSize:10,color:T.acc,background:T.card,borderRadius:10,padding:'2px 7px'}}>پیش‌فرض</span>}
+     {item.isDefault&&<span style={{fontSize:10,color:T.accText,background:T.card,borderRadius:10,padding:'2px 7px'}}>پیش‌فرض</span>}
      <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,fontWeight:800,cursor:'pointer'}}><input type="checkbox" checked={item.isVisible!==false} onChange={e=>onChange('isVisible',e.target.checked)}/> نمایش</label>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'70px 1fr',gap:8,alignItems:'start'}}>

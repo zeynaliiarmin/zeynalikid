@@ -716,7 +716,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
                   borderRadius: 10,
                   border: `1px solid ${T.brd || '#E5E0D8'}`,
                   background: T.soft || '#CCFBF1',
-                  color: T.acc || '#0F766E',
+                  color:T.accText || '#0F766E',
                   cursor: 'pointer',
                   fontSize: 18,
                   fontFamily: 'inherit',
@@ -816,7 +816,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
               {/* ترجمه انگلیسی اختیاری */}
               <details style={{ background: T.soft || '#CCFBF1', padding: 10, borderRadius: 12 }}>
-                <summary style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: T.acc }}>
+                <summary style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color:T.accText }}>
                   + افزودن ترجمه انگلیسی (Optional English Version)
                 </summary>
                 <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -11,6 +11,8 @@
   --zk-primary-hover: #134E4B;
   --zk-primary-light: #CCFBF1;
   --zk-accent: #0369A1;
+  /* رنگ متن‌های رنگی — در حالت تاریک روشن‌تر می‌شود تا روی کارت‌های تیره خوانا بماند */
+  --zk-primary-text: var(--zk-primary);
   --zk-accent-light: #E0F2FE;
 
   /* Surfaces */
@@ -138,7 +140,7 @@ input, select, textarea {
 
 .zk-btn-ghost {
   background: transparent;
-  color: var(--zk-primary);
+  color: var(--zk-primary-text, var(--zk-primary, #0F766E));
 }
 
 /* Cards */
@@ -188,7 +190,7 @@ input, select, textarea {
 }
 .zk-chip.active, .zk-chip--active {
   background: var(--zk-primary-light);
-  color: var(--zk-primary);
+  color: var(--zk-primary-text, var(--zk-primary, #0F766E));
   border-color: var(--zk-primary);
 }
 

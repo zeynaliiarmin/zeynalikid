@@ -71,7 +71,7 @@ export default function GrowthChart({ T, lang, data = [], childName = '' }: Grow
               borderRadius: 999,
               border: mode === m ? `2px solid ${T.acc}` : `1px solid ${T.brd}`,
               background: mode === m ? `${T.acc}10` : T.card,
-              color: mode === m ? T.acc : T.mut,
+              color: mode === m ? T.accText : T.mut,
               fontSize: 12,
               fontWeight: 700,
               minHeight: 40
@@ -146,7 +146,7 @@ export default function GrowthChart({ T, lang, data = [], childName = '' }: Grow
             {p}
           </span>
         ))}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: T.acc, fontWeight: 700 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color:T.accText, fontWeight: 700 }}>
           <span style={{ width: 12, height: 2, background: T.acc, display: 'inline-block' }} />
           {lang === 'en' ? 'Your child' : 'فرزند شما'}
         </span>

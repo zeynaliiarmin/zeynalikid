@@ -160,7 +160,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           }}
         />
         {uploading && (
-          <span style={{ fontSize: 11, color: T.acc, fontWeight: 700 }}>
+          <span style={{ fontSize: 11, color:T.accText, fontWeight: 700 }}>
             در حال آپلود...
           </span>
         )}

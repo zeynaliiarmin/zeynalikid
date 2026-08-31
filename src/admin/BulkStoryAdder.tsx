@@ -28,7 +28,7 @@ export default function BulkStoryAdder({ T, S, AdminBtn, internalText, externalT
   };
   return (
    <details style={{ marginTop: 10, border: `1px dashed ${T.acc || '#0f766e'}55`, borderRadius: 10, padding: 8, background: T.card }}>
-    <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, color: T.acc }}>+ افزودن دسته‌جمعی استوری‌ها (کپی همه لینک‌ها یک‌جا)</summary>
+    <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, color:T.accText }}>+ افزودن دسته‌جمعی استوری‌ها (کپی همه لینک‌ها یک‌جا)</summary>
     <div style={{ marginTop: 10 }}>
      <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.8, margin: '0 0 8px' }}>
       همه لینک‌ها یا کدهای HTML را اینجا بچسبانید؛ هر لینک/کد، یک اسلاید استوری می‌شود. لینک‌ها می‌توانند با خط جدید، کاما یا فاصله جدا شده باشند؛ تگ <span dir="ltr">&lt;img src="…"&gt;</span> هم پذیرفته می‌شود. اگر فقط یکی از دو فیلد را پر کنید، همان لینک برای هر دو حالت (VPN روشن/خاموش) استفاده می‌شود؛ اگر هر دو را پر کنید، به‌ترتیب خط‌به‌خط با هم جفت می‌شوند. بعد از زدن «ذخیره هایلایت‌ها»، اسلایدها در بخش «استوری‌ها» به‌صورت تکی ساخته و قابل ویرایش/جابه‌جایی می‌شوند.

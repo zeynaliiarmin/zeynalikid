@@ -1,132 +1,182 @@
 /* Public light/dark colour contract.
  * Geometry, spacing and component behaviour stay in their owning styles.
- * Every public design shares the restored project dark palette.
+ * هر دیزاین پالت تاریکِ اختصاصی خودش را دارد (design-A-warm → src/theme/warmPalettes.ts).
+ * مقادیر --zk-d-* در بلوک همان دیزاین ست می‌شوند؛ بقیهٔ قواعد فقط از همان متغیرها خوانده
+ * می‌شوند، پس هیچ رنگ تاریکی در این فایل هاردکد نیست.
  */
 html[data-public-theme='light'] body.public-root { color-scheme: light; }
 
+/* ── پایهٔ حالت تاریک (پیش‌فرض = پالت کلاسیک تیره) ── */
 html[data-public-theme='dark'] body.public-root {
   color-scheme: dark;
 
-  --zk-bg: #0F1722;
-  --zk-surface: #1E293B;
-  --zk-surface-muted: #111827;
-  --zk-surface-soft: #26364A;
-  --zk-primary: #2DD4BF;
-  --zk-primary-hover: #5EEAD4;
-  --zk-primary-light: rgba(45, 212, 191, .12);
-  --zk-accent: #38BDF8;
-  --zk-accent-light: rgba(56, 189, 248, .14);
-  --zk-text: #E2E8F0;
-  --zk-text-muted: #B0BED1;
-  --zk-text-subtle: #94A3B8;
-  --zk-text-inverse: #0F1722;
-  --zk-border: #334155;
-  --zk-border-strong: #475569;
-  --zk-success: #34D399;
-  --zk-warning: #FBBF24;
-  --zk-error: #F87171;
-  --zk-info: #38BDF8;
-  --zk-shadow-light: 0 4px 15px rgba(0, 0, 0, .22);
-  --zk-shadow-medium: 0 8px 24px rgba(0, 0, 0, .30);
-  --zk-shadow-strong: 0 18px 42px rgba(0, 0, 0, .42);
+  --zk-d-bg: #0F1620;
+  --zk-d-card: #241C33;
+  --zk-d-card1: #1D1627;
+  --zk-d-soft: #1B2A3D;
+  --zk-d-field: #1B1327;
+  --zk-d-acc: #60A5FA;
+  --zk-d-g2: #93C5FD;
+  --zk-d-ttl: #7DB3E8;
+  --zk-d-ink: #E3EDF7;
+  --zk-d-sub: #A79BC0;
+  --zk-d-ph: #8D81AE;
+  --zk-d-inverse: #12101C;
+  --zk-d-bd: rgba(255, 255, 255, .08);
+  --zk-d-bd-strong: rgba(255, 255, 255, .22);
+  --zk-d-mem0: #1B2A42;
+  --zk-d-mem1: #1C2C44;
+  --zk-d-mem2: #1D2E46;
 
-  --zk-action-primary: #2DD4BF;
-  --zk-action-primary-hover: #5EEAD4;
-  --zk-action-primary-soft: rgba(45, 212, 191, .12);
-  --zk-action-secondary: #38BDF8;
-  --zk-surface-page: #0F1722;
-  --zk-surface-base: #1E293B;
-  --zk-surface-raised: #26364A;
-  --zk-surface-selected: rgba(15, 118, 110, .28);
-  --zk-surface-inverse: #E2E8F0;
-  --zk-text-primary: #E2E8F0;
-  --zk-text-secondary: #CBD5E1;
-  --zk-border-default: #334155;
-  --zk-border-focus: #5EEAD4;
-  --zk-status-success: #34D399;
-  --zk-status-warning: #FBBF24;
-  --zk-status-error: #F87171;
-  --zk-status-info: #38BDF8;
-  --zk-status-disabled: #64748B;
-  --zk-focus-ring: 0 0 0 3px rgba(45, 212, 191, .28);
+  --zk-bg: var(--zk-d-bg);
+  --zk-surface: var(--zk-d-card);
+  --zk-surface-muted: var(--zk-d-card1);
+  --zk-surface-soft: var(--zk-d-soft);
+  --zk-primary: var(--zk-d-acc);
+  --zk-primary-hover: var(--zk-d-ttl);
+  --zk-primary-text: var(--zk-d-ttl);
+  --zk-primary-light: var(--zk-d-soft);
+  --zk-accent: var(--zk-d-g2);
+  --zk-accent-light: color-mix(in srgb, var(--zk-d-g2) 14%, transparent);
+  --zk-text: var(--zk-d-ink);
+  --zk-text-muted: var(--zk-d-sub);
+  --zk-text-subtle: var(--zk-d-ph);
+  --zk-text-inverse: var(--zk-d-inverse);
+  --zk-border: var(--zk-d-bd);
+  --zk-border-strong: var(--zk-d-bd-strong);
+  --zk-success: #5EEAD4;
+  --zk-warning: #F4C766;
+  --zk-error: #F2A9A2;
+  --zk-info: var(--zk-d-ttl);
+  --zk-shadow-light: 0 4px 15px rgba(0, 0, 0, .34);
+  --zk-shadow-medium: 0 8px 24px rgba(0, 0, 0, .42);
+  --zk-shadow-strong: 0 18px 42px rgba(0, 0, 0, .52);
 
-  background: #0F1722;
-  color: #E2E8F0;
+  --zk-action-primary: var(--zk-d-acc);
+  --zk-action-primary-hover: var(--zk-d-ttl);
+  --zk-action-primary-soft: var(--zk-d-soft);
+  --zk-action-secondary: var(--zk-d-g2);
+  --zk-surface-page: var(--zk-d-bg);
+  --zk-surface-base: var(--zk-d-card);
+  --zk-surface-raised: var(--zk-d-card1);
+  --zk-surface-selected: var(--zk-d-soft);
+  --zk-surface-inverse: var(--zk-d-ink);
+  --zk-text-primary: var(--zk-d-ink);
+  --zk-text-secondary: color-mix(in srgb, var(--zk-d-ink) 78%, transparent);
+  --zk-border-default: var(--zk-d-bd);
+  --zk-border-focus: var(--zk-d-ttl);
+  --zk-status-success: #5EEAD4;
+  --zk-status-warning: #F4C766;
+  --zk-status-error: #F2A9A2;
+  --zk-status-info: var(--zk-d-ttl);
+  --zk-status-disabled: #6E6390;
+  --zk-focus-ring: 0 0 0 3px color-mix(in srgb, var(--zk-d-acc) 34%, transparent);
+  --zk-memphis-a: var(--zk-d-mem0);
+  --zk-memphis-b: var(--zk-d-mem1);
+  --zk-memphis-c: var(--zk-d-mem2);
+
+  background: var(--zk-d-bg);
+  color: var(--zk-d-ink);
+}
+
+/* ── پالت تاریک اختصاصیِ هر دیزاین ── */
+html[data-zk-theme='wellness-dark'] body.public-root {
+  --zk-d-bg: #151021; --zk-d-soft: #2A1B3E;
+  --zk-d-acc: #A855F7; --zk-d-g2: #EC4899; --zk-d-ttl: #C9A2F8;
+  --zk-d-ink: #F2EAFC;
+  --zk-d-mem0: #2C1C44; --zk-d-mem1: #1B2A42; --zk-d-mem2: #173527;
+}
+html[data-zk-theme='kidlearn-dark'] body.public-root {
+  --zk-d-bg: #1B1112; --zk-d-soft: #3B2416;
+  --zk-d-acc: #F87171; --zk-d-g2: #60A5FA; --zk-d-ttl: #F5A29B;
+  --zk-d-ink: #FBE9E4;
+  --zk-d-mem0: #3E2617; --zk-d-mem1: #1D2A45; --zk-d-mem2: #1C3526;
+}
+html[data-zk-theme='blend-dark'] body.public-root {
+  --zk-d-bg: #0F1A19; --zk-d-soft: #15302B;
+  --zk-d-acc: #38BDF8; --zk-d-g2: #34D399; --zk-d-ttl: #7CC4E8;
+  --zk-d-ink: #E6F2F1;
+  --zk-d-mem0: #17293B; --zk-d-mem1: #163029; --zk-d-mem2: #163127;
+}
+html[data-zk-theme='classic-dark'] body.public-root {
+  --zk-d-bg: #0F1620; --zk-d-soft: #1B2A3D;
+  --zk-d-acc: #60A5FA; --zk-d-g2: #93C5FD; --zk-d-ttl: #7DB3E8;
+  --zk-d-ink: #E3EDF7;
+  --zk-d-mem0: #1B2A42; --zk-d-mem1: #1C2C44; --zk-d-mem2: #1D2E46;
 }
 
 html[data-public-theme='dark'] body.public-root #root {
-  background: #0F1722;
-  color: #E2E8F0;
+  background: var(--zk-d-bg);
+  color: var(--zk-d-ink);
 }
 
 html[data-public-theme='dark'] body.public-root ::selection {
-  background: rgba(45, 212, 191, .28);
-  color: #F8FAFC;
+  background: color-mix(in srgb, var(--zk-d-acc) 34%, transparent);
+  color: var(--zk-d-ink);
 }
 
-html[data-public-theme='dark'] body.public-root :is(input,textarea,select,button) { accent-color: #2DD4BF; }
+html[data-public-theme='dark'] body.public-root :is(input,textarea,select,button) { accent-color: var(--zk-d-acc); }
 
 html[data-public-theme='dark'] body.public-root input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
 html[data-public-theme='dark'] body.public-root textarea,
 html[data-public-theme='dark'] body.public-root select {
-  background-color: #0F1722 !important;
-  color: #E2E8F0 !important;
-  border-color: #475569 !important;
-  caret-color: #5EEAD4;
+  background-color: var(--zk-d-field) !important;
+  color: var(--zk-d-ink) !important;
+  border-color: var(--zk-d-bd-strong) !important;
+  caret-color: var(--zk-d-ttl);
 }
 
 html[data-public-theme='dark'] body.public-root input::placeholder,
 html[data-public-theme='dark'] body.public-root textarea::placeholder {
-  color: #94A3B8 !important;
+  color: var(--zk-d-ph);
   opacity: 1;
 }
 
 html[data-public-theme='dark'] body.public-root select option {
-  background: #1E293B;
-  color: #E2E8F0;
+  background: var(--zk-d-card);
+  color: var(--zk-d-ink);
 }
 
 html[data-public-theme='dark'] body.public-root input:-webkit-autofill,
 html[data-public-theme='dark'] body.public-root input:-webkit-autofill:hover,
 html[data-public-theme='dark'] body.public-root input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #E2E8F0 !important;
-  box-shadow: 0 0 0 1000px #0F1722 inset !important;
+  -webkit-text-fill-color: var(--zk-d-ink) !important;
+  box-shadow: 0 0 0 1000px var(--zk-d-field) inset !important;
   transition: background-color 9999s ease-out 0s;
 }
 
 html[data-public-theme='dark'] body.public-root :is(input,textarea,select,button,a):focus-visible {
-  outline: 2px solid #5EEAD4;
+  outline: 2px solid var(--zk-d-ttl);
   outline-offset: 2px;
 }
 
-html[data-public-theme='dark'] body.public-root :is(hr,fieldset) { border-color: #334155; }
+html[data-public-theme='dark'] body.public-root :is(hr,fieldset) { border-color: var(--zk-d-bd); }
 
 /* Design roots may carry a fixed light canvas. The resolved colour mode has final say. */
 html[data-public-theme='dark'] body.public-root :is(.zk-page,.kidlearn-page,.wellness-page) {
-  background-color: #0F1722 !important;
-  color: #E2E8F0 !important;
+  background-color: var(--zk-d-bg) !important;
+  color: var(--zk-d-ink) !important;
 }
 
 html[data-public-theme='dark'] body.public-root .zk-launch {
-  background: linear-gradient(145deg,#0F1722 0%,#111827 52%,#1E293B 100%);
-  color: #E2E8F0;
+  background: linear-gradient(145deg, var(--zk-d-bg) 0%, var(--zk-d-card1) 52%, var(--zk-d-card) 100%);
+  color: var(--zk-d-ink);
 }
 html[data-public-theme='dark'] body.public-root .zk-launch-card {
-  background: rgba(30,41,59,.92);
-  border-color: #334155;
+  background: color-mix(in srgb, var(--zk-d-card) 92%, transparent);
+  border-color: var(--zk-d-bd);
   box-shadow: 14px 14px 32px rgba(0,0,0,.30),-8px -8px 22px rgba(71,85,105,.12);
 }
-html[data-public-theme='dark'] body.public-root .zk-launch h1 { color: #5EEAD4; }
-html[data-public-theme='dark'] body.public-root .zk-launch :is(p,small) { color: #B0BED1; }
-html[data-public-theme='dark'] body.public-root .zk-launch-loader { background: #26364A; }
+html[data-public-theme='dark'] body.public-root .zk-launch h1 { color: var(--zk-d-ttl); }
+html[data-public-theme='dark'] body.public-root .zk-launch :is(p,small) { color: var(--zk-d-sub); }
+html[data-public-theme='dark'] body.public-root .zk-launch-loader { background: var(--zk-d-soft); }
 html[data-public-theme='dark'] body.public-root .zk-launch-icon {
-  background: linear-gradient(145deg,#26364A,#111827);
+  background: linear-gradient(145deg, var(--zk-d-soft), var(--zk-d-card1));
   box-shadow: 8px 8px 18px rgba(0,0,0,.30),-5px -5px 14px rgba(71,85,105,.16);
 }
-html[data-public-theme='dark'] body.public-root .zk-launch-blob-a { background: #134E4A; }
-html[data-public-theme='dark'] body.public-root .zk-launch-blob-b { background: #0C4A6E; }
-html[data-public-theme='dark'] body.public-root .zk-launch-dots i { background: #2DD4BF; }
-
+html[data-public-theme='dark'] body.public-root .zk-launch-blob-a { background: var(--zk-d-mem0); }
+html[data-public-theme='dark'] body.public-root .zk-launch-blob-b { background: var(--zk-d-mem1); }
+html[data-public-theme='dark'] body.public-root .zk-launch-dots i { background: var(--zk-d-acc); }
 html[data-public-theme='dark'] body.public-root .zka-discovery {
   background: rgba(42,35,16,.94) !important;
   border-color: rgba(251,191,36,.70) !important;

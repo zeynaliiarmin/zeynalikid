@@ -154,7 +154,7 @@ function MediaCardInfo({item,type,masked,T,secure=true,lang,expanded=false,onMor
    />
   )}
   <Highlights highlights={item?.highlights} style={{ margin: '8px 0 0' }} />
-  <div dir="ltr" aria-hidden={!masked} style={{height:20,marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.acc,fontFamily:'monospace,-apple-system,"Courier New"',visibility:masked?'visible':'hidden'}}><PhoneIcon size={12} color={T.acc}/> {masked||'0000xxxx000'}</div>
+  <div dir="ltr" aria-hidden={!masked} style={{height:20,marginTop:6,display:'flex',alignItems:'center',gap:5,fontSize:11,color:T.accText,fontFamily:'monospace,-apple-system,"Courier New"',visibility:masked?'visible':'hidden'}}><PhoneIcon size={12} color={T.accText}/> {masked||'0000xxxx000'}</div>
  </div>
 }
 
@@ -201,7 +201,7 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=
     :<button onClick={()=>setPlaying(true)} style={{position:'relative',width:'100%',paddingTop:'56.25%',background:T.soft,border:0,cursor:'pointer'}}>{item.thumbnail?<img src={item.thumbnail} alt="" loading="lazy" decoding="async" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} draggable={false}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc} /></span>}<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{width:52,height:52,borderRadius:'50%',background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,paddingInlineStart:4}}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></span></span></button>))}
   {type==='audio'&&<div style={{aspectRatio:'16 / 9',padding:'14px 12px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" loading="lazy" decoding="async" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
   {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" decoding="async" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
-  {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.acc}}><TextIcon size={44} color={T.acc}/></div>}
+  {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.accText}}><TextIcon size={44} color={T.acc}/></div>}
   <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} expanded={expanded} onMore={onMore} />
  </div>
 }

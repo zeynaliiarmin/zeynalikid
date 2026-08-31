@@ -496,7 +496,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
               <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : T.card }}>
                 {!seen && <span className="zk-hl-spin" aria-hidden="true" />}
                 <div className="zk-hl-inner" style={{ background: T.card }}>
-                  {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <span style={{ fontSize: 18, color: T.acc }}>✦</span>}
+                  {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <span style={{ fontSize: 18, color:T.accText }}>✦</span>}
                 </div>
               </div>
               <span style={{ fontSize: 10, color: seen ? T.mut : T.ttl, fontWeight: seen ? 500 : 700, maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hl.title}</span>

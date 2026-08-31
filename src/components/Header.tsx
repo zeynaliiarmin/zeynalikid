@@ -122,7 +122,7 @@ export default function Header({
         style={{
           fontSize: 'clamp(17px, 4.2vw, 21px)',
           fontWeight: 800,
-          color: T.ttl || T.acc || 'var(--zk-primary)',
+          color: T.ttl || T.accText || 'var(--zk-primary)',
           letterSpacing: '0.3px',
           userSelect: 'none',
           fontFamily: "'Vazirmatn', Tahoma, sans-serif",

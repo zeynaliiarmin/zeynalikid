@@ -202,7 +202,7 @@ export default function ProductCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
           {hasDiscount ? (
             <>
-              <span style={{ color: 'var(--zk-primary)', fontWeight: 800, fontSize: isSmall ? '13px' : '15px' }}>
+              <span style={{ color:'var(--zk-primary-text)', fontWeight: 800, fontSize: isSmall ? '13px' : '15px' }}>
                 {discounted.toLocaleString()} {isFa ? 'تومان' : 'T'}
               </span>
               <span style={{ textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: isSmall ? '11px' : '12px' }}>
@@ -210,7 +210,7 @@ export default function ProductCard({
               </span>
             </>
           ) : product.price ? (
-            <span style={{ color: 'var(--zk-primary)', fontWeight: 800, fontSize: isSmall ? '13px' : '15px' }}>
+            <span style={{ color:'var(--zk-primary-text)', fontWeight: 800, fontSize: isSmall ? '13px' : '15px' }}>
               {product.price} {isFa ? 'تومان' : 'T'}
             </span>
           ) : null}

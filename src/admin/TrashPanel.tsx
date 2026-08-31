@@ -42,7 +42,7 @@ export default function TrashPanel({T,S,AdminBtn,onRestored,refreshKey}:{T:any,S
     <input type="checkbox" checked={deletedSubs.length>0&&selectedIds.size===deletedSubs.length} onChange={()=>{if(selectedIds.size===deletedSubs.length){setSelectedIds(new Set())}else{setSelectedIds(new Set(deletedSubs.map(s=>s.id)))}}} style={{width:18,height:18,accentColor:T.acc,cursor:'pointer'}}/>
     {selectedIds.size===deletedSubs.length?'لغو انتخاب همه':'انتخاب همه'} ({deletedSubs.length})
    </label>
-   {selectedIds.size>0&&<span style={{fontSize:12,color:T.acc,fontWeight:700}}>{selectedIds.size} انتخاب شده</span>}
+   {selectedIds.size>0&&<span style={{fontSize:12,color:T.accText,fontWeight:700}}>{selectedIds.size} انتخاب شده</span>}
   </div>}
   {loading?<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>
   :deletedSubs.length===0?<div style={{textAlign:'center',color:T.mut,padding:40}}>سطل آشغال خالی است.</div>

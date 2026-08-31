@@ -111,6 +111,8 @@ export default function NotFoundPage(){
   '--nf-four-stroke':String(T.brd||(dark?'#475569':'#CBD5E1')),
   '--nf-donut-inner':dark?'rgba(255,255,255,.24)':'rgba(0,0,0,.18)',
   '--nf-donut-outer':dark?'rgba(255,255,255,.28)':'rgba(255,255,255,.45)',
+  // رنگ متن دکمهٔ اصلی — در حالت تاریک تیره می‌شود تا روی گرادیان روشن خوانا بماند
+  '--nf-on-accent':String((T as any).btnfg||(dark?'#12101C':'#ffffff')),
  };
  return <div className="zk-nf-page" dir="rtl" style={vars} data-nf-theme={themeId} data-nf-mode={dark?'dark':'light'}>
   <Helmet><title>صفحه پیدا نشد | زینالیکید</title><meta name="robots" content="noindex, nofollow"/></Helmet>

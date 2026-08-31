@@ -87,7 +87,7 @@ export default function FAQPage(){
               borderRadius: 12,
               border: `1px solid ${T.brd}`,
               background: T.soft,
-              color: T.acc,
+              color:T.accText,
               cursor: 'pointer',
               fontFamily: 'inherit',
               fontSize: 13,
@@ -248,7 +248,7 @@ export default function FAQPage(){
                       }}
                     >
                       {item.answerTitle ? (
-                        <div style={{ fontWeight: 800, color: T.acc, fontSize: 13, marginBottom: 6 }}>{item.answerTitle}</div>
+                        <div style={{ fontWeight: 800, color:T.accText, fontSize: 13, marginBottom: 6 }}>{item.answerTitle}</div>
                       ) : null}
                       {item.answer}
                     </div>
@@ -267,7 +267,7 @@ export default function FAQPage(){
                   padding: '11px 24px',
                   borderRadius: T.btnRadius || 14,
                   background: T.soft,
-                  color: T.acc,
+                  color:T.accText,
                   border: `1px solid ${T.brd}`,
                   fontSize: 13.5,
                   fontWeight: 800,
@@ -308,7 +308,7 @@ export default function FAQPage(){
                 height: 54,
                 borderRadius: '50%',
                 background: `${T.acc}15`,
-                color: T.acc,
+                color:T.accText,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

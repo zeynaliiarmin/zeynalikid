@@ -145,7 +145,7 @@ export default function EnrollmentStepper({ step, lang, T }: EnrollmentStepperPr
                   style={{
                     fontSize: 10,
                     fontWeight: isActive ? 800 : 600,
-                    color: isActive ? T.acc : isDone ? T.ttl : T.mut,
+                    color: isActive ? T.accText : isDone ? T.ttl : T.mut,
                     lineHeight: 1.2,
                     transition: 'all .3s ease',
                   }}

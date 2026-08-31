@@ -80,7 +80,7 @@ export default function SmartFAQ({
           key={idx}
           style={{
             background: 'rgba(23, 105, 194, 0.15)',
-            color: 'var(--zk-primary)',
+            color:'var(--zk-primary-text)',
             borderRadius: 3,
             padding: '0 2px',
           }}
@@ -217,7 +217,7 @@ export default function SmartFAQ({
               type="button"
               className="zke-pillbtn"
               onClick={onConsult}
-              style={{ background: 'var(--zk-surface-raised)', color: 'var(--zk-primary)', border: '1px solid var(--zk-border)' }}
+              style={{ background: 'var(--zk-surface-raised)', color:'var(--zk-primary-text)', border: '1px solid var(--zk-border)' }}
             >
               {en ? 'Contact consultant' : 'تماس با مشاور'}
             </button>

@@ -1006,7 +1006,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                           title="شماره رندوم همان کشور"
                           aria-label="شماره رندوم"
                           onClick={() => setEditMap((previous) => ({ ...previous, [r.id]: { ...previous[r.id], phone: manualMaskedPhoneTemplate(currentEdit.phoneCountry) } }))}
-                          style={{ flexShrink: 0, minHeight: 36, padding: '0 11px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.soft, color: T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800 }}
+                          style={{ flexShrink: 0, minHeight: 36, padding: '0 11px', borderRadius: 8, border: `1px solid ${T.brd}`, background: T.soft, color:T.accText, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800 }}
                         >
                           🎲
                         </button>
@@ -1299,7 +1299,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                   borderRadius: 10,
                   border: `1px solid ${T.brd || '#E5E0D8'}`,
                   background: T.soft || '#CCFBF1',
-                  color: T.acc || '#0F766E',
+                  color:T.accText || '#0F766E',
                   cursor: 'pointer',
                   fontSize: 18,
                   fontFamily: 'inherit',
@@ -1356,7 +1356,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       title="شماره رندوم همان کشور"
                       aria-label="شماره رندوم"
                       onClick={() => setNewReview({ ...newReview, phone: manualMaskedPhoneTemplate(newReview.phoneCountry) })}
-                      style={{ flexShrink: 0, minHeight: 38, padding: '0 12px', borderRadius: 9, border: `1px solid ${T.brd}`, background: T.soft, color: T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}
+                      style={{ flexShrink: 0, minHeight: 38, padding: '0 12px', borderRadius: 9, border: `1px solid ${T.brd}`, background: T.soft, color:T.accText, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}
                     >
                       🎲 رندوم
                     </button>

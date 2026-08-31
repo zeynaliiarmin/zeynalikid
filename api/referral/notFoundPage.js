@@ -136,8 +136,38 @@ function renderThemeBootstrap({supabaseUrl='',initialMode='auto'}={}){
  return `(function(){var root=document.documentElement,globalKey='zk_public_theme_mode',personalKey='zk_personal_color_mode',mode=${safeInitial},endpoint=${safeEndpoint};function validGlobal(v){return v==='light'||v==='dark'||v==='auto'}function validPersonal(v){return v==='light'||v==='dark'}function personal(){try{var value=localStorage.getItem(personalKey);return validPersonal(value)?value:null}catch(e){return null}}function apply(next,cache){mode=validGlobal(next)?next:'auto';if(cache!==false)try{localStorage.setItem(globalKey,mode)}catch(e){}var own=personal(),hour=(new Date()).getHours(),resolved=own||(mode==='dark'||(mode==='auto'&&(hour>=23||hour<7))?'dark':'light');root.setAttribute('data-theme',resolved);root.setAttribute('data-public-theme',resolved);root.setAttribute('data-public-theme-mode',mode);root.setAttribute('data-color-mode-source',own?'personal':'global');root.style.colorScheme=resolved;root.style.backgroundColor=resolved==='dark'?'#0F1722':'#F8FBFA';return resolved}try{var cached=localStorage.getItem(globalKey);if(validGlobal(cached))mode=cached}catch(e){}apply(mode,false);window.addEventListener('storage',function(e){if(e.key===globalKey)apply(e.newValue,false);if(e.key===personalKey)apply(mode,false)});setInterval(function(){if(mode==='auto'&&!personal())apply(mode,false)},60000);if(endpoint){fetch(endpoint,{method:'GET',headers:{'Content-Type':'application/json'}}).then(function(response){if(!response.ok)throw new Error('theme');return response.json()}).then(function(payload){var next=payload&&payload.settings&&payload.settings.publicThemeMode;if(validGlobal(next))apply(next,true)}).catch(function(){})}})();`;
 }
 
-export function renderNotFoundPage({brand='زینالیکید',supabaseUrl='',initialMode='auto'}={}){
+/**
+ * پالت تاریک اختصاصی دیزاین — صفحهٔ ۴۰۴ ایستا (اورژانسی) هم باید همان رنگ‌ها را بگیرد.
+ * shape: { bg, bg2, surface, raised, text, muted, accent, onAccent, border }
+ */
+function renderDarkDesignCss(darkDesign){
+ if(!darkDesign||typeof darkDesign!=='object')return '';
+ const d=darkDesign;
+ const v=name=>String(d[name]||'');
+ if(!v('bg')||!v('text'))return '';
+ return `
+/* پالت تاریک اختصاصی دیزاین پیش‌فرضِ همین برند */
+html[data-theme='dark']{background:${v('bg')}}
+html[data-theme='dark'] body{background:${v('bg')}}
+html[data-theme='dark'] .nf-page{background:linear-gradient(180deg,${v('bg')} 0%,${v('bg2')||v('bg')} 52%,${v('surface')} 100%);color:${v('text')}}
+html[data-theme='dark'] .nf-shell{background:${v('surface')};border:1px solid ${v('border')};box-shadow:0 20px 44px rgba(0,0,0,.36)}
+html[data-theme='dark'] .home-icon,html[data-theme='dark'] .brand{background:${v('raised')||v('bg')};border-color:${v('border')};color:${v('text')}}
+html[data-theme='dark'] .brand-mark{background:${v('accent')}}
+html[data-theme='dark'] .nf-art text{fill:${v('text')};stroke:${v('border')};filter:none}
+html[data-theme='dark'] .question{color:${v('text')}}
+html[data-theme='dark'] .copy p{color:${v('muted')}}
+html[data-theme='dark'] .nf-shortcut{background:${v('raised')||v('bg')};border-color:${v('border')};color:${v('text')}}
+html[data-theme='dark'] .nf-shortcut:active,html[data-theme='dark'] .home-icon:active{background:${v('surface')}}
+html[data-theme='dark'] .nf-shortcut:active .nf-shortcut-icon{background:${v('surface')}}
+html[data-theme='dark'] .primary{background:${v('accent')};color:${v('onAccent')||'#12101C'}!important;box-shadow:0 10px 20px rgba(0,0,0,.28)}
+html[data-theme='dark'] .primary:active{background:${v('accent')};color:${v('onAccent')||'#12101C'}!important}
+html[data-theme='dark'] .primary:focus-visible,html[data-theme='dark'] .nf-shortcut:focus-visible,html[data-theme='dark'] .home-icon:focus-visible{box-shadow:0 0 0 3px ${v('border')}}
+`;
+}
+
+export function renderNotFoundPage({brand='زینالیکید',supabaseUrl='',initialMode='auto',darkDesign=null}={}){
  const cleanBrand=escapeHtml(brand);
  const themeScript=renderThemeBootstrap({supabaseUrl,initialMode});
- return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>صفحه پیدا نشد | ${cleanBrand}</title><script>${themeScript}</script><style>${styles}</style></head><body><div class="nf-page"><main class="nf-shell" aria-labelledby="not-found-title"><header class="nf-top"><a class="home-icon nf-control" href="/" aria-label="خانه">${icons.home}</a><div class="brand"><span>${cleanBrand}</span><span class="brand-mark" aria-hidden="true"></span></div></header>${artwork}<div class="copy"><h1 id="not-found-title" aria-label="عه ! اینجا کجاست؟"><span class="exclaim">عه !</span><span class="question">اینجا کجاست؟</span></h1><p><span>صفحه‌ای که دنبالش بودی، پیدا نشد.</span><br><span>مسیر درست را از بین گزینه‌های زیر پیدا کن!</span></p></div><nav class="quick" aria-label="دسترسی سریع">${shortcuts.map(shortcut).join('')}</nav><footer class="nf-footer"><a class="primary nf-control" href="/"><strong>بازگشت به صفحه اصلی</strong>${icons.home}</a></footer></main></div></body></html>`;
+ const darkCss=renderDarkDesignCss(darkDesign);
+ return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>صفحه پیدا نشد | ${cleanBrand}</title><script>${themeScript}</script><style>${styles}${darkCss}</style></head><body><div class="nf-page"><main class="nf-shell" aria-labelledby="not-found-title"><header class="nf-top"><a class="home-icon nf-control" href="/" aria-label="خانه">${icons.home}</a><div class="brand"><span>${cleanBrand}</span><span class="brand-mark" aria-hidden="true"></span></div></header>${artwork}<div class="copy"><h1 id="not-found-title" aria-label="عه ! اینجا کجاست؟"><span class="exclaim">عه !</span><span class="question">اینجا کجاست؟</span></h1><p><span>صفحه‌ای که دنبالش بودی، پیدا نشد.</span><br><span>مسیر درست را از بین گزینه‌های زیر پیدا کن!</span></p></div><nav class="quick" aria-label="دسترسی سریع">${shortcuts.map(shortcut).join('')}</nav><footer class="nf-footer"><a class="primary nf-control" href="/"><strong>بازگشت به صفحه اصلی</strong>${icons.home}</a></footer></main></div></body></html>`;
 }

@@ -183,7 +183,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
             return (
               <div key={l.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, background: T.card, padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: T.soft, color: T.acc, whiteSpace: 'nowrap' }}>{kindLabel(l.kind)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: T.soft, color:T.accText, whiteSpace: 'nowrap' }}>{kindLabel(l.kind)}</span>
                   <span style={{ fontSize: 12, color: T.mut, whiteSpace: 'nowrap' }}>{fmtDate(l.created_at)}</span>
                   <span style={{ fontSize: 11, color: T.mut }} dir="ltr">{l.page_path || '—'}</span>
                   {l.lang && <span style={{ fontSize: 10, color: T.mut, border: `1px solid ${T.brd}`, borderRadius: 6, padding: '1px 6px' }}>{l.lang === 'fa' ? 'فارسی' : 'انگلیسی'}</span>}
@@ -225,7 +225,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
                 {desc && <div style={{ fontSize: 11.5, color: T.mut, lineHeight: 1.8, marginTop: 6, padding: '6px 10px', background: T.soft, borderRadius: 8 }}>💡 {desc}</div>}
                 <div style={{ fontSize: 12.5, color: T.txt, fontWeight: 700, marginTop: 6, lineHeight: 1.8, wordBreak: 'break-word' }}>{l.message || '(بدون پیام)'}</div>
                 {l.stack && (
-                  <button type="button" onClick={() => toggle(l.id)} style={{ marginTop: 6, border: 0, background: 'transparent', color: T.acc, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, padding: 0 }}>
+                  <button type="button" onClick={() => toggle(l.id)} style={{ marginTop: 6, border: 0, background: 'transparent', color:T.accText, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, padding: 0 }}>
                     {expanded.has(l.id) ? 'پنهان کردن جزئیات' : 'نمایش جزئیات فنی'}
                   </button>
                 )}

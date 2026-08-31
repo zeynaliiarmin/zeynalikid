@@ -21,6 +21,14 @@ let adminSettingsWrites=0;
 let adminSavePayload=null;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const rgb=(r,g,b)=>`rgb(${r}, ${g}, ${b})`;
+// پالت تاریک اختصاصی هر دیزاین (design-A-warm → src/theme/warmPalettes.ts)
+const DARK_PALETTE={
+ 'wellness-dark':{bg:'#151021',surface:'#241C33',primary:'#A855F7',text:'#F2EAFC',border:'#ffffff14'},
+ 'kidlearn-dark':{bg:'#1B1112',surface:'#241C33',primary:'#F87171',text:'#FBE9E4',border:'#ffffff14'},
+ 'blend-dark':{bg:'#0F1A19',surface:'#241C33',primary:'#38BDF8',text:'#E6F2F1',border:'#ffffff14'},
+ 'classic-dark':{bg:'#0F1620',surface:'#241C33',primary:'#60A5FA',text:'#E3EDF7',border:'#ffffff14'},
+};
+const hexRgb=hex=>{const h=hex.replace('#','');return rgb(parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16));};
 
 function assert(condition,message,detail){if(!condition)throw new Error(`${message}${detail?`\n${JSON.stringify(detail,null,2)}`:''}`)}
 async function setStorage(page,values){await page.evaluate(data=>{for(const [key,value] of Object.entries(data)){if(value==null)localStorage.removeItem(key);else localStorage.setItem(key,String(value))}sessionStorage.clear()},values)}
@@ -47,11 +55,15 @@ function assertMode(state,expected,label,source='global'){
  assert(state.source===source,`${label}: wrong precedence source`,state);
  assert(state.form&&state.input&&state.submit,`${label}: consultation controls were not rendered`,state);
  if(expected==='dark'){
-  assert(state.body.background===rgb(15,23,34)&&state.body.color===rgb(226,232,240),`${label}: restored dark canvas mismatch`,state);
-  assert(state.vars.bg.toLowerCase()==='#0f1722'&&state.vars.surface.toLowerCase()==='#1e293b'&&state.vars.primary.toLowerCase()==='#2dd4bf'&&state.vars.text.toLowerCase()==='#e2e8f0',`${label}: restored dark variables mismatch`,state);
-  assert(state.input.background===rgb(15,23,34)&&state.input.color===rgb(226,232,240),`${label}: dark form field mismatch`,state);
+  const pal=DARK_PALETTE[state.zkTheme];
+  assert(pal,`${label}: dark mode did not select a dedicated design palette`,state);
+  assert(state.vars.bg.toLowerCase()===pal.bg.toLowerCase()&&state.body.background===hexRgb(pal.bg)&&state.body.color===hexRgb(pal.text),`${label}: dedicated dark canvas mismatch`,{pal,state});
+  assert(state.vars.surface.toLowerCase()===pal.surface.toLowerCase()&&state.vars.primary.toLowerCase()===pal.primary.toLowerCase()&&state.vars.text.toLowerCase()===pal.text.toLowerCase(),`${label}: dedicated dark variables mismatch`,{pal,vars:state.vars});
+  assert(state.vars.border.toLowerCase().replace(/\s+/g,' ').trim()===pal.border,`${label}: dark border token mismatch`,state.vars);
+  assert(state.vars.primary.toLowerCase()!=='#2dd4bf',`${label}: old shared teal dark palette leaked`,state.vars);
+  assert(state.input.color===hexRgb(pal.text),`${label}: dark form field text mismatch`,state.input);
  }else{
-  assert(state.body.background!==rgb(15,23,34)&&state.input.background!==rgb(15,23,34),`${label}: dark colour leaked into resolved light mode`,state);
+  assert(!String(state.zkTheme).endsWith('-dark')&&state.input.background!==rgb(15,23,34),`${label}: dark colour leaked into resolved light mode`,state);
  }
 }
 async function openFixture(page,fixture,mode,hour=12,personal=null){
@@ -66,8 +78,10 @@ const index=fs.readFileSync('index.html','utf8'),prerender=fs.readFileSync('scri
 assert(index.includes('__zkApplyPublicMode')&&index.includes('zk_personal_color_mode')&&index.includes('zk_public_theme_mode'),'Early precedence bootstrap is missing');
 assert(prerender.includes("if(mode==='light'||mode==='dark'||mode==='auto')window.__zkApplyPublicMode?.(mode)"),'SSG does not safely apply its server-provided global mode before first paint');
 assert(app.includes('resolveColorMode(personalColorMode,publicThemeMode'),'App does not resolve personal choice before global policy');
-assert(app.includes('({...publicLightTheme,...PUBLIC_DARK_COLORS})'),'Public dark colours are not layered over selected design geometry');
-assert(support.includes("bg:'#0F1722',card:'#1E293B'")&&support.includes("acc:'#2DD4BF'"),'Restored shared dark palette is missing');
+assert(app.includes("TH[`${activeDesign}-dark`]"),'Public dark mode does not resolve the selected design own dark palette');
+assert(support.includes("...TH.wellness,...publicDarkPatch('wellness')")&&support.includes("...TH.kidlearn,...publicDarkPatch('kidlearn')")&&support.includes("...TH.blend,...publicDarkPatch('blend')")&&support.includes("...TH.classic,...publicDarkPatch('classic')"),'A design is missing its dedicated dark palette');
+const palettesSource=fs.readFileSync('src/theme/warmPalettes.ts','utf8');
+for(const [hex,label] of [['#151021','wellness dark canvas'],['#1B1112','kidlearn dark canvas'],['#0F1A19','blend dark canvas'],['#0F1620','classic dark canvas']]) assert(palettesSource.includes(hex),`missing ${label} (${hex})`);
 assert(![app,support,designUi,themeSource].join('\n').toLowerCase().includes(retiredDesign),'Retired design remains in active source or UI');
 
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
@@ -202,5 +216,5 @@ try{
  await setStorage(page,{'zk_personal_color_mode':null});
  await page.goto(`${base}/form?test-hour=12&saved-global-without-personal=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'dark');assertMode(await readFormState(page),'dark','saved global dark without personal choice','global');
 
- console.log('Personal persistence and precedence, global light/dark/auto save, restored shared dark palette, navigation, refresh, early bootstrap, admin toggle, and runtime-only legacy mapping passed.');
+ console.log('Personal persistence and precedence, global light/dark/auto save, dedicated per-design dark palettes, navigation, refresh, early bootstrap, admin toggle, and runtime-only legacy mapping passed.');
 }finally{await browser.close()}

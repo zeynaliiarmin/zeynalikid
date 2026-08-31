@@ -242,7 +242,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         <div>
           <h3 style={{ fontSize: 17, fontWeight: 900, color: T.ttl, margin: 0 }}>{isFa ? 'نظرات والدین و کاربران' : 'Parent & User Reviews'}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 900, color: T.acc }}>
+            <span style={{ fontSize: 17, fontWeight: 900, color:T.accText }}>
               {reviews.length > 0 ? `★ ${avgRating}` : '★ —'}
             </span>
             <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{isFa ? 'از ۵' : '/ 5'}</span>
@@ -282,13 +282,13 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
                 aria-label={isFa ? 'مشاهده همه' : 'View all'}
                 style={{ flex: '0 0 39%', maxWidth: 150, scrollSnapAlign: 'start', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14 }}
               >
-                <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color: T.acc, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ width: 46, height: 46, borderRadius: '50%', border: `2px solid ${T.acc}`, background: T.soft, color:T.accText, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}>
                     <path d="M5 12h14" />
                     <path d="m13 6 6 6-6 6" />
                   </svg>
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: T.acc }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color:T.accText }}>{isFa ? 'مشاهده همه' : 'View all'}</span>
               </button>
             )}
           </div>
@@ -309,7 +309,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
             </button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <b style={{ display: 'block', fontSize: 16, fontWeight: 900, color: T.ttl }}>{isFa ? 'نظرات' : 'Reviews'}</b>
-              <span style={{ fontSize: 12, color: T.acc, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>
+              <span style={{ fontSize: 12, color:T.accText, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.mut }}>
               <span>{isFa ? 'مرتب‌سازی:' : 'Sort:'}</span>

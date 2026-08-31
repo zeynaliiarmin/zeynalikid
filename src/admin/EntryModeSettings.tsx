@@ -61,7 +61,7 @@ export default function EntryModeSettings({ app }: { app: any }) {
         const label = savedMode === 'user' ? (en ? 'User portal' : 'پنل کاربر') : (en ? 'Course tracking' : 'پیگیری دوره');
         return (
           <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 11, padding: '9px 12px', marginBottom: 10 }}>
-            {en ? 'Currently live on the site: ' : 'وضعیت فعلی سایت: '}<span style={{ color: T.acc }}>{label}</span>
+            {en ? 'Currently live on the site: ' : 'وضعیت فعلی سایت: '}<span style={{ color:T.accText }}>{label}</span>
             {staged !== savedMode && <span style={{ color: T.warn, fontWeight: 800 }}>{en ? ' — you have an unsaved change; press Save below.' : ' — یک تغییر ذخیرهنشده دارید؛ دکمهٔ پایین را بزنید.'}</span>}
           </div>
         );

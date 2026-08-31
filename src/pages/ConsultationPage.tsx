@@ -674,7 +674,7 @@ export default function ConsultationPage(){
           <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.9, margin: '0 0 16px' }}>{lang === 'fa' ? 'اطلاعات شما ثبت شده اما در اتصال به سرور مشکلی رخ داده؛ کارشناسان ما آماده‌اند درخواست شما را تلفنی نهایی کنند.' : 'Your info is saved locally. Please contact our support team directly.'}</p>
           <div style={{ background: T.soft, borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: `1px solid ${T.brd}` }}>
             <div style={{ fontSize: 12, color: T.mut, marginBottom: 4 }}>شماره تماس مستقیم:</div>
-            <a href={`tel:${cfg.adminPhone || cfg.contacts?.phone || '09125703684'}`} style={{ fontSize: 20, fontWeight: 800, color: T.acc, textDecoration: 'none', letterSpacing: '1px', display: 'block', direction: 'ltr' }}>{cfg.adminPhone || cfg.contacts?.phone || '09125703684'}</a>
+            <a href={`tel:${cfg.adminPhone || cfg.contacts?.phone || '09125703684'}`} style={{ fontSize: 20, fontWeight: 800, color:T.accText, textDecoration: 'none', letterSpacing: '1px', display: 'block', direction: 'ltr' }}>{cfg.adminPhone || cfg.contacts?.phone || '09125703684'}</a>
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
             <a href={`tel:${cfg.adminPhone || cfg.contacts?.phone || '09125703684'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 12, background: T.grad, color: '#fff', textDecoration: 'none', fontSize: 14.5, fontWeight: 800 }}>تماس تلفنی مستقیم</a>
@@ -703,7 +703,7 @@ export default function ConsultationPage(){
           <div style={{ fontSize: 11, color: T.warn, fontWeight: 800, lineHeight: 1.8, marginBottom: 3 }}>{lang === 'en' ? 'Please save your tracking code:' : 'حتماً کد پیگیری را ذخیره کنید:'}</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <span style={{ fontSize: 10, color: T.mut }}>{lang === 'en' ? 'Tracking code:' : 'کد پیگیری:'}</span>
-            <b dir="ltr" onClick={copyTrack} title={lang === 'en' ? 'Click to copy' : 'برای کپی کلیک کنید'} style={{ fontSize: 17, color: T.acc, letterSpacing: '2px', fontFamily: 'monospace,-apple-system,"Courier New"', cursor: 'pointer' }}>{lastTrack}</b>
+            <b dir="ltr" onClick={copyTrack} title={lang === 'en' ? 'Click to copy' : 'برای کپی کلیک کنید'} style={{ fontSize: 17, color:T.accText, letterSpacing: '2px', fontFamily: 'monospace,-apple-system,"Courier New"', cursor: 'pointer' }}>{lastTrack}</b>
             <button onClick={copyTrack} title={lang === 'en' ? 'Copy' : 'کپی'} style={{ width: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: trackCopied ? T.ok : T.inp || T.card, color: trackCopied ? 'var(--zk-text-inverse, #fff)' : T.txt, fontSize: 13, transition: 'all .3s ease', flexShrink: 0, border: 0, fontFamily: 'inherit' }}>{trackCopied ? (lang === 'en' ? 'Copied' : 'کپی شد') : (lang === 'en' ? 'Copy' : 'کپی')}</button>
           </div>
         </div>}

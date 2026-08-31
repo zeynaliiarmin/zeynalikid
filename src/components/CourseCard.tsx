@@ -313,7 +313,7 @@ export default function CourseCard({
         {!showImage && !isSmall && (course.duration || course.ageBadge !== false) && (
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
             {course.duration && <span style={{ background: 'var(--zk-surface-muted)', color: 'var(--zk-text-muted)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{course.duration}</span>}
-            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color: 'var(--zk-primary)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
+            {course.ageBadge !== false && <span style={{ background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', padding: '2px 7px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>{lang === 'en' ? '2-17y' : '۲ تا ۱۷ سال'}</span>}
           </div>
         )}
 
@@ -356,7 +356,7 @@ export default function CourseCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: isSmall ? 0 : 8 }}>
           {hasDiscount ? (
             <>
-              <span style={{ color: 'var(--zk-primary)', fontWeight: 800, fontSize: isHero ? '17px' : '14.5px' }}>
+              <span style={{ color:'var(--zk-primary-text)', fontWeight: 800, fontSize: isHero ? '17px' : '14.5px' }}>
                 {discountedPrice.toLocaleString()} {lang === 'en' ? 'T' : 'تومان'}
               </span>
               <span style={{ textDecoration: 'line-through', color: 'var(--zk-text-muted)', fontSize: isHero ? '12px' : '11px' }}>
@@ -364,7 +364,7 @@ export default function CourseCard({
               </span>
             </>
           ) : course.price ? (
-            <span style={{ color: 'var(--zk-primary)', fontWeight: 800, fontSize: isHero ? '15px' : '13.5px' }}>
+            <span style={{ color:'var(--zk-primary-text)', fontWeight: 800, fontSize: isHero ? '15px' : '13.5px' }}>
               {course.price} {lang === 'en' ? 'Toman' : 'تومان'}
             </span>
           ) : null}
