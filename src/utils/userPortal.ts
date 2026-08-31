@@ -51,25 +51,40 @@ const EN_RE = /^[A-Za-z\s\u200c\u200f'.-]+$/;
 const FA_MIN_DEFAULT = 3;
 const EN_MIN = 2;
 
+/** «+989123456789» را به کد کشور + شمارهٔ داخلی تبدیل می‌کند (برای پر کردن خودکار فرم‌ها) */
+export function splitE164(phone: any, countries: any[] = []): { cc: string; local: string } {
+  const raw = String(phone || '').replace(/[^\d+]/g, '');
+  if (!raw.startsWith('+')) return { cc: '+98', local: raw };
+  let best: any = null; let bestLen = 0;
+  for (const c of countries || []) {
+    const d = String(c?.code || '').replace(/\D/g, '');
+    if (d && raw.slice(1).startsWith(d) && d.length > bestLen) { best = c; bestLen = d.length; }
+  }
+  if (!best) return { cc: '+98', local: raw.replace(/\D/g, '') };
+  let local = raw.slice(1 + bestLen);
+  if (String(best.code) === '+98' && local && !local.startsWith('0')) local = `0${local}`;
+  return { cc: String(best.code), local };
+}
+
 export function validateFullName(name: any, lang: 'fa' | 'en' | string = 'fa', faMin: number = FA_MIN_DEFAULT): { ok: boolean; error?: string } {
   const en = lang === 'en';
   const raw = String(name || '').replace(/\s+/g, ' ').trim();
   if (!raw) return { ok: false, error: en ? 'Enter your first and last name.' : 'نام و نام خانوادگی را وارد کنید.' };
-  if (/[0-9\u06F0-\u06F9]/.test(raw)) return { ok: false, error: en ? 'The name cannot contain numbers.' : 'نام نمیتواند شامل رقم باشد.' };
+  if (/[0-9\u06F0-\u06F9]/.test(raw)) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
   if (en) {
-    if (!EN_RE.test(raw)) return { ok: false, error: 'The name must contain English letters only.' };
+    if (!EN_RE.test(raw)) return { ok: false, error: 'Enter your first and last name correctly.' };
   } else {
-    if (!FA_RE.test(raw)) return { ok: false, error: 'نام فقط میتواند حروف فارسی باشد.' };
+    if (!FA_RE.test(raw)) return { ok: false, error: 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
   }
   const min = en ? EN_MIN : Math.max(2, Math.min(8, Number(faMin) || FA_MIN_DEFAULT));
   const letters = raw.replace(/[\s\u200c\u200f'.-]/g, '');
-  if (letters.length < min) return { ok: false, error: en ? `The name must be at least ${min} letters.` : `نام باید حداقل ${min} حرف باشد.` };
+  if (letters.length < min) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
   // رد تکرار یک کلمه
   const seen: Record<string, boolean> = {};
   for (const w of raw.split(/\s+/).filter(Boolean)) {
     const norm = w.toLowerCase();
     if (w.length < 2) continue;
-    if (seen[norm]) return { ok: false, error: en ? 'Repeating a word in the name is not acceptable.' : 'تکرار یک کلمه در نام قابل قبول نیست؛ نام واقعی را کامل وارد کنید.' };
+    if (seen[norm]) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
     seen[norm] = true;
   }
   return { ok: true };

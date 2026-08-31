@@ -29,8 +29,8 @@ export const portalConfirm = (phone: string, otp: string): Promise<PortalRespons
   call('confirm', { phone, otp });
 
 /** ورود با شماره تماس + کد پیگیری (مثل صفحه پیگیری، ولی در پنل کاربر) */
-export const portalLogin = (phone: string, code: string): Promise<PortalResponse> =>
-  call('login', { phone, code });
+export const portalLogin = (phone: string, code: string, captchaToken?: string): Promise<PortalResponse> =>
+  call('login', { phone, code, captchaToken });
 
 /** تاریخچهٔ دوره‌ها و مشاوره‌های کاربر */
 export const portalHistory = (phone: string, code: string): Promise<PortalResponse> =>

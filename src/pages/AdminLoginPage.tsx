@@ -2,7 +2,6 @@
 import { useAppContext } from '../app/AppContext';
 import { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import PortalHeader from '../components/PortalHeader';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, verifyAdminBiometric } from '../utils/adminBiometric';
 import { loginAdminSession, getAdminSessionToken, validateAdminSession } from '../utils/adminSession';
 import './portal.css';
@@ -65,11 +64,7 @@ export default function AdminLoginPage() {
         <circle cx="86%" cy="84%" r="96" fill={mem[2] || '#E2F6EC'} opacity=".4" />
         <circle cx="12%" cy="90%" r="40" fill={mem[0] || '#F1E4FC'} opacity=".45" />
       </svg></div>
-      <div style={{ width: '100%', position: 'relative', zIndex: 20 }}>
-        <PortalHeader brand={brand} lang={lang} setLang={setLang} T={T} darkGlass={darkGlass}
-          onHome={goHome} onCourses={() => setView('courses')} onSupport={() => setView('contact')}
-          onBack={goHome} backLabel={en ? 'Back' : 'بازگشت'} />
-      </div>
+      {/* هدر صفحه: همان هدر صفحات عمومی (از App.tsx رندر می‌شود) */}
       <div className="zp-content" style={{ justifyContent: 'center', paddingTop: 8 }}>
         <div className="zp-card" style={{ maxWidth: 400 }}>
           <div style={{ textAlign: 'center', marginBottom: 4 }}><span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5z" /></svg>{en ? 'ADMIN ONLY' : 'فقط برای تیم مدیریت'}</span></div>

@@ -33,16 +33,20 @@ serve(async(req)=>{
  const referralCode=String(body.referralCode||'').trim().toLowerCase().slice(0,100);
  const turnstileToken=String(body.turnstileToken||'').trim();
  if(!courseId)return reply({error:"دوره معتبر نیست"},400,origin);
- if(turnstileToken.length<20||turnstileToken.length>2048)return reply({error:"تأیید امنیتی لازم است"},403,origin);
- const remoteIp=String(req.headers.get('CF-Connecting-IP')||req.headers.get('X-Forwarded-For')||'').split(',')[0].trim();
- const hostname=new URL(origin).hostname;
- const captcha=await verifyTurnstile(turnstileToken,remoteIp,hostname);
- if(captcha==='unavailable')return reply({error:"سرویس بررسی امنیتی موقتاً در دسترس نیست"},503,origin);
- if(captcha!=='ok')return reply({error:"تأیید امنیتی نامعتبر یا منقضی است"},403,origin);
  const admin=getSupabaseAdmin();
  const {data,error}=await admin.from('settings').select('settings').eq('key','app_settings').limit(1).maybeSingle();
  if(error||!data)return reply({error:"روند پرداخت در دسترس نیست"},503,origin);
  const settings=data.settings||{};
+ // کپچا: اگر صفحهٔ ورودی سایت روی «پنل کاربر» باشد، بررسی امنیتی روی همان فرم ورود انجام شده
+ // و در صفحهٔ پرداخت تکرار نمی‌شود؛ در حالت «پیگیری دوره» همان قفل قبلی سر جایش می‌ماند.
+ if(String(settings.entryMode||'track')!=='user'){
+  const remoteIp=String(req.headers.get('CF-Connecting-IP')||req.headers.get('X-Forwarded-For')||'').split(',')[0].trim();
+  const hostname=new URL(origin).hostname;
+  if(turnstileToken.length<20||turnstileToken.length>2048)return reply({error:"تأیید امنیتی لازم است"},403,origin);
+  const captcha=await verifyTurnstile(turnstileToken,remoteIp,hostname);
+  if(captcha==='unavailable')return reply({error:"سرویس بررسی امنیتی موقتاً در دسترس نیست"},503,origin);
+  if(captcha!=='ok')return reply({error:"تأیید امنیتی نامعتبر یا منقضی است"},403,origin);
+ }
  const courses=(Array.isArray(settings.courseTabs)?settings.courseTabs:[]).flatMap((tab:any)=>Array.isArray(tab?.courses)?tab.courses:[]);
  const course=courses.find((item:any)=>String(item?.id||'')===courseId&&item?.active!==false);
  if(!course)return reply({error:"دوره معتبر نیست"},404,origin);

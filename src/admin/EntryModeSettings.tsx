@@ -96,7 +96,7 @@ export default function EntryModeSettings({ app }: { app: any }) {
           <input className="zkad-switch" type="checkbox" checked={up.captchaEnabled === true} onChange={(e) => setUp({ captchaEnabled: e.target.checked })} />
           {en ? 'Enable Cloudflare Turnstile on registration' : 'فعالسازی Cloudflare Turnstile در فرم ثبتنام'}
         </label>,
-        en ? 'Recommended to turn ON when live SMS is enabled (bots would burn SMS credits). Requires TURNSTILE_SECRET on the Edge Function.'
+        en ? 'Recommended to turn ON when live SMS is enabled (bots would burn SMS credits). Requires TURNSTILE_SECRET on the Edge Function. Where it appears: on the sign-in/register forms in user-portal mode, and on the payment page in course-tracking mode.'
           : 'پیشنهاد: همزمان با فعالسازی پیامک واقعی روشن شود (رباتها اعتبار پیامک را میسوزانند). نیازمند TURNSTILE_SECRET در Edge Function است.'
       )}
 

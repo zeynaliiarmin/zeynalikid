@@ -97,13 +97,13 @@ assert(isAnyValidTrackingCode('ZK-AB12CD') === true, 'isAnyValidTrackingCode ه�
 assert(isAnyValidTrackingCode('XYZ123') === false, 'isAnyValidTrackingCode نامعتبر');
 assert(normalizeTrackingCode('zk 12345') === 'ZK12345', 'normalizeTrackingCode استاندارد');
 assert(normalizeTrackingCode('ZK-AB12CD') === 'ZK-AB12CD', 'normalizeTrackingCode هگز');
-// ── ورودی مخفی ادمین «۶۳۹»: هیچ کد پیگیری تولیدی نباید با ۶۳۹ شروع شود ──
+// ── «۶۳۹» دیگر در فیلد کد پیگیری معنایی ندارد (درِ مخفی به فیلد شمارهٔ تماس منتقل شده)
+// پس محدودیتی روی رقم‌های شروع کد گذاشته نمی‌شود؛ فقط فرمتِ کد باید درست بماند.
 for (let i = 0; i < 2000; i++) {
   const c = generateTrackingCode(5);
-  const body = extractTrackingNumber(c);
-  assert(!body.startsWith('639'), 'کد پیگیری هرگز با 639 شروع نشود');
+  assert(/^ZK\d{5}$/.test(c), 'generateTrackingCode فرمت ۵رقمی');
 }
-assert(!extractTrackingNumber(generateTrackingCode(3)).startsWith('639'), 'کد ۳رقمی هم با 639 شروع نشود');
+assert(/^ZK\d{3}$/.test(generateTrackingCode(3)), 'کد ۳رقمی هم همان فرمت را دارد');
 assert(isTrackingCodeUnique('ZK99999', ['ZK11111']) === true, 'isTrackingCodeUnique یکتا');
 assert(isTrackingCodeUnique('ZK11111', ['ZK11111']) === false, 'isTrackingCodeUnique تکراری');
 const uniq=generateUniqueTrackingCode(['ZK11111','ZK22222']);

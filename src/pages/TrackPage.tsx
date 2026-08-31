@@ -4,7 +4,7 @@
 import { useAppContext } from '../app/AppContext';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import PortalHeader from '../components/PortalHeader';
+
 import { isSupabaseConfigured } from '../lib/supabase';
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
@@ -48,7 +48,6 @@ export default function TrackPage() {
 
   const onNumChange = (v: string) => {
     const clean = p2e(v).replace(/^(zk|fm)-?/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 20);
-    if (clean === '639') { setNum(''); setView('admin-login'); return; }
     setNum(clean);
   };
   const buildCode = () => normalizeTrackingCode(num, TRACKING_PREFIX);
@@ -232,9 +231,7 @@ export default function TrackPage() {
         <circle cx="18%" cy="80%" r="8" fill={mem[2] || '#E2F6EC'} opacity=".6" />
         <path d="M 40 -5 Q 48 30 40 60" stroke={mem[0] || '#F1E4FC'} strokeWidth="3" fill="none" opacity=".5" />
       </svg></div>
-      <PortalHeader brand={brand} lang={lang} setLang={setLang} T={T} darkGlass={darkGlass}
-        onHome={() => setView('home')} onCourses={() => setView('courses')} onSupport={() => setView('contact')}
-        onBack={() => setView('home')} backLabel={lang === 'en' ? 'Back' : 'بازگشت'} />
+      {/* هدر صفحه: همان هدر صفحات عمومی (از App.tsx رندر می‌شود) */}
 
       <div className="zp-content">
         <div className="zp-card" style={{ maxWidth: 400 }}>
@@ -247,7 +244,7 @@ export default function TrackPage() {
           </div>
           <div className="zp-field">
             <span className="zp-lbl">{lang === 'en' ? 'Phone number' : 'شماره تماس'}</span>
-            <div className="zp-box"><span className="zp-fic"><PhoneIcon size={19} /></span><input dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
+            <div className="zp-box"><span className="zp-fic"><PhoneIcon size={19} /></span><input dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => { const v = e.target.value; if (p2e(v).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; } setPhone(v); }} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
           </div>
           {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
           <button className="zp-btn" onClick={search} disabled={loading}>{loading ? '…' : (lang === 'en' ? 'Track course' : 'پیگیری دوره')}</button>

@@ -56,20 +56,23 @@ const maskPhone = (phone: string): string => {
 /** نام واقعی: minimum LETTER count, mirroring src/utils/userPortal.ts — fa: 3 letters (e.g. «علی»), en: 2 Latin letters. */
 const PERSIAN_TOKEN_RE = /^[\u0600-\u06FF\u0750-\u077F]+$/;
 const LATIN_NAME_RE = /^[A-Za-z][A-Za-z '.-]*$/;
+const NAME_RULE_ERROR = "نام و نام خانوادگی خود را به درستی وارد کنید.";
+const NAME_RULE_ERROR_EN = "Enter your first and last name correctly.";
+
 const validateFullName = (raw: string, minLetters?: number): { ok: boolean; error?: string } => {
   const cleaned = String(raw ?? "").replace(/[\u200c\u0640]/g, " ").replace(/\s+/g, " ").trim();
   if (!cleaned) return { ok: false, error: "نام را وارد کنید." };
   const letters = cleaned.replace(/[\s'.,-]/g, "");
   if (/[A-Za-z]/.test(cleaned)) {
-    if (!LATIN_NAME_RE.test(cleaned)) return { ok: false, error: "The name must contain English letters only." };
-    if (letters.length < 2) return { ok: false, error: "The name must be at least 2 letters." };
+    if (!LATIN_NAME_RE.test(cleaned)) return { ok: false, error: NAME_RULE_ERROR_EN };
+    if (letters.length < 2) return { ok: false, error: NAME_RULE_ERROR_EN };
     return { ok: true };
   }
   for (const part of cleaned.split(" ").filter(Boolean)) {
-    if (!PERSIAN_TOKEN_RE.test(part)) return { ok: false, error: "نام فقط باید شامل حروف فارسی باشد (بدون رقم و علامت)." };
+    if (!PERSIAN_TOKEN_RE.test(part)) return { ok: false, error: NAME_RULE_ERROR };
   }
   const min = Math.max(2, Math.min(8, Number(minLetters) || 3));
-  if (letters.length < min) return { ok: false, error: `نام باید حداقل ${min} حرف باشد.` };
+  if (letters.length < min) return { ok: false, error: NAME_RULE_ERROR };
   return { ok: true };
 };
 
@@ -263,6 +266,12 @@ serve(async (req) => {
   if (action === "login" || action === "me") {
     const rl = await centralRateLimit(req, "user-portal-login", { maxRequests: 100, windowMs: 10 * 60_000, blockMs: 5 * 60_000 });
     if (!rl.ok) return jsonResponse({ error: "تعداد درخواستها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
+
+    // در حالت «پنل کاربر» کپچا همان‌جا روی فرم ورود نشسته است (فقط برای login، نه بررسی نشست)
+    if (action === "login" && portalCfg.captchaEnabled) {
+      const cap = await verifyCaptcha(body?.captchaToken);
+      if (!cap.ok) return jsonResponse({ error: cap.error }, 400, origin);
+    }
 
     const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
     if (!code) return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);

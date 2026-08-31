@@ -3,11 +3,12 @@
 import { useAppContext } from '../app/AppContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import PortalHeader from '../components/PortalHeader';
+import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { portalStart, portalConfirm, portalLogin, portalHistory } from '../lib/userPortalApi';
-import { TRACKING_PREFIX } from '../config/project';
+import { TRACKING_PREFIX, TURNSTILE_SITE_KEY } from '../config/project';
+import TurnstileGate from '../components/TurnstileGate';
 import {
   getUserSession, setUserSession, clearUserSession, normalizePhoneForServer, validateFullName,
   maskPhoneLocal, takePortalNext, setPortalNext, digitsOnly, getUserSession as readSession,
@@ -43,6 +44,15 @@ export default function UserPortalPage() {
   const [nextPath, setNextPath] = useState(() => takePortalNext());
   const faMinLetters = Math.max(2, Math.min(8, Number((cfg as any)?.userPortal?.minNameWords) || 3));
   const captchaOn = (cfg as any)?.userPortal?.captchaEnabled === true;
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
+  const onCaptchaVerify = (t: string) => setCaptchaToken(t);
+  const onCaptchaReset = () => { setCaptchaToken(''); setCaptchaAttempt((a) => a + 1); };
+  // درِ مخفی پنل مدیریت: فقط در فیلد شماره تماس و فقط وقتی کلّ مقدار دقیقاً ۶۳۹ باشد
+  const onPhoneInput = (v: string) => {
+    if (p2e(String(v || '')).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; }
+    setPhone(v);
+  };
   const ctryNow = () => countries.find((c: any) => c.code === cc) || countries[0];
 
   useEffect(() => { setOtpMode(String((cfg as any)?.userPortal?.otpMode || 'test') as any); }, [cfg]);
@@ -87,9 +97,10 @@ export default function UserPortalPage() {
       if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شمارهٔ تماس برای کشور انتخاب‌شده معتبر نیست.');
       const ph = normalizePhoneForServer(fullPhone(cc, localNum));
       if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
+      if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
       const c = String(code).trim().toUpperCase();
       if (!/^(FM|ZK)[-]?[a-z0-9]{4,20}$/i.test(c)) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
-      const r = await portalLogin(phone, c);
+      const r = await portalLogin(phone, c, captchaToken);
       const s = { code: String(r.code), fullName: String(r.fullName), phone: ph, loginAt: Date.now() };
       setUserSession(s); setSession(s);
     } catch (e: any) { setErr(e?.message || 'خطا در ورود'); } finally { setBusy(false); }
@@ -102,9 +113,10 @@ export default function UserPortalPage() {
       if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شمارهٔ تماس برای کشور انتخاب‌شده معتبر نیست.');
       const ph = normalizePhoneForServer(fullPhone(cc, localNum));
       if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
+      if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
       const chk = validateFullName(fullName, lang, faMinLetters);
       if (!chk.ok) throw new Error(chk.error as string);
-      const r = await portalStart(fullName, ph, undefined);
+      const r = await portalStart(fullName, ph, captchaToken || undefined);
       if (r.exists) { setErr(en ? 'This phone number is already registered — please sign in.' : 'این شماره قبلاً ثبتنام کرده؛ لطفاً وارد شوید.'); setAuth('login'); return; }
       setOtpMode(String(r.otpMode || 'off') as any);
       setOtpPreview(String(r.otpPreview || ''));
@@ -157,9 +169,7 @@ export default function UserPortalPage() {
         <circle cx="94%" cy="70%" r="44" fill={mem[2] || '#E2F6EC'} opacity=".45" />
         <circle cx="20%" cy="82%" r="8" fill={mem[2] || '#E2F6EC'} opacity=".6" />
       </svg></div>
-      <PortalHeader brand={brand} lang={lang} setLang={setLang} T={T} darkGlass={darkGlass}
-        onHome={() => setView('home')} onCourses={() => goto('courses')} onSupport={() => goto('contact')}
-        onBack={() => setView('home')} backLabel={en ? 'Back' : 'بازگشت'} />
+      {/* هدر صفحه: همان هدر صفحات عمومی (از App.tsx رندر می‌شود) */}
 
       <div className="zp-content">
         {!session && (
@@ -177,13 +187,14 @@ export default function UserPortalPage() {
             {auth === 'login' && (<>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Phone number' : 'شماره تماس'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><select className="zp-cct" value={cc} onChange={(e) => setCc(e.target.value)} aria-label={en ? 'Country code' : 'کد کشور'}>{countries.map((c: any) => <option key={c.code} value={c.code}>{getCountryFlag(c)} {c.code}</option>)}</select><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => setPhone(p2e(e.target.value).replace(/[^0-9]/g, ''))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} /></div>
+                <div className="zp-box"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} /><CountryCodePicker T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
               </div>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
                 <div className="zp-box"><span className="zp-fic"><I d="M9 9h6v6H9z M4 4h16v16H4z" /></span><input dir="ltr" inputMode="text" placeholder={`${TRACKING_PREFIX}-12739`} value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{(cfg as any)?.trackingPrefix || TRACKING_PREFIX}</span></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
+{captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
               <button className="zp-btn" onClick={doLogin} disabled={busy}>{busy ? '…' : (en ? 'Sign in' : 'ورود به پنل')}</button>
               <button className="zp-ghost" onClick={() => { setAuth('register'); setErr(''); setStep('form'); }}>
                 <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>{en ? 'Register for the first time' : 'اولین بار است؛ ثبتنام کنید'}
@@ -191,19 +202,16 @@ export default function UserPortalPage() {
             </>)}
 
             {auth === 'register' && step === 'form' && (<>
-              <div className="zp-note" style={{ marginBottom: 14 }}>
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>
-                <span>{en ? `Full name (at least 2 letters in English / ${faMinLetters} in Persian) and a real mobile number (verification code will be sent).` : `نام و نام خانوادگی واقعی (حداقل ${faMinLetters} حرف فارسی — در حالت انگلیسی ۲ حرف) و شمارهٔ تماس واقعی (کد تأیید ارسال میشود).`}</span>
-              </div>
               <div className="zp-field">
-                <span className="zp-lbl">{en ? `Full name (min ${faMinLetters} letters)` : `نام و نام خانوادگی (حداقل ${faMinLetters} حرف)`}</span>
+                <span className="zp-lbl">{en ? 'Full name' : 'نام و نام خانوادگی'}</span>
                 <div className="zp-box"><span className="zp-fic"><I d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0" /></span><input placeholder={en ? 'e.g. Ali Mohammad Rezaei' : 'مثلاً: علی محمد رضایی'} value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
               </div>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Phone number' : 'شماره تماس'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><select className="zp-cct" value={cc} onChange={(e) => setCc(e.target.value)} aria-label={en ? 'Country code' : 'کد کشور'}>{countries.map((c: any) => <option key={c.code} value={c.code}>{getCountryFlag(c)} {c.code}</option>)}</select><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => setPhone(p2e(e.target.value).replace(/[^0-9]/g, ''))} onKeyDown={(e) => e.key === 'Enter' && doStart()} /></div>
+                <div className="zp-box"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doStart()} /><CountryCodePicker T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
+{captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
               <button className="zp-btn" onClick={doStart} disabled={busy}>{busy ? '…' : (en ? 'Send verification code' : 'ارسال کد تأیید')}</button>
               {otpMode === 'test' && !busy && <div className="zp-secure" style={{ marginTop: 12 }}>حالت تست — پس از اتصال پنل پیامکی، کد برای شما پیامک میشود</div>}
             </>)}

@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { CountryCodePopup } from '../components/CountryCodePicker';
 import PrivacyConsent from '../components/PrivacyConsent';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -10,7 +11,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { TRACKING_PREFIX } from '../config/project';
-import { getUserSession, validateFullName } from '../utils/userPortal';
+import { getUserSession, validateFullName, splitE164 } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -81,11 +82,8 @@ const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val
   },[multi,setVal,val]);
   return <div><label style={S.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={T} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{...S.inp,textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?T.txt:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(_tr).join('، '):(cfg? '- انتخاب کنید...' : 'انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{(items||[]).map((it:string)=><button key={String(it)} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.soft:'transparent',border:0,borderRadius:9,color:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{_tr(it)}</button>)}</Popup></div>;
 });
-const StableCountrySelectLocal = memo(function StableCountrySelectLocal({value,onChange,small=true,T,countries,lang}:any){
-  const [open,setOpen]=useState(false);
-  const choose = useCallback((v:string)=>{ onChange(v); setOpen(false); },[onChange]);
-  return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,color:T.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountryFn((countries||[]).find((x:any)=>x.code===value)||(countries||[])[0])}</button>}>{(countries||[]).map((c:any)=><button key={c.id||c.code} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountryFn(c, lang)}</button>)}</Popup>;
-});
+// از همان کامپوننت مشترک استفاده می‌شود تا انتخاب کشور در همه‌جای سایت یک شکل باشد
+const StableCountrySelectLocal = CountryCodePopup;
 
 
 export default function ConsultationPage(){
@@ -173,6 +171,15 @@ export default function ConsultationPage(){
 
   // Exit guard
   // پس از ثبت موفق، فرم دیگر «ویرایش ذخیره‌نشده» نیست؛ بنابراین رفرش/رفتن به دوره‌ها هشدار نادرست نمی‌دهد.
+  // در حالت «پنل کاربر» وقتی کاربر وارد شده باشد، نام و شمارهٔ تماس از حساب او برداشته می‌شود
+  // و در فرم نمایش داده/قابل ویرایش نیست (اما در رکورد ذخیره می‌شود تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست).
+  const portalSession = String((cfg as any)?.entryMode || 'track') === 'user' ? getUserSession() : null;
+  useEffect(() => {
+    if (!portalSession) return;
+    const parts = splitE164(portalSession.phone, countries);
+    setFd((prev: any) => ({ ...prev, pName: portalSession.fullName || prev.pName, cc: parts.cc, pPhone: parts.local }));
+  }, [portalSession]);
+
   const isDirty = formView === 'form' && (fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0));
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
 
@@ -277,11 +284,11 @@ export default function ConsultationPage(){
     if (!fd.topics.length) e.topics = lang === 'en' ? 'Select at least one topic' : 'حداقل یک موضوع مشاوره انتخاب کنید';
     // نام والد فقط وقتی الزامی است که از پنل مدیریت برای این فیلد Required فعال شده باشد.
     const pnMin = Math.max(2, Math.min(6, Number((cfg as any)?.userPortal?.minNameWords) || 3));
-    if (ff?.parentName?.show !== false && ff?.parentName?.required === true) {
+    if (!portalSession && ff?.parentName?.show !== false && ff?.parentName?.required === true) {
       const pnChk = validateFullName(fd.pName, lang, pnMin);
       if (!pnChk.ok) e.pName = lang === 'en' ? 'Enter a real full name (at least 3 words, name and surname).' : String(pnChk.error);
     }
-    if (ff?.parentPhone?.show !== false && ff?.parentPhone?.required !== false && !validPhone(fd.pPhone, country)) e.pPhone = lang === 'en' ? 'Phone number is invalid for selected country' : 'شماره تماس برای کشور انتخاب شده معتبر نیست';
+    if (!portalSession && ff?.parentPhone?.show !== false && ff?.parentPhone?.required !== false && !validPhone(fd.pPhone, country)) e.pPhone = lang === 'en' ? 'Phone number is invalid for selected country' : 'شماره تماس برای کشور انتخاب شده معتبر نیست';
     if (!fd.gender) e.gender = lang === 'en' ? 'Select gender' : 'جنسیت فرزند را انتخاب کنید';
     const ag = +p2e(fd.age);
     if (ff?.age?.show !== false && (!fd.age || isNaN(ag) || ag < minAge || ag > maxAge)) e.age = lang === 'en' ? `Age must be ${minAge} to ${maxAge}` : `سن ${minAge} تا ${maxAge} سال`;
@@ -573,8 +580,9 @@ export default function ConsultationPage(){
 
         {/* Parent info */}
         <div style={S.sec}><MiniIcon type="user" T={T} />{publicText('parentInfo', 'اطلاعات والد / سرپرست')}</div>
-        {cfg.formFields?.parentName?.show !== false && <Field label={cfg.formFields.parentName.label} value={fd.pName} onChange={(v: string) => setFd({ ...fd, pName: v })} ph={cfg.formFields.parentName.placeholder} />}
-        {cfg.formFields?.parentPhone?.show !== false && <div style={{ marginBottom: 13 }}>
+        {portalSession && <div style={{ marginBottom: 13, fontSize: 12.5, color: T.mut, fontWeight: 700, lineHeight: 1.9 }}>{lang === 'en' ? `Name and contact number are taken from your account (${portalSession.fullName}).` : `نام و شمارهٔ تماس از حساب کاربری شما (${portalSession.fullName}) استفاده می‌شود.`}</div>}
+        {!portalSession && cfg.formFields?.parentName?.show !== false && <Field label={cfg.formFields.parentName.label} value={fd.pName} onChange={(v: string) => setFd({ ...fd, pName: v })} ph={cfg.formFields.parentName.placeholder} />}
+        {!portalSession && cfg.formFields?.parentPhone?.show !== false && <div style={{ marginBottom: 13 }}>
           <label style={S.lbl}>{trVal(cfg.formFields.parentPhone.label)} <span style={{ color: T.err }}>*</span></label>
           <div style={{ display: 'flex', gap: 5, alignItems: 'stretch', direction: 'ltr' }}>
             <CountrySelectLocal value={fd.cc} onChange={(v: string) => setFd({ ...fd, cc: v })} />
