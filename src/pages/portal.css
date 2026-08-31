@@ -45,7 +45,7 @@
 .zp-fic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .zp-box input{flex:1;min-width:0;background:transparent;border:0;color:var(--zp-ink);font-size:15px;font-family:inherit;outline:none;font-weight:800}
 .zp-box input::placeholder{color:var(--zp-ph);font-weight:600}
-.zp-tag{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:900;color:var(--zp-acc);background:transparent;border:0;box-shadow:none;border-radius:0;padding:0;letter-spacing:.6px}
+.zp-tag{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:900;color:var(--zp-accText);background:transparent;border:0;box-shadow:none;border-radius:0;padding:0;letter-spacing:.6px}
 .zp-eye{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;padding:0;border:0;border-radius:11px;background:transparent;color:var(--zp-ttl);font-family:inherit;cursor:pointer;display:grid;place-items:center;transition:.16s}
 .zp-eye:hover{background:color-mix(in srgb,var(--zp-acc) 10%,transparent)}
 .zp-eye:active{transform:translateY(-50%) scale(.94)}
@@ -109,13 +109,16 @@
 .zp-note svg{width:16px;height:16px;flex-shrink:0;stroke:var(--zp-acc);fill:none;stroke-width:2.2}
 
 /* ── پنل کاربر: هدر خوش‌آمد + استت‌ها ── */
-.zp-hero{width:100%;border-radius:26px;padding:22px 20px;position:relative;overflow:hidden;margin-bottom:14px;
-  background:linear-gradient(135deg,var(--zp-acc),var(--zp-g2));color:var(--zp-btnfg);
-  box-shadow:0 18px 42px color-mix(in srgb,var(--zp-acc) 36%,transparent)}
+.zp-hero{width:100%;border-radius:26px;padding:20px;position:relative;overflow:hidden;margin-bottom:14px;border:1px solid var(--zp-cardbd);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--zp-soft) 78%,var(--zp-card0)) 0%,var(--zp-card0) 55%,var(--zp-card1) 100%);color:var(--zp-ink);
+  box-shadow:0 14px 34px color-mix(in srgb,var(--zp-acc) 10%,transparent)}
 .zp-hero::after{content:'';position:absolute;inset:0;background:
-  radial-gradient(60% 90% at 88% 0%,rgba(255,255,255,.28),transparent 60%),
-  radial-gradient(50% 80% at 6% 100%,rgba(255,255,255,.14),transparent 55%);pointer-events:none}
-.zp-avatar{width:52px;height:52px;border-radius:18px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;font-size:22px;font-weight:900}
+  radial-gradient(64% 110% at 96% 2%,color-mix(in srgb,var(--zp-g2) 15%,transparent),transparent 60%),
+  radial-gradient(52% 90% at 3% 100%,color-mix(in srgb,var(--zp-acc) 9%,transparent),transparent 55%);pointer-events:none}
+.zp-avatar{width:52px;height:52px;border-radius:18px;background:color-mix(in srgb,var(--zp-acc) 12%,transparent);border:1px solid color-mix(in srgb,var(--zp-acc) 30%,transparent);color:var(--zp-accText);display:grid;place-items:center;font-size:22px;font-weight:900}
+.zp-codechip{margin-top:14px;display:flex;align-items:center;gap:10px;width:100%;background:linear-gradient(165deg,var(--zp-card1),var(--zp-fbg));border:1px solid var(--zp-cardbd);border-radius:16px;padding:11px 14px;color:var(--zp-ink);font-family:inherit;cursor:pointer}
+.zp-codechip:hover{border-color:color-mix(in srgb,var(--zp-acc) 38%,var(--zp-cardbd))}
+.zp-codechip b{color:var(--zp-accText)}
 .zp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .zp-stat{border-radius:18px;padding:12px 8px;text-align:center;background:linear-gradient(165deg,var(--zp-card0),var(--zp-card1));border:1px solid var(--zp-cardbd);box-shadow:0 10px 26px rgba(30,18,50,.12);position:relative}
 .zp-stat b{display:block;font-size:17px;color:var(--zp-ink)}

@@ -232,7 +232,7 @@ export default function TrackPage() {
           <p className="zp-sub">{lang === 'en' ? 'Enter your tracking code and the phone number used at registration.' : <>کد پیگیری و شمارهٔ تماس هنگام ثبت را وارد کنید تا <b>وضعیت دوره</b> و <b>گام بعدی</b> را ببینید.</>}</p>
           <div className="zp-field">
             <span className="zp-lbl">{lang === 'en' ? 'Tracking code' : 'کد پیگیری'}</span>
-            <div className="zp-box"><span className="zp-fic"><svg viewBox="0 0 24 24"><path d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></svg></span><input dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /></div>
+            <div className="zp-box"><span className="zp-fic"><svg viewBox="0 0 24 24"><path d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></svg></span><input dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
           </div>
           <div className="zp-field">
             <span className="zp-lbl">{lang === 'en' ? 'Phone number' : 'شماره تماس'}</span>

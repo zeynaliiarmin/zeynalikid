@@ -7,7 +7,7 @@ import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { portalStart, portalConfirm, portalLogin, portalHistory } from '../lib/userPortalApi';
-import { TURNSTILE_SITE_KEY } from '../config/project';
+import { TURNSTILE_SITE_KEY, TRACKING_PREFIX } from '../config/project';
 import TurnstileGate from '../components/TurnstileGate';
 import {
   getUserSession, setUserSession, clearUserSession, normalizePhoneForServer, validateFullName,
@@ -187,7 +187,7 @@ export default function UserPortalPage() {
               </div>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /></div>
+                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
@@ -248,7 +248,7 @@ export default function UserPortalPage() {
                 <div style={{ fontSize: 11.5, opacity: .85, marginTop: 2 }} dir="ltr">{maskPhoneLocal(session.phone)}</div>
               </div>
             </div>
-            <button type="button" onClick={copyCode} style={{ position: 'relative', zIndex: 2, marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'rgba(255,255,255,.16)', border: '1px solid rgba(255,255,255,.35)', borderRadius: 16, padding: '11px 14px', color: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+            <button type="button" onClick={copyCode} className="zp-codechip" style={{ position: 'relative', zIndex: 2 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
               <span style={{ fontSize: 11 }}>{en ? 'Your tracking code (tap to copy)' : 'کد پیگیری شما (برای کپی بزنید)'}</span>
               <b style={{ marginInlineStart: 'auto', fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: 2 }}>{session.code}</b>

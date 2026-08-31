@@ -51,7 +51,7 @@ export default function Header({
         left: 0,
         right: 0,
         zIndex: 1200,
-        background: T.hdr || 'rgba(253,248,243,0.94)',
+        background: T.hdr || 'rgba(253,248,243,0.62)',
         backdropFilter: 'blur(18px) saturate(160%)',
         WebkitBackdropFilter: 'blur(18px) saturate(160%)',
         borderBottom: `1px solid ${T.brd || 'var(--zk-border)'}`,
@@ -114,7 +114,7 @@ export default function Header({
             )}
           </button>
         )}
-        <LanguageSwitcher lang={lang} setLang={setLang} T={T} />
+        <LanguageSwitcher lang={lang} setLang={setLang} T={T} glass />
       </div>
 
       <div

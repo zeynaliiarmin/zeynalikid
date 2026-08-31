@@ -19,8 +19,8 @@ export default function LanguageSwitcher({ lang, setLang, T, glass }: Props) {
   const glassDark=/(?:^|-)dark$/.test(String(T.id||''));
   const btnStyle:any = glass
     ? (glassDark
-      ? {height:42,minWidth:50,padding:'0 12px',border:'1px solid rgba(255,255,255,.35)',borderRadius:999,background:'rgba(255,255,255,.12)',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}
-      : {height:42,minWidth:50,padding:'0 12px',border:`1px solid ${T.brd}`,borderRadius:999,background:T.card,color:T.txt,cursor:'pointer',fontSize:13,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'})
+      ? {height:42,minWidth:50,padding:'0 12px',border:'1px solid rgba(255,255,255,.28)',borderRadius:999,background:'rgba(255,255,255,.12)',backdropFilter:'blur(14px) saturate(160%)',WebkitBackdropFilter:'blur(14px) saturate(160%)',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}
+      : {height:42,minWidth:50,padding:'0 12px',border:`1px solid ${T.brd}`,borderRadius:999,background:'rgba(255,255,255,.55)',backdropFilter:'blur(14px) saturate(160%)',WebkitBackdropFilter:'blur(14px) saturate(160%)',color:T.txt,cursor:'pointer',fontSize:13,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'})
     : {height:48,minWidth:48,padding:'0 10px',border:`1px solid ${T.brd}`,borderRadius:12,background:T.card,color:T.txt,cursor:'pointer',fontSize:13,fontWeight:800,opacity:open?1:.92,transition:'all .2s ease',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:open?T.neuIn:T.neuOut,fontFamily:'inherit'};
   const menuStyle:any = glass
     ? (glassDark
