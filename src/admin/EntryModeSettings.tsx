@@ -15,12 +15,13 @@ const SMS_PROVIDERS = [
 ] as const;
 
 export default function EntryModeSettings({ app }: { app: any }) {
-  const { T, lang, setEditCfg, cfg } = app;
+  const { T, lang, setEditCfg, setSave, savedCfg, cfg } = app;
   const en = lang === 'en';
   const ec = cfg || {};
   const up: any = ec.userPortal || {};
   const [smsKey, setSmsKey] = useState(String(up.smsApiKey || ''));
   const [smsSender, setSmsSender] = useState(String(up.smsSender || ''));
+  const [busy, setBusy] = useState(false);
 
   const set = (patch: any) => setEditCfg({ ...ec, ...patch });
   const setUp = (patch: any) => set({ userPortal: { ...up, smsApiKey: smsKey, smsSender, ...patch } });
@@ -50,9 +51,21 @@ export default function EntryModeSettings({ app }: { app: any }) {
           { id: 'track', label: en ? 'Course tracking (guest, no login)' : 'پیگیری دوره (بدون ورود — حالت فعلی)' },
           { id: 'user', label: en ? 'User portal (login required)' : 'پنل کاربر (ثبتنام/ورود اجباری)' },
         ], (v) => set({ entryMode: v })),
-        en ? 'Only one mode can be active. In user-portal mode, course registration and consultations require sign-in; entries stay in “Forms & orders” with the new view, split into consultation and course sections.'
-          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، ثبت دوره و مشاوره بدون ورود ممکن نیست؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
+        en ? 'Only one mode can be active. In user-portal mode /track and /portal both show the sign-in page, and course registration and consultations require sign-in (tracking a code still works from inside the portal). Entries stay in “Forms & orders” with the new view, split into consultation and course sections. '
+          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، نشانی /track و /portal هر دو صفحهٔ ورود را نشان میدهند و ثبت دوره و مشاوره بدون ورود ممکن نیست (جست‌وجوی کد پیگیری هم داخل همان پنل باقی میماند)؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
       )}
+
+      {(() => {
+        const savedMode = String((savedCfg as any)?.entryMode || 'track') === 'user' ? 'user' : 'track';
+        const staged = String(ec.entryMode || 'track') === 'user' ? 'user' : 'track';
+        const label = savedMode === 'user' ? (en ? 'User portal' : 'پنل کاربر') : (en ? 'Course tracking' : 'پیگیری دوره');
+        return (
+          <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 11, padding: '9px 12px', marginBottom: 10 }}>
+            {en ? 'Currently live on the site: ' : 'وضعیت فعلی سایت: '}<span style={{ color: T.acc }}>{label}</span>
+            {staged !== savedMode && <span style={{ color: T.warn, fontWeight: 800 }}>{en ? ' — you have an unsaved change; press Save below.' : ' — یک تغییر ذخیرهنشده دارید؛ دکمهٔ پایین را بزنید.'}</span>}
+          </div>
+        );
+      })()}
 
       {row(
         en ? 'Verification code (SMS OTP)' : 'کد تأیید پیامکی (OTP)',
@@ -100,10 +113,20 @@ export default function EntryModeSettings({ app }: { app: any }) {
         en ? 'Min 3 letters for Persian names, min 2 for English (when the site language is English). Applies to registration, consultation form and shipping form. Letters only — no digits, no repeated words.'
           : 'فارسی حداقل ۳ حرف (مثل «علی») و وقتی زبان سایت انگلیسی است حداقل ۲ حرف لاتین. در ثبتنام پنل، فرم مشاوره و فرم ارسال دوره اعمال میشود؛ بدون رقم و تکرار کلمه.'
       )}
-      <button type="button" style={{ ...(T.btn || {}), background: T.acc, color: T.card === '#fff' ? '#fff' : '#fff', border: 0, borderRadius: 10, padding: '12px 20px', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}
-        onClick={() => setEditCfg({ ...ec, userPortal: { ...up, smsApiKey: smsKey, smsSender } })}>
-        {en ? 'Apply (then press Save)' : 'اعمال تغییرات (سپس ذخیره)'}
+      <button type="button" disabled={busy} style={{ ...(T.btn || {}), background: T.acc, color: '#fff', border: 0, borderRadius: 10, padding: '12px 20px', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}
+        onClick={async () => {
+          const next = { ...ec, userPortal: { ...up, smsApiKey: smsKey, smsSender } };
+          setEditCfg(next);
+          if (typeof setSave !== 'function') return;
+          setBusy(true);
+          try { await Promise.resolve(setSave(next)); } finally { setBusy(false); }
+        }}>
+        {busy ? (en ? 'Saving…' : 'در حال ذخیره…') : (en ? 'Save & apply' : 'ذخیره و فعال‌سازی')}
       </button>
+      <div style={{ fontSize: 11, color: T.mut, marginTop: 8, lineHeight: 1.9 }}>
+        {en ? 'Nothing changes on the site until this button is pressed and «Saved» appears.'
+            : 'تا این دکمه را نزنید و پیام «ذخیره شد» را نبینید، تغییری در سایت اعمال نمی‌شود.'}
+      </div>
     </div>
   );
 }
