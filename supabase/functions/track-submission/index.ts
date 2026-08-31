@@ -86,8 +86,19 @@ serve(async (req) => {
     const supabase = getSupabaseAdmin();
 
     const findByCode=(candidate:string)=>supabase.from("submissions").select("full_phone,payload,created_at").ilike("payload->>trackingCode",candidate).limit(1).maybeSingle();
-    let lookup=await findByCode(code);
-    if((lookup.error||!lookup.data)&&code.toUpperCase().startsWith("FM"))lookup=await findByCode(`ZK${code.slice(2)}`);
+    // پیشوندِ کد در گذشته ZK بود و در سایت فرزندمن به FM تغییر کرده؛ هر دو شکل (با خط تیره و بدون آن)
+    // امتحان می‌شود تا کد قدیمیِ مشتری‌های قبلی همان رکورد را پیدا کند.
+    const bodyPart=String(code).replace(/^(ZK|FM)-?/i,"");
+    const candidates:string[]=[];
+    for(const cand of [code,`FM${bodyPart}`,`ZK${bodyPart}`,`FM-${bodyPart}`,`ZK-${bodyPart}`]){
+      if(cand&&!candidates.includes(cand))candidates.push(cand);
+    }
+    let lookup={data:null,error:null as any};
+    for(const cand of candidates){
+      const attempt=await findByCode(cand);
+      if(attempt.data){lookup=attempt;break;}
+      if(!lookup.error&&attempt.error)lookup=attempt;
+    }
     const {data,error}=lookup;
 
     if(error||!data){

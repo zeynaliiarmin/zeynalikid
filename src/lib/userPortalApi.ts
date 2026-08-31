@@ -21,8 +21,8 @@ const call = async (action: string, payload: Record<string, unknown>): Promise<P
 };
 
 /** مرحله ۱ ثبت‌نام: اعتبارسنجی نام/شماره + ارسال کد تأیید (تست/واقعی) */
-export const portalStart = (fullName: string, phone: string, captchaToken?: string): Promise<PortalResponse> =>
-  call('start', { fullName, phone, captchaToken });
+export const portalStart = (fullName: string, phone: string, captchaToken?: string, referralCode?: string): Promise<PortalResponse> =>
+  call('start', { fullName, phone, captchaToken, referralCode });
 
 /** مرحله ۲: تأیید کد پیامکی → کد پیگیری یکپارچه برای کاربر ساخته/به‌ارث می‌رسد */
 export const portalConfirm = (phone: string, otp: string): Promise<PortalResponse> =>

@@ -33,12 +33,17 @@ export default function CourseShippingPage(){
  // (مقادیر در رکورد ذخیره می‌شوند تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست)
  const portalSession = String((cfg as any)?.entryMode||'track')==='user' ? getUserSession() : null;
  const [receiverSelf,setReceiverSelf]=useState<boolean>(()=>!!portalSession);
+ // نشست تازه‌ساخته‌شده را وارد deps نمی‌کنیم (حلقهٔ رندر)؛ فقط کلید رشته‌ای + مقداردهی بی‌آزار
+ const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';
  useEffect(()=>{
-  if(!receiverSelf||!portalSession)return;
-  const parts=splitE164(portalSession.phone,countries);
-  setCourse((c:any)=>({...c,form:{...c.form,receiver:portalSession.fullName||c.form.receiver,phoneCc:parts.cc,phone:parts.local}}));
+  if(!receiverSelf||!portalSessionKey)return;
+  const s=getUserSession(); if(!s)return;
+  const parts=splitE164(s.phone,countries);
+  setCourse((c:any)=>{const receiver=s.fullName||c.form.receiver;
+   if(c.form.receiver===receiver&&c.form.phoneCc===parts.cc&&c.form.phone===parts.local)return c;
+   return {...c,form:{...c.form,receiver,phoneCc:parts.cc,phone:parts.local}}});
   // eslint-disable-next-line react-hooks/exhaustive-deps
- },[receiverSelf,portalSession]);
+ },[receiverSelf,portalSessionKey]);
  const receiverToggle = portalSession ? <div style={{display:'flex',gap:8,marginBottom:12}}>
   {[{k:true,t:lang==='en'?'I am the receiver':'گیرنده خودم هستم'},{k:false,t:lang==='en'?'Someone else receives it':'گیرنده شخص دیگری است'}].map((o:any)=>(
    <button key={String(o.k)} type="button" aria-pressed={receiverSelf===o.k} onClick={()=>setReceiverSelf(o.k)} style={{flex:1,padding:'10px 8px',borderRadius:12,border:`1.5px solid ${receiverSelf===o.k?T.acc:T.brd}`,background:receiverSelf===o.k?`${T.acc}12`:'transparent',color:receiverSelf===o.k?T.acc:T.mut,fontWeight:800,fontSize:12.5,fontFamily:'inherit',cursor:'pointer'}}>{o.t}</button>))}

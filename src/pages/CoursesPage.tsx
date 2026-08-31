@@ -1,6 +1,7 @@
 import { PUBLIC_SITE_URL } from '../config/project';
 import { useAppContext } from '../app/AppContext';
 import { getUserSession, setPortalNext } from '../utils/userPortal';
+import { rememberPendingRegistration } from '../utils/portalPending';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
@@ -317,6 +318,12 @@ export default function CoursesPage(){
             referralConsultant={app.referralConsultant}
             onOpenCourse={(cr: any) => { setSelectedCourse(cr); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
             onRegister={() => {
+              // حالت «پنل کاربر»: اگر کاربر وارد نشده باشد، نخست ورود/ثبت‌نام خواسته می‌شود
+              // و بعد از آن سؤال روش ارسال می‌آید (برای همهٔ دوره‌ها، از جمله دوره‌های تازه‌افزوده)
+              if (String((cfg as any)?.entryMode || 'track') === 'user' && !getUserSession()) {
+                rememberPendingRegistration(String(selectedCourse?.id || ''));
+                setPortalNext('/courses'); app.setView('track'); return;
+              }
               // نمایش کادر انتخاب مقصد ارسال (ایران / خارج از کشور / بازگشت)
               if (app.setShipModal) {
                 app.setShipModal(selectedCourse);

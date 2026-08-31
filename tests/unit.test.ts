@@ -5,6 +5,7 @@
  */
 
 import { p2e, digits, fullPhone, validPhone, flagToEmoji, getCountryFlag } from '../src/utils/phone';
+import { TRACKING_PREFIX } from '../src/config/project';
 import {
   generateTrackingCode, extractTrackingNumber, isValidTrackingCode, isAnyValidTrackingCode,
   normalizeTrackingCode,isTrackingCodeUnique,generateUniqueTrackingCode,generateSecureTrackingCode,
@@ -85,7 +86,8 @@ assert(getCountryFlag(null) === '🌍', 'getCountryFlag null');
 
 // ── tracking ──────────────────────────────────────────────────────
 const tk = generateTrackingCode();
-assert(/^ZK\d{5}$/.test(tk), 'generateTrackingCode فرمت ZK+5');
+assert(new RegExp('^' + TRACKING_PREFIX + '\\d{5}$').test(tk), 'generateTrackingCode فرمت پیشوندِ سایت + ۵ رقم');
+assert(generateTrackingCode(5, 'ZK').startsWith('ZK'), 'generateTrackingCode پیشوند دلخواه هم می‌پذیرد');
 assert(generateTrackingCode(4).length === 6, 'generateTrackingCode با 4 رقم');
 assert(extractTrackingNumber('ZK12345') === '12345', 'extractTrackingNumber');
 assert(extractTrackingNumber('zk-12345') === '12345', 'extractTrackingNumber مورد-ناست (lower)');
@@ -101,16 +103,17 @@ assert(normalizeTrackingCode('ZK-AB12CD') === 'ZK-AB12CD', 'normalizeTrackingCod
 // پس محدودیتی روی رقم‌های شروع کد گذاشته نمی‌شود؛ فقط فرمتِ کد باید درست بماند.
 for (let i = 0; i < 2000; i++) {
   const c = generateTrackingCode(5);
-  assert(/^ZK\d{5}$/.test(c), 'generateTrackingCode فرمت ۵رقمی');
+  assert(new RegExp('^' + TRACKING_PREFIX + '\\d{5}$').test(c), 'generateTrackingCode فرمت ۵رقمی');
 }
-assert(/^ZK\d{3}$/.test(generateTrackingCode(3)), 'کد ۳رقمی هم همان فرمت را دارد');
+assert(new RegExp('^' + TRACKING_PREFIX + '\\d{3}$').test(generateTrackingCode(3)), 'کد ۳رقمی هم همان فرمت را دارد');
 assert(isTrackingCodeUnique('ZK99999', ['ZK11111']) === true, 'isTrackingCodeUnique یکتا');
 assert(isTrackingCodeUnique('ZK11111', ['ZK11111']) === false, 'isTrackingCodeUnique تکراری');
 const uniq=generateUniqueTrackingCode(['ZK11111','ZK22222']);
-assert(/^ZK\d{5}$/.test(uniq),'generateUniqueTrackingCode خروجی قدیمی معتبر');
+assert(new RegExp('^' + TRACKING_PREFIX + '\\d{5}$').test(uniq),'generateUniqueTrackingCode خروجی معتبر و یکتا');
+assert(uniq.length===TRACKING_PREFIX.length+5 && !['ZK11111','ZK22222'].includes(uniq),'generateUniqueTrackingCode تکراری نیست');
 const secureCodes=new Set(Array.from({length:200},()=>generateSecureTrackingCode()));
 assert(secureCodes.size===200,'کدهای امن نمونه تکراری ندارند');
-assert([...secureCodes].every(code=>/^ZK-[1-9][a-z0-9]{6,8}$/.test(code)),'کد امن ۷ تا ۹ کاراکتر، عدد اول و حروف کوچک دارد');
+assert([...secureCodes].every(code=>new RegExp('^' + TRACKING_PREFIX + '-[1-9][a-z0-9]{6,8}$').test(code)),'کد امن ۷ تا ۹ کاراکتر، عدد اول و حروف کوچک دارد');
 assert(isAnyValidTrackingCode([...secureCodes][0].toUpperCase())===true,'اعتبارسنجی کد امن به بزرگی حروف حساس نیست');
 const fmSecure=generateSecureTrackingCode([],'FM',8);
 assert(/^FM-[1-9][a-z0-9]{7}$/.test(fmSecure),'پیشوند FM و طول هشت‌کاراکتری');

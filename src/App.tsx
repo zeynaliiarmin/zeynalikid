@@ -17,6 +17,7 @@ import { triggerErrorAlert } from './utils/errorAlertBus';
 
 import { generateTrackingCode, generateSecureTrackingCode } from './utils/tracking';
 import { getUserSession, setPortalNext } from './utils/userPortal';
+import { takePendingRegistration } from './utils/portalPending';
 import { PUBLIC_SITE_URL, TRACKING_PREFIX } from './config/project';
 import { optimizeForUpload } from './utils/imageOptimizer';
 import { isSupabaseConfigured, supabase, fetchSettings, createSubmission, saveSettings as saveSettingsRemote, trackPageView, type Submission } from './lib/supabase';
@@ -177,6 +178,16 @@ function App(){
  // ذخیره خودکار داده‌های مهاجرت‌شده در Supabase
  useEffect(()=>{if(cfg&&cfg.version&&cfg.version<CURRENT_SETTINGS_VERSION&&isSupabaseConfigured){saveSettingsRemote(cfg).catch(e=>console.warn('Could not save migrated settings to Supabase',e))}},[cfg]);
  useEffect(()=>{const tabs=cfg.courseTabs||[]; if(tabs.length&&!tabs.some((x:DynamicRecord)=>x.id===courseTab))setCourseTab(tabs.find((x:DynamicRecord)=>x.active)?.id||tabs[0]?.id)},[cfg.courseTabs]);
+ // پس از ورود/ثبت‌نام موفق، همان دوره‌ای که پشت درِ ورود مانده بود دوباره باز می‌شود (سؤال روش ارسال)
+ useEffect(()=>{
+  if(String((cfg as any)?.entryMode||'track')!=='user')return;
+  if(!getUserSession())return;
+  const pid=takePendingRegistration(); if(!pid)return;
+  const all=(cfg.courseTabs||[]).flatMap((t:DynamicRecord)=>Array.isArray(t?.courses)?t.courses:[]).filter((c:DynamicRecord)=>c&&c.active!==false);
+  const cr=all.find((c:DynamicRecord)=>String(c?.id)===pid); if(!cr)return;
+  if(view!=='courses')setView('courses');
+  setShipModal(cr);
+ },[view,cfg.courseTabs]);
  useEffect(()=>{try{const q=new URLSearchParams(window.location.search);const pname=q.get('pname')||'';const cc=q.get('cc')||'';const phone=q.get('phone')||'';if(pname||phone){setFd((f)=>({...f,pName:pname||f.pName,cc:cc||f.cc,pPhone:phone||f.pPhone}));setCourse((c)=>({...c,form:{...c.form,receiver:pname||c.form.receiver,phoneCc:cc||c.form.phoneCc,phone:phone||c.form.phone}}))}}catch{}},[]);
  // مشاور ارجاع‌دهنده از URL (?ad=CODE یا /CODE یا لینک گسترش‌یافته /CODE+t+number)
  const [referralConsultant,setReferralConsultant]=useState<DynamicRecord|null>(null);
@@ -439,8 +450,10 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','admin-login','admin'];
  const successView=view==='course-done'||(view==='form'&&consultationComplete);
  const sensitiveFlow=!successView&&['form','child-info','course-shipping','course-payment','payment-verify','course-confirm'].includes(view);
- const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy'].includes(view);
- const showMenu=!glassFullViews.includes(view)&&!sensitiveFlow&&(successView||view==='courses'||(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)));
+ const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy','track','admin-login'].includes(view);
+ // صفحات ویژه (پیگیری/پنل کاربر، ورود مدیریت) دقیقاً مثل صفحات عمومی منوی همبرگری را دارند
+ const entryChromeViews=['track','admin-login'];
+ const showMenu=!sensitiveFlow&&(entryChromeViews.includes(view)||(!glassFullViews.includes(view)&&(successView||view==='courses'||(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)))));
  const headerOnFullViews=['admin-login','track']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
  const showHeader=view!=='admin'&&(!glassFullViews.includes(view)||headerOnFullViews.includes(view));
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود

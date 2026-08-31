@@ -141,11 +141,29 @@ const verifyCaptcha = async (token: string | undefined): Promise<{ ok: boolean; 
   }
 };
 
+// بدنهٔ کد پیگیری بدون پیشوند (ZK/FM) — تا کدهایی که با پیشوند دیگر ساخته شده‌اند هم پیدا شوند
+const codeBody = (v: unknown) => String(v || "").trim().toUpperCase().replace(/^(ZK|FM)-?/, "");
+
 const getUserRecord = async (supabase: any, phone: string, code?: string) => {
-  let q = supabase.from("submissions").select("id,full_phone,payload,created_at").eq("full_phone", phone).eq("deleted_at", null).ilike("payload->>type", "user");
-  if (code) q = q.ilike("payload->>code", String(code).toLowerCase());
-  const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return data || null;
+  const { data } = await supabase
+    .from("submissions")
+    .select("id,full_phone,payload,created_at")
+    .eq("full_phone", phone)
+    .eq("deleted_at", null)
+    .ilike("payload->>type", "user")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const rows = data || [];
+  if (!code) return rows[0] || null;
+  const wanted = String(code).trim().toUpperCase();
+  const wantedBody = codeBody(wanted);
+  // ۱) تطبیق کامل کد ۲) تطبیق بدنهٔ کد (پیشوند فرق کرده باشد) ۳) کد بایگانی‌شدهٔ قدیمی
+  return (
+    rows.find((r: any) => String(r.payload?.code || "").toUpperCase() === wanted) ||
+    (wantedBody ? rows.find((r: any) =>
+      codeBody(r.payload?.code) === wantedBody || codeBody(r.payload?.legacyCode) === wantedBody) : null) ||
+    null
+  );
 };
 
 serve(async (req) => {
@@ -177,6 +195,12 @@ serve(async (req) => {
         minNameWords: Math.max(2, Math.min(6, Number(u.minNameWords) || 3)),
       };
     }
+    // کدهای ارجاع فعال (برای اینکه ثبت‌نام از لینک مشاور، به همان مشاور برگردد)
+    const list = Array.isArray(data?.settings?.consultants) ? data.settings.consultants : [];
+    portalCfg.referralCodes = new Set(
+      list.filter((c: any) => c?.active !== false && String(c?.referralCode || "").trim())
+        .map((c: any) => String(c.referralCode).trim().toLowerCase()),
+    );
   } catch { /* پیشفرضها */ }
 
   // ─────────────── اکشن: start (ثبتنام مرحله ۱ — ارسال کد) ───────────────
@@ -200,11 +224,16 @@ serve(async (req) => {
     if (!nameCheck.ok) return jsonResponse({ error: nameCheck.error }, 400, origin);
     const fullName = String(body?.fullName || "").replace(/\s+/g, " ").trim();
 
+    // کد ارجاع: فقط اگر واقعاً در تنظیمات وجود دارد پذیرفته می‌شود
+    const rawRef = String(body?.referralCode || "").trim().toLowerCase();
+    const referralCode = rawRef && portalCfg.referralCodes instanceof Set && portalCfg.referralCodes.has(rawRef) ? rawRef.slice(0, 40) : "";
+    const referralFields = referralCode ? { referralCode, origin: "referral" } : {};
+
     // اگر OTP خاموش است: ثبتنام مستقیم
     if (portalCfg.otpMode === "off") {
       const code = await adoptOrCreateCode(supabase, phone);
       const linkedOff = await linkPastRecords(supabase, phone, code, fullName);
-      const { error } = await upsertUser(supabase, phone, { fullName, code, status: "active", otpMode: "off", lastLoginAt: new Date().toISOString(), origin: linkedOff > 0 ? "guest" : "new" });
+      const { error } = await upsertUser(supabase, phone, { ...referralFields, fullName, code, status: "active", otpMode: "off", lastLoginAt: new Date().toISOString(), origin: linkedOff > 0 ? "guest" : "new" });
       if (error) return jsonResponse({ error: "ثبتنام انجام نشد؛ دوباره تلاش کنید." }, 500, origin);
       return jsonResponse({ ok: true, exists: false, otpMode: "off", code, fullName, maskedPhone: maskPhone(phone) }, 201, origin);
     }
@@ -214,6 +243,7 @@ serve(async (req) => {
     const otpHash = await hashOtp(otpCode);
     const otpExpires = Date.now() + 5 * 60_000;
     const pending = await upsertUser(supabase, phone, {
+      ...referralFields,
       fullName, status: "pending", otpHash, otpExpires, otpAttempts: 0,
       code: existing?.payload?.code || "",
     });

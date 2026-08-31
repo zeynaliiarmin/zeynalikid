@@ -174,11 +174,18 @@ export default function ConsultationPage(){
   // در حالت «پنل کاربر» وقتی کاربر وارد شده باشد، نام و شمارهٔ تماس از حساب او برداشته می‌شود
   // و در فرم نمایش داده/قابل ویرایش نیست (اما در رکورد ذخیره می‌شود تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست).
   const portalSession = String((cfg as any)?.entryMode || 'track') === 'user' ? getUserSession() : null;
+  // getUserSession() هر بار شیء تازه می‌سازد؛ پس فقط یک کلید رشته‌ای به افکت داده می‌شود و مقداردهی
+  // تنها وقتی انجام می‌شود که واقعاً چیزی فرق داشته باشد — وگرنه صفحه در حلقهٔ رندر می‌افتد.
+  const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';
   useEffect(() => {
-    if (!portalSession) return;
-    const parts = splitE164(portalSession.phone, countries);
-    setFd((prev: any) => ({ ...prev, pName: portalSession.fullName || prev.pName, cc: parts.cc, pPhone: parts.local }));
-  }, [portalSession]);
+    if (!portalSessionKey) return;
+    const s = getUserSession(); if (!s) return;
+    const parts = splitE164(s.phone, countries);
+    setFd((prev: any) => (prev.pName === (s.fullName || prev.pName) && prev.cc === parts.cc && prev.pPhone === parts.local)
+      ? prev
+      : { ...prev, pName: s.fullName || prev.pName, cc: parts.cc, pPhone: parts.local });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portalSessionKey]);
 
   const isDirty = formView === 'form' && (fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0));
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');

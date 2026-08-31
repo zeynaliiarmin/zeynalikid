@@ -384,7 +384,13 @@ export default function CourseCard({
 
         {/* CTA */}
         {!isSmall && (
-          <div style={{
+          // دکمهٔ واقعی (نه مربع متنی): با کیبورد و صفحه‌خوان هم باز می‌شود و
+          // هیچ کنترل تعاملی داخل کنترل دیگر قرار نمی‌گیرد.
+          <button
+            type="button"
+            onClick={(ev) => { ev.stopPropagation(); handleClick(); }}
+            aria-label={`${ctaLabel || (lang === 'en' ? 'View course' : 'مشاهده دوره')}${course.title ? ` — ${course.title}` : ''}`}
+            style={{
             background: 'var(--zk-primary)',
             color: 'var(--zk-text-inverse, #fff)',
             minHeight: 44,
@@ -399,9 +405,10 @@ export default function CourseCard({
             transition: 'all .2s ease',
             animation: ctaPulse ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined,
             WebkitAnimation: ctaPulse ? 'zk-hero-pulse 1.6s ease-in-out infinite' : undefined,
+            border: 0, width: '100%', fontFamily: 'inherit', cursor: 'pointer',
           }}>
             {ctaLabel || (lang === 'en' ? 'View course' : 'مشاهده دوره')}
-          </div>
+          </button>
         )}
       </div>
     </article>
