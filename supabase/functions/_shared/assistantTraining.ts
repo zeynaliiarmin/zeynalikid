@@ -3,7 +3,7 @@ import {normalizeAssistantText,type AssistantKnowledgeAction,type AssistantMatch
 const MISTRAL_API_URL='https://api.mistral.ai/v1/chat/completions';
 const MODEL='mistral-small-latest';
 export const PUBLIC_ASSISTANT_PATHS=new Set(['/','/consultation','/track','/courses','/products','/education','/faq','/contact','/about','/privacy','/experience','/licenses','/growth']);
-export const ADMIN_ASSISTANT_TABS=new Set(['dashboard','data','userQuestions','assistant','reviews','consultants','courses','featured','tagged','products','services','trustbox','trust','shipping','content','images','highlights','licenses','contacts','settings','design','security','analytics','errors','trash']);
+export const ADMIN_ASSISTANT_TABS=new Set(['dashboard','data','userQuestions','assistant','reviews','consultants','courses','featured','tagged','products','services','trustbox','trust','shipping','content','images','highlights','licenses','contacts','settings','design','security','analytics','entry','errors','trash']);
 
 const clean=(value:unknown,max:number)=>String(value||'').replace(/\s+/g,' ').trim().slice(0,max);
 export const cleanList=(value:unknown,maxItems=30,maxLength=100)=>{

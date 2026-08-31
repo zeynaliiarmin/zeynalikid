@@ -12,6 +12,18 @@ try{
  await page.setViewport({width:320,height:700});await new Promise(r=>setTimeout(r,250));const resized=await page.$eval('.zka-discovery',n=>{const r=n.getBoundingClientRect();return{left:r.left,right:r.right}});assert.ok(resized.left>=9.5&&resized.right<=310.5,'card lost its 10px viewport-safe gap after resize');
  await page.waitForFunction(()=>!document.querySelector('.zka-discovery'),{timeout:7000});assert.equal(await page.$eval('.zka-launch',n=>n.classList.contains('is-guiding')),false,'halo remained after card dismissal');
  await page.evaluate(()=>{for(const key of Object.keys(sessionStorage))if(key.includes('assistant_discovery_'))sessionStorage.removeItem(key);for(const key of ['zeynalikid_assistant_discovery_initial','farzandman_assistant_discovery_initial'])localStorage.setItem(key,'1');sessionStorage.setItem('zeynalikid_assistant_discovery_elapsed','299500');sessionStorage.setItem('farzandman_assistant_discovery_elapsed','299500')});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.innerText.includes('راهنمایی لازم دارین؟'),{timeout:4000});await page.mouse.click(310,680);await page.waitForFunction(()=>!document.querySelector('.zka-discovery'),{timeout:3000});
+ // بازدیدکنندهٔ قبلی: کارت اول نشان داده نمی‌شود، ولی بعد از دو دقیقه همان متن اول یک‌بار می‌آید
+ await page.evaluate(()=>{for(const key of Object.keys(sessionStorage))if(key.includes('assistant_discovery_'))sessionStorage.removeItem(key);localStorage.setItem('zeynalikid_assistant_discovery_initial','1')});
+ await page.reload({waitUntil:'domcontentloaded'});await new Promise(r=>setTimeout(r,1500));
+ assert.equal(await page.$('.zka-discovery'),null,'a returning visitor must not see the bubble on arrival');
+ await page.evaluate(()=>sessionStorage.setItem('zeynalikid_assistant_discovery_elapsed','125000'));await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.body.innerText.includes('همراه شما هستیم'),{timeout:6000});
+ const again=await page.evaluate(()=>({title:document.querySelector('.zka-discovery b')?.textContent||'',text:document.querySelector('.zka-discovery small')?.textContent||''}));
+ assert.deepEqual(again,{title:'همراه شما هستیم',text:'اگر سوالی دارین، راهنمای سایت در دسترس شماست.'},'returning visitor must see the first message after two minutes');
+ await page.evaluate(()=>document.querySelector('.zka-discovery').click());
+ await page.waitForFunction(()=>!document.querySelector('.zka-discovery'),{timeout:3000});
+ await page.evaluate(()=>sessionStorage.setItem('zeynalikid_assistant_discovery_elapsed','131000'));await page.reload({waitUntil:'domcontentloaded'});await new Promise(r=>setTimeout(r,1800));
+ assert.equal(await page.$('.zka-discovery'),null,'the two-minute reminder must appear only once per session');
  await page.goto(base+'/consultation',{waitUntil:'domcontentloaded'});await new Promise(r=>setTimeout(r,1400));assert.equal(await page.$('.zka-discovery'),null,'discovery card must not run during consultation');
  console.log('Anchored assistant card, connector, halo, resize, auto-hide and form exclusion passed.');
 }finally{await browser.close()}
