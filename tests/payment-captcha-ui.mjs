@@ -8,11 +8,29 @@ const draft=(destination)=>({selected,dest:destination,shippingMethod:'post',chi
 // Locked state: no server request and no payment destination before CAPTCHA.
 {
  const context=await browser.createBrowserContext();const page=await context.newPage();await page.setBypassServiceWorker(true);let checkoutRequests=0;page.on('request',request=>{if(request.url().includes('/checkout-session'))checkoutRequests++});await page.evaluateOnNewDocument(value=>localStorage.setItem('zkid_course_draft',JSON.stringify(value)),draft('iran'));
- await page.goto(base+'/course-payment',{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('[data-testid="payment-captcha-gate"]',{timeout:15000});await new Promise(resolve=>setTimeout(resolve,700));
+ await page.goto(base+'/course-payment',{waitUntil:'domcontentloaded',timeout:30000});await page.waitForFunction(()=>!!document.querySelector('[data-testid="payment-captcha-gate"]')||(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.entryMode==='user'),{timeout:15000});await new Promise(resolve=>setTimeout(resolve,700));
  const before=await page.evaluate(()=>({gate:!!document.querySelector('[data-testid="payment-captcha-gate"]'),destinations:!!document.querySelector('[data-testid="payment-destinations"]'),hasCard:/\b\d{16}\b/.test(document.body.innerText.replace(/\s/g,'')),bankOnly:document.body.innerText.includes('برای مشاهده اطلاعات بانکی، بررسی امنیتی زیر را تکمیل کنید.')}));
- if(!before.gate||before.destinations||before.hasCard||!before.bankOnly||checkoutRequests!==0)throw new Error(`CAPTCHA gate failed: ${JSON.stringify({before,checkoutRequests})}`);
+ const mode=await page.evaluate(()=>(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.entryMode==='user')?'user':'track');
+ if(mode==='user'){
+  // حالت «پنل کاربر»: بررسی امنیتی روی فرم ورود/ثبت‌نام نشسته است، پس صفحهٔ پرداخت قفلِ کپچا ندارد
+  if(before.gate) throw new Error(`payment CAPTCHA must not lock the payment page in user-portal mode: ${JSON.stringify(before)}`);
+  if(before.destinations||before.hasCard) throw new Error(`payment details appeared before the server allowed them: ${JSON.stringify(before)}`);
+  if(checkoutRequests<1) throw new Error(`user-portal mode must load payment details without a CAPTCHA token (requests=${checkoutRequests})`);
+  // مسیرِ /track در حالت «پنل کاربر» همان فرم ورود را نشان می‌دهد (صفحهٔ ورودی سایت)
+  await page.goto(base+'/track',{waitUntil:'domcontentloaded',timeout:30000});
+  await new Promise(resolve=>setTimeout(resolve,1500));
+  const portal=await page.evaluate(()=>({authGate:!!document.querySelector('[data-testid="auth-captcha-gate"]'),captchaWanted:!!(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.userPortal&&globalThis.__APP_SSG_SETTINGS__.userPortal.captchaEnabled===true),ruleText:/حداقل\s*[۰-۹0-9]+\s*حرف/.test(document.body.innerText),selectInField:!!document.querySelector('.zp-box select'),chooserAfterInput:(()=>{const b=document.querySelector('.zp-box');if(!b)return false;const kids=Array.from(b.children).map(c=>c.tagName.toLowerCase());return kids.includes('input')&&kids.indexOf('input')<kids.length-1})()}));
+  if(portal.captchaWanted!==portal.authGate) throw new Error(`the sign-in CAPTCHA must follow the admin switch: ${JSON.stringify(portal)}`);
+  if(portal.ruleText) throw new Error(`the real-name rule must not be explained to visitors: ${JSON.stringify(portal)}`);
+  if(portal.selectInField) throw new Error(`the country chooser must be the shared popup, not a native select: ${JSON.stringify(portal)}`);
+  if(!portal.chooserAfterInput) throw new Error(`the country chooser must sit after the number input: ${JSON.stringify(portal)}`);
+  await context.close();
+ } else {
+  // حالت «پیگیری دوره»: همان قفل قبلی روی صفحهٔ پرداخت، بدون هیچ درخواستی پیش از تأیید
+  if(!before.gate||before.destinations||before.hasCard||!before.bankOnly||checkoutRequests!==0)throw new Error(`CAPTCHA gate failed: ${JSON.stringify({before,checkoutRequests})}`);
  for(const button of await page.$$('button')){if((await button.evaluate(node=>node.textContent||'')).includes('ثبت‌نام اولیه')){await button.click();break}}
  await page.waitForFunction(()=>document.body.innerText.includes('ابتدا بررسی امنیتی را تکمیل کنید.'),{timeout:5000});if(checkoutRequests!==0)throw new Error('Checkout session was requested before CAPTCHA verification.');await context.close();
+ }
 }
 
 // Unlocked experimental launcher: default copy once, then preserve any explicit IBAN/wallet copy.
