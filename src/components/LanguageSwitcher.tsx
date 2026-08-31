@@ -16,7 +16,7 @@ export default function LanguageSwitcher({ lang, setLang, T, glass }: Props) {
     return()=>window.removeEventListener('storage',onStorage);
   },[setLang]);
   const changeLang=(l:'fa'|'en')=>{setLang(l);try{localStorage.setItem('zkid_lang',JSON.stringify(l))}catch{}setOpen(false)};
-  const glassDark=T.id==='dark'||T.id==='admin-dark';
+  const glassDark=/(?:^|-)dark$/.test(String(T.id||''));
   const btnStyle:any = glass
     ? (glassDark
       ? {height:42,minWidth:50,padding:'0 12px',border:'1px solid rgba(255,255,255,.35)',borderRadius:999,background:'rgba(255,255,255,.12)',color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}

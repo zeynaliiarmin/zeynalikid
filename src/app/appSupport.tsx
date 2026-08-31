@@ -851,8 +851,8 @@ export function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onS
   const year = new Date().getFullYear();
   const siteName = (cfg.browserTitle && String(cfg.browserTitle).trim()) ? String(cfg.browserTitle).trim().replace(/["“”]+/g,'') : (cfg.siteTitle || 'زینالیکید');
   const c = cfg.contacts || {};
-  const whatsappAccessible = T.id==='dark' ? '#6EE7B7' : '#08783E';
-  const telegramAccessible = T.id==='dark' ? '#7DD3FC' : '#0369A1';
+  const whatsappAccessible = /(?:^|-)dark$/.test(String(T.id||'')) ? '#6EE7B7' : '#08783E';
+  const telegramAccessible = /(?:^|-)dark$/.test(String(T.id||'')) ? '#7DD3FC' : '#0369A1';
   const [openAcc, setOpenAcc] = useState<string | null>(null);
   const toggleAcc = (key: string) => setOpenAcc(openAcc === key ? null : key);
 
@@ -942,7 +942,7 @@ const items=[c.phone&&{key:'phone',title:lang==='en'?'Phone':'شماره تما�
 const knownKeys=['phone','whatsapp','telegram','instagram','rubika','bale'];
 return <div style={glass?{marginTop:12,padding:14,background:'rgba(15,23,42,.45)',border:'1px solid rgba(255,255,255,.16)',borderRadius:16,backdropFilter:'blur(14px) saturate(140%)',WebkitBackdropFilter:'blur(14px) saturate(140%)'}:{marginTop:12,padding:14,background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16}}><div style={{fontWeight:700,color:glass?'#fff':T.ttl,marginBottom:10,fontSize:13,display:'flex',gap:7,alignItems:'center'}}><PlatformIcon type="phone" color={glass?'#fff':T.acc} size={16}/>{t(cfg,lang,'contactUs','ارتباط با ما')}</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:8}}>{items.map((it:any,i:number)=>{
   const color=it.color||icons[it.key]?.color||T.acc;
-  const displayColor=T.id==='dark'?`color-mix(in srgb, ${color} 55%, white)`:`color-mix(in srgb, ${color} 58%, #0F172A)`;
+  const displayColor=/(?:^|-)dark$/.test(String(T.id||''))?`color-mix(in srgb, ${color} 55%, white)`:`color-mix(in srgb, ${color} 58%, #0F172A)`;
   const isKnown=knownKeys.includes(it.key);
   return <a key={i} href={it.url} target={it.url?.startsWith('http')?'_blank':undefined} rel="noreferrer" style={glass?{textDecoration:'none',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(255,255,255,.16)',background:'rgba(255,255,255,.07)',color:'#fff',fontWeight:700,fontSize:12.5,display:'flex',alignItems:'center',gap:8,overflow:'hidden',minHeight:44,transition:'all .15s ease'}:{textDecoration:'none',padding:'10px 12px',borderRadius:12,border:`1px solid ${displayColor}66`,background:`color-mix(in srgb, ${color} 12%, transparent)`,color:displayColor,fontWeight:700,fontSize:12.5,display:'flex',alignItems:'center',gap:8,overflow:'hidden',minHeight:44,transition:'all .15s ease'}}>
    <span style={{width:28,height:28,borderRadius:'50%',background:glass?`${color}33`:`color-mix(in srgb, ${color} 18%, transparent)`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
