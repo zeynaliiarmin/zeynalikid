@@ -3,6 +3,11 @@ import {matchKnowledge,normalizeAssistantText,type KnowledgeLike} from './assist
 const MISTRAL_API_URL='https://api.mistral.ai/v1/chat/completions';
 export const MISTRAL_ASSISTANT_MODEL='mistral-small-latest';
 
+// ── کلید پشتیبانِ صفحات عمومی: وقتی سقف روزانهٔ کلید اصلی تمام شد، تا پایان آن روز (UTC)
+// پاسخ‌ها با کلید دوم داده می‌شود؛ روز بعد کلید اصلی خودش به‌طور خودکار به چرخه برمی‌گردد.
+let publicPrimaryCooldownUntil=0;
+function nextUtcMidnightMs(){const now=new Date();return Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1)}
+
 export interface ScopedKnowledge extends KnowledgeLike {
   id?:string;
   answer?:string;
@@ -138,13 +143,26 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
     options.language==='en'?'Answer in clear, natural English and keep the response under 180 words.':'پاسخ را با فارسی گفتاری مودبانه و طبیعی و حداکثر ۱۸۰ کلمه بنویس؛ «می» و «نمی» را به فعل بچسبون، از شکل های رایج مثل میتونم، میخواین، میدونم، اینجوری، کدوم و یه استفاده کن، اعراب ننویس و از واژه های کوچه بازاری بی ادبانه استفاده نکن. تا جای ممکن معادل فارسی واژه های انگلیسی را به کار ببر، مگر اینکه واژه تخصصی یا نام رسمی باشه.',
     'نام یا شماره مرجع را در پاسخ ذکر نکنید.',
   ];
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),25_000);
+  async function callProvider(key:string):Promise<Response>{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),25_000);
+    let response:Response;
+    try{
+    response=await fetch(MISTRAL_API_URL,{method:'POST',signal:controller.signal,headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MISTRAL_ASSISTANT_MODEL,temperature:0.35,max_tokens:450,messages:[{role:'system',content:rules.join('\n')},{role:'user',content:`سؤال:\n${question}\n\nدانش تأییدشده:\n${buildReference(matches)}`}]})});
+    }catch(error){if((error as Error)?.name==='AbortError')throw new Error('MISTRAL_TIMEOUT');throw error instanceof Error&&error.message.startsWith('MISTRAL_')?error:new Error('MISTRAL_NETWORK')}finally{clearTimeout(timer)}
+    if(!response.ok){if(response.status===429)throw new Error('MISTRAL_RATE_LIMIT');if(response.status===401||response.status===403)throw new Error('MISTRAL_AUTH');throw new Error('MISTRAL_PROVIDER')}
+    return response;
+  }
+  const fallbackKey=options.mode==='public'?String(Deno.env.get('MISTRAL_FALLBACK_API_KEY')||'').trim():'';
   let response:Response;
-  try{
-    response=await fetch(MISTRAL_API_URL,{method:'POST',signal:controller.signal,headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:MISTRAL_ASSISTANT_MODEL,temperature:0.35,max_tokens:450,messages:[{role:'system',content:rules.join('\n')},{role:'user',content:`سؤال:\n${question}\n\nدانش تأییدشده:\n${buildReference(matches)}`}]})});
-  }catch(error){if((error as Error)?.name==='AbortError')throw new Error('MISTRAL_TIMEOUT');throw new Error('MISTRAL_NETWORK')}finally{clearTimeout(timer)}
-  if(!response.ok){if(response.status===429)throw new Error('MISTRAL_RATE_LIMIT');if(response.status===401||response.status===403)throw new Error('MISTRAL_AUTH');throw new Error('MISTRAL_PROVIDER')}
+  if(fallbackKey&&Date.now()<publicPrimaryCooldownUntil){response=await callProvider(fallbackKey)}
+  else{
+    try{response=await callProvider(apiKey)}
+    catch(error){
+      if(options.mode==='public'&&fallbackKey&&String((error as Error)?.message||'')==='MISTRAL_RATE_LIMIT'){publicPrimaryCooldownUntil=nextUtcMidnightMs();response=await callProvider(fallbackKey)}
+      else throw error;
+    }
+  }
   const parsed=parseProvider(await response.json().catch(()=>null));
   if(!parsed.answer)throw new Error('MISTRAL_EMPTY');
   return {...parsed,sources,providerCalled:true};
