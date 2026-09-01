@@ -28,6 +28,10 @@ export const portalStart = (fullName: string, phone: string, captchaToken?: stri
 export const portalConfirm = (phone: string, otp: string): Promise<PortalResponse> =>
   call('confirm', { phone, otp });
 
+/** پیش‌نمایش ماسک‌شدهٔ شماره ثبت‌شده با کد پیگیری — فقط رقم‌های ماسک‌خورده برمی‌گردد */
+export const portalPhonePreview = (code: string): Promise<PortalResponse> =>
+  call('preview-phone', { code });
+
 /** ورود با شماره تماس + کد پیگیری (مثل صفحه پیگیری، ولی در پنل کاربر) */
 export const portalLogin = (phone: string, code: string, captchaToken?: string): Promise<PortalResponse> =>
   call('login', { phone, code, captchaToken });

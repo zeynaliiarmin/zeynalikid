@@ -41,6 +41,7 @@ import { canonicalizeMediaInput, extractDirectMediaUrl, extractImageLinkList } f
 import BulkStoryAdder from './BulkStoryAdder';
 import CoverCropModal from './CoverCropModal';
 import CoverImage from '../components/CoverImage';
+import { HIGHLIGHT_VECTORS, HighlightVectorGlyph } from '../components/HighlightVectors';
 import { isGatewayProductionReady } from '../services/payment/PaymentService';
 
 const TrashPanel=lazy(()=>import('./TrashPanel'));
@@ -1591,6 +1592,12 @@ function DesignManagerEditor(){
       <label style={S.lbl}>آدرس کاور (اختیاری)</label>
       <StableAdminInput dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={it.coverUrl||''} onCommit={(v:string)=>chg(i,'coverUrl',canonicalizeMediaInput(v,'image'))} placeholder="لینک دانلود مستقیم ImgURL"/>
       {(()=>{const coverSrc=extractDirectMediaUrl(it.coverUrl,'image'); const cpos=it.coverPosition||'50% 50%'; const czoom=Number(it.coverZoom)||1; return <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:8}}>{coverSrc?<><span style={{width:58,height:58,borderRadius:'50%',overflow:'hidden',background:T.inp||T.soft,border:`2px solid ${T.acc}`,flexShrink:0,display:'inline-block'}}><CoverImage src={coverSrc} position={cpos} zoom={czoom}/></span><button type="button" style={AdminBtn()} onClick={()=>setCoverCropFor(i)}>تنظیم کادر کاور</button></>:<span style={{fontSize:11,color:T.mut}}>با وارد کردن لینک کاور، امکان تنظیم کادر فعال می‌شود.</span>}</div>;})()}
+      <label style={S.lbl}>یا آیکون برداریِ کاور — برای همه هایلایت‌ها آزاد است</label>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,margin:'4px 0 6px'}}>
+       {(it.coverVector||'')===''&&<span style={{fontSize:11,color:T.mut,alignSelf:'center'}}>بدون انتخاب، حرف اول عنوان نمایش داده می‌شود.</span>}
+       {HIGHLIGHT_VECTORS.map(v=>{const on=(it.coverVector||'')===v.id;return <button key={v.id} type="button" onClick={()=>chg(i,'coverVector',on?'':v.id)} style={{width:64,minHeight:58,borderRadius:12,border:`1.5px solid ${on?T.acc:T.brd}`,background:on?`${T.acc}22`:T.card,color:on?T.accText:T.ttl,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,cursor:'pointer',fontSize:8.5,fontWeight:800,padding:'4px 2px',lineHeight:1.3,flexShrink:0}}><HighlightVectorGlyph id={v.id} size={21}/>{v.label}</button>;})}
+      </div>
+      {it.coverUrl&&<p style={{fontSize:10.5,color:T.warn,margin:'0 0 6px'}}>تصویرِ کاور اولویت دارد؛ بردار فقط وقتی نمایش داده می‌شود که «آدرس کاور» خالی باشد.</p>}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'8px 0'}}>
        <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveHl(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
        <button type="button" style={AdminBtn()} disabled={i===items.length-1} onClick={()=>moveHl(i,1)}><ZkArrowDownIcon size={13}/> پایین</button>
