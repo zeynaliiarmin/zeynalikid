@@ -1,0 +1,1 @@
+import{useEffect as o}from"react";function d(e,n){o(()=>{if(!e)return;const r=t=>{const u=n||"اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟ / You have unsaved changes. Are you sure?";return t.preventDefault(),t.returnValue=u,u};return window.addEventListener("beforeunload",r),()=>{window.removeEventListener("beforeunload",r)}},[e,n])}export{d as t};

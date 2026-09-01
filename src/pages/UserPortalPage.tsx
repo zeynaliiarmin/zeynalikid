@@ -205,7 +205,7 @@ export default function UserPortalPage() {
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
-              <button className="zp-btn" onClick={doLogin} disabled={busy}>{busy ? '…' : (en ? 'Sign in' : 'ورود به پنل')}</button>
+              <button className="zp-btn" onClick={doLogin} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال بررسی…'}><i/><i/><i/></span> : (en ? 'Sign in' : 'ورود به پنل')}</button>
               <button type="button" className="zp-link zp-underline" onClick={() => { setAuth('register'); setErr(''); setStep('form'); }}>{en ? 'Not registered yet? Create an account first' : 'اگر ثبت‌نام نکردید، ابتدا ثبت‌نام کنید'}</button>
             </>)}
 
@@ -220,7 +220,7 @@ export default function UserPortalPage() {
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
-              <button className="zp-btn" onClick={doStart} disabled={busy}>{busy ? '…' : (en ? 'Send verification code' : 'ارسال کد تأیید')}</button>
+              <button className="zp-btn" onClick={doStart} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال ارسال…'}><i/><i/><i/></span> : (en ? 'Send verification code' : 'ارسال کد تأیید')}</button>
               {otpMode === 'test' && !busy && <div className="zp-secure" style={{ marginTop: 12 }}>حالت تست — پس از اتصال پنل پیامکی، کد برای شما پیامک میشود</div>}
             </>)}
 
@@ -238,7 +238,7 @@ export default function UserPortalPage() {
                 <div className="zp-box"><span className="zp-fic"><I d="M12 8v4M12 16h.01 M4 4h16v16H4z" /></span><input dir="ltr" inputMode="numeric" maxLength={6} placeholder="••••••" value={otp} onChange={(e) => setOtp(p2e(e.target.value).replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => e.key === 'Enter' && doConfirm()} style={{ fontFamily: 'ui-monospace,monospace', letterSpacing: 6, fontSize: 16 }} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
-              <button className="zp-btn" onClick={doConfirm} disabled={busy}>{busy ? '…' : (en ? 'Verify and continue' : 'تأیید و ادامه')}</button>
+              <button className="zp-btn" onClick={doConfirm} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال تأیید…'}><i/><i/><i/></span> : (en ? 'Verify and continue' : 'تأیید و ادامه')}</button>
               <button className="zp-link" onClick={() => { setStep('form'); setErr(''); }}>{en ? 'Change phone / resend' : 'تغییر شماره / ارسال دوباره'}</button>
             </>)}
           </div>
