@@ -89,7 +89,7 @@ serve(async req=>{
       const recommendsCourse=(result.sources||[]).some(source=>String(source.category||'').includes('دوره')||String(source.link_url||'').startsWith('/courses'));
       const healthish=/(رشد|قد|وزن|تغذیه|غذا|اشتها|خواب|تمرکز|حافظه|یبوست|مو|مکمل|دوره|growth|height|weight|nutri|food|appetite|sleep|focus|memory|constip|hair|supplement|course)/i.test(`${question} ${normalized}`);
       if(recommendsCourse||removed||healthish){const hasConsult=actions.some(item=>item.path==='/consultation');if(!hasConsult)actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
-      if(image&&/(از روی عکس|نمی‌تونم|نمی توانم)/.test(answer)){if(!/(درخواست )?مشاوره/.test(answer))answer+=consultCta;if(!actions.some(item=>item.path==='/consultation'))actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
+      if(image&&/(از روی عکس|نمی‌تونم|نمی توانم|اطلاعاتی ندارم)/.test(answer)){if(!/(درخواست )?مشاوره/.test(answer))answer+=consultCta;if(!actions.some(item=>item.path==='/consultation'))actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
     }
     return deliver({ok:true,answer,model:result.model,sources:result.sources,actions,suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false},200);
   }
