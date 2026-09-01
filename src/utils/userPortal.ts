@@ -109,14 +109,14 @@ export function validateFullName(name: any, lang: 'fa' | 'en' | string = 'fa', f
  * و حذف پیشوند برند در ابتدای کد (ZK، FM، F، M) — «ZK-12739»، «F 12739»، «M-12739» و «fm12739» همگی پذیرفته می‌شوند.
  */
 export function normalizeLoginCode(raw: unknown): string {
-  let v = String(raw ?? '')
+  const s = String(raw ?? '')
     .replace(/[\u0660-\u0669]/g, (d) => String('\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'.indexOf(d)))
     .replace(/[\u06F0-\u06F9]/g, (d) => String('\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9'.indexOf(d)))
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '');
-  if (!v) return '';
-  const b = v.replace(/^(?:FZK|ZK|FM|F|M)+/, '');
-  return b.length >= 4 ? b : v;
+  if (!s) return '';
+  const m = s.match(/[0-9][A-Z0-9]*$/);
+  return m ? m[0] : s;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

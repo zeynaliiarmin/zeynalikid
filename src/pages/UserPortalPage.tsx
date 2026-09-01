@@ -6,7 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { portalStart, portalConfirm, portalLogin, portalHistory } from '../lib/userPortalApi';
+import { portalStart, portalConfirm, portalLogin, portalHistory, portalPhonePreview } from '../lib/userPortalApi';
 import { TURNSTILE_SITE_KEY, TRACKING_PREFIX } from '../config/project';
 import TurnstileGate from '../components/TurnstileGate';
 import {
@@ -19,8 +19,6 @@ import { designModeFromThemeId, warmZpVars } from '../theme/warmPalettes';
 
 type AuthView = 'login' | 'register';
 type RegStep = 'form' | 'otp';
-/** سه‌نقطهٔ متحرک (جایگزین «…» ساده روی دکمهٔ مشغول) */
-const Dots = () => (<span className="zp-dots" aria-hidden="true"><i /><i /><i /></span>);
 
 const empty = { o: 0, p: 0, c: 0 };
 
@@ -28,7 +26,7 @@ export default function UserPortalPage() {
   const app = useAppContext();
   const { cfg, T, css, lang, setLang, setView, p2e, countries, validPhone, fullPhone, phonePlaceholder } = app;
   const en = lang === 'en';
-  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (en ? 'ZeynaliKid' : 'زینالیکید')).replace(/[“”"]/g, '').trim();
+  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (en ? 'Farzandman' : 'فرزند من')).replace(/[“”"]/g, '').trim();
 
   const [auth, setAuth] = useState<AuthView>('login');
   const [step, setStep] = useState<RegStep>('form');
@@ -46,6 +44,10 @@ export default function UserPortalPage() {
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [nextPath, setNextPath] = useState(() => takePortalNext());
+  const [phonePreview, setPhonePreview] = useState('');
+  // پذیرای همه شکل‌ها: FM-1x2tsvy / F1x2tsvy / M-1x2tsvy / 1x2tsvy / هر خطای فاصله و خط تیره
+  // همان قاعدهٔ سرور: حذف نویز + گرفتن بدنهٔ کد از اولین رقم به بعد («FM-1x2»، «F 1x2»، «1x2» یکی می‌شوند)
+  const codeCore = normalizeLoginCode;
   const faMinLetters = Math.max(2, Math.min(8, Number((cfg as any)?.userPortal?.minNameWords) || 3));
   const captchaOn = (cfg as any)?.userPortal?.captchaEnabled === true;
   const [captchaToken, setCaptchaToken] = useState('');
@@ -65,6 +67,25 @@ export default function UserPortalPage() {
 
   useEffect(() => { setOtpMode(String((cfg as any)?.userPortal?.otpMode || 'test') as any); }, [cfg]);
   useEffect(() => { const s = readSession(); setSession(s); }, []);
+  // اگر کد، شماره‌ای را پیدا نکرد، دست‌کم شمارهٔ تایپ‌شده را ماسک‌شده نشان بده (۴ رقم + ۴×x + ۳ رقم)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loginMask = useMemo(() => {
+    try {
+      const localNum = digitsOnly(phone);
+      if (!validPhone(localNum, ctryNow())) return '';
+      return maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, localNum)));
+    } catch { return ''; }
+  }, [phone, cc, countries]);
+  useEffect(() => {
+    if (auth !== 'login') { setPhonePreview(''); return; }
+    const core = codeCore(code);
+    if (core.length < 4) { setPhonePreview(''); return; }
+    const timer = window.setTimeout(async () => {
+      try { const r = await portalPhonePreview(TRACKING_PREFIX + '-' + core.toLowerCase()); setPhonePreview(r.found && r.maskedPhone ? String(r.maskedPhone) : ''); }
+      catch { setPhonePreview(''); }
+    }, 550);
+    return () => window.clearTimeout(timer);
+  }, [code, auth]);
   useEffect(() => {
     if (!session) return;
     let alive = true;
@@ -88,16 +109,6 @@ export default function UserPortalPage() {
   const mem = [zp['--zp-mem0'], zp['--zp-mem1'], zp['--zp-mem2']];
   const rootVars: any = { ...zp };
 
-  // شمارهٔ ماسک‌شده (۴ رقم اول + چهار تا x + ۳ رقم آخر) تا کاربر پیش از ورود، حسابش را تشخیص دهد
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const loginMask = useMemo(() => {
-    try {
-      const localNum = digitsOnly(phone);
-      if (!validPhone(localNum, ctryNow())) return '';
-      return maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, localNum)));
-    } catch { return ''; }
-  }, [phone, cc, countries]);
-
   const doLogin = async () => {
     setErr(''); setBusy(true);
     try {
@@ -106,10 +117,9 @@ export default function UserPortalPage() {
       const ph = normalizePhoneForServer(fullPhone(cc, localNum));
       if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
       if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
-      const c = normalizeLoginCode(code);
-      if (!c) throw new Error(en ? 'Enter your tracking code.' : 'کد پیگیری را وارد کنید.');
-      if (!/^[A-Z0-9]{4,20}$/.test(c)) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
-      const r = await portalLogin(ph, c, captchaToken);
+      const core = codeCore(code);
+      if (core.length < 4 || core.length > 20) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
+      const r = await portalLogin(ph, TRACKING_PREFIX + '-' + core.toLowerCase(), captchaToken);
       const s = { code: String(r.code), fullName: String(r.fullName), phone: ph, loginAt: Date.now() };
       setUserSession(s); setSession(s);
     } catch (e: any) { setErr(e?.message || 'خطا در ورود'); if (captchaOn) retryCaptcha(); } finally { setBusy(false); }
@@ -197,22 +207,20 @@ export default function UserPortalPage() {
             {auth === 'login' && (<>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" autoComplete="one-time-code" maxLength={24} placeholder={en ? 'e.g. 12739' : 'مثلاً 12739'} value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase().replace(/[^A-Z0-9 ._-]/g, '').slice(0, 24))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
-                <div className="zp-hint" style={{ marginTop: 4, textAlign: 'start' }}>{en ? 'With or without the site prefix — spaces and dashes are fine too.' : 'با پیشوند یا بدون آن؛ فاصله و خط‌تیره هم اشکالی ندارد.'}</div>
+                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 26))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
               </div>
-              {loginMask && (
-                <div className="zp-masknote" dir="ltr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg><span>{en ? 'Account of' : 'حساب کاربری'}</span><b>{loginMask}</b></div>
-              )}
+              <div className="zp-codehint" aria-live="polite">{phonePreview ? <><span className="zp-hintline" /><span>{en ? 'You registered with this number:' : 'شما با این شماره ثبت‌نام کردید:'} <b dir="ltr">{phonePreview}</b></span><span className="zp-hintline" /></> : null}</div>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Phone number' : 'شماره تماس'}</span>
                 <div className="zp-box"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} /><CountryCodePicker flat T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
-              <button className="zp-btn" onClick={doLogin} disabled={busy}>{busy ? <Dots /> : (en ? 'Sign in' : 'ورود به پنل')}</button>
-              <button className="zp-link zp-acctlink" onClick={() => { setAuth('register'); setErr(''); setStep('form'); }}>
-                {en ? 'First time here? Register' : 'اولین بار است؛ ثبتنام کنید'}
-              </button>
+              {!phonePreview && loginMask && (
+                <div className="zp-masknote" dir="ltr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg><span>{en ? 'Sign in with account' : 'ورود با حساب'}</span><b>{loginMask}</b></div>
+              )}
+              <button className="zp-btn" onClick={doLogin} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال بررسی…'}><i/><i/><i/></span> : (en ? 'Sign in' : 'ورود به پنل')}</button>
+              <button type="button" className="zp-link zp-underline" onClick={() => { setAuth('register'); setErr(''); setStep('form'); }}>{en ? 'Not registered yet? Create an account first' : 'اگر ثبت‌نام نکردید، ابتدا ثبت‌نام کنید'}</button>
             </>)}
 
             {auth === 'register' && step === 'form' && (<>
@@ -226,7 +234,7 @@ export default function UserPortalPage() {
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
-              <button className="zp-btn" onClick={doStart} disabled={busy}>{busy ? <Dots /> : (otpMode === 'off' ? (en ? 'Sign up' : 'ثبت‌نام') : (en ? 'Register and get the code' : 'ثبت‌نام و دریافت کد تأیید'))}</button>
+              <button className="zp-btn" onClick={doStart} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال ارسال…'}><i/><i/><i/></span> : (otpMode === 'off' ? (en ? 'Sign up' : 'ثبت‌نام') : (en ? 'Register and get the code' : 'ثبت‌نام و دریافت کد تأیید'))}</button>
               {otpMode !== 'off' && <div className="zp-hint">{en ? 'If you have not registered before, this button creates your profile.' : 'اگر تا حالا ثبت‌نام نکرده باشید، با زدن همین دکمه پروفایل شما ساخته می‌شود.'}</div>}
               {otpMode === 'test' && !busy && <div className="zp-secure" style={{ marginTop: 12 }}>حالت تست — پس از اتصال پنل پیامکی، کد برای شما پیامک میشود</div>}
             </>)}
@@ -245,7 +253,7 @@ export default function UserPortalPage() {
                 <div className="zp-box"><span className="zp-fic"><I d="M12 8v4M12 16h.01 M4 4h16v16H4z" /></span><input dir="ltr" inputMode="numeric" maxLength={6} placeholder="••••••" value={otp} onChange={(e) => setOtp(p2e(e.target.value).replace(/\D/g, '').slice(0, 6))} onKeyDown={(e) => e.key === 'Enter' && doConfirm()} style={{ fontFamily: 'ui-monospace,monospace', letterSpacing: 6, fontSize: 16 }} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
-              <button className="zp-btn" onClick={doConfirm} disabled={busy}>{busy ? <Dots /> : (en ? 'Verify and continue' : 'تأیید و ادامه')}</button>
+              <button className="zp-btn" onClick={doConfirm} disabled={busy}>{busy ? <span className="zp-dots" role="status" aria-label={en?'Please wait…':'در حال تأیید…'}><i/><i/><i/></span> : (en ? 'Verify and continue' : 'تأیید و ادامه')}</button>
               <button className="zp-link" onClick={() => { setStep('form'); setErr(''); }}>{en ? 'Change phone / resend' : 'تغییر شماره / ارسال دوباره'}</button>
             </>)}
           </div>

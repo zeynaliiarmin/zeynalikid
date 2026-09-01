@@ -8,10 +8,10 @@ import { detectVpnOn } from '../utils/vpn';
 import { extractDirectMediaUrl } from '../utils/mediaInput';
 import { markStorySeen, getResumeIndex, hasSeenStoryHint, markStoryHintSeen } from '../utils/storyProgress';
 import CoverImage from './CoverImage';
-import { isVectorCoverUrl } from './highlightVectors';
+import { HighlightVectorGlyph } from './HighlightVectors';
 
 export type StorySlide = { id: string; imageCodeExternal?: string; imageCodeInternal?: string; title?: string; order?: number; active?: boolean };
-export type Highlight = { id: string; title: string; coverUrl?: string; coverPosition?: string; coverZoom?: number; stories: StorySlide[]; active?: boolean; order?: number };
+export type Highlight = { id: string; title: string; coverUrl?: string; coverVector?: string; coverPosition?: string; coverZoom?: number; stories: StorySlide[]; active?: boolean; order?: number };
 
 const DURATION_MS = 8000; // مدت نمایش هر استوری = ۸ ثانیه
 const LONG_PRESS_MS = 400; // حد تشخیص «نگه‌داشتن انگشت»
@@ -309,7 +309,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 
   if (!slide) return null;
   const imgSrc = resolveImage(slide, vpnOn);
-  const highlightCover = isVectorCoverUrl(hl?.coverUrl) ? String(hl?.coverUrl).trim() : (extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn));
+  const highlightCover = extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn);
 
   const handleClick = (e: React.MouseEvent) => {
     if (hlDirRef.current) return; // حین انیمیشن تغییر هایلایت
@@ -380,8 +380,8 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
         </div>
         {/* هدر */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 8 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0 }}>
-            {highlightCover && <CoverImage src={highlightCover} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} />}
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.soft, border: `2px solid ${T.acc}`, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            {highlightCover ? <CoverImage src={highlightCover} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <HighlightVectorGlyph id={(hl as any)?.coverVector} size={18} strokeWidth={2} />}
           </div>
           <span key={hIdx} style={{ color: '#fff', fontSize: 13, fontWeight: 700, flex: 1, animation: 'zk-story-slide .3s ease both', WebkitAnimation: 'zk-story-slide .3s ease both' }}>{hl?.title || ''}</span>
           <button onClick={onClose} aria-label={isEn ? 'Close' : 'بستن'} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>×</button>
@@ -489,7 +489,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
         {active.map((hl, i) => {
           const stories = storiesOf(hl);
           const firstStory = stories[0];
-          const previewUrl = isVectorCoverUrl(hl.coverUrl) ? String(hl.coverUrl).trim() : (extractDirectMediaUrl(hl.coverUrl, 'image') || (firstStory ? resolveImage(firstStory, vpnOn) : ''));
+          const previewUrl = extractDirectMediaUrl(hl.coverUrl, 'image') || (firstStory ? resolveImage(firstStory, vpnOn) : '');
           const seenSet = new Set((progress?.[hl.id]?.seen) || []);
           const seen = stories.length > 0 && stories.every((s) => seenSet.has(s.id));
           return (
@@ -497,7 +497,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
               <div className="zk-hl-ring" style={{ background: seen ? 'rgba(148,163,184,.55)' : T.card }}>
                 {!seen && <span className="zk-hl-spin" aria-hidden="true" />}
                 <div className="zk-hl-inner" style={{ background: T.card }}>
-                  {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : <span style={{ fontSize: 18, color:T.accText }}>✦</span>}
+                  {previewUrl ? <CoverImage src={previewUrl} position={(hl as any).coverPosition} zoom={(hl as any).coverZoom} onContextMenu={(e:any) => e.preventDefault()} /> : (hl as any).coverVector ? <HighlightVectorGlyph id={(hl as any).coverVector} size={25} color={T.accText} /> : <span style={{ fontSize: 18, color:T.accText }}>✦</span>}
                 </div>
               </div>
               <span style={{ fontSize: 10, color: seen ? T.mut : T.ttl, fontWeight: seen ? 500 : 700, maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hl.title}</span>

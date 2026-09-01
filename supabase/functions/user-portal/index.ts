@@ -143,12 +143,11 @@ const verifyCaptcha = async (token: string | undefined): Promise<{ ok: boolean; 
   }
 };
 
-// بدنهٔ کد پیگیری بدون پیشوند — والدین ممکن است پیشوند را جورِجور بنویسند (F، M، FM، ZK، فاصله، خط‌تیره)
+// بدنهٔ کد پیگیری بدون پیشوند (ZK/FM) — تا کدهایی که با پیشوند دیگر ساخته شده‌اند هم پیدا شوند
 const codeBody = (v: unknown) => {
-  const s = String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!s) return "";
-  const b = s.replace(/^(?:FZK|ZK|FM|F|M)+/, "");
-  return b.length >= 4 ? b : s;
+  const s = String(v || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const m = s.match(/[0-9][A-Z0-9]*$/);
+  return m ? m[0] : s;
 };
 
 const getUserRecord = async (supabase: any, phone: string, code?: string) => {
@@ -156,7 +155,7 @@ const getUserRecord = async (supabase: any, phone: string, code?: string) => {
     .from("submissions")
     .select("id,full_phone,payload,created_at")
     .eq("full_phone", phone)
-    .eq("deleted_at", null)
+    .is("deleted_at", null)
     .ilike("payload->>type", "user")
     .order("created_at", { ascending: false })
     .limit(5);
@@ -173,6 +172,49 @@ const getUserRecord = async (supabase: any, phone: string, code?: string) => {
   );
 };
 
+/** تطبیق نرمِ شماره (ایرانی: ۱۰ رقم آخر) برای ثبت‌نام خودکار از رکورد مشاوره */
+const phoneLooseMatch = (a: string, b: string): boolean => {
+  const norm = (v: string) => { let d = digitsOnly(String(v || "")); if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("0")) d = "98" + d.slice(1); return d; };
+  const ka = norm(a); const kb = norm(b);
+  if (!ka || !kb) return false;
+  if (ka === kb) return true;
+  const tail = (v: string) => (/^989\d{9}$/.test(v) ? v.slice(-10) : v);
+  return tail(ka) === tail(kb);
+};
+
+/** جست‌وجوی رکورد فقط با بدنهٔ کد (هر پیشوندی: ZK-/FM/F/M/هیچی) در هر دو ستون code و trackingCode */
+const findRecordByCode = async (supabase: any, codeRaw: string) => {
+  const bodyC = codeBody(codeRaw);
+  if (bodyC.length < 6) return null;
+  const lc = bodyC.toLowerCase();
+  const cands = Array.from(new Set([`${PREFIX}-${lc}`, lc, `${PREFIX}${lc}`, bodyC]));
+  for (const cand of cands) {
+    for (const col of ["trackingCode", "code"]) {
+      try {
+        const { data } = await supabase
+          .from("submissions").select("id,full_phone,payload,created_at")
+          .is("deleted_at", null).ilike(`payload->>${col}`, cand)
+          .order("created_at", { ascending: false }).limit(5);
+        const hit = (data || []).find((r: any) => codeBody(r.payload?.trackingCode) === bodyC || codeBody(r.payload?.code) === bodyC);
+        if (hit) return hit;
+      } catch { /* ادامه */ }
+    }
+  }
+  return null;
+};
+
+/** ماسک پیش‌نمایش — دقیقاً همان قاعدهٔ صفحهٔ پیگیری */
+const maskPhonePreview = (stored: string): string => {
+  const d = digitsOnly(String(stored || ""));
+  if (!d || d.length < 7) return "";
+  const last3 = d.slice(-3);
+  if (d.startsWith("98")) { const local = "0" + d.slice(2); return local.slice(0, 4) + "xxxx" + last3; }
+  if (d.startsWith("09")) return d.slice(0, 4) + "xxxx" + last3;
+  const prefix = String(stored || "").match(/^(\+\d{1,3})/)?.[0] || "";
+  if (prefix) { const rest = d.slice(prefix.replace("+", "").length); return prefix + rest.slice(0, 3) + "xxxx" + last3; }
+  return d.slice(0, 4) + "xxxx" + last3;
+};
+
 serve(async (req) => {
   const optionsResp = handleOptions(req);
   if (optionsResp) return optionsResp;
@@ -184,7 +226,7 @@ serve(async (req) => {
   const action = String(body?.action || "");
   const rawPhone = String(body?.phone || "");
   const phone = normalizePhone(rawPhone);
-  if (!phone) return jsonResponse({ error: "شماره تماس معتبر نیست" }, 400, origin);
+  if (!phone && action !== "preview-phone") return jsonResponse({ error: "شماره تماس معتبر نیست" }, 400, origin);
 
   // تنظیمات پنل کاربر از جدول settings
   let portalCfg: any = { otpMode: "test", captchaEnabled: false, smsProvider: "kavenegar", smsApiKey: "", smsSender: "", minNameWords: 3 };
@@ -209,6 +251,16 @@ serve(async (req) => {
         .map((c: any) => String(c.referralCode).trim().toLowerCase()),
     );
   } catch { /* پیشفرضها */ }
+
+  // ─────────────── اکشن: preview-phone (پیش‌نمایش ماسک‌شدهٔ شماره با کد پیگیری) ───────────────
+  if (action === "preview-phone") {
+    const rl = await centralRateLimit(req, "user-portal-preview", { maxRequests: 20, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
+    if (!rl.ok) return jsonResponse({ ok: true, found: false }, 200, origin);
+    const supabase = getSupabaseAdmin();
+    const rec = await findRecordByCode(supabase, String(body?.code || ""));
+    const masked = rec ? maskPhonePreview(String(rec.full_phone || "")) : "";
+    return jsonResponse({ ok: true, found: !!masked, maskedPhone: masked }, 200, origin);
+  }
 
   // ─────────────── اکشن: start (ثبتنام مرحله ۱ — ارسال کد) ───────────────
   if (action === "start") {
@@ -313,7 +365,20 @@ serve(async (req) => {
     const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
     if (!code) return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);
     const supabase = getSupabaseAdmin();
-    const user = await getUserRecord(supabase, phone, code);
+    let user = await getUserRecord(supabase, phone, code);
+    // ثبت‌نام خودکارِ بی‌صدا: والدی که فقط «درخواست مشاوره» ثبت کرده و کد درست + شمارهٔ همان رکورد را
+    // وارد می‌کند، با همان کد حسابش ساخته می‌شود (دقیقاً مثل ثبت‌نام عادی؛ سوابق هم پیوند می‌خورند).
+    if ((!user || user.payload?.status !== "active") && user?.payload?.status !== "blocked") {
+      const found = await findRecordByCode(supabase, code);
+      if (found && phoneLooseMatch(String(found.full_phone || ""), phone)) {
+        const keepCode = String(found.payload?.trackingCode || found.payload?.code || "") || code;
+        const nm = [found.payload?.fullName, found.payload?.parentName].map((v: any) => String(v || "").trim()).filter(Boolean)[0] || "والدین";
+        await upsertUser(supabase, phone, { status: "active", code: keepCode, fullName: nm, origin: "guest" });
+        await linkPastRecords(supabase, phone, keepCode, nm);
+        const again = await getUserRecord(supabase, phone, code);
+        if (again) user = again;
+      }
+    }
     if (!user || user.payload?.status !== "active") {
       return jsonResponse({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404, origin);
     }
@@ -351,7 +416,7 @@ serve(async (req) => {
       .from("submissions")
       .select("id,full_phone,payload,created_at")
       .eq("full_phone", phone)
-      .eq("deleted_at", null)
+      .is("deleted_at", null)
       .not("payload->>type", "eq", "user")
       .order("created_at", { ascending: false })
       .limit(50);
@@ -384,7 +449,7 @@ async function adoptOrCreateCode(supabase: any, phone: string): Promise<string> 
       .from("submissions")
       .select("payload")
       .eq("full_phone", phone)
-      .eq("deleted_at", null)
+      .is("deleted_at", null)
       .not("payload->>type", "eq", "user")
       .not("payload->>trackingCode", "is", null)
       .order("created_at", { ascending: false })
@@ -440,7 +505,7 @@ async function linkPastRecords(supabase: any, phone: string, code: string, fullN
       .from("submissions")
       .select("id,payload")
       .eq("full_phone", phone)
-      .eq("deleted_at", null)
+      .is("deleted_at", null)
       .not("payload->>type", "eq", "user")
       .limit(100);
     for (const row of data || []) {
