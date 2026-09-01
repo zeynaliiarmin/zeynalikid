@@ -122,7 +122,7 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
       link_url:String(scoped.link_url||'').slice(0,500),link_label:String(scoped.link_label||'').slice(0,100),target_tab:String(scoped.target_tab||'').slice(0,50),target_focus:String(scoped.target_focus||'').slice(0,120),action_label:String(scoped.action_label||'').slice(0,100),actions:Array.isArray(scoped.actions)?scoped.actions.slice(0,3).map((item:any)=>({label:String(item?.label||'').slice(0,100),path:String(item?.path||'').slice(0,500)})):[],response_mode:String(scoped.response_mode||'grounded'),match_mode:String(scoped.match_mode||'smart'),score:Math.round(score*1000)/1000,
     };
   });
-  if(!matches.length)return {answer:'',model:MISTRAL_ASSISTANT_MODEL,sources:[],providerCalled:false};
+  if(!matches.length&&!image)return {answer:'',model:MISTRAL_ASSISTANT_MODEL,sources:[],providerCalled:false};
 
   const envKey=(name:string)=>String(Deno.env.get(name)||'').trim();
   const legacyKey=String(Deno.env.get('MISTRAL_API_KEY')||'').trim();
