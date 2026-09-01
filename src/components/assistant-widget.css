@@ -7,3 +7,12 @@
 .zka-discovery-copy{position:relative;z-index:3;display:block;width:100%;max-width:none;white-space:normal;overflow-wrap:normal;word-break:normal}.zka-discovery-copy[dir="rtl"]{direction:rtl;text-align:right}.zka-discovery-copy[dir="ltr"]{direction:ltr;text-align:left}.zka-discovery b,.zka-discovery small{display:block}.zka-discovery b{font-size:13px;font-weight:900;line-height:1.55;color:#443500;white-space:nowrap}.zka-discovery small{font-size:11px;font-weight:700;line-height:1.7;margin-top:2px;color:#65500a;white-space:normal}
 @media(max-width:520px){.zka-discovery{min-width:min(260px,calc(100vw - 20px));max-width:calc(100vw - 20px);border-radius:16px;padding:11px 13px!important}.zka-discovery-copy{max-width:none}}@media(max-width:220px){.zka-discovery b{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.zka-launch.is-guiding{animation:none!important;box-shadow:0 0 0 4px rgba(255,196,0,.13)!important}.zka-discovery{transition:none}}
+
+/* photo attach */
+.zka-attach{flex:none;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;border:1px solid rgba(120,120,140,.28);background:transparent;color:inherit;cursor:pointer;opacity:.85;transition:opacity .15s ease}
+.zka-attach:hover{opacity:1}
+.zka-chip{display:flex;justify-content:flex-end;gap:6px;margin:0 12px;padding:4px 6px;font-size:11px}
+.zka-chip img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(120,120,140,.3)}
+.zka-chip button{border:0;background:transparent;cursor:pointer;font-size:14px;line-height:1;color:inherit;opacity:.7}
+.zka-chip button:hover{opacity:1}
+.zka-msgimg{display:block;max-width:70%;max-height:150px;border-radius:10px;margin-top:6px}

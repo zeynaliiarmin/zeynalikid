@@ -5,7 +5,7 @@ export interface AssistantSuggestion {question:string;label:string;path?:string;
 export type AssistantAction=AssistantKnowledgeAction;
 export interface AssistantSettings {enabled:boolean;welcome_message:string;fallback_message:string;disclaimer:string;suggested_questions:AssistantSuggestion[];frequent_question_threshold?:number;revision?:number;updated_at?:string;}
 export interface AssistantPublicData {knowledge:AssistantKnowledge[];settings:AssistantSettings;}
-export interface AssistantGeneratedAnswer {ok:true;answer:string;model:string;actions:AssistantAction[];suggestions:AssistantSuggestion[];provider_called:boolean;blocked_admin:boolean;blocked_private?:boolean;remaining_daily:number;limit_code?:string;support_phone?:string;}
+export interface AssistantGeneratedAnswer {ok:true;answer:string;model:string;actions:AssistantAction[];suggestions:AssistantSuggestion[];provider_called:boolean;blocked_admin:boolean;blocked_private?:boolean;limit_code?:string;support_phone?:string;}
 export interface AssistantStatus {enabled:boolean;revision:number;updated_at:string;}
 
 const base=String(import.meta.env.VITE_SUPABASE_URL||'').replace(/\/$/,'');
@@ -37,4 +37,4 @@ export async function fetchAssistantData(force=false):Promise<AssistantPublicDat
 async function post<T>(payload:Record<string,unknown>):Promise<T>{
   const response=await fetch(url,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(String(body.error||'دستیار موقتاً در دسترس نیست'));return body as T;
 }
-export const generateAssistantAnswer=(question:string,ui_language:'fa'|'en')=>post<AssistantGeneratedAnswer>({action:'generate',question,ui_language,client_id:browserId(),page_path:typeof location==='undefined'?'':location.pathname});
+export const generateAssistantAnswer=(question:string,ui_language:'fa'|'en',image='')=>post<AssistantGeneratedAnswer>({action:'generate',question,ui_language,client_id:browserId(),page_path:typeof location==='undefined'?'':location.pathname,...(image?{images:[image]}:{})});
