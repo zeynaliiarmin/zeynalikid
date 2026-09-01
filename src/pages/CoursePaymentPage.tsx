@@ -6,7 +6,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { PaymentService,isGatewayProductionReady } from '../services/payment/PaymentService';
 import { defaultSettings } from '../config/defaultSettings';
-import { loadCheckoutPaymentDetails, type PaymentDetails } from '../lib/checkoutSession';
+import { loadCheckoutPaymentDetails, peekCachedPaymentDetails, type PaymentDetails } from '../lib/checkoutSession';
 import TurnstileGate from '../components/TurnstileGate';
 import { PAYMENT_APP_LAUNCHER_ENABLED, TURNSTILE_SITE_KEY } from '../config/project';
 import { paymentShareText, resolvePaymentLaunchInfo, type CopiedPaymentInfo } from '../utils/paymentLauncher';
@@ -38,7 +38,7 @@ export default function CoursePaymentPage(){
  const [paymentDetails,setPaymentDetails]=useState<PaymentDetailsState>({banks:[],wallets:[],loading:false,unlocked:false,error:''});
  const resetCaptcha=useCallback(()=>setCaptchaProof(null),[]);
  const acceptCaptcha=useCallback((token:string)=>setCaptchaProof({token,scope:captchaScope}),[captchaScope]);
- useEffect(()=>{const controller=new AbortController();if(!courseId||(!captchaMovedToPortal&&!(captchaProof&&captchaProof.scope===captchaScope))){setPaymentDetails(current=>current.unlocked||current.loading?{banks:[],wallets:[],loading:false,unlocked:false,error:''}:current);return()=>controller.abort();}setPaymentDetails({banks:[],wallets:[],loading:true,unlocked:false,error:''});loadCheckoutPaymentDetails(courseId,referralCode,captchaMovedToPortal?'':(captchaProof?captchaProof.token:''),controller.signal).then(data=>setPaymentDetails({...data,loading:false,unlocked:true,error:''})).catch(error=>{if(error?.name!=='AbortError'){setPaymentDetails({banks:[],wallets:[],loading:false,unlocked:false,error:String(error?.message||'اطلاعات پرداخت در دسترس نیست')});setCaptchaProof(null)}});return()=>controller.abort()},[courseId,referralCode,captchaScope,captchaProof,captchaMovedToPortal]);
+ useEffect(()=>{const controller=new AbortController();if(!courseId||(!captchaMovedToPortal&&!(captchaProof&&captchaProof.scope===captchaScope))){setPaymentDetails(current=>current.unlocked||current.loading?{banks:[],wallets:[],loading:false,unlocked:false,error:''}:current);return()=>controller.abort();}const cached=peekCachedPaymentDetails(courseId);setPaymentDetails(cached?{...cached,loading:false,unlocked:true,error:''}:{banks:[],wallets:[],loading:true,unlocked:false,error:''});loadCheckoutPaymentDetails(courseId,referralCode,captchaMovedToPortal?'':(captchaProof?captchaProof.token:''),controller.signal).then(data=>setPaymentDetails({...data,loading:false,unlocked:true,error:''})).catch(error=>{if(error?.name!=='AbortError'){setPaymentDetails({banks:[],wallets:[],loading:false,unlocked:false,error:String(error?.message||'اطلاعات پرداخت در دسترس نیست')});setCaptchaProof(null)}});return()=>controller.abort()},[courseId,referralCode,captchaScope,captchaProof,captchaMovedToPortal]);
  // بازگشت امن: اگر مستقیماً به این صفحه آمده و course انتخاب نشده، به فهرست دوره‌ها برگردد (به‌جای صفحه سفید)
  useEffect(()=>{
    if(!course?.selected){
@@ -100,7 +100,15 @@ export default function CoursePaymentPage(){
   const firstBank=banks[0];const resolution=resolvePaymentLaunchInfo(lastCopiedPayment,String(firstBank?.card||''),lang==='en'?`${String(firstBank?.name||'Default bank')} card number`:`شماره کارت ${String(firstBank?.name||'پیش‌فرض')}`);let copiedDefault=false;let asyncCopy:Promise<void>|null=null;
   if(resolution.shouldCopyDefault&&resolution.info){try{fallbackCopy(resolution.info.value);copiedDefault=true;setLastCopiedPayment(resolution.info)}catch{if(navigator.clipboard?.writeText){asyncCopy=navigator.clipboard.writeText(resolution.info.value).then(()=>{copiedDefault=true;setLastCopiedPayment(resolution.info)})}}}
   let sharePromise:Promise<void>|null=null;
-  try{if(navigator.share)sharePromise=navigator.share({title:lang==='en'?'Choose a payment application':'انتخاب برنامه پرداخت',text:paymentShareText(resolution.info,lang)})}catch{}
+  try{if(navigator.share){
+   const shareText=paymentShareText(resolution.info,lang);const shareTitle=lang==='en'?'Choose a payment application':'انتخاب برنامه پرداخت';
+   // فایل متنی ضمیمه → برنامه‌های بانک و پرداخت (اشتراک فایل) هم در لیست_share ظاهر می‌شوند؛
+   // اگر دستگاه ضمیمه را نپذیرفت، به اشتراک متنی ساده برمی‌گردد.
+   try{const shareFile=new File([shareText],'payment-details.txt',{type:'text/plain'});
+    if((navigator as any).canShare?.({files:[shareFile]})){sharePromise=navigator.share({title:shareTitle,files:[shareFile]} as any);}
+   }catch{/* بدون فایل */}
+   if(!sharePromise)sharePromise=navigator.share({title:shareTitle,text:shareText});
+  }}catch{}
   if(asyncCopy){try{await asyncCopy}catch{}}
   if(sharePromise){try{await sharePromise;setToast(copiedDefault?(lang==='en'?'Default card copied; choose a payment application.':'شماره کارت پیش‌فرض کپی شد؛ برنامه پرداخت را انتخاب کنید.'):(lang==='en'?'Your previously copied payment information was preserved.':'اطلاعاتی که قبلاً کپی کرده‌اید بدون تغییر حفظ شد.'))}catch(error){if((error as Error)?.name!=='AbortError')setToast(lang==='en'?'The application chooser could not be opened.':'امکان بازکردن فهرست برنامه‌ها وجود نداشت.');else if(copiedDefault)setToast(lang==='en'?'Default card copied.':'شماره کارت پیش‌فرض کپی شد.')}}else setToast(copiedDefault?(lang==='en'?'Default card copied; open your banking app.':'شماره کارت پیش‌فرض کپی شد؛ همراه‌بانک را باز کنید.'):(lastCopiedPayment?(lang==='en'?'Your copied payment information was preserved; open your payment app.':'اطلاعات کپی‌شده شما تغییر نکرد؛ برنامه پرداخت را باز کنید.'):(lang==='en'?'Open your preferred payment application.':'برنامه پرداخت دلخواه را باز کنید.')));
   setTimeout(()=>setToast(''),4500);

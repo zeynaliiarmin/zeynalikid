@@ -6,15 +6,17 @@ export const p2e = (value: unknown) =>
 export const digits = (value: unknown) => p2e(value).replace(/[^0-9]/g, '');
 
 export const fullPhone = (cc: string, local: string): string => {
-  const cleaned = p2e(local).replace(/[\s\-().]/g, '');
-  // اگر کد کشور ایران (+98) است و شماره با 0 شروع می‌شود، 0 را حذف کن
-  if (cc === '+98' && cleaned.startsWith('0')) {
-    return `+98${cleaned.slice(1)}`;
+  // فقط رقم نگه می‌داریم (علامت + و فاصله و خط تیره حذف می‌شوند)
+  let cleaned = p2e(local).replace(/[^0-9]/g, '');
+  const ccDigits = String(cc || '').replace(/\D/g, '');
+  // اگر والدین کد کشور را هم داخل فیلد شماره تایپ کرده باشند (98…، 0098…، +98…) یک‌بار حذف می‌شود
+  if (ccDigits) {
+    if (cleaned.startsWith(`00${ccDigits}`)) cleaned = cleaned.slice(2 + ccDigits.length);
+    else if (cleaned.startsWith(`0${ccDigits}`) && cleaned.length >= ccDigits.length + 9) cleaned = cleaned.slice(1 + ccDigits.length);
+    else if (ccDigits.length >= 2 && cleaned.startsWith(ccDigits) && cleaned.length >= ccDigits.length + 9) cleaned = cleaned.slice(ccDigits.length);
   }
-  // اگر کد کشور ایران است و شماره با 9 شروع می‌شود، مستقیماً +98 را اضافه کن
-  if (cc === '+98' && cleaned.startsWith('9')) {
-    return `+98${cleaned}`;
-  }
+  // اگر کد کشور ایران است و پیش‌شمارهٔ داخلی 0 دارد، آن 0 حذف می‌شود
+  if (cc === '+98' && cleaned.startsWith('0')) cleaned = cleaned.slice(1);
   return `${cc}${cleaned}`;
 };
 
@@ -23,9 +25,9 @@ export const validPhone = (local: string, country: { code?: string; regex?: stri
   if (!clean || /^(\d)\1+$/.test(clean)) return false;
   // ایران: هر دو فرمت 09XXXXXXXXX و 9XXXXXXXXX معتبر است
   if (country?.code === '+98') {
-    const m = clean.match(/^(0?9)(\d{9})$/);
+    const m = fullPhone('+98', local).match(/^\+98(9\d{9})$/);
     if (!m) return false;
-    const tail = m[2];
+    const tail = m[1].slice(1);
     // شماره‌های جعلی که ۹ رقم انتهایی آن‌ها تکراری/یکسان است (مثل 09111111111، 09000000000) رد شوند
     if (/^(\d)\1{8}$/.test(tail)) return false;
     return true;

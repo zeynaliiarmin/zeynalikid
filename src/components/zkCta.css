@@ -187,7 +187,7 @@
    طرح «ثبت‌نام دوره» — گرادیان primary/accent تم + سوییچ نرم primary ↔ muted
    ═══════════════════════════════════════════════════════════════════ */
 .zk-swap-enroll {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--zk-primary) 72%, #0F172A), color-mix(in srgb, var(--zk-primary) 42%, #0F172A));
+  background: linear-gradient(135deg, var(--zk-primary), var(--zk-accent, var(--zk-primary)));
   color: #fff;
   box-shadow: var(--zk-shadow-light);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 26%, transparent), var(--zk-shadow-light);

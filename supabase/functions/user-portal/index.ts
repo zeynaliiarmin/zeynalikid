@@ -143,8 +143,13 @@ const verifyCaptcha = async (token: string | undefined): Promise<{ ok: boolean; 
   }
 };
 
-// بدنهٔ کد پیگیری بدون پیشوند (ZK/FM) — تا کدهایی که با پیشوند دیگر ساخته شده‌اند هم پیدا شوند
-const codeBody = (v: unknown) => String(v || "").trim().toUpperCase().replace(/^(ZK|FM)-?/, "");
+// بدنهٔ کد پیگیری بدون پیشوند — والدین ممکن است پیشوند را جورِجور بنویسند (F، M، FM، ZK، فاصله، خط‌تیره)
+const codeBody = (v: unknown) => {
+  const s = String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!s) return "";
+  const b = s.replace(/^(?:FZK|ZK|FM|F|M)+/, "");
+  return b.length >= 4 ? b : s;
+};
 
 const getUserRecord = async (supabase: any, phone: string, code?: string) => {
   const { data } = await supabase

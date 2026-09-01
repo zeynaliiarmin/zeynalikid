@@ -73,28 +73,50 @@ export function splitE164(phone: any, countries: any[] = []): { cc: string; loca
   return { cc: String(best.code), local };
 }
 
+const FA_START_RE = new RegExp(`^[${FA_CHARS}]`);
+const EN_TOKEN_RE = /^[A-Za-z][A-Za-z'.-]*$/;
+/**
+ * اعتبارسنجی نام — بر پایهٔ «خطِ متن» نه زبان سایت:
+ * نام کاملاً لاتین با قواعد لاتین (حداقل ۲ حرف)، وگرنه با قواعد فارسی (حداقل faMin حرف).
+ * ترکیب فارسی+لاتین (مثلاً «علی Rezaei») هم مجاز است.
+ */
 export function validateFullName(name: any, lang: 'fa' | 'en' | string = 'fa', faMin: number = FA_MIN_DEFAULT): { ok: boolean; error?: string } {
   const en = lang === 'en';
+  const bad = en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.';
   const raw = String(name || '').replace(/\s+/g, ' ').trim();
   if (!raw) return { ok: false, error: en ? 'Enter your first and last name.' : 'نام و نام خانوادگی را وارد کنید.' };
-  if (/[0-9\u06F0-\u06F9]/.test(raw)) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
-  if (en) {
-    if (!EN_RE.test(raw)) return { ok: false, error: 'Enter your first and last name correctly.' };
-  } else {
-    if (!FA_RE.test(raw)) return { ok: false, error: 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
-  }
-  const min = en ? EN_MIN : Math.max(2, Math.min(8, Number(faMin) || FA_MIN_DEFAULT));
+  if (/[0-9\u06F0-\u06F9\u0660-\u0669]/.test(raw)) return { ok: false, error: bad };
+  const tokens = raw.split(' ').filter(Boolean);
+  if (!tokens.length) return { ok: false, error: bad };
+  const allLatin = tokens.every((t) => EN_TOKEN_RE.test(t));
+  if (!allLatin && !tokens.every((t) => EN_TOKEN_RE.test(t) || FA_START_RE.test(t))) return { ok: false, error: bad };
+  const min = allLatin ? EN_MIN : Math.max(2, Math.min(8, Number(faMin) || FA_MIN_DEFAULT));
   const letters = raw.replace(/[\s\u200c\u200f'.-]/g, '');
-  if (letters.length < min) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
+  if (letters.length < min) return { ok: false, error: bad };
   // رد تکرار یک کلمه
   const seen: Record<string, boolean> = {};
-  for (const w of raw.split(/\s+/).filter(Boolean)) {
+  for (const w of tokens) {
     const norm = w.toLowerCase();
     if (w.length < 2) continue;
-    if (seen[norm]) return { ok: false, error: en ? 'Enter your first and last name correctly.' : 'نام و نام خانوادگی خود را به درستی وارد کنید.' };
+    if (seen[norm]) return { ok: false, error: bad };
     seen[norm] = true;
   }
   return { ok: true };
+}
+
+/**
+ * یکسان‌سازی کد پیگیری برای والدین: ارقام فارسی→لاتین، حروف بزرگ، حذف فاصله/خط تیره/آندرلاین
+ * و حذف پیشوند برند در ابتدای کد (ZK، FM، F، M) — «ZK-12739»، «F 12739»، «M-12739» و «fm12739» همگی پذیرفته می‌شوند.
+ */
+export function normalizeLoginCode(raw: unknown): string {
+  let v = String(raw ?? '')
+    .replace(/[\u0660-\u0669]/g, (d) => String('\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'.indexOf(d)))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String('\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9'.indexOf(d)))
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (!v) return '';
+  const b = v.replace(/^(?:FZK|ZK|FM|F|M)+/, '');
+  return b.length >= 4 ? b : v;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

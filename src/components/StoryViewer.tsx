@@ -8,6 +8,7 @@ import { detectVpnOn } from '../utils/vpn';
 import { extractDirectMediaUrl } from '../utils/mediaInput';
 import { markStorySeen, getResumeIndex, hasSeenStoryHint, markStoryHintSeen } from '../utils/storyProgress';
 import CoverImage from './CoverImage';
+import { isVectorCoverUrl } from './highlightVectors';
 
 export type StorySlide = { id: string; imageCodeExternal?: string; imageCodeInternal?: string; title?: string; order?: number; active?: boolean };
 export type Highlight = { id: string; title: string; coverUrl?: string; coverPosition?: string; coverZoom?: number; stories: StorySlide[]; active?: boolean; order?: number };
@@ -308,7 +309,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
 
   if (!slide) return null;
   const imgSrc = resolveImage(slide, vpnOn);
-  const highlightCover = extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn);
+  const highlightCover = isVectorCoverUrl(hl?.coverUrl) ? String(hl?.coverUrl).trim() : (extractDirectMediaUrl(hl?.coverUrl, 'image') || resolveImage(stories[0] || slide, vpnOn));
 
   const handleClick = (e: React.MouseEvent) => {
     if (hlDirRef.current) return; // حین انیمیشن تغییر هایلایت
@@ -488,7 +489,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
         {active.map((hl, i) => {
           const stories = storiesOf(hl);
           const firstStory = stories[0];
-          const previewUrl = extractDirectMediaUrl(hl.coverUrl, 'image') || (firstStory ? resolveImage(firstStory, vpnOn) : '');
+          const previewUrl = isVectorCoverUrl(hl.coverUrl) ? String(hl.coverUrl).trim() : (extractDirectMediaUrl(hl.coverUrl, 'image') || (firstStory ? resolveImage(firstStory, vpnOn) : ''));
           const seenSet = new Set((progress?.[hl.id]?.seen) || []);
           const seen = stories.length > 0 && stories.every((s) => seenSet.has(s.id));
           return (

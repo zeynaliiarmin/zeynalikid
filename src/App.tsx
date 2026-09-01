@@ -199,12 +199,19 @@ function App(){
  // پس از ورود/ثبت‌نام موفق، همان دوره‌ای که پشت درِ ورود مانده بود دوباره باز می‌شود (سؤال روش ارسال)
  useEffect(()=>{
   if(String((cfg as any)?.entryMode||'track')!=='user')return;
-  if(!getUserSession())return;
-  const pid=takePendingRegistration(); if(!pid)return;
-  const all=(cfg.courseTabs||[]).flatMap((t:DynamicRecord)=>Array.isArray(t?.courses)?t.courses:[]).filter((c:DynamicRecord)=>c&&c.active!==false);
-  const cr=all.find((c:DynamicRecord)=>String(c?.id)===pid); if(!cr)return;
-  if(view!=='courses')setView('courses');
-  setShipModal(cr);
+  const resume=()=>{
+    try{
+      if(!getUserSession())return;
+      const pid=takePendingRegistration(); if(!pid)return;
+      const all=(cfg.courseTabs||[]).flatMap((t:DynamicRecord)=>Array.isArray(t?.courses)?t.courses:[]).filter((c:DynamicRecord)=>c&&c.active!==false);
+      const cr=all.find((c:DynamicRecord)=>String(c?.id)===pid); if(!cr)return;
+      if(view!=='courses')setView('courses');
+      setShipModal(cr);
+    }catch{ /* بی‌خطر */ }
+  };
+  resume();
+  window.addEventListener('zk-portal-session', resume);
+  return ()=>window.removeEventListener('zk-portal-session', resume);
  },[view,cfg.courseTabs]);
  useEffect(()=>{try{const q=new URLSearchParams(window.location.search);const pname=q.get('pname')||'';const cc=q.get('cc')||'';const phone=q.get('phone')||'';if(pname||phone){setFd((f)=>({...f,pName:pname||f.pName,cc:cc||f.cc,pPhone:phone||f.pPhone}));setCourse((c)=>({...c,form:{...c.form,receiver:pname||c.form.receiver,phoneCc:cc||c.form.phoneCc,phone:phone||c.form.phone}}))}}catch{}},[]);
  // مشاور ارجاع‌دهنده از URL (?ad=CODE یا /CODE یا لینک گسترش‌یافته /CODE+t+number)

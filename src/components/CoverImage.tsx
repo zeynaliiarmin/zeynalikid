@@ -9,6 +9,7 @@
  * coverZoom     = z (بزرگ‌نمایی نسبت به پوشش پایهٔ cover؛ ۱ = پیش‌فرض)
  */
 import { useEffect, useRef, useState } from 'react';
+import ZkVectorCover, { isVectorCoverUrl, vectorIdFrom } from './highlightVectors';
 
 /** هندسهٔ رندر کاور: ابعاد صریح + جابه‌جایی بر اساس سرریز */
 export function coverGeometry(W: number, H: number, cx: number, cy: number, z: number, F: number) {
@@ -34,12 +35,14 @@ export default function CoverImage({ src, position, zoom, alt = '', style, onLoa
 }) {
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const boxRef = useRef<HTMLDivElement | null>(null);
+  // کاور برداریِ داخلی («vec:<id>») — بدون شبکه، بدون متن، کاملاً وکتور
+  const vecId = vectorIdFrom(src);
   const [F, setF] = useState(0);
 
   useEffect(() => {
     let alive = true;
     setDims(null);
-    if (!src) return;
+    if (!src || isVectorCoverUrl(src)) return;
     const el = new Image();
     try { el.referrerPolicy = 'no-referrer'; } catch {}
     el.onload = () => { if (alive && el.naturalWidth) { setDims({ w: el.naturalWidth, h: el.naturalHeight }); try { onLoadDims?.(el.naturalWidth, el.naturalHeight); } catch {} } };
@@ -60,6 +63,8 @@ export default function CoverImage({ src, position, zoom, alt = '', style, onLoa
   const W = dims?.w || 0, H = dims?.h || 0;
   const ready = dims && F > 0;
   const g = ready ? coverGeometry(W, H, cx, cy, z, F) : null;
+
+  if (vecId) return <ZkVectorCover id={vecId} style={style} />;
 
   return (
     <div ref={boxRef} style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 'inherit', display: 'block', position: 'relative' }}>

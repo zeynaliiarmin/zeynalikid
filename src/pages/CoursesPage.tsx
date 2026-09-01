@@ -330,7 +330,7 @@ export default function CoursesPage(){
               } else if (chooseDest) {
                 chooseDest('iran', selectedCourse);
               } else {
-                if ((cfg as any)?.entryMode === 'user' && !getUserSession()) { setPortalNext('/courses'); app.setView('track'); return; }
+                if ((cfg as any)?.entryMode === 'user' && !getUserSession()) { rememberPendingRegistration(String(selectedCourse?.id || '')); setPortalNext('/courses'); app.setView('track'); return; }
                 app.setView('child-info');
               }
             }}
