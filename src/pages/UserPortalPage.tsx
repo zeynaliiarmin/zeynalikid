@@ -26,7 +26,7 @@ export default function UserPortalPage() {
   const app = useAppContext();
   const { cfg, T, css, lang, setLang, setView, p2e, countries, validPhone, fullPhone, phonePlaceholder } = app;
   const en = lang === 'en';
-  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (en ? 'Farzandman' : 'فرزند من')).replace(/[“”"]/g, '').trim();
+  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (en ? 'ZeynaliKid' : 'زینالیکید')).replace(/[“”"]/g, '').trim();
 
   const [auth, setAuth] = useState<AuthView>('login');
   const [step, setStep] = useState<RegStep>('form');
