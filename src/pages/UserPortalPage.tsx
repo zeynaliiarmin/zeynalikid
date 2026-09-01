@@ -196,7 +196,7 @@ export default function UserPortalPage() {
             {auth === 'login' && (<>
               <div className="zp-field">
                 <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
-                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).replace(/[^A-Z0-9\- ]/g, '').toUpperCase().slice(0, 26))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
+                <div className="zp-box"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 26))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
               </div>
               <div className="zp-codehint" aria-live="polite">{phonePreview ? <><span className="zp-hintline" /><span>{en ? 'You registered with this number:' : 'شما با این شماره ثبت‌نام کردید:'} <b dir="ltr">{phonePreview}</b></span><span className="zp-hintline" /></> : null}</div>
               <div className="zp-field">

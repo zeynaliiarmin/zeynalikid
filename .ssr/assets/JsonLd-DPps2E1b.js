@@ -1,1 +1,0 @@
-import{useEffect as r,useMemo as m}from"react";function s({id:t,data:n}){const o=m(()=>typeof n=="string"?n:JSON.stringify(n),[n]);return r(()=>{let e=document.getElementById(t);return e||(e=document.createElement("script"),e.type="application/ld+json",e.id=t,document.head.appendChild(e)),e.textContent=o,()=>{document.getElementById(t)?.remove()}},[t,o]),null}export{s as t};
