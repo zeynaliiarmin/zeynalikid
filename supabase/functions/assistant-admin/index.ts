@@ -8,6 +8,7 @@ import {generateGroundedAssistant,relatedKnowledge,sanitizeAssistantQuestion,typ
 import {cleanList,parseAssistantInstruction,safeAdminTab,safePublicPath,sanitizeKnowledgeActions,sanitizeMatchMode,sanitizeResponseMode} from '../_shared/assistantTraining.ts';
 import {getAssistantTelegramStatus,repairAssistantTelegram} from '../_shared/assistantTelegramApi.ts';
 import {buildAssistantKnowledgeBackup} from '../_shared/assistantKnowledgeExport.ts';
+import {buildSiteContentKnowledge} from '../_shared/assistantSiteContent.ts';
 
 const BRAND='زینالیکید';
 const text=(value:unknown,max:number)=>String(value||'').trim().slice(0,max);
@@ -54,7 +55,8 @@ async function testKnowledge(db:any,scope:KnowledgeScope,question:string){
   const table=scope==='admin'?'assistant_admin_knowledge':'assistant_knowledge';
   const fields=scope==='admin'?'id,question,answer,aliases,keywords,category,priority,target_tab,target_focus,action_label,response_mode,match_mode':'id,question,answer,aliases,keywords,category,priority,link_url,link_label,actions,response_mode,match_mode';
   const {data,error}=await db.from(table).select(fields).eq('status','published').eq('is_active',true).order('priority',{ascending:false}).limit(500);if(error)throw error;
-  const knowledge=(data||[]) as ScopedKnowledge[],fixed=findKnowledgeRule(question,knowledge);
+  const [{data:siteCfg},{data:siteReviews}]=await Promise.all([db.from('settings').select('settings').eq('key','app_settings').maybeSingle(),db.from('reviews').select('id,reviewer_name,rating,comment,course_id,course_ids').eq('status','approved').limit(40)]);
+  const knowledge=[...(data||[]),...buildSiteContentKnowledge(siteCfg?.settings||{},siteReviews||[])] as ScopedKnowledge[],fixed=findKnowledgeRule(question,knowledge);
   if(fixed){const row:any=fixed.item;return {ok:true,answer:String(row.answer||''),model:row.response_mode==='refusal'?'internal-refusal-rule':'internal-exact-rule',sources:adminSources([{item:row,score:fixed.score}] as any),actions:scope==='admin'?actionsFrom(adminSources([{item:row,score:fixed.score}] as any)):publicActionsFrom(row),provider_called:false,needs_training:false,confidence:fixed.score}}
   try{const result=await generateGroundedAssistant({question,knowledge,mode:scope==='admin'?'admin':'public',brand:BRAND,db}),confidence=Number(result.sources[0]?.score||0);return {ok:true,answer:result.answer||'برای این سؤال دانش منتشرشده‌ای پیدا نشد.',model:result.model,sources:result.sources,actions:scope==='admin'?actionsFrom(result.sources):result.sources.flatMap(source=>publicActionsFrom(source)).filter((item,index,array)=>array.findIndex(other=>other.path===item.path)===index).slice(0,3),provider_called:result.providerCalled,needs_training:confidence<.6,confidence}}
   catch{const matches=relatedKnowledge(question,knowledge,3),row:any=matches[0]?.item,confidence=Number(matches[0]?.score||0);return {ok:true,answer:String(row?.answer||'برای این سؤال دانش منتشرشده‌ای پیدا نشد.'),model:'internal-fallback',sources:adminSources(matches),actions:scope==='admin'?actionsFrom(adminSources(matches)):publicActionsFrom(row),provider_called:false,needs_training:confidence<.6,confidence}}

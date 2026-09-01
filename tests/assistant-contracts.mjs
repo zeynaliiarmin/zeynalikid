@@ -1,8 +1,8 @@
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const optional=async path=>read(path).catch(()=> '');
-const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,insights,assistantMatch,knowledgeExport]=await Promise.all([
- read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts')
+const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,insights,assistantMatch,knowledgeExport,siteContent,infoPages,faqPage]=await Promise.all([
+ read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts'),read('supabase/functions/_shared/assistantSiteContent.ts'),read('src/pages/InfoPages.tsx'),read('src/pages/FAQPage.tsx')
 ]);
 const failures=[];
 const need=(source,pattern,label)=>{const ok=pattern instanceof RegExp?pattern.test(source):source.includes(pattern);if(!ok)failures.push(label)};
@@ -51,6 +51,8 @@ need(publicFn,'blocked_private:true','private-data refusal missing');
 need(publicFn,"Cache-Control','no-store",'assistant settings are still cached after disabling');
 need(publicFn,"settings?.enabled!==true",'public assistant does not fail closed when disabled');
 need(publicFn,'return reply({knowledge:[],settings:', 'disabled assistant still exposes public knowledge');
+need(publicFn,"from('reviews')",'approved reviews are not joined to the live site bridge');
+need(publicFn,'buildSiteContentKnowledge','live site-content bridge is not wired into the public assistant');
 forbid(publicFn,/assistant_admin_knowledge/,'public endpoint references admin knowledge');
 forbid(publicFn,/from\(['\"]submissions['\"]\)/,'public assistant must never query submissions');
 
@@ -90,6 +92,17 @@ forbid(generator,/MISTRAL_(?:PUBLIC_|ADMIN_)?API_KEY\s*=\s*['"][^'"]+/i,'Mistral
 need(training,'parseAssistantInstruction','instruction parser missing');
 need(training,"response_format:{type:'json_object'}",'instruction parser does not enforce JSON output');
 need(training,'sanitizeKnowledgeActions','knowledge action sanitizer missing');
+need(siteContent,'open=','exact-item deep-link key missing');
+need(siteContent,'mediaItemsForDestination','destination-aware media reading missing');
+need(siteContent,'site-license-','license items are not read');
+need(siteContent,'نظر والدین درباره','approved reviews are not read');
+forbid(siteContent,/full_phone|public_phone|phone/,'site content bridge touches phone data');
+need(adminFn,'buildSiteContentKnowledge','panel test does not preview the live bridge');
+need(infoPages,'openEduItem(it as EduItem)','education page does not auto-open the linked item');
+need(infoPages,'data-license-id','license items cannot be focused by deep link');
+need(infoPages,'data-media-id','media cards cannot be focused by deep link');
+need(faqPage,"get('open')",'faq page ignores the deep-link id');
+need(faqPage,'data-faq-id','faq items cannot be scrolled into view');
 
 need(widget,'fetchAssistantStatus','assistant enabled status is not checked');
 need(widget,'ASSISTANT_SETTINGS_EVENT','immediate assistant toggle event missing');
