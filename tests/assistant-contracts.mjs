@@ -43,6 +43,8 @@ need(publicFn,'maxRequests:20,windowMs:86_400_000','public 20-per-day provider l
 need(publicFn,"limit_code:'minute_limit'",'minute-limit response missing');
 need(publicFn,"'daily_limit'",'daily-limit support response missing');
 forbid(publicFn,/سقف سرویس|provider_daily_limit/,'provider quota wording is exposed to visitors');
+need(publicFn,'ثبت درخواست مشاوره','consultation button post-processing missing');
+need(publicFn,'consultCta','consultation CTA sentence missing');
 need(publicFn,"path:'/contact'",'support contact action missing');
 need(publicFn,'isPublicAdminQuestion(question)','public admin guard missing');
 need(publicFn,"String(settings?.fallback_message||defaultFallback)",'admin-panel questions do not get the default no-info sentence');

@@ -153,6 +153,9 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
     variationHint,
     options.language==='en'?'Answer in clear, natural English and keep the response under 180 words.':'پاسخ را با فارسی گفتاری مودبانه و طبیعی و حداکثر ۱۸۰ کلمه بنویس؛ «می» و «نمی» را به فعل بچسبون، از شکل های رایج مثل میتونم، میخواین، میدونم، اینجوری، کدوم و یه استفاده کن، اعراب ننویس و از واژه های کوچه بازاری بی ادبانه استفاده نکن. تا جای ممکن معادل فارسی واژه های انگلیسی را به کار ببر، مگر اینکه واژه تخصصی یا نام رسمی باشه.',
     'نام یا شماره مرجع را در پاسخ ذکر نکنید.',
+    'هیچ‌وقت جمله‌های خودمحدودکننده یا بلاتکلیف‌ساز مثل «به‌تنهایی کافی نیست»، «برای نتیجه‌گیری کافی نیست» یا «روند چند اندازه‌گیری اهمیت بیشتری دارد» نساز؛ هر جا اطلاعات کامل نبود، کاربر را به ثبت درخواست مشاوره دعوت کن.',
+    'در موضوعاتی که در دوره‌ها، مقالات آموزشی یا موضوع‌های مشاورهٔ سایت پوشش دارند، هرگز نگویید «با پزشک مشورت کنید»، «از پزشک بپرسید» یا «به پزشک اطلاع دهید»؛ در عوض آخر پاسخ بگویید «برای اطلاعات بیشتر می‌تونید درخواست مشاوره بدید».',
+    'وقتی دوره‌ای را پیشنهاد می‌دهی دقیقاً از جزئیات تأییدشدهٔ همان دوره بگو و این‌طور بیان کن که «این دوره مناسب فرزند شماست و می‌تونه کمک کنه این موضوع بهتر پیش بره»؛ هرگز ادعای «صددرصد»، «تضمینی» یا «حتماً خوب می‌شود» نکن و در پایان همین پاسخ، دعوت به ثبت درخواست مشاوره را هم اضافه کن.',
   ];
   async function callProvider(key:string):Promise<Response>{
     const controller=new AbortController();
@@ -166,7 +169,7 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
   }
   let response:Response;
   if(options.mode==='public'){
-    const slotNames=['MISTRAL_PUBLIC_API_KEY','MISTRAL_FALLBACK_API_KEY','MISTRAL_ADMIN_API_KEY'];
+    const slotNames=(String(Deno.env.get('ASSISTANT_KEY_ORDER')||'').trim().split(',').map((name:string)=>name.trim()).filter(Boolean).length?String(Deno.env.get('ASSISTANT_KEY_ORDER')).trim().split(',').map((name:string)=>name.trim()):['MISTRAL_PUBLIC_API_KEY','MISTRAL_FALLBACK_API_KEY','MISTRAL_ADMIN_API_KEY']) as string[];
     const slotValues:Record<string,string>={MISTRAL_PUBLIC_API_KEY:envKey('MISTRAL_PUBLIC_API_KEY')||legacyKey,MISTRAL_FALLBACK_API_KEY:envKey('MISTRAL_FALLBACK_API_KEY'),MISTRAL_ADMIN_API_KEY:envKey('MISTRAL_ADMIN_API_KEY')};
     const seenValues=new Set<string>();
     const slots=slotNames.filter(name=>{const value=slotValues[name];if(!value||seenValues.has(value))return false;seenValues.add(value);return true});

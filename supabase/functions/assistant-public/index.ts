@@ -79,7 +79,19 @@ serve(async req=>{
     let result;
     try{result=await generateGroundedAssistant({question:groundedQuestion,knowledge:rows,mode:'public',brand:BRAND,language,db})}
     catch(error){const code=String((error as Error)?.message||'');const sources=sourceRows(matches);result={answer:String(matches[0]?.item?.answer||localizedFallback),model:'internal-fallback',sources,providerCalled:false};console.warn('assistant-public provider fallback:',code)}
-    const answer=result.answer||localizedFallback;return deliver({ok:true,answer,model:result.model,sources:result.sources,actions:actionsFrom(result.sources,language),suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false,remaining_daily:daily.remaining},200);
+    const consultCta=language==='en'?' For more details you can send a consultation request.':' برای اطلاعات بیشتر می‌تونید درخواست مشاوره بدید.';
+    let answer=result.answer||localizedFallback,actions=actionsFrom(result.sources,language);
+    if(result.providerCalled){
+      const sentences=answer.split(/(?<=[.!?؟])\s+/);
+      const kept=sentences.filter(sentence=>!(/پزشک/.test(sentence)&&/(مشورت|نظر|بپرس|اطلاع|مراجعه)/.test(sentence)));
+      const removed=sentences.length>kept.length;
+      if(kept.length)answer=kept.join(' ').trim();
+      if(!/(درخواست )?مشاوره/.test(answer)&&answer)answer+=(/[.!?؟]\s*$/.test(answer)?' ':'')+consultCta;
+      const recommendsCourse=(result.sources||[]).some(source=>String(source.category||'').includes('دوره')||String(source.link_url||'').startsWith('/courses'));
+      const healthish=/(رشد|قد|وزن|تغذیه|غذا|اشتها|خواب|تمرکز|حافظه|یبوست|مو|مکمل|دوره|growth|height|weight|nutri|food|appetite|sleep|focus|memory|constip|hair|supplement|course)/i.test(`${question} ${normalized}`);
+      if(recommendsCourse||removed||healthish){const hasConsult=actions.some(item=>item.path==='/consultation');if(!hasConsult)actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
+    }
+    return deliver({ok:true,answer,model:result.model,sources:result.sources,actions,suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false,remaining_daily:daily.remaining},200);
   }
   const rate=await centralRateLimit(req,`assistant-${action||'write'}`,{maxRequests:20,windowMs:60_000,blockMs:60_000});if(!rate.ok)return reply({error:'درخواست بیش از حد مجاز است'},429,origin);
   if(action==='unanswered'){const question=safe(body.question,500),normalized=normalizeAssistantText(question),page=safe(body.page_path,200);if(normalized.length<3)return reply({error:'سؤال معتبر نیست'},400,origin);await rememberUnanswered(db,question,page);return reply({ok:true},200,origin)}
