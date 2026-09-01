@@ -1,8 +1,8 @@
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const optional=async path=>read(path).catch(()=> '');
-const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,adminWidget,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,insights,assistantMatch,knowledgeExport]=await Promise.all([
- read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AdminAssistantWidget.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts')
+const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,insights,assistantMatch,knowledgeExport]=await Promise.all([
+ read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts')
 ]);
 const failures=[];
 const need=(source,pattern,label)=>{const ok=pattern instanceof RegExp?pattern.test(source):source.includes(pattern);if(!ok)failures.push(label)};
@@ -42,9 +42,10 @@ need(publicFn,'maxRequests:5,windowMs:60_000','public 5-per-minute provider limi
 need(publicFn,'maxRequests:20,windowMs:86_400_000','public 20-per-day provider limit is incorrect');
 need(publicFn,"limit_code:'minute_limit'",'minute-limit response missing');
 need(publicFn,"'daily_limit'",'daily-limit support response missing');
-need(publicFn,"'provider_daily_limit'",'provider-limit support response missing');
+forbid(publicFn,/سقف سرویس|provider_daily_limit/,'provider quota wording is exposed to visitors');
 need(publicFn,"path:'/contact'",'support contact action missing');
 need(publicFn,'isPublicAdminQuestion(question)','public admin guard missing');
+need(publicFn,"String(settings?.fallback_message||defaultFallback)",'admin-panel questions do not get the default no-info sentence');
 need(publicFn,'isPublicPrivateDataQuestion(question)','public private-data guard missing');
 need(publicFn,'blocked_private:true','private-data refusal missing');
 need(publicFn,"Cache-Control','no-store",'assistant settings are still cached after disabling');
@@ -56,7 +57,7 @@ forbid(publicFn,/from\(['\"]submissions['\"]\)/,'public assistant must never que
 need(adminFn,'validateAdminSession','admin assistant lacks session authentication');
 need(adminFn,"from('assistant_admin_knowledge')",'admin knowledge missing');
 need(adminFn,"from('assistant_knowledge')",'admin assistant must also know public knowledge');
-need(adminFn,'customerIntent(question)','customer search intent missing');
+need(adminFn,'const customerIntent=','customer search helper missing');
 need(adminFn,"from('submissions')",'internal customer search missing');
 need(adminFn,'maskPhone','customer phone masking missing');
 need(adminFn,'maskName','customer name masking missing');
@@ -66,10 +67,11 @@ need(adminFn,"action==='test_knowledge'",'knowledge preview action missing');
 need(adminFn,"action==='telegram_status'",'Telegram status action missing');
 need(adminFn,"action==='telegram_repair'",'Telegram repair action missing');
 need(adminFn,"action==='export_knowledge'",'complete assistant export action missing');
-need(adminFn,"value==='both'?'both'",'admin endpoint lacks both-scope selection');
+need(adminFn,"selectionFrom=(_value:unknown):KnowledgeSelection=>'public'",'admin endpoint does not collapse every scope to the single public pool');
 need(adminFn,"selection==='both'?['public','admin']",'both-scope changes do not target both physical tables');
 need(adminFn,"results:{public:publicResult,admin:adminResult}",'both-scope test does not return independent results');
-need(adminFn,"providerError==='MISTRAL_RATE_LIMIT'",'admin token exhaustion response missing');
+need(adminFn,'دستیار پنل مدیریت حذف شده است','admin assistant chat is not retired');
+need(adminFn,',410,origin','retired admin assistant lacks retired status');
 forbid(adminFn,/assistant-admin-mistral-2m/,'obsolete admin question cap still exists');
 
 need(generator,'فارسی گفتاری مودبانه','polite conversational Persian style missing');
@@ -77,6 +79,10 @@ need(generator,"options.language==='en'",'English response rule missing');
 need(generator,"MISTRAL_PUBLIC_API_KEY",'public scoped Mistral secret missing');
 need(generator,"MISTRAL_ADMIN_API_KEY",'admin scoped Mistral secret missing');
 need(generator,"Deno.env.get('MISTRAL_API_KEY')",'legacy provider fallback missing');
+need(generator,'assistant_rotation','rotation state is not persisted in the settings table');
+need(generator,'MISTRAL_FALLBACK_API_KEY','second rotation slot missing');
+need(generator,'state.cap-state.margin','pre-emptive switch margin missing');
+need(generator,'blocked[slot]=1','failing slot is not blocked for the rest of the day');
 need(generator,'مکمل، دارو','medical safety rule missing');
 need(generator,'فقط جمله‌بندی را متنوع کنید','controlled grounded-answer variation rule missing');
 need(generator,'temperature:0.35','grounded-answer variation temperature missing');
@@ -99,9 +105,8 @@ need(css,'left:72px','assistant launcher is not beside language control');
 need(css,'top:calc(8px','assistant launcher is not in header');
 
 need(app,'<AssistantWidget','public assistant not mounted');
-need(adminPanel,'<AdminAssistantWidget','admin assistant not mounted');
+forbid(adminPanel,/AdminAssistantWidget/,'admin assistant still mounted in panel');
 need(adminPanel,'zk_admin_open_form','admin record deep-link missing');
-need(adminWidget,'customerResults','masked customer result UI missing');
 need(manager,'assistant-enabled-toggle','assistant enabled toggle missing');
 need(manager,'آموزش با یک جمله','one-sentence trainer missing');
 need(manager,'assistantAdminParseInstruction','panel instruction parser missing');
@@ -110,7 +115,8 @@ need(manager,'assistantAdminTelegramRepair','panel Telegram repair missing');
 need(manager,'اعلام عدم اطلاع','explicit unknown-answer mode missing');
 need(manager,'دانش مستقیم و مطمئنی','panel test does not identify training need');
 need(manager,'frequent_question_threshold','panel frequent-question threshold setting missing');
-need(manager,'assistant-scope-both','panel both-scope tab missing');
+forbid(manager,/assistant-scope-both|switchScope/,'panel still exposes an assistant-scope choice');
+need(manager,'scope=\'public\' as AssistantKnowledgeSelection','panel does not freeze knowledge into the single pool');
 need(manager,'assistant-export-knowledge','panel complete knowledge backup control missing');
 need(manager,"testResult.scope==='both'",'panel does not render both test results independently');
 need(managerCss,'.zkam-switch','assistant toggle styling missing');
@@ -122,7 +128,8 @@ need(backup,"'assistant_admin_knowledge'",'backup omits admin knowledge');
 need(backup,"'assistant_question_clusters'",'backup omits frequent-question clusters');
 
 if(telegramFn){
- need(telegramFn,'callback_query','Telegram callback handling missing');need(telegramFn,'inline_keyboard','Telegram glass buttons missing');need(telegramFn,'telegramEditMessage','Telegram menus do not edit the same message');need(telegramFn,'Promise.all([callbackAck,handleCallback','Telegram callback acknowledgement still blocks the requested action');need(telegramFn,'results=await Promise.all(entries.map','Telegram knowledge id lookup is still sequential');forbid(telegramFn,/if\(callback\?\.id\)await telegramAnswerCallback/,'Telegram callback acknowledgement remains sequential');need(telegramFn,'menu:quick','Telegram quick trainer missing');need(telegramFn,'parseAssistantInstruction','Telegram natural-language trainer missing');need(telegramFn,'addscope:','Telegram scope buttons missing');need(telegramFn,'`${prefix}:both`','Telegram scope keyboards omit both');need(telegramFn,"selection==='both'?['public','admin']",'Telegram both-scope changes do not target both tables');need(telegramFn,'نتیجه آزمایش هر دو دستیار','Telegram both-scope test results missing');need(telegramFn,"data==='menu:backup'",'Telegram complete knowledge backup button missing');need(telegramFn,'telegramSendDocument','Telegram backup is not sent as a document');need(telegramFn,'item:show:','Telegram item view buttons missing');need(telegramFn,'item:editq:','Telegram question edit button missing');need(telegramFn,'item:edita:','Telegram answer edit button missing');need(telegramFn,'deleteyes:','Telegram confirmed delete missing');need(telegramFn,'testAnswer','Telegram real answer test missing');need(telegramFn,"callback_data:'fq:list:trained:0'",'Telegram trained frequent-question branch missing');need(telegramFn,"callback_data:'fq:list:auto:0'",'Telegram automatic frequent-question branch missing');need(telegramFn,'frequent_train_answer','Telegram cannot teach an automatic frequent question');need(telegramFn,'needsTraining','Telegram test does not identify training need');need(telegramFn,'getAssistantTelegramStatus','Telegram connection status missing');need(telegramFn,"chatId!==owner",'Telegram owner restriction missing');need(telegramFn,"callback_data:'site:enable'",'Telegram site-enable button missing');need(telegramFn,"callback_data:'site:disable'",'Telegram site-disable button missing');need(telegramFn,'is_active:true','Telegram publish action does not reactivate knowledge');
+ need(telegramFn,'callback_query','Telegram callback handling missing');need(telegramFn,'inline_keyboard','Telegram glass buttons missing');need(telegramFn,'telegramEditMessage','Telegram menus do not edit the same message');need(telegramFn,'Promise.all([callbackAck,handleCallback','Telegram callback acknowledgement still blocks the requested action');need(telegramFn,'results=await Promise.all(entries.map','Telegram knowledge id lookup is still sequential');forbid(telegramFn,/if\(callback\?\.id\)await telegramAnswerCallback/,'Telegram callback acknowledgement remains sequential');need(telegramFn,'menu:quick','Telegram quick trainer missing');need(telegramFn,'parseAssistantInstruction','Telegram natural-language trainer missing');forbid(telegramFn,/scopeKeyboard|quickscope|addscope/,'Telegram still asks which assistant');
+need(telegramFn,"{scope:'public'}",'Telegram does not silently target the single public pool');need(telegramFn,"selection==='both'?['public','admin']",'Telegram both-scope changes do not target both tables');need(telegramFn,'نتیجه آزمایش هر دو دستیار','Telegram both-scope test results missing');need(telegramFn,"data==='menu:backup'",'Telegram complete knowledge backup button missing');need(telegramFn,'telegramSendDocument','Telegram backup is not sent as a document');need(telegramFn,'item:show:','Telegram item view buttons missing');need(telegramFn,'item:editq:','Telegram question edit button missing');need(telegramFn,'item:edita:','Telegram answer edit button missing');need(telegramFn,'deleteyes:','Telegram confirmed delete missing');need(telegramFn,'testAnswer','Telegram real answer test missing');need(telegramFn,"callback_data:'fq:list:trained:0'",'Telegram trained frequent-question branch missing');need(telegramFn,"callback_data:'fq:list:auto:0'",'Telegram automatic frequent-question branch missing');need(telegramFn,'frequent_train_answer','Telegram cannot teach an automatic frequent question');need(telegramFn,'needsTraining','Telegram test does not identify training need');need(telegramFn,'getAssistantTelegramStatus','Telegram connection status missing');need(telegramFn,"chatId!==owner",'Telegram owner restriction missing');need(telegramFn,"callback_data:'site:enable'",'Telegram site-enable button missing');need(telegramFn,"callback_data:'site:disable'",'Telegram site-disable button missing');need(telegramFn,'is_active:true','Telegram publish action does not reactivate knowledge');
 }
 need(telegramApi,"allowed_updates:['message','callback_query']",'Telegram webhook does not accept callback buttons');
 need(telegramApi,'setMyCommands','Telegram command menu setup missing');
@@ -134,9 +141,9 @@ need(knowledgeExport,"allKnowledgeRows(db,'assistant_admin_knowledge')",'complet
 need(knowledgeExport,".md`",'complete export is not a Markdown file');need(knowledgeExport,'پایان بکاپ','complete export is incomplete');
 forbid(knowledgeExport,/BOT_TOKEN|SERVICE_ROLE|MISTRAL_API_KEY/,'complete knowledge export references credentials');
 forbid([telegramApi,telegramFn].join('\n'),/ASSISTANT_TELEGRAM_BOT_TOKEN\s*=\s*['"][^'"]+/i,'Telegram token is hard-coded');
-forbid([widget,adminWidget,adminApi].join('\n'),/MISTRAL_API_KEY|api\.mistral\.ai/i,'Mistral secret leaked into browser code');
+forbid([widget,adminApi].join('\n'),/MISTRAL_API_KEY|api\.mistral\.ai/i,'Mistral secret leaked into browser code');
 
 for(const key of ['"consultTopics"','"digestiveOptions"','"appetiteOptions"','"specialConditions"','"categories"'])need(publicSettings,key,`public settings omits ${key}`);
 need(publicSettings,'Cache-Control","no-store','public settings cache hardening missing');
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}
-console.log('Scoped assistants, simple training, Telegram controls, privacy and settings contracts passed.');
+console.log('Unified assistant pool, 3-slot silent rotation, privacy and settings contracts passed.');

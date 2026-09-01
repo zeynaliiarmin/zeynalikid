@@ -11,7 +11,6 @@ import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdmi
 import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials, isAdminPasswordUpgradeRequired } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import AdminSpeedDialFAB from './AdminSpeedDialFAB';
-import AdminAssistantWidget from './AdminAssistantWidget';
 import { ZkArrowUpIcon, ZkArrowDownIcon, ZkChevronUpIcon, ZkChevronDownIcon, ZkCheckIcon, ZkCloseIcon,
  ZkCheckCircleIcon, ZkXCircleIcon, ZkEyeIcon, ZkEyeOffIcon, ZkCameraIcon, ZkDocIcon,
  ZkMoneyIcon, ZkCalendarIcon, ZkPillIcon, ZkStethoscopeIcon, ZkImageIcon, ZkVideoIcon, ZkAudioIcon,
@@ -169,7 +168,6 @@ export default function AdminPanel(){
  // مرورگر به‌صورت native کلیک داخل محتوای details (غیر از summary) را toggle نمی‌کند، پس نیازی به stopPropagation نیست
  // این بلوک قبلاً باعث شده بود دکمه‌های "افزودن محتوا" و "افزودن آیتم" نمادین شوند (رویداد به target نمی‌رسید)
  const [aTab,setATab]=useState(()=>{try{return new URLSearchParams(window.location.search).get('tab')||app.adminTab||'dashboard'}catch{return app.adminTab||'dashboard'}});useEffect(()=>{if(app.adminTab)setATab(app.adminTab)},[app.adminTab]);
- const navigateFromAssistant=useCallback((tab:string,focus:string,recordId?:string)=>{if(recordId)try{sessionStorage.setItem('zk_admin_open_form',recordId)}catch{}setATab(tab);setEditCfg(JSON.parse(JSON.stringify(cfg)));try{const url=new URL(window.location.href);url.pathname='/admin/app';url.searchParams.set('tab',tab);if(focus)url.searchParams.set('focus',focus);else url.searchParams.delete('focus');if(recordId)url.searchParams.set('record',recordId);else url.searchParams.delete('record');window.history.replaceState({},'',url)}catch{}},[cfg,setEditCfg]);
  useEffect(()=>{let focus='';try{focus=new URLSearchParams(window.location.search).get('focus')||''}catch{}if(!focus)return;const find=()=>{const wanted=focus.replace(/\s+/g,' ').trim();const nodes=[...document.querySelectorAll<HTMLElement>('.admin-main h1,.admin-main h2,.admin-main h3,.admin-main summary,.admin-main legend,.admin-main label')];const node=nodes.find(item=>(item.textContent||'').replace(/\s+/g,' ').includes(wanted));if(!node)return false;const target=(node.closest('details,section,article,.zkad-box') as HTMLElement|null)||node;const details=target.closest('details') as HTMLDetailsElement|null;if(details)details.open=true;target.scrollIntoView({behavior:'smooth',block:'center'});const previous=target.style.outline;target.style.outline='3px solid var(--zkad-acc)';target.style.outlineOffset='4px';setTimeout(()=>{target.style.outline=previous;target.style.outlineOffset=''},2200);return true};const timers=[180,600,1200].map(delay=>window.setTimeout(find,delay));return()=>timers.forEach(clearTimeout)},[aTab]);
  useEffect(()=>{if(isAdminPasswordUpgradeRequired()){setATab('security');setMsgType('info');setMsg('برای امنیت پنل، رمز کوتاه فعلی را به رمزی با حداقل ۱۲ کاراکتر تغییر دهید.')}},[]);
  const [productHomeCrop,setProductHomeCrop]=useState<any>(null);
@@ -607,7 +605,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   </div>
 </div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
 <ApiApprovalNotifier T={T} onNavigateToSecurity={()=>{ setATab('security'); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch{} }} />
-<AdminAssistantWidget T={T} onNavigate={navigateFromAssistant}/><div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>
+<div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>
 function DataNewViewPanel(){
  const dataUserByPhone: any = {};
  const dataUserOrder: string[] = [];

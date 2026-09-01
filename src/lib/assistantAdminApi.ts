@@ -25,7 +25,6 @@ export const assistantAdminDelete=(id:string,scope:AssistantKnowledgeSelection='
 export const assistantAdminSettings=(settings:AssistantSettings&{admin_block_message?:string})=>call<{settings:AssistantSettings}>('settings',{settings});
 export const assistantAdminUnansweredStatus=(id:number,status:AssistantUnanswered['status'])=>call<{ok:true}>('unanswered_status',{id,status});
 export const assistantAdminImport=(items:Array<Partial<AssistantAdminItem>>,scope:AssistantKnowledgeSelection='public')=>call<{ok:true;imported:number|Record<AssistantKnowledgeScope,number>;counts?:Record<AssistantKnowledgeScope,number>}>('batch_import',{items,scope});
-export const assistantAdminGenerate=(question:string)=>call<AssistantAdminAnswer>('generate_admin',{question});
 export const assistantAdminTestKnowledge=(question:string,scope:AssistantKnowledgeSelection)=>call<AssistantKnowledgeTestResult>('test_knowledge',{question,scope});
 export const assistantAdminParseInstruction=(instruction:string,scope:AssistantKnowledgeSelection)=>call<{ok:true;draft:ParsedAssistantDraft}>('parse_instruction',{instruction,scope});
 export const assistantAdminTelegramStatus=()=>call<{ok:true;status:AssistantTelegramStatus}>('telegram_status');
