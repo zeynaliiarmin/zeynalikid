@@ -13,6 +13,8 @@ import { normalizeTrackingCode } from '../utils/tracking';
 import { PhoneIcon, PinIcon, ChatIcon, productVectorIcon } from '../components/Icons';
 import './portal.css';
 import { designModeFromThemeId, warmZpVars } from '../theme/warmPalettes';
+import { PlanView } from '../lib/PlanView';
+import { downloadPlanPdf } from '../lib/planPdf';
 
 const getLS = (k: string, f: any) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch { return f; } };
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || '';
@@ -32,8 +34,6 @@ const maskPhonePreview = (stored: string) => {
   return d.slice(0, 4) + 'xxxx' + last3;
 };
 const resultPhonePreview = (result: any) => { if (!result) return ''; if (result.maskedPhone) return result.maskedPhone; return maskPhonePreview(String(result.fullPhone || '')); };
-
-function dlTxt(name: string, text: string) { const b = new Blob(['\uFEFF' + String(text || '')], { type: 'text/plain;charset=utf-8' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name.replace(/[\\/:*?"<>|]/g, '-') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); }
 
 export default function TrackPage() {
   const app = useAppContext();
@@ -274,12 +274,9 @@ export default function TrackPage() {
           <div className="zp-rc" style={{ padding: '14px 16px', fontSize: 12.5, lineHeight: 2, minHeight: 64, whiteSpace: 'pre-wrap', color: 'var(--zp-ink)' }}>
             {rtab === 'edit' && !isGuest && (result.lastEdit ? `${lang === 'en' ? 'Last edit:' : 'آخرین ویرایش:'} ${result.lastEdit}` : (lang === 'en' ? 'No edits have been recorded for this form.' : 'تاکنون ویرایشی برای این فرم ثبت نشده است.'))}
             {rtab === 'meal' && (isGuest ? getGuestMeal() : <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {result.showMealPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Meal plan' : 'برنامه خوراکی'}</b><div style={{ whiteSpace: 'pre-line', lineHeight: 2 }}>{result.mealPlan || (lang === 'en' ? 'The meal plan has not been added by the specialist yet.' : 'برنامه خوراکی هنوز توسط کارشناس ثبت نشده است.')}</div></div>}
-              {result.showSportPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Sport plan' : 'برنامه ورزشی'}</b><div style={{ whiteSpace: 'pre-line', lineHeight: 2 }}>{result.sportPlan || (lang === 'en' ? 'The sport plan has not been added by the specialist yet.' : 'برنامه ورزشی هنوز توسط کارشناس ثبت نشده است.')}</div></div>}
-              {((result.showMealPlan && result.mealPlan) || (result.showSportPlan && result.sportPlan)) && <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                {result.showMealPlan && !!result.mealPlan && <button type="button" onClick={() => dlTxt(lang === 'en' ? 'meal-plan' : 'برنامه خوراکی', result.mealPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11.5, padding: 0 }}>{lang === 'en' ? 'Download TXT' : 'دانلود فایل متنی خوراکی'}</button>}
-                {result.showSportPlan && !!result.sportPlan && <button type="button" onClick={() => dlTxt(lang === 'en' ? 'sport-plan' : 'برنامه ورزشی', result.sportPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11.5, padding: 0 }}>{lang === 'en' ? 'Download TXT' : 'دانلود فایل متنی ورزشی'}</button>}
-              </div>}
+              {result.showMealPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Meal plan' : 'برنامه خوراکی'}</b><PlanView text={result.mealPlan} fallback={(lang === 'en' ? 'The meal plan has not been added by the specialist yet.' : 'برنامه خوراکی هنوز توسط کارشناس ثبت نشده است.')} /></div>}
+              {result.showSportPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Sport plan' : 'برنامه ورزشی'}</b><PlanView text={result.sportPlan} fallback={(lang === 'en' ? 'The sport plan has not been added by the specialist yet.' : 'برنامه ورزشی هنوز توسط کارشناس ثبت نشده است.')} /></div>}
+              {((result.showMealPlan && result.mealPlan) || (result.showSportPlan && result.sportPlan)) && <button type="button" onClick={() => { void downloadPlanPdf({ title: lang === 'en' ? 'Plans' : 'برنامه‌ها', code: String(result.trackingCode || ''), meal: result.showMealPlan ? result.mealPlan : '', sport: result.showSportPlan ? result.sportPlan : '' }); }} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11.5, padding: 0 }}>{lang === 'en' ? '⬇ Download PDF' : '⬇ دانلود PDF برنامه‌ها'}</button>}
             </div>)}
             {rtab === 'usage' && (() => {
               if (isGuest) return getGuestUsage();

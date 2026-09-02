@@ -14,7 +14,8 @@
 // ============================================================================
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { generatePlans, autoGeneratePlansIfEmpty, downloadPlanTxt } from '../lib/plansApi';
+import { generatePlans, autoGeneratePlansIfEmpty } from '../lib/plansApi';
+import { downloadPlanPdf } from '../lib/planPdf';
 import AdminPopover from './AdminPopover';
 import {
   digits, p2e, fmtWhen, statusTone, subTime, needsReminder, logChange, normRange, growthStatus,
@@ -923,16 +924,16 @@ function SubCardBase({
                     }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
                   </div>
                   <label className="zkad-f">
-                    <span>برنامه خوراکی — دو سطحی (سطح اول: خاص/گران‌تر · سطح دوم: اقتصادی و در دسترس در ایران) + پرهیز با درصد</span>
+                    <span>برنامه خوراکی (گروه «مواردی که سخت پیدا میشن یا هزینه زیادی دارن» + گروه «مواردی نیاز به بودجه زیادی ندارند و به راحتی میتونید دسترسی داشته باشید» + پرهیز با درصد)</span>
                     <textarea key={'meal-' + String(sub.plansAiAt || '')} className="zkad-textarea sm" defaultValue={sub.mealPlan || ''}
                       onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه خوراکی'); }}
-                      placeholder="صبحانه:\nسطح اول: …\nسطح دوم: …\nناهار: …\nپرهیزها: نوشابه ۹۰٪…" />
+                      placeholder={'🍽 برنامه خوراکی\n🥣 صبحانه:\n• مواردی که سخت پیدا میشن یا هزینه زیادی دارن: …\n• مواردی نیاز به بودجه زیادی ندارند و به راحتی میتونید دسترسی داشته باشید: …\n——————\n🚫 پرهیزها:\n- نوشابه ۹۰٪'} />
                   </label>
                   <label className="zkad-f">
                     <span>برنامه ورزشی (فقط موضوع قد/وزن و ۶ سال به بالا — مدت زمان با دقیقه/ثانیه، نه ست و تکرار)</span>
                     <textarea key={'sport-' + String(sub.plansAiAt || '')} className="zkad-textarea sm" defaultValue={sub.sportPlan || ''}
                       onBlur={e => { if (sub.sportPlan !== e.target.value) patchSelf({ sportPlan: e.target.value }, 'ویرایش برنامه ورزشی'); }}
-                      placeholder="حرکت: مدت زمان + هر چند وقت یک‌بار… تعداد روز در هفته… مجموع زمان روزانه…" />
+                      placeholder={'🏃 برنامه ورزشی\n• نام حرکت: مدت … — هر …\n📅 تعداد روزهای تمرین در هفته: …\n⏱ مجموع زمان روزانه: …\n——————\n🎽 کلاس‌های پیشنهادی: ۱. …'} />
                   </label>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
                     <label className="zkad-switch-row" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 11.5, flexShrink: 0 }}>
@@ -945,8 +946,7 @@ function SubCardBase({
                         onChange={e => patchSelf({ showSportPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه ورزشی' : 'غیرفعال‌سازی نمایش برنامه ورزشی')} />
                       <span>نمایش ورزشی</span>
                     </label>
-                    {!!sub.mealPlan && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => downloadPlanTxt('برنامه خوراکی ' + String(sub.trackingCode || sub.id), sub.mealPlan)}>⬇ TXT</button>}
-                    {!!sub.sportPlan && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => downloadPlanTxt('برنامه ورزشی ' + String(sub.trackingCode || sub.id), sub.sportPlan)}>⬇ TXT</button>}
+                    {(sub.mealPlan || sub.sportPlan) && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => { void downloadPlanPdf({ title: 'برنامه‌ها' + (sub.childName || sub.pName ? ' — ' + String(sub.childName || sub.pName) : ''), code: String(sub.trackingCode || sub.id), meal: sub.mealPlan, sport: sub.sportPlan, userNotes: sub.userNotes }); }}>⬇ PDF برنامه‌ها</button>}
                   </div>
                 </div>
               </details>
