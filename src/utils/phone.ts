@@ -16,7 +16,7 @@ export const fullPhone = (cc: string, local: string): string => {
     else if (ccDigits.length >= 2 && cleaned.startsWith(ccDigits) && cleaned.length >= ccDigits.length + 9) cleaned = cleaned.slice(ccDigits.length);
   }
   // اگر کد کشور ایران است و پیش‌شمارهٔ داخلی 0 دارد، آن 0 حذف می‌شود
-  if (cc === '+98' && cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+  if (cleaned.startsWith('0') && cleaned.length >= 9) cleaned = cleaned.slice(1);
   return `${cc}${cleaned}`;
 };
 

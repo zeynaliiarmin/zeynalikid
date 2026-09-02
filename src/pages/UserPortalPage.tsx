@@ -22,6 +22,8 @@ type RegStep = 'form' | 'otp';
 
 const empty = { o: 0, p: 0, c: 0 };
 
+function dlTxt(name: string, text: string) { const b = new Blob(['\uFEFF' + String(text || '')], { type: 'text/plain;charset=utf-8' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name.replace(/[\\/:*?"<>|]/g, '-') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); }
+
 export default function UserPortalPage() {
   const app = useAppContext();
   const { cfg, T, css, lang, setLang, setView, p2e, countries, validPhone, fullPhone, phonePlaceholder } = app;
@@ -293,6 +295,14 @@ export default function UserPortalPage() {
                     <span className="zp-sdot" style={{ padding: '3px 10px', fontSize: 11, marginInlineStart: 'auto' }}><i />{it.status}</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--zp-sub)', fontWeight: 700 }}>{it.date} {it.time && `· ${it.time}`}{it.amount ? ` · ${it.amount}` : ''}</div>
+                  {(it.mealPlan || it.sportPlan || it.userNotes) && (
+                    <div style={{ background: 'rgba(125,125,145,.08)', borderRadius: 12, padding: '9px 11px', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 2 }}>
+                      <b style={{ fontSize: 12, color: 'var(--zp-ink)' }}>{en ? 'Plans & notes' : 'برنامه‌ها و یادداشت'}</b>
+                      {it.mealPlan && <div><b style={{ fontSize: 11, color: 'var(--zp-sub)', display: 'block', marginBottom: 2 }}>{en ? 'Meal plan' : 'برنامه خوراکی'}</b><div style={{ whiteSpace: 'pre-line', fontSize: 12, lineHeight: 1.9, color: 'var(--zp-ink)' }}>{it.mealPlan}</div><button type="button" onClick={() => dlTxt((en ? 'meal-plan-' : 'برنامه-خوراکی-') + it.id, it.mealPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11, padding: 0 }}>{en ? 'Download TXT' : 'دانلود فایل متنی'}</button></div>}
+                      {it.sportPlan && <div><b style={{ fontSize: 11, color: 'var(--zp-sub)', display: 'block', marginBottom: 2 }}>{en ? 'Sport plan' : 'برنامه ورزشی'}</b><div style={{ whiteSpace: 'pre-line', fontSize: 12, lineHeight: 1.9, color: 'var(--zp-ink)' }}>{it.sportPlan}</div><button type="button" onClick={() => dlTxt((en ? 'sport-plan-' : 'برنامه-ورزشی-') + it.id, it.sportPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11, padding: 0 }}>{en ? 'Download TXT' : 'دانلود فایل متنی'}</button></div>}
+                      {it.userNotes && <div><b style={{ fontSize: 11, color: 'var(--zp-sub)', display: 'block', marginBottom: 2 }}>{en ? 'Advisor note' : 'یادداشت کارشناس'}</b><div style={{ whiteSpace: 'pre-line', fontSize: 12, lineHeight: 1.9, color: 'var(--zp-ink)' }}>{it.userNotes}</div></div>}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

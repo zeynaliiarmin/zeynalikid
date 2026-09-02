@@ -26,6 +26,8 @@ import './zkadmin-forms.css';
 // جدید ساخته شود و React کل زیردرخت را unmount/remount کند (کیبورد بسته می‌شد،
 // تب داخلی ریست می‌شد، اسکرول می‌پرید، فرم باز بسته می‌شد).
 import SubCard, { LazySubCard } from './SubCard';
+import DataNewViewPanel from './DataNewView';
+import { autoGeneratePlansIfEmpty } from '../lib/plansApi';
 // منبع واحد ابزارهای مشترک پنل (قبلاً در چند فایل تکرار شده بود)
 import { SK, p2e, digits, uid, getLS, setLS, faNum, relTime, fmtWhen, subTime, logChange } from './adminUtils';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
@@ -291,8 +293,6 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const toggleSelect=(id:any)=> setSelectedIds(prev=>{const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n;});
   const toggleSelectAll=(ids:any[])=> setSelectedIds(prev=>{ const allSelected = ids.every((id:any)=> prev.has(id)); if(allSelected) { const n=new Set(prev); ids.forEach((id:any)=> n.delete(id)); return n; } else { const n=new Set(prev); ids.forEach((id:any)=> n.add(id)); return n; }});
   const clearSelection=()=> setSelectedIds(new Set());
-  const [nvFs,setNvFs]=useState<{stat:string,pay:string,date:string,uStat:string}>({stat:'همه',pay:'همه',date:'',uStat:'همه'});
-  const nvCopy=async(value:string)=>{ if(!value)return; try{ if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(value); setMsg(T.en?'Copied to clipboard':'کپی شد ✓'); setMsgType('ok'); return; } }catch{} try{ const el=document.createElement('textarea'); el.value=value; el.style.position='fixed'; el.style.opacity='0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); el.remove(); setMsg(T.en?'Copied to clipboard':'کپی شد ✓'); setMsgType('ok'); }catch{ setMsg(T.en?'Copy failed':'کپی نشد'); setMsgType('err'); } };
   const [imageFormat,setImageFormat]=useState<'webp'|'jpg'>(()=>{try{return localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp'}catch{return 'webp'}});
   const setPersistentImageFormat=(f:'webp'|'jpg')=>{setImageFormat(f);try{localStorage.setItem('zkid_form_image_format',f)}catch{}};
   const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);alert('خطا در ساخت تصویر پرونده')}};
@@ -596,7 +596,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تصویر انتخاب‌شده</button>
   </div>}
 </div>
-{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>:<DataNewViewPanel/>}</>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
+{groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>:<DataNewViewPanel app={{T,subs,filteredAll,statusOptions,getStatus,getPay,changeStatus,changeConsultStatus,selectedIds,setSelectedIds,toggleSelect,toggleSelectAll,clearSelection,setSubs,setMsg,setMsgType,modalSub,setModalSub,nvTab,setNvTab,nvQ,setNvQ,nvPhone,setNvPhone,subCardIO}}/>}</>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>
   <div style={{display:'flex',alignItems:'center',gap:10}}>
     <span style={{width:22,height:22,borderRadius:'50%',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:msgType==='err'?`${T.err}1f`:(msgType==='ok'?`${T.ok}1f`:T.soft),color:msgType==='err'?T.err:(msgType==='ok'?T.ok:T.acc),fontSize:12}}>{msgType==='err'?'✕':(msgType==='ok'?'✓':'…')}</span>
     <div style={{flex:1,minWidth:0}}>
@@ -608,192 +608,14 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
 </div>}</div></div>{/* FAB floating action speedDial position: fixed bottom: 24 */}
 <ApiApprovalNotifier T={T} onNavigateToSecurity={()=>{ setATab('security'); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch{} }} />
 <div style={{ position: 'fixed', bottom: 0, right: 0, pointerEvents: 'none', zIndex: 5000 }}><div style={{ pointerEvents: 'auto' }}><AdminSpeedDialFAB T={T} lang={lang} onNavigate={(id:string)=>setATab(id)} onSave={()=>setSave(editCfg)} /></div></div></AdminLayout></div>
-function DataNewViewPanel(){
- const dataUserByPhone: any = {};
- const dataUserOrder: string[] = [];
- {
-  const seen: any = {};
-  for (const x of subs) {
-   if ((x as any).type !== 'user') continue;
-   const k = digits(String((x as any).fullPhone || ''));
-   if (!k) continue;
-   const prev = seen[k];
-   if (!prev || String(prev.date || '') + String(prev.time || '') < String(x.date || '') + String(x.time || '')) seen[k] = x;
-  }
-  for (const k of Object.keys(seen)) { dataUserByPhone[k] = seen[k]; dataUserOrder.push(k); }
- }
- const dataName = (k: string, head: any) => String(dataUserByPhone[k]?.fullName || head?.pName || head?.userName || 'بدون نام');
- const dataCode = (k: string, head: any) => String(dataUserByPhone[k]?.code || head?.userCode || head?.trackingCode || '');
-  const nvIds=(items:any[])=>items.map((x:any)=>x.id);
-  const nvAllSel=(ids:any[])=>ids.length>0&&ids.every((id:any)=>selectedIds.has(id));
-  const nvToggleIds=(ids:any[])=> setSelectedIds((prev:any)=>{const n=new Set(prev);const all=ids.length>0&&ids.every((id:any)=>n.has(id));ids.forEach((id:any)=>{if(all)n.delete(id);else n.add(id);});return n;});
-  const nvListIds=()=>{ if(nvTab==='users') return usersList.map((k:any)=>dataUserByPhone[k]?.id).filter(Boolean); const src= nvTab==='consult'?consultList:courseList; const out:any[]=[]; src.forEach((g:any)=>g.items.forEach((x:any)=>out.push(x.id))); return out; };
- const dataGroups = () => {
-  const byPhone: any = {};
-  for (const x of filteredAll) {
-   if ((x as any).type !== 'consultation' && (x as any).type !== 'course') continue;
-   const k = digits(String((x as any).fullPhone || ''));
-   if (!k) continue;
-   (byPhone[k] = byPhone[k] || []).push(x);
-  }
-  const out: { key: string; items: any[] }[] = [];
-  for (const k of Object.keys(byPhone)) {
-   const sorted = [...byPhone[k]].sort((a: any, b: any) => (String(b.date || '') + String(b.time || '') > String(a.date || '') + String(a.time || '') ? 1 : -1));
-   out.push({ key: k, items: sorted });
-  }
-  out.sort((a, b) => (String(b.items[0].date || '') + String(b.items[0].time || '') > String(a.items[0].date || '') + String(a.items[0].time || '') ? 1 : -1));
-  return out;
- };
- const dataGroupsCached = dataGroups();
- const consultCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'consultation'));
- const courseCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'course'));
- const q = nvQ.trim().toLowerCase();
-  const nvMatchesHead=(head:any,kind:'consult'|'course')=>{
-   if (nvFs.date && !String(head?.date||'').includes(nvFs.date)) return false;
-   if (kind==='consult' && nvFs.stat!=='همه' && String(head?.consultationStatus||'مشاوره اولیه')!==nvFs.stat) return false;
-   if (kind==='course') { if (nvFs.stat!=='همه' && getStatus(head)!==nvFs.stat) return false; if (nvFs.pay!=='همه' && getPay(head)!==nvFs.pay) return false; }
-   return true;
-  };
-  const filterCards = (arr: typeof consultCards, kind: 'consult'|'course') => arr.filter((g) => {
-   if (!nvMatchesHead(g.items[0], kind)) return false;
-   if (!q) return true;
-   const head = g.items[0];
-   return dataName(g.key, head).toLowerCase().includes(q) || digits(g.key).includes(q.replace(/\D/g, '')) || dataCode(g.key, head).toLowerCase().includes(q);
-  });
- const consultList = filterCards(consultCards, 'consult');
- const courseList = filterCards(courseCards, 'course');
- const consultStatuses = ['مشاوره اولیه', 'پیگیری', 'مشاوره شده', 'ناقص'];
- const card = (g: { key: string; items: any[] }, kind: 'consult' | 'course') => {
-  const head = g.items.find((x: any) => x.type === kind) || g.items[0];
-  const hasOther = kind === 'consult' ? g.items.some((x: any) => x.type === 'course') : g.items.some((x: any) => x.type === 'consultation');
-  const isUser = !!dataUserByPhone[g.key];
-  const statLbl = kind === 'consult' ? (head.consultationStatus || 'مشاوره اولیه') : getStatus(head);
-  const count = g.items.filter((x: any) => x.type === kind).length;
-  const isHi = nvPhone === g.key;
-  return (
-   <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${isHi ? T.acc : T.brd}`, borderRadius: 14, background: T.card, boxShadow: isHi ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 10, overflow: 'hidden' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
-<input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={()=>nvToggleIds(nvIds(g.items))} onClick={(ev)=>ev.stopPropagation()} style={{width:16,height:16,accentColor:T.acc,cursor:'pointer',flexShrink:0}} aria-label={T.en?'Select card':'انتخاب کارت'}/>
-     <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color:T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(dataName(g.key, head) || '؟').trim().charAt(0)}</span>
-     <span style={{ minWidth: 0, flex: 1 }}>
-      <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}><NvPhoneBtn raw={String(head.fullPhone||head.pPhone||('+'+g.key))} sub={head}/> · <b onClick={(ev)=>{ev.stopPropagation();nvCopy(String(dataCode(g.key, head)||''));}} title={T.en?'Click to copy the tracking code':'کلیک برای کپی کد پیگیری'} style={{ color:T.accText, fontFamily: 'monospace', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 3 }}>{dataCode(g.key, head) || '—'}</b></span>
-     </span>
-     <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-      <span className={`zkad-tag ${kind === 'consult' ? 't-warn' : 't-info'}`} style={{ fontSize: 10.5 }}>{kind === 'consult' ? `مشاوره ×${faNum(count)}` : `دوره ×${faNum(count)}`}</span>
-      <select value={statLbl} onChange={(e) => { if (kind === 'consult') changeConsultStatus(head.id, e.target.value); else changeStatus(head.id, e.target.value); }}
-        style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 8, padding: '5px 8px', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, outline: 'none', cursor: 'pointer', maxWidth: 150 }}>
-        {(kind === 'consult' ? consultStatuses : statusOptions).map((s: string) => <option key={s} value={s}>{s}</option>)}
-       </select>
-     </span>
-    </div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 14px 12px', alignItems: 'center' }}>
-     <span className="zkad-tag" style={{ fontSize: 10.5 }}>{kind === 'consult' ? 'فرزند/موضوع' : 'دوره'}: {kind === 'consult' ? String(head.pName || head.topics || '—') : String(head.course?.title || 'ثبت دوره')}</span>
-     <span style={{ fontSize: 10.5, color: T.mut }}>{fmtWhen(head)}</span>
-     <span style={{ marginInlineStart: 'auto', display: 'flex', gap: 6 }}>
-      {hasOther && (
-       <button type="button" className="zkad-toolbtn" style={{ fontSize: 11, cursor: 'pointer' }}
-        onClick={() => { setNvTab(kind === 'consult' ? 'course' : 'consult'); setNvPhone(g.key); setTimeout(() => { const el = document.getElementById('nvc-' + g.key); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); }}>
-        {kind === 'consult' ? (T.en ? 'Also registered a course →' : 'ثبت دوره هم کرده ←') : (T.en ? 'Also sent a consultation →' : 'درخواست مشاوره هم داده ←')}
-       </button>
-      )}
-      <button type="button" className="zkad-toolbtn" style={{ fontSize: 11, cursor: 'pointer' }} onClick={() => setModalSub(head)}>{T.en ? 'Details' : 'جزئیات'}</button>
-     </span>
-    </div>
-   </div>
-  );
- };
- const section = (title: string, note: string, list: typeof consultList, kind: 'consult' | 'course') => (
-  <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
-   <h3 style={{ fontSize: 14, color: T.ttl, margin: '0 0 4px', fontWeight: 900 }}>{title} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(list.length)})</small></h3>
-   <div style={{ fontSize: 11.5, color: T.mut, marginBottom: 12, lineHeight: 1.8 }}>{note}</div>
-   {list.length ? list.map((g) => card(g, kind)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
-  </section>
- );
-  const usersList = dataUserOrder.filter((k) => { const u = dataUserByPhone[k] || {}; if (nvFs.date && !String(u.date||'').includes(nvFs.date)) return false; if (nvFs.uStat!=='همه') { const st=(u.status==='active'||u.phoneConfirmed)?'تأییدشده':'در انتظار'; if (st!==nvFs.uStat) return false; } if (!q) return true; return String(u.fullName||'').toLowerCase().includes(q) || digits(k).includes(q.replace(/\D/g,'')) || String(u.code||'').toLowerCase().includes(q); });
-  const usersSection = () => (
-   <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
-    <h3 style={{ fontSize: 14, color: T.ttl, margin: '0 0 4px', fontWeight: 900 }}>{T.en ? 'Panel registrations' : 'ثبت‌نام‌های پنل'} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(usersList.length)})</small></h3>
-    <div style={{ fontSize: 11.5, color: T.mut, marginBottom: 12, lineHeight: 1.8 }}>{T.en ? 'Every account created on the portal (phone + tracking code).' : 'هر حسابی که در پنل کاربر ساخته شده (شماره تماس + کد پیگیری).'}</div>
-    {usersList.length ? usersList.map((k) => { const u = dataUserByPhone[k] || {}; return (
-      <div key={'u'+k} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, background: T.card, boxShadow: T.neuOut, marginBottom: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-<input type="checkbox" checked={nvAllSel([u.id])} onChange={()=>nvToggleIds([u.id])} style={{width:16,height:16,accentColor:T.acc,cursor:'pointer',flexShrink:0}} aria-label={T.en?'Select user':'انتخاب کاربر'}/>
-       <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color: T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(u.fullName||'؟').trim().charAt(0)}</span>
-       <span style={{ minWidth: 0, flex: 1 }}>
-        <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{String(u.fullName||'—')}</b>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}><NvPhoneBtn raw={String(u.fullPhone||('+'+k))} sub={u}/> · <b onClick={()=>nvCopy(String(u.code||''))} title={T.en?'Click to copy the tracking code':'کلیک برای کپی کد پیگیری'} style={{ color: T.accText, fontFamily: 'monospace', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 3 }}>{String(u.code||'—')}</b></span>
-       </span>
-       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-        <span className={`zkad-tag ${(u.status==='active'||u.phoneConfirmed)?'t-ok':'t-warn'}`} style={{ fontSize: 10.5 }}>{(u.status==='active'||u.phoneConfirmed)?(T.en?'Verified':'تأییدشده'):(T.en?'Pending':'در انتظار')}</span>
-        <span style={{ fontSize: 10.5, color: T.mut }}>{String(u.date||'')}{u.time?' · '+String(u.time):''}</span>
-       </span>
-      </div>
-     ); }) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
-   </section>
-  );
- return (
-  <div>
-   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-    <div className="zkad-seg" style={{ display: 'flex', gap: 6, padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
-     {(['consult', 'course', 'users'] as const).map((t) => (
-      <button key={t} type="button" onClick={() => setNvTab(t)}
-       style={{ padding: '8px 16px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 900, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
-       {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست‌های مشاوره') : t === 'course' ? (T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها') : (T.en ? 'Registrations' : 'ثبت‌نام‌های پنل')}
-      </button>
-     ))}
-    </div>
-    <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 9, padding: '9px 12px', fontFamily: 'inherit', fontSize: 12.5, width: '100%', maxWidth: 320, outline: 'none' }}
-     placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
-    <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(consultList.length + courseList.length)}</span>
-    <button type="button" className="zkad-toolbtn" onClick={()=>toggleSelectAll(nvListIds())} title={T.en?'Select all cards in this list':'انتخاب همهٔ کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en?'Select all':'انتخاب همه'} ({faNum(nvListIds().length)})</button>
-    {selectedIds.size>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:12,color:T.accText,fontWeight:800}}>{faNum(selectedIds.size)} {T.en?'selected':'انتخاب‌شده'}
-     <button type="button" className="zkad-toolbtn zkad-selected-delete" onClick={()=>{ if(!confirm(T.en?`Move ${selectedIds.size} selected items to the trash?`:`حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`)) return; setSubs((prev:any)=>prev.filter((x:any)=>!selectedIds.has(x.id))); clearSelection(); setMsg(T.en?'Moved to trash':'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}><ZkTrashIcon size={13}/> {T.en?'Delete selected':'حذف انتخاب‌شده‌ها'}</button>
-     <button type="button" className="zkad-toolbtn" onClick={clearSelection}>{T.en?'Cancel selection':'لغو انتخاب'}</button>
-    </span>}
-   </div>
-   <details className="zkad-nvfilters" style={{ margin:'2px 0 12px' }}>
-    <summary style={{ cursor:'pointer', fontSize:12.5, fontWeight:800, color:T.mut, display:'inline-flex', alignItems:'center', gap:6, padding:'7px 12px', border:`1px solid ${T.brd}`, borderRadius:10, background:T.inp, userSelect:'none' }}><ZkFilterIcon size={13}/> {T.en?'Filters':'فیلترها'}{((nvTab==='consult'&&nvFs.stat!=='همه')||(nvTab==='course'&&(nvFs.stat!=='همه'||nvFs.pay!=='همه'))||(nvTab==='users'&&nvFs.uStat!=='همه'))||nvFs.date?<span className="zkad-tag t-warn" style={{ fontSize:9.5 }}>{T.en?'ON':'فعال'}</span>:null}</summary>
-    <div style={{ padding:'12px 4px 2px', display:'flex', flexWrap:'wrap', gap:14, alignItems:'flex-end' }}>
-     {nvTab==='consult'&&<ChipGroup label="وضعیت مشاوره" options={consultStatuses} val={nvFs.stat} set={v=>setNvFs((fr:any)=>({...fr,stat:v}))}/>}
-     {nvTab==='course'&&<><ChipGroup label="وضعیت سفارش" options={statusOptions} val={nvFs.stat} set={v=>setNvFs((fr:any)=>({...fr,stat:v}))}/><ChipGroup label="پرداخت" options={payOptions} val={nvFs.pay} set={v=>setNvFs((fr:any)=>({...fr,pay:v}))}/></>}
-     {nvTab==='users'&&<ChipGroup label="وضعیت حساب" options={['همه','تأییدشده','در انتظار']} val={nvFs.uStat} set={v=>setNvFs((fr:any)=>({...fr,uStat:v}))}/>}
-     <label style={{ display:'flex', flexDirection:'column', gap:4, fontSize:11, fontWeight:800, color:T.mut }}>{T.en?'Date contains':'شامل تاریخ'}<input dir="ltr" placeholder="1405/06/10" value={nvFs.date} onChange={(e)=>setNvFs((fr:any)=>({...fr,date:e.target.value}))} style={{ background:T.inp, border:`1px solid ${T.brd}`, color:T.txt, borderRadius:9, padding:'8px 10px', fontFamily:'inherit', fontSize:12, width:150, outline:'none' }}/></label>
-     <button type="button" className="zkad-toolbtn" onClick={()=>setNvFs({stat:'همه',pay:'همه',date:'',uStat:'همه'})}><ZkResetIcon size={13}/> {T.en?'Reset':'بازنشانی فیلترها'}</button>
-    </div>
-   </details>
-   {nvTab === 'users' ? usersSection() : nvTab === 'consult'
-    ? section(T.en ? 'Consultation requests' : 'درخواست‌های مشاوره', T.en ? 'One card per user. Each card shows when the same person also registered a course.' : 'هر کارت = یک کاربر؛ اگر همین شخص دوره هم ثبت کرده باشد، روی کارت مشخص است.', consultList, 'consult')
-    : section(T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها', T.en ? 'One card per user. Each card shows when the same person also sent a consultation.' : 'هر کارت = یک کاربر؛ اگر همین شخص مشاوره هم داده باشد، روی کارت مشخص است.', courseList, 'course')}
-   {modalSub && <Modal T={T} onClose={() => setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO} /></Modal>}
-  </div>
- );
-}
 
- function NvPhoneBtn({ raw, sub }:{raw:string;sub?:any}){
-  const [popOpen,setPopOpen]=useState(false);
-  const closePop=useCallback(()=>setPopOpen(false),[]);
-  if(!raw) return <span className="zkad-mut">—</span>;
-  const cc=String(sub?.cc||sub?.shipping?.phoneCc||'');
-  const wa=digits(raw.startsWith('+')||raw.startsWith('00')?raw:`${cc}${raw}`);
-  const isIran=cc==='+98'||raw.startsWith('+98')||raw.startsWith('0098')||raw.startsWith('09');
-  return (
-   <AdminPopover open={popOpen} onClose={closePop} width={244} ariaLabel={T.en?'Phone actions':'عملیات شماره تماس'}
-    trigger={<button type="button" className="zkad-phone-btn" aria-haspopup="menu" aria-expanded={popOpen} onClick={(ev)=>{ev.stopPropagation();setPopOpen((v)=>!v);}}><ZkPhoneIcon size={12}/><span className="zkad-phone-num">{raw}</span></button>}>
-    <div className="zkad-pop-head" dir="ltr">{raw}</div>
-    <a href={`tel:${raw}`} className="zkad-pop-item" role="menuitem" onClick={closePop}><ZkPhoneIcon size={14}/> {T.en?'Call':'تماس تلفنی'}</a>
-    <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="zkad-pop-item t-ok" role="menuitem" onClick={closePop}><span className="zkad-pop-dot t-ok"/> {T.en?'WhatsApp':'واتساپ'}</a>
-    {isIran&&<a href={`https://rubika.ir/${wa}`} target="_blank" rel="noreferrer" className="zkad-pop-item t-warn" role="menuitem" onClick={closePop}><span className="zkad-pop-dot t-warn"/> {T.en?'Rubika':'روبیکا'}</a>}
-    <button type="button" className="zkad-pop-item" role="menuitem" onClick={async()=>{await nvCopy(raw);closePop();}}><ZkCopyIcon size={14}/> {T.en?'Copy':'کپی'}</button>
-   </AdminPopover>
-  );
-}
 }
 
 
  // بازطراحی: بخش‌های ادیتور پنل مدیریت با کارت نئومورفیک (سایه نرم به‌جای بردر ساده)
  // FIX: Stabilize Box component identity — used 59+ times, remount caused all nested inputs/details to reset
  const Box=useMemo(()=>({title,children}:any)=><section className="zkad-panel-card" style={{marginBottom:12}}><h3 style={{fontSize:13.5,color:T.ttl,margin:'0 0 12px',fontWeight:800,lineHeight:1.6,display:'flex',alignItems:'center',gap:7}}>{title}</h3>{children}</section>,[T.ttl]);
-  const changeConsultStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,consultationStatus:status,category:status,changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${status}`)}:x)),[setSubs]);
+  const changeConsultStatus=useCallback((id:any,status:string)=>{setSubs((list:any[])=>list.map(x=>x.id===id?{...x,consultationStatus:status,category:status,changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${status}`)}:x)); if(String(status)==='مشاوره شده'){const cur=(subs||[]).find((x:any)=>String(x.id)===String(id)); if(cur)autoGeneratePlansIfEmpty(id,cur.mealPlan,(d:{mealPlan:string;sportPlan:string})=>setSubs((prev:any[])=>prev.map((x:any)=>x.id===id?{...x,...(d.mealPlan?{mealPlan:d.mealPlan,showMealPlan:true}:{}),...(d.sportPlan?{sportPlan:d.sportPlan,showSportPlan:true}:{}),plansAiAt:Date.now()}:x)));}},[subs,setSubs]);
 
  // ─────────────────────────────────────────────────────────────────────────
  // نمای جدید «فرم‌ها و دوره‌ها»: کارت به ازای هر کاربر (تلفیق مشاوره/دوره)

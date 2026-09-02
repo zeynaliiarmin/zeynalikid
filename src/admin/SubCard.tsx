@@ -14,6 +14,7 @@
 // ============================================================================
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { generatePlans, autoGeneratePlansIfEmpty, downloadPlanTxt } from '../lib/plansApi';
 import AdminPopover from './AdminPopover';
 import {
   digits, p2e, fmtWhen, statusTone, subTime, needsReminder, logChange, normRange, growthStatus,
@@ -35,6 +36,8 @@ export type SubCardProps = {
   statusOptions?: string[];
   getStatus?: (x: any) => string;
   onStatusChange?: (id: any, status: string) => void;
+  /** تب پیش‌فرض هنگام باز شدن (نمای جدید: مشاوره→parent، دوره→course) */
+  defaultTab?: 'parent' | 'course' | 'manage' | 'corrective';
   groupCount?: number;
   isChild?: boolean;
   allSubs?: any[];
@@ -211,7 +214,7 @@ export const GrowthBox = memo(function GrowthBox({ sub }: { sub: any }) {
 // ---------------------------------------------------------------------------
 function SubCardBase({
   sub, statusOptions = [], getStatus = (x: any) => x.orderStatus || 'جدید', onStatusChange,
-  groupCount = 0, isChild = false, allSubs = [], onOpenRelated, forceOpen = false,
+  groupCount = 0, isChild = false, allSubs = [], onOpenRelated, defaultTab, forceOpen = false,
   selectedIds, toggleSelect, isOpen = false, onToggleOpen,
   setSubs, cfg, uploadPdfFile, deleteStoredFile, deleteStoredImage, deleteStoredTonguePhoto,
   isSupabaseConfigured, updateSubmission,
@@ -221,6 +224,7 @@ function SubCardBase({
   // تب داخلی: با state پایدار نگه داشته می‌شود؛ چون کامپوننت دیگر remount نمی‌شود
   // نیازی به بازیابی از sessionStorage در هر رندر نیست، اما برای بازگشت بین صفحات حفظ می‌شود.
   const [subTab, setSubTabRaw] = useState<SubTabId>(() => {
+    if (defaultTab && TABS.some(t => t[0] === defaultTab)) return defaultTab;
     try {
       const v = sessionStorage.getItem(`zk_admin_form_tab_${sub.id}`) as SubTabId | null;
       return v && TABS.some(t => t[0] === v) ? v : 'parent';
@@ -232,6 +236,7 @@ function SubCardBase({
   }, [sub.id]);
 
   const [trackCopied, setTrackCopied] = useState(false);
+  const [plansBusy, setPlansBusy] = useState(false);
   const [selectedCourseIdx, setSelectedCourseIdx] = useState(0);
   const [selectedConsultIdx, setSelectedConsultIdx] = useState(0);
 
@@ -247,7 +252,7 @@ function SubCardBase({
 
   // پیگیری‌ها: ۳ تیک سبز → «آخر ماه»، هر miss → «پیگیری»
   const fu = useCallback((i: number) => {
-    const slots = [...(sub.followUps || [null, null, null, null, null])];
+    const slots = [...(sub.followUps || []), null, null, null, null].slice(0, 4);
     slots[i] = slots[i] === null || slots[i] === undefined ? 'done' : slots[i] === 'done' ? 'miss' : null;
     let cat = sub.category;
     let cs = sub.consultationStatus;
@@ -868,6 +873,7 @@ function SubCardBase({
                         setSubs((list: any[]) => list.map(x => (x.id === sub.id || x.id === activeConsultRecord.id)
                           ? { ...x, consultationStatus: val, consultationStatusChangedAt: new Date().toISOString(), changeHistory: logChange(x, `تغییر وضعیت مشاوره به ${val}`) }
                           : x));
+                        if (val === 'مشاوره شده') autoGeneratePlansIfEmpty(sub.id, sub.mealPlan, (d: { mealPlan: string; sportPlan: string }) => setSubs((prev: any[]) => prev.map((x: any) => String(x.id) === String(sub.id) ? { ...x, ...(d.mealPlan ? { mealPlan: d.mealPlan, showMealPlan: true } : {}), ...(d.sportPlan ? { sportPlan: d.sportPlan, showSportPlan: true } : {}), plansAiAt: Date.now() } : x)));
                       }}
                     >
                       {CONSULT_STATUSES.map(x => <option key={x}>{x}</option>)}
@@ -875,9 +881,9 @@ function SubCardBase({
                   </label>
                 )}
                 <div className="zkad-f">
-                  <span>پیگیری‌ها (۵ مرحله)</span>
+                  <span>پیگیری‌ها (۴ مرحله)</span>
                   <div className="zkad-fu">
-                    {[0, 1, 2, 3, 4].map(i => {
+                    {[0, 1, 2, 3].map(i => {
                       const st = (sub.followUps || [])[i];
                       return (
                         <button
@@ -909,18 +915,45 @@ function SubCardBase({
                   placeholder="مثلاً: روزی یک پیمانه بعد از صبحانه..." />
               </label>
 
-              <label className="zkad-f">
-                <span>برنامه غذایی (در صفحه پیگیری به کاربر نمایش داده می‌شود)</span>
-                <textarea className="zkad-textarea" defaultValue={sub.mealPlan || ''}
-                  onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه غذایی'); }}
-                  placeholder="برنامه غذایی هفتگی..." />
-              </label>
-
-              <label className="zkad-switch-row">
-                <input className="zkad-display-check" type="checkbox" checked={!!sub.showMealPlan}
-                  onChange={e => patchSelf({ showMealPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه غذایی' : 'غیرفعال‌سازی نمایش برنامه غذایی')} />
-                <span>نمایش برنامه غذایی در صفحه پیگیری</span>
-              </label>
+              {/* ─── برنامه‌ها: خوراکی + ورزشی — تولید با AI، ویرایش آزاد، خروجی TXT ─── */}
+              <div style={{ border: '1px solid rgba(120,120,140,.16)', borderRadius: 14, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10, margin: '2px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <b style={{ fontSize: 13 }}>برنامه‌ها</b>
+                  <span style={{ fontSize: 10.5, color: '#8b8b96', fontWeight: 700 }}>خوراکی و ورزشی — در پنل کاربری و صفحه پیگیری نمایش داده می‌شود</span>
+                  <button type="button" className="zkad-btn sm" style={{ marginInlineStart: 'auto' }} disabled={plansBusy} onClick={() => {
+                    setPlansBusy(true);
+                    generatePlans(sub.id, true).then(d => {
+                      patchSelf({ ...(d.mealPlan ? { mealPlan: d.mealPlan, showMealPlan: true } : {}), ...(d.sportPlan ? { sportPlan: d.sportPlan, showSportPlan: true } : {}), plansAiAt: Date.now() }, 'تولید برنامه‌ها با هوش مصنوعی');
+                    }).catch((e: any) => alert(String(e?.message || e) || 'تولید برنامه ناموفق بود')).finally(() => setPlansBusy(false));
+                  }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
+                </div>
+                <label className="zkad-f">
+                  <span>برنامه خوراکی (وعده‌ها + پرهیز با درصد — بدون روزهای هفته)</span>
+                  <textarea key={'meal-' + String(sub.plansAiAt || '')} className="zkad-textarea" defaultValue={sub.mealPlan || ''}
+                    onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه خوراکی'); }}
+                    placeholder="صبحانه: …، ناهار: …، شام: …، میان‌وعده‌ها: …، پرهیزها: نوشابه ۹۰٪…" />
+                </label>
+                <label className="zkad-f">
+                  <span>برنامه ورزشی (فقط موضوع قد/وزن و ۶ سال به بالا — مدت زمان با دقیقه/ثانیه، نه ست و تکرار)</span>
+                  <textarea key={'sport-' + String(sub.plansAiAt || '')} className="zkad-textarea" defaultValue={sub.sportPlan || ''}
+                    onBlur={e => { if (sub.sportPlan !== e.target.value) patchSelf({ sportPlan: e.target.value }, 'ویرایش برنامه ورزشی'); }}
+                    placeholder="حرکت: مدت زمان + هر چند وقت یک‌بار… تعداد روز در هفته… مجموع زمان روزانه…" />
+                </label>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label className="zkad-switch-row" style={{ margin: 0 }}>
+                    <input className="zkad-display-check" type="checkbox" checked={!!sub.showMealPlan}
+                      onChange={e => patchSelf({ showMealPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه خوراکی' : 'غیرفعال‌سازی نمایش برنامه خوراکی')} />
+                    <span>نمایش برنامه خوراکی</span>
+                  </label>
+                  <label className="zkad-switch-row" style={{ margin: 0 }}>
+                    <input className="zkad-display-check" type="checkbox" checked={!!sub.showSportPlan}
+                      onChange={e => patchSelf({ showSportPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه ورزشی' : 'غیرفعال‌سازی نمایش برنامه ورزشی')} />
+                    <span>نمایش برنامه ورزشی</span>
+                  </label>
+                  {!!sub.mealPlan && <button type="button" className="zkad-btn sm" onClick={() => downloadPlanTxt('برنامه خوراکی ' + String(sub.trackingCode || sub.id), sub.mealPlan)}>⬇ TXT خوراکی</button>}
+                  {!!sub.sportPlan && <button type="button" className="zkad-btn sm" onClick={() => downloadPlanTxt('برنامه ورزشی ' + String(sub.trackingCode || sub.id), sub.sportPlan)}>⬇ TXT ورزشی</button>}
+                </div>
+              </div>
 
               {/* PDFها — دو کارت هم‌اندازه در یک ردیف */}
               <div className="zkad-file-grid">

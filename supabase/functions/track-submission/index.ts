@@ -199,6 +199,8 @@ serve(async (req) => {
       usage: p.usageInstructions || "",
       mealPlan: p.mealPlan || "",
       showMealPlan: p.showMealPlan === true,
+      sportPlan: p.sportPlan || "",
+      showSportPlan: p.showSportPlan === true,
       usagePdfUrl: await signPrivateUrl(p.usagePdfUrl || ""),
       mealPdfUrl: await signPrivateUrl(p.mealPdfUrl || ""),
       userNotes: p.userNotes || "",

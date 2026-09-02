@@ -433,6 +433,9 @@ serve(async (req) => {
         date: String(p.date || ""),
         time: String(p.time || ""),
         createdAt: String(r.created_at || ""),
+        mealPlan: p.showMealPlan === true ? String(p.mealPlan || "").slice(0, 6000) : "",
+        sportPlan: p.showSportPlan === true ? String(p.sportPlan || "").slice(0, 6000) : "",
+        userNotes: String(p.userNotes || "").slice(0, 1500),
       };
     });
     return jsonResponse({ ok: true, code, fullName: String(user.payload.fullName || ""), maskedPhone: maskPhone(phone), items, count: items.length }, 200, origin);

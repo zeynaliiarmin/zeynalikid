@@ -33,6 +33,8 @@ const maskPhonePreview = (stored: string) => {
 };
 const resultPhonePreview = (result: any) => { if (!result) return ''; if (result.maskedPhone) return result.maskedPhone; return maskPhonePreview(String(result.fullPhone || '')); };
 
+function dlTxt(name: string, text: string) { const b = new Blob(['\uFEFF' + String(text || '')], { type: 'text/plain;charset=utf-8' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name.replace(/[\\/:*?"<>|]/g, '-') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); }
+
 export default function TrackPage() {
   const app = useAppContext();
   const { cfg, T, S, css, lang, setLang, setView, publicText, p2e, showContactOn, ContactPanel } = app;
@@ -83,7 +85,7 @@ export default function TrackPage() {
     return {
       trackingCode: found.trackingCode, status: found.orderStatus || (found.payment?.receipt ? 'پرداختشده' : found.course ? 'در انتظار پرداخت' : 'جدید'),
       date: `${found.date || ''} ${found.time || ''}`.trim(), course: found.course ? { title: found.course.title, titleEn: found.course.titleEn } : null,
-      usage: found.usageInstructions || '', mealPlan: found.mealPlan || '', showMealPlan: found.showMealPlan === true,
+      usage: found.usageInstructions || '', mealPlan: found.mealPlan || '', showMealPlan: found.showMealPlan === true, sportPlan: found.sportPlan || '', showSportPlan: found.showSportPlan === true,
       usagePdfUrl: found.usagePdfUrl || '', mealPdfUrl: found.mealPdfUrl || '', userNotes: found.userNotes || '', productUsage: found.productUsage || {},
       lastEdit: eh.length ? `${eh[eh.length - 1].date || ''} ${eh[eh.length - 1].time || ''}`.trim() : '', maskedPhone, canEdit: true,
       corrective: found.corrective || null, showCorrectiveTab: !!found.showCorrectiveTab, correctiveData: found.correctiveData || {},
@@ -119,15 +121,15 @@ export default function TrackPage() {
     setIsGuest(true); setErr('');
     setResult({
       trackingCode: 'GUEST', status: lang === 'en' ? 'Guest' : 'مهمان', date: '', course: null,
-      usage: '', mealPlan: '', showMealPlan: true, userNotes: '', productUsage: {}, maskedPhone: '', canEdit: false, corrective: null,
+      usage: '', mealPlan: '', showMealPlan: true, sportPlan: '', showSportPlan: true, userNotes: '', productUsage: {}, maskedPhone: '', canEdit: false, corrective: null,
     });
     setRtab('meal');
   };
 
-  const mealTab: ['meal', string] = ['meal', lang === 'en' ? 'Meal Plan' : 'برنامه غذایی'];
+  const mealTab: ['meal', string] = ['meal', lang === 'en' ? 'Plans' : 'برنامه‌ها'];
   const rtabs: [('edit' | 'meal' | 'usage' | 'corrective'), string][] = isGuest
-    ? [...(result?.showMealPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف']]
-    : [['edit', lang === 'en' ? 'Last Edit' : 'آخرین ویرایش'], ...(result?.showMealPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف'], ...(result?.showCorrectiveTab ? [['corrective', lang === 'en' ? 'Corrective' : 'اصلاحی'] as ['corrective', string]] : [])];
+    ? [...(result?.showMealPlan || result?.showSportPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف']]
+    : [['edit', lang === 'en' ? 'Last Edit' : 'آخرین ویرایش'], ...(result?.showMealPlan || result?.showSportPlan ? [mealTab] : []), ['usage', lang === 'en' ? 'Usage' : 'طریقه مصرف'], ...(result?.showCorrectiveTab ? [['corrective', lang === 'en' ? 'Corrective' : 'اصلاحی'] as ['corrective', string]] : [])];
 
   useEffect(() => { if (result?.correctiveData) setCorrectiveDraft({ ...result.correctiveData }); }, [result]);
 
@@ -271,7 +273,14 @@ export default function TrackPage() {
           ))}</div>
           <div className="zp-rc" style={{ padding: '14px 16px', fontSize: 12.5, lineHeight: 2, minHeight: 64, whiteSpace: 'pre-wrap', color: 'var(--zp-ink)' }}>
             {rtab === 'edit' && !isGuest && (result.lastEdit ? `${lang === 'en' ? 'Last edit:' : 'آخرین ویرایش:'} ${result.lastEdit}` : (lang === 'en' ? 'No edits have been recorded for this form.' : 'تاکنون ویرایشی برای این فرم ثبت نشده است.'))}
-            {rtab === 'meal' && (isGuest ? getGuestMeal() : (result.mealPlan || (lang === 'en' ? 'The meal plan has not been added by the specialist yet.' : 'برنامه غذایی هنوز توسط کارشناس ثبت نشده است.')))}
+            {rtab === 'meal' && (isGuest ? getGuestMeal() : <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {result.showMealPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Meal plan' : 'برنامه خوراکی'}</b><div style={{ whiteSpace: 'pre-line', lineHeight: 2 }}>{result.mealPlan || (lang === 'en' ? 'The meal plan has not been added by the specialist yet.' : 'برنامه خوراکی هنوز توسط کارشناس ثبت نشده است.')}</div></div>}
+              {result.showSportPlan && <div><b style={{ color: 'var(--zp-acc)', fontSize: 12.5, display: 'block', marginBottom: 3 }}>{lang === 'en' ? 'Sport plan' : 'برنامه ورزشی'}</b><div style={{ whiteSpace: 'pre-line', lineHeight: 2 }}>{result.sportPlan || (lang === 'en' ? 'The sport plan has not been added by the specialist yet.' : 'برنامه ورزشی هنوز توسط کارشناس ثبت نشده است.')}</div></div>}
+              {((result.showMealPlan && result.mealPlan) || (result.showSportPlan && result.sportPlan)) && <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                {result.showMealPlan && !!result.mealPlan && <button type="button" onClick={() => dlTxt(lang === 'en' ? 'meal-plan' : 'برنامه خوراکی', result.mealPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11.5, padding: 0 }}>{lang === 'en' ? 'Download TXT' : 'دانلود فایل متنی خوراکی'}</button>}
+                {result.showSportPlan && !!result.sportPlan && <button type="button" onClick={() => dlTxt(lang === 'en' ? 'sport-plan' : 'برنامه ورزشی', result.sportPlan)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11.5, padding: 0 }}>{lang === 'en' ? 'Download TXT' : 'دانلود فایل متنی ورزشی'}</button>}
+              </div>}
+            </div>)}
             {rtab === 'usage' && (() => {
               if (isGuest) return getGuestUsage();
               const products = (cfg.products?.list || []) as any[];

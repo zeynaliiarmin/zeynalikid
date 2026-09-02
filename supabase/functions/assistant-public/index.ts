@@ -7,6 +7,7 @@ import {findKnowledgeRule,normalizeAssistantText} from '../_shared/assistantMatc
 import {safePublicPath,sanitizeKnowledgeActions} from '../_shared/assistantTraining.ts';
 import {trackAssistantQuestion} from '../_shared/assistantInsights.ts';
 import {buildSiteContentKnowledge} from '../_shared/assistantSiteContent.ts';
+import {whoGrowthAnswer} from '../_shared/whoGrowth.ts';
 
 const BRAND='زینالیکید';
 const OWNER_LABEL='جناب زینالی';
@@ -61,6 +62,8 @@ serve(async req=>{
     const deliver=(payload:any,status=200)=>{if(status===200&&payload?.ok===true&&!payload?.limit_code){const task=trackAssistantQuestion(db,{question,answer:payload.answer,model:payload.model,sources:payload.sources,threshold:settings?.frequent_question_threshold}).catch(error=>console.warn('assistant insight:',String((error as Error)?.message||error).slice(0,120)));const runtime=(globalThis as any).EdgeRuntime;if(runtime?.waitUntil)runtime.waitUntil(task)}return reply(payload,status,origin)};
     if(isPublicAdminQuestion(question)){const answer=language==='en'?'I cannot provide information about administrative settings or the management panel. I can help with public services, courses and consultation.':String(settings?.fallback_message||defaultFallback);return deliver({ok:true,answer,model:'internal-policy',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:true,blocked_private:false},200)}
     if(isPublicPrivateDataQuestion(question)){const answer=language==='en'?'The public guide has no access to registrations, forms, phone numbers, enrolled courses or user records and cannot display them.':'دستیار عمومی هیچ دسترسی‌ای به اطلاعات ثبت‌نام، فرم‌ها، شماره تماس، دوره‌های ثبت‌شده یا پرونده کاربران ندارد و نمی‌تواند این اطلاعات را نمایش دهد.';return deliver({ok:true,answer,model:'internal-privacy-policy',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:false,blocked_private:true},200)}
+    const growthReply = image ? '' : whoGrowthAnswer(question, language);
+    if (growthReply) return deliver(fixedResponse(growthReply, [], [{ path: '/consultation', label: language === 'en' ? 'Request a consultation' : 'درخواست مشاوره' }], 'internal-who-growth'), 200);
     if(/(سرطان|شیمی درمانی|پرتو درمانی|داروی سرطان|دوز دارو|نحوه مصرف دارو|قرص سرطان)/i.test(normalized))return deliver(fixedResponse('من درباره درمان سرطان یا نحوه مصرف این دارو اطلاعاتی ارائه نمیدم. لطفاً حتماً از پزشک متخصص فرزندتون بپرسین. حیطه راهنمایی من رشد و تغذیه کودک و نوجوانه.',growthSuggestions),200);
     const fixed=image?null:findKnowledgeRule(question,rows);
     if(fixed){const source=sourceRows([{item:fixed.item,score:fixed.score}] as any),model=fixed.item.response_mode==='refusal'?'internal-refusal-rule':'internal-exact-rule';return deliver({...fixedResponse(String(fixed.item.answer||localizedFallback),suggestionsFrom(settings,source,question),actionsFrom(source,language),model),sources:source},200)}

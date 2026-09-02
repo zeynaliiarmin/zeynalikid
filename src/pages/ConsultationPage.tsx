@@ -418,7 +418,7 @@ export default function ConsultationPage(){
           category: 'مشاوره اولیه', consultationStatus: 'مشاوره اولیه',
           consultationStatusChangedAt: new Date().toISOString(),
           priority: autoPriority, unread: true, isNew: true, followReminder: true,
-          similarTo, followUps: [null, null, null, null, null],
+          similarTo, followUps: [null, null, null, null],
           adminNotes: voiceUploadFailed ? '(یادداشت صوتی در ارسال اولیه با خطا مواجه شد)' : '',
           usageInstructions: '', timeSlot: '', course: null, shipping: null, payment: null, editHistory: [],
           advisor: referralConsultant ? { id: referralConsultant.id, name: referralConsultant.name, nameEn: referralConsultant.nameEn, referralCode: referralConsultant.referralCode } : null
