@@ -16,8 +16,8 @@ function sectionHtml(emoji: string, title: string, body: string): string {
     const s = ln.trim();
     if (!s) return '<div style="height:7px"></div>';
     if (/^[-—–_=]{3,}$/.test(s)) return '<div style="height:2px;background:#ede9fe;margin:9px 0;border-radius:2px"></div>';
-    if (/^(🍽|🏃|🎽|🚫)/.test(s)) return `<div style="font-weight:900;font-size:16px;color:#5b21b6;margin-top:4px">${esc(s)}</div>`;
-    if (/^(🥣|🍲|🌙|🍏|📅|⏱)/.test(s) || (/[:：]$/.test(s) && s.length <= 34 && !s.startsWith('•') && !s.startsWith('-')))
+    if (/^(🍽|🏃|🎽|🚫|🌳|🎯)/.test(s)) return `<div style="font-weight:900;font-size:16px;color:#5b21b6;margin-top:4px">${esc(s)}</div>`;
+    if (/^(🥣|🍲|🌙|🍏|📅|⏱|🎯)/.test(s) || (/[:：]$/.test(s) && s.length <= 34 && !s.startsWith('•') && !s.startsWith('-')))
       return `<div style="font-weight:800;font-size:14.5px;margin-top:6px">${esc(s)}</div>`;
     if (/^(•|-)\s/.test(s)) return `<div style="padding-inline-start:14px;font-size:13.5px">${esc(s)}</div>`;
     return `<div style="font-size:13.5px">${esc(s)}</div>`;
@@ -99,7 +99,7 @@ export async function downloadPlanPdf(o: PdfOpts): Promise<void> {
     + `<span style="font-size:11.5px;color:#7a7a86">${esc([o.code, new Date().toLocaleDateString('fa-IR')].filter(Boolean).join(' · '))}</span></div>`
     + usageHtml(o.usage)
     + sectionHtml('🍽', 'برنامه خوراکی', meal)
-    + sectionHtml('🏃', 'برنامه ورزشی', sport)
+    + sectionHtml(sport.startsWith('🌳') ? '🌳' : '🏃', sport.startsWith('🌳') ? 'فعالیت روزانه (زیر ۶ سال)' : 'برنامه ورزشی', sport)
     + (form.length ? SEC_OPEN('📋', 'اطلاعات ثبت‌شده') + `<div style="padding-top:8px">${tableHtml(form)}</div></div>` : '')
     + growthChartHtml(o.form)
     + reportsHtml(o.reports)

@@ -13,8 +13,8 @@ export function PlanView({ text, fallback, small }: { text?: string; fallback?: 
         if (!s) return <div key={i} style={{ height: 5 }} />;
         if (/^[-—–_=]{3,}$/.test(s)) return <div key={i} style={{ height: 1, margin: '7px 0', background: 'rgba(124,92,220,.28)' }} />;
         const st: CSSProperties = {};
-        if (/^(🍽|🏃)/.test(s)) { st.fontWeight = 900; st.fontSize = fs + 1.5; if (i) st.marginTop = 6; }
-        else if (/^(🥣|🍲|🌙|🍏|🚫|🎽|📅|⏱)/.test(s) || (/[:：]$/.test(s) && s.length <= 32 && !s.startsWith('•') && !s.startsWith('-'))) st.fontWeight = 800;
+        if (/^(🍽|🏃|🌳)/.test(s)) { st.fontWeight = 900; st.fontSize = fs + 1.5; if (i) st.marginTop = 6; }
+        else if (/^(🥣|🍲|🌙|🍏|🚫|🎽|📅|⏱|🎯)/.test(s) || (/[:：]$/.test(s) && s.length <= 32 && !s.startsWith('•') && !s.startsWith('-'))) st.fontWeight = 800;
         else if (/^(•|-)\s/.test(s)) st.paddingInlineStart = 12;
         return <div key={i} style={st}>{s}</div>;
       })}

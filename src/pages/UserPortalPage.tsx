@@ -331,7 +331,7 @@ export default function UserPortalPage() {
                     <div className="zp-sec"><b className="zp-sech">🍽 {en ? 'Meal plan' : 'برنامه خوراکی'}</b><PlanView text={it.mealPlan} small /></div>
                   )}
                   {it.sportPlan && (
-                    <div className="zp-sec"><b className="zp-sech">🏃 {en ? 'Sport plan' : 'برنامه ورزشی'}</b><PlanView text={it.sportPlan} small /></div>
+                    <div className="zp-sec"><b className="zp-sech">{String(it.sportPlan).trim().startsWith('🌳') ? `🌳 ${en ? 'Daily activity (under 6)' : 'فعالیت روزانه (زیر ۶ سال)'}` : `🏃 ${en ? 'Sport plan' : 'برنامه ورزشی'}`}</b><PlanView text={it.sportPlan} small /></div>
                   )}
                   {form.length > 0 && (
                     <div className="zp-sec">
