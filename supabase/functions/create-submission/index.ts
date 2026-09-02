@@ -13,7 +13,7 @@ const phoneDigits=(value:string)=>String(value||"").replace(/[^0-9+]/g,"").slice
 serve(async(req)=>{
  const options=handleOptions(req);if(options)return options;const origin=getOrigin(req);
  if(req.method!=="POST")return jsonResponse({error:"Method not allowed"},405,origin);
- const rl=await centralRateLimit(req,"create-submission",{maxRequests:20,windowMs:60*60_000,blockMs:60*60_000});
+ const rl=await centralRateLimit(req,"create-submission",{maxRequests:80,windowMs:60*60_000,blockMs:10*60_000});
  if(!rl.ok)return jsonResponse({error:"تعداد ثبت‌ها بیش از حد مجاز است. لطفاً بعداً تلاش کنید."},429,origin);
  let body:any={};try{body=await req.json()}catch{return jsonResponse({error:"درخواست نامعتبر است"},400,origin)}
  const input=body?.submission;

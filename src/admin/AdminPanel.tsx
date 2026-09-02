@@ -179,8 +179,8 @@ export default function AdminPanel(){
  // متن‌های bulk «افزودن دسته‌جمعی» هر هایلایت (key = id هایلایت) — باید اینجا نگه داشته شود تا
  // موقع «ذخیره هایلایت‌ها» قابل خواندن و تبدیل به اسلایدهای تکی باشد (بدون نقض Rules-of-Hooks).
  const [hlBulkTexts,setHlBulkTexts]=useState<Record<string,{internal:string;external:string}>>({});
- const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'>('all');
- const [dataView,setDataView]=useState<'old'|'new'>((cfg as any)?.entryMode==='user'?'new':'old'); const [nvTab,setNvTab]=useState<'consult'|'course'>('consult'); const [nvPhone,setNvPhone]=useState(''); const [nvQ,setNvQ]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
+ const [settingsSubTab,setSettingsSubTab]=useState<'secondary'|'primary'|'layout'|'translations'>('secondary'); const [srch,setSrch]=useState(''); const [debouncedSrch,setDebouncedSrch]=useState(''); const [typeF,setTypeF]=useState<'all'|'consultation'|'course'|'user'>('all');
+ const dataView:('old'|'new')=((cfg as any)?.entryMode==='user'?'new':'old'); const [nvTab,setNvTab]=useState<'consult'|'course'|'users'>('consult'); const [nvPhone,setNvPhone]=useState(''); const [nvQ,setNvQ]=useState(''); const [catF,setCatF]=useState('همه'); const [dateF,setDateF]=useState(''); const [countryF,setCountryF]=useState('همه'); const [courseF,setCourseF]=useState('همه'); const [payF,setPayF]=useState('همه'); const [statusF,setStatusF]=useState('همه'); const [page,setPage]=useState(1); const [revokeBusy,setRevokeBusy]=useState(false); const [devicesList,setDevicesList]=useState<any[]|null>(null); const [devicesErr,setDevicesErr]=useState(''); const [cc,setCc]=useState<any>(()=>{try{return JSON.parse(JSON.stringify(editCfg.contacts||{}))}catch{return {}}}); useEffect(()=>{ if(aTab==='contacts'){ try{ setCc(JSON.parse(JSON.stringify(editCfg.contacts||{}))); }catch{} } },[aTab]); // eslint-disable-line react-hooks/exhaustive-deps
  // تغییر رمز/شماره ورود (admin-credentials) — state ها در سطح بالای کامپوننت (قانون hooks)
  const [credBusy,setCredBusy]=useState(false); const [credMsg,setCredMsg]=useState(''); const [credErr,setCredErr]=useState(''); const [credPhoneMasked,setCredPhoneMasked]=useState('');
  const credCurPwdRef=useRef<HTMLInputElement|null>(null); const credNewPhoneRef=useRef<HTMLInputElement|null>(null); const credRepPhoneRef=useRef<HTMLInputElement|null>(null); const credNewPwdRef=useRef<HTMLInputElement|null>(null); const credRepPwdRef=useRef<HTMLInputElement|null>(null); const [expIdRaw,setExpIdRaw]=useState<any>(()=>{try{return sessionStorage.getItem('zk_admin_open_form')||null}catch{return null}}); const expIdRef=useRef<any>(expIdRaw); const setExpId=useCallback((id:any)=>{expIdRef.current=id; setExpIdRaw(id); try{if(id)sessionStorage.setItem('zk_admin_open_form',String(id));else sessionStorage.removeItem('zk_admin_open_form')}catch{}},[]); const expId=expIdRaw; useEffect(()=>{expIdRef.current=expIdRaw},[expIdRaw]);
@@ -307,7 +307,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const hay=(s:any)=>[s.pName,s.fullPhone,s.trackingCode,(s.topics||[]).join(' '),s.course?.title,s.course?.titleEn,s.shipping?.city,s.shipping?.country,s.shipping?.address,s.category,getStatus(s)].join(' ').toLowerCase();
   // اول روی همه فرم‌ها جستجو و فیلتر می‌کنیم، سپس نتیجه را صفحه‌بندی می‌کنیم.
   // بنابراین جستجو محدود به ۵۰ مورد صفحه فعلی نیست.
-  const filteredAll=subs.filter(s=>(typeF==='all'||s.type===typeF)&&s.type!=='user'&&(catF==='همه'||getCategory(s)===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
+  const filteredAll=subs.filter(s=>(typeF==='all'||s.type===typeF)&&(typeF==='user'||s.type!=='user')&&(catF==='همه'||getCategory(s)===catF)&&(!dateF||String(s.date||'').includes(dateF))&&(countryF==='همه'||getCountry(s)===countryF)&&(courseF==='همه'||getCourse(s)===courseF)&&(payF==='همه'||getPay(s)===payF)&&(statusF==='همه'||getStatus(s)===statusF)&&(!debouncedSrch||hay(s).includes(debouncedSrch.toLowerCase())));
   const pageSize=50,totalPages=Math.max(1,Math.ceil(filteredAll.length/pageSize)); const safePage=Math.min(page,totalPages); const filtered=filteredAll.slice((safePage-1)*pageSize,safePage*pageSize);
   const groups=(()=>{const byPhone=new Map<string,any[]>();const singles:any[]=[];filtered.forEach(s=>{const key=digits(s.fullPhone||'');if(!key){singles.push({head:s,children:[]});return}if(!byPhone.has(key))byPhone.set(key,[]);byPhone.get(key)!.push(s)});const out:any[]=[...singles];byPhone.forEach(list=>{const sorted=[...list].sort((a,b)=>subTime(a)-subTime(b));out.push({head:sorted[0],children:sorted.slice(1)})});const latest=(g:any)=>Math.max(subTime(g.head),...g.children.map((c:any)=>subTime(c)));return out.sort((a,b)=>latest(b)-latest(a))})();
   // انتخاب همه روی تمام نتایج فیلترشده انجام می‌شود، نه فقط ۵۰ مورد صفحه فعلی.
@@ -564,9 +564,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
  </section>
 </div>
 {loadingSubs&&<div className="zkad-loading"><span className="zkad-spin"/>در حال بارگذاری...</div>}</>}{aTab==='entry'&&editCfg&&<EntryModeSettings app={{...app, AdminBtn, Box, setEditCfg, setSave, cfg:editCfg||cfg, savedCfg:cfg}}/>}{aTab==='data'&&<>{subs.length>1000&&<div className="zkad-tag t-warn" style={{marginBottom:10,fontSize:11,padding:'8px 10px'}}>برای نمایش همه فرم‌ها، از فیلتر استفاده کنید</div>}
-<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small title="کل ثبت‌شده‌ها / تعداد همین صفحه" style={{direction:'ltr',display:'inline-block'}}>{faNum(subs.length)} / {faNum(groups.length)}</small></h3></div><div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
-   {(['old','new'] as const).map(v => <button key={v} type="button" onClick={() => setDataView(v)} style={{ padding: '7px 14px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 900, background: dataView === v ? T.acc : 'transparent', color: dataView === v ? '#fff' : T.mut }}>{v === 'old' ? (T.en ? 'Old view' : 'نمای قدیمی') : (T.en ? 'User view' : 'نمای جدید')}</button>)}
-  </div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
+<div className="zkad-data-hero"><div><span className="zkad-data-eyebrow">مدیریت ارتباط با مخاطب</span><h3>فرم‌ها و سفارشات <small title="کل ثبت‌شده‌ها / تعداد همین صفحه" style={{direction:'ltr',display:'inline-block'}}>{faNum(subs.length)} / {faNum(groups.length)}</small></h3></div><button type="button" className="zkad-refresh-btn" onClick={refreshSubmissions} disabled={refreshingSubs}>{refreshingSubs?"در حال بروزرسانی…":"↻ بروزرسانی"}</button></div>
 {dataView==='old'?<><div className="zkad-toolbar">
  <div className="zkad-search"><ZkSearchIcon size={16}/><input placeholder="نام، شماره، کد پیگیری..." value={srch} onChange={e=>{setSrch(e.target.value);setPage(1)}} aria-label="جستجوی فرم‌ها"/></div>
  <div className="zkad-toolbar-actions">
@@ -577,7 +575,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
  </div>
 </div>
 <div className="zkad-filter-toggle"><button type="button" onClick={()=>setFiltersOpen(v=>!v)}>{filtersOpen?"− بستن فیلترها":"+ فیلترها و تنظیمات خروجی"}{filtersActive&&<span> فعال</span>}</button>{filtersOpen&&<button type="button" onClick={clearFilters}>پاک‌کردن</button>}</div>{filtersOpen&&<div className="zkad-chips-area">
- <ChipGroup label="نوع ثبت" options={['همه','درخواست مشاوره','ثبت دوره']} val={typeF==='all'?'همه':typeF==='consultation'?'درخواست مشاوره':'ثبت دوره'} set={v=>{setTypeF(v==='درخواست مشاوره'?'consultation':v==='ثبت دوره'?'course':'all');setPage(1)}}/>
+ <ChipGroup label="نوع ثبت" options={['همه','درخواست مشاوره','ثبت دوره','ثبت‌نام پنل']} val={typeF==='all'?'همه':typeF==='consultation'?'درخواست مشاوره':typeF==='course'?'ثبت دوره':'ثبت‌نام پنل'} set={v=>{setTypeF(v==='درخواست مشاوره'?'consultation':v==='ثبت دوره'?'course':v==='ثبت‌نام پنل'?'user':'all');setPage(1)}}/>
  <ChipGroup label="دسته‌بندی" options={cats} val={catF} set={v=>{setCatF(v);setPage(1)}}/>
  <ChipGroup label="وضعیت سفارش" options={['همه',...statusOptions]} val={statusF} set={v=>{setStatusF(v);setPage(1)}}/>
  <ChipGroup label="پرداخت" options={payOptions} val={payF} set={v=>{setPayF(v);setPage(1)}}/>
@@ -702,14 +700,34 @@ function DataNewViewPanel(){
    {list.length ? list.map((g) => card(g, kind)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
   </section>
  );
+  const usersList = dataUserOrder.filter((k) => { if (!q) return true; const u = dataUserByPhone[k] || {}; return String(u.fullName||'').toLowerCase().includes(q) || digits(k).includes(q.replace(/\D/g,'')) || String(u.code||'').toLowerCase().includes(q); });
+  const usersSection = () => (
+   <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
+    <h3 style={{ fontSize: 14, color: T.ttl, margin: '0 0 4px', fontWeight: 900 }}>{T.en ? 'Panel registrations' : 'ثبت‌نام‌های پنل'} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(usersList.length)})</small></h3>
+    <div style={{ fontSize: 11.5, color: T.mut, marginBottom: 12, lineHeight: 1.8 }}>{T.en ? 'Every account created on the portal (phone + tracking code).' : 'هر حسابی که در پنل کاربر ساخته شده (شماره تماس + کد پیگیری).'}</div>
+    {usersList.length ? usersList.map((k) => { const u = dataUserByPhone[k] || {}; return (
+      <div key={'u'+k} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, background: T.card, boxShadow: T.neuOut, marginBottom: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+       <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color: T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(u.fullName||'؟').trim().charAt(0)}</span>
+       <span style={{ minWidth: 0, flex: 1 }}>
+        <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{String(u.fullName||'—')}</b>
+        <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(k)} · <b style={{ color: T.accText, fontFamily: 'monospace' }}>{String(u.code||'—')}</b></span>
+       </span>
+       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <span className={`zkad-tag ${(u.status==='active'||u.phoneConfirmed)?'t-ok':'t-warn'}`} style={{ fontSize: 10.5 }}>{(u.status==='active'||u.phoneConfirmed)?(T.en?'Verified':'تأییدشده'):(T.en?'Pending':'در انتظار')}</span>
+        <span style={{ fontSize: 10.5, color: T.mut }}>{String(u.date||'')}{u.time?' · '+String(u.time):''}</span>
+       </span>
+      </div>
+     ); }) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
+   </section>
+  );
  return (
   <div>
    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
     <div className="zkad-seg" style={{ display: 'flex', gap: 6, padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
-     {(['consult', 'course'] as const).map((t) => (
+     {(['consult', 'course', 'users'] as const).map((t) => (
       <button key={t} type="button" onClick={() => setNvTab(t)}
        style={{ padding: '8px 16px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 900, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
-       {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست‌های مشاوره') : (T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها')}
+       {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست‌های مشاوره') : t === 'course' ? (T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها') : (T.en ? 'Registrations' : 'ثبت‌نام‌های پنل')}
       </button>
      ))}
     </div>
@@ -717,7 +735,7 @@ function DataNewViewPanel(){
      placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
     <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(consultList.length + courseList.length)}</span>
    </div>
-   {nvTab === 'consult'
+   {nvTab === 'users' ? usersSection() : nvTab === 'consult'
     ? section(T.en ? 'Consultation requests' : 'درخواست‌های مشاوره', T.en ? 'One card per user. Each card shows when the same person also registered a course.' : 'هر کارت = یک کاربر؛ اگر همین شخص دوره هم ثبت کرده باشد، روی کارت مشخص است.', consultList, 'consult')
     : section(T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها', T.en ? 'One card per user. Each card shows when the same person also sent a consultation.' : 'هر کارت = یک کاربر؛ اگر همین شخص مشاوره هم داده باشد، روی کارت مشخص است.', courseList, 'course')}
    {modalSub && <Modal T={T} onClose={() => setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO} /></Modal>}

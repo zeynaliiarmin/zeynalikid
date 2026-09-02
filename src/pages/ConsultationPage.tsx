@@ -436,9 +436,19 @@ export default function ConsultationPage(){
             setLS(SK.subs,[...refreshed,entry]);
             setLastId(entry.id);
           } catch (e) {
-            console.warn('Could not save submission to Supabase, falling back to localStorage', e);
-            reportError('consult_submit', 'Could not save submission to Supabase', String((e as any)?.message||e));triggerErrorAlert('registration');
-            setLastId(entry.id);
+            // خطای شبکه/سرویس: یک تلاش مجدد؛ در شکست دوباره فرم «موفق» جا نمی‌زند تا داده بی‌صدا گم نشود
+            console.warn('consult submit failed, retrying once', e);
+            await new Promise(r=>setTimeout(r,1500));
+            try {
+              const saved2=await createSubmission(entry as any);
+              Object.assign(entry,saved2);
+              const refreshed2=getLS(SK.subs,[]).filter((x:any)=>String(x.id)!==String(clientId));
+              setLS(SK.subs,[...refreshed2,entry]);
+              setLastId(entry.id);
+            } catch (e2) {
+              reportError('consult_submit', 'Could not save submission to Supabase', String((e2 as any)?.message||e2));triggerErrorAlert('registration');
+              throw e2;
+            }
           }
         } else {
           setLastId(entry.id);

@@ -1,3 +1,5 @@
+// FIX: تب قدیمیِ بازمانده بعد از دیپلوی → خطای ۴۰۴ chunk داینامیک؛ یک‌بار ریلود خودکار (رفع «خطای» کاذب ثبت)
+try{const _zc='zk_chunk_reload';if(sessionStorage.getItem(_zc)==='1'){sessionStorage.removeItem(_zc)}else{try{sessionStorage.setItem(_zc,'0')}catch{}}window.addEventListener('unhandledrejection',(ev:any)=>{const m=String((ev&&ev.reason&&ev.reason.message)||ev&&ev.reason||'');if(/dynamically imported module|error loading dynamically imported module|importing a module script failed/i.test(m)){try{sessionStorage.setItem(_zc,'1')}catch{}window.location.reload();}});}catch{}
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';

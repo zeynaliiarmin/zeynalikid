@@ -102,12 +102,7 @@ export default function CoursePaymentPage(){
   let sharePromise:Promise<void>|null=null;
   try{if(navigator.share){
    const shareText=paymentShareText(resolution.info,lang);const shareTitle=lang==='en'?'Choose a payment application':'انتخاب برنامه پرداخت';
-   // فایل متنی ضمیمه → برنامه‌های بانک و پرداخت (اشتراک فایل) هم در لیست_share ظاهر می‌شوند؛
-   // اگر دستگاه ضمیمه را نپذیرفت، به اشتراک متنی ساده برمی‌گردد.
-   try{const shareFile=new File([shareText],'payment-details.txt',{type:'text/plain'});
-    if((navigator as any).canShare?.({files:[shareFile]})){sharePromise=navigator.share({title:shareTitle,files:[shareFile]} as any);}
-   }catch{/* بدون فایل */}
-   if(!sharePromise)sharePromise=navigator.share({title:shareTitle,text:shareText});
+   sharePromise=navigator.share({title:shareTitle,text:shareText});
   }}catch{}
   if(asyncCopy){try{await asyncCopy}catch{}}
   if(sharePromise){try{await sharePromise;setToast(copiedDefault?(lang==='en'?'Default card copied; choose a payment application.':'شماره کارت پیش‌فرض کپی شد؛ برنامه پرداخت را انتخاب کنید.'):(lang==='en'?'Your previously copied payment information was preserved.':'اطلاعاتی که قبلاً کپی کرده‌اید بدون تغییر حفظ شد.'))}catch(error){if((error as Error)?.name!=='AbortError')setToast(lang==='en'?'The application chooser could not be opened.':'امکان بازکردن فهرست برنامه‌ها وجود نداشت.');else if(copiedDefault)setToast(lang==='en'?'Default card copied.':'شماره کارت پیش‌فرض کپی شد.')}}else setToast(copiedDefault?(lang==='en'?'Default card copied; open your banking app.':'شماره کارت پیش‌فرض کپی شد؛ همراه‌بانک را باز کنید.'):(lastCopiedPayment?(lang==='en'?'Your copied payment information was preserved; open your payment app.':'اطلاعات کپی‌شده شما تغییر نکرد؛ برنامه پرداخت را باز کنید.'):(lang==='en'?'Open your preferred payment application.':'برنامه پرداخت دلخواه را باز کنید.')));
