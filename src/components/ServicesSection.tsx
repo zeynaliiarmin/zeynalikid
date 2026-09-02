@@ -183,8 +183,8 @@ const getServiceIcon = (item: ServiceItem, accentColor: string) => {
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       width: 44, height: 44, borderRadius: '50%',
-      background: `linear-gradient(135deg, ${accentColor}22, ${accentColor}08)`,
-      border: `2px solid ${accentColor}33`,
+      background: `radial-gradient(closest-side, ${accentColor}2a, ${accentColor}0c 72%, transparent)`,
+      boxShadow: `0 0 18px ${accentColor}12`,
       color: accentColor,
       flexShrink: 0,
     }}>
@@ -228,8 +228,8 @@ export default function ServicesSection({ T, lang, publicText, mode, listItems, 
         {safeListItems.map((item: ServiceItem) => (
           <div key={item.id} style={{
             display: 'flex', alignItems: 'flex-start', gap: 12,
-            background: T.card, borderRadius: 16, padding: '12px 14px',
-            boxShadow: T.neuOut,
+            borderRadius: 14, padding: '7px 4px',
+            background: `linear-gradient(${isRtl ? 270 : 90}deg, ${T.acc}14, transparent 74%)`,
           }}>
             {getServiceIcon(item, T.acc)}
             <div style={{ flex: 1, minWidth: 0, textAlign: isRtl ? 'right' : 'left' }}>
@@ -338,8 +338,7 @@ export default function ServicesSection({ T, lang, publicText, mode, listItems, 
         width: '100%',
         overflow: 'hidden',
         borderRadius: 16,
-        background: `${T.soft}88`,
-        border: `1px solid ${T.brd}`,
+        background: 'transparent',
         userSelect: 'none',
         //  اصلاح ۴: اجازه اسکرول عمودی صفحه هنگام لمس کاروسل
         touchAction: 'pan-y',

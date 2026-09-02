@@ -101,39 +101,52 @@ function extractPlans(text: string): { meal: string; sport: string } {
   return { meal: "", sport: "" };
 }
 
+function mistralKeys(): string[] {
+  const names = ["MISTRAL_PLANS_API_KEY", "MISTRAL_ADMIN_API_KEY", "MISTRAL_API_KEY", "MISTRAL_PUBLIC_API_KEY", "MISTRAL_FALLBACK_API_KEY"];
+  const out: string[] = []; const seen = new Set<string>();
+  for (const n of names) { const v = String(Deno.env.get(n) || "").trim(); if (v && !seen.has(v)) { seen.add(v); out.push(v); } }
+  return out;
+}
+
 async function callMistral(prompt: string): Promise<string> {
-  const key = Deno.env.get("MISTRAL_API_KEY");
-  if (!key) throw new Error("کلید Mistral روی این پروژه تنظیم نشده است");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 50_000);
-  try {
-    const res = await fetch(MISTRAL_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MISTRAL_MODEL,
-        messages: [
-          { role: "system", content: "یک متخصص تغذیهٔ کودک هستی که خروجی‌ات فقط JSON است." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.55,
-        max_tokens: 1700,
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const bodyText = await res.text().catch(() => "");
-      const e: any = new Error(res.status === 429 ? "سقف درخواست سرویس هوش مصنوعی پر شده؛ کمی بعد دوباره تلاش کنید" : `خطای سرویس هوش مصنوعی (${res.status})`);
-      e.raw = bodyText.slice(0, 300);
-      throw e;
+  const keys = mistralKeys();
+  if (!keys.length) throw new Error("کلید هوش مصنوعی روی این پروژه تنظیم نشده است");
+  const models = (String(Deno.env.get("ASSISTANT_MODEL_ORDER") || "mistral-small-latest,ministral-8b-latest,ministral-3b-latest")).split(",").map((s) => s.trim()).filter(Boolean);
+  const deadline = Date.now() + 48_000;
+  let lastErr = "سرویس هوش مصنوعی پاسخ نداد؛ دوباره تلاش کنید";
+  for (const key of keys) {
+    for (const model of models) {
+      if (Date.now() > deadline) break;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 24_000);
+      try {
+        const res = await fetch(MISTRAL_API_URL, {
+          method: "POST", signal: controller.signal,
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({ model, messages: [
+            { role: "system", content: "یک متخصص تغذیهٔ کودک هستی که خروجی‌ات فقط JSON است." },
+            { role: "user", content: prompt },
+          ], temperature: 0.55, max_tokens: 1700 }),
+        });
+        if (!res.ok) {
+          lastErr = res.status === 429 ? "سقف درخواست‌های Mistral پر شده (۴۲۹)؛ کمی بعد دوباره بزن"
+            : res.status === 401 || res.status === 403 ? "کلید هوش مصنوعی رد شد؛ کلید بعدی امتحان می‌شود"
+            : `خطای سرویس هوش مصنوعی (${res.status})`;
+          continue;
+        }
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (typeof content === "string" && content.trim()) return content;
+        lastErr = "پاسخ خالی از سرویس هوش مصنوعی";
+      } catch (e: any) {
+        lastErr = e?.name === "AbortError" ? "تأخیر سرویس هوش مصنوعی؛ کلید/مدل بعدی امتحان می‌شود" : "خطای شبکه در سرویس هوش مصنوعی";
+      } finally {
+        clearTimeout(timer);
+      }
     }
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (typeof content !== "string" || !content.trim()) throw new Error("پاسخ خالی از سرویس هوش مصنوعی");
-    return content;
-  } finally {
-    clearTimeout(timer);
+    if (Date.now() > deadline) break;
   }
+  throw new Error(lastErr);
 }
 
 serve(async (req) => {
@@ -168,20 +181,14 @@ serve(async (req) => {
   }
 
   const { prompt, allowSport } = buildPrompt(p);
-  let meal = ""; let sport = ""; let lastError = "";
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const raw = await callMistral(prompt);
-      const parsed = extractPlans(raw);
-      meal = parsed.meal; sport = parsed.sport;
-      if (meal) break;
-      lastError = "سرویس هوش مصنوعی خروجی قابل‌فهمی برنگرداند";
-    } catch (e: any) {
-      lastError = String(e?.message || e);
-      if (attempt === 0) await new Promise((r) => setTimeout(r, 3_000));
-    }
+  let meal = ""; let sport = "";
+  try {
+    const parsed = extractPlans(await callMistral(prompt));
+    meal = parsed.meal; sport = parsed.sport;
+  } catch (e: any) {
+    return err(String(e?.message || e) || "تولید برنامه ناموفق بود", origin, 502);
   }
-  if (!meal) return err(lastError || "تولید برنامه ناموفق بود", origin, 502);
+  if (!meal) return err("سرویس هوش مصنوعی خروجی قابل‌فهمی برنگرداند؛ یک‌بار دیگر تلاش کنید", origin, 502);
   if (!allowSport) sport = "";
 
   const payload: any = { ...p, mealPlan: meal, plansAiAt: Date.now() };

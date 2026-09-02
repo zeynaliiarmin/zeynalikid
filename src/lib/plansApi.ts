@@ -15,7 +15,11 @@ export async function generatePlans(submissionId: any, force = false): Promise<P
     try {
       const token = getAdminSessionToken();
       const res: any = await (supabase as any).functions.invoke('generate-plans', { body: { token, submissionId, force } });
-      if (res?.error) throw res.error;
+      if (res?.error) {
+        let m = String(res.error?.message || 'تولید برنامه ناموفق بود');
+        try { const j = await (res.error as any)?.context?.json?.(); if (j?.error) m = String(j.error); } catch { /* body was not JSON */ }
+        throw new Error(m);
+      }
       const data: any = res?.data;
       if (!data?.ok) throw new Error(String(data?.error || 'تولید برنامه انجام نشد'));
       return { mealPlan: String(data.mealPlan || ''), sportPlan: String(data.sportPlan || '') };

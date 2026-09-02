@@ -266,6 +266,12 @@ function SubCardBase({
       : x));
   }, [sub.followUps, sub.category, sub.consultationStatus, sub.id, setSubs]);
 
+  const fuClear = useCallback(() => {
+    let cat = sub.category; let cs = sub.consultationStatus;
+    if (cat === 'آخر ماه' || cs === 'پیگیری آخر ماه') { cat = 'پیگیری'; cs = 'پیگیری'; }
+    setSubs((s: any[]) => s.map(x => x.id === sub.id ? { ...x, followUps: [null, null, null, null], category: cat, consultationStatus: cs, changeHistory: logChange(x, 'پاک‌کردن تیک‌های پیگیری') } : x));
+  }, [sub.category, sub.consultationStatus, sub.id, setSubs]);
+
   // یکپارچه‌سازی خودکار بر اساس شماره تماس
   const myPhone = digits(sub.fullPhone || '');
 
@@ -881,22 +887,26 @@ function SubCardBase({
                   </label>
                 )}
                 <div className="zkad-f">
-                  <span>پیگیری‌ها (۴ مرحله)</span>
+                  <span>پیگیری‌ها (۴ مرحله) — هر کلیک: بدون‌علامت ← ✓ سبز (پیگیری شد) ← ✗ قرمز (تماس، جواب نداد) ← بدون‌علامت</span>
                   <div className="zkad-fu">
                     {[0, 1, 2, 3].map(i => {
                       const st = (sub.followUps || [])[i];
+                      const stName = st === 'done' ? 'پیگیری شد ✓' : st === 'miss' ? 'زنگ زدم، جواب نداد' : 'هنوز پیگیری نشده';
                       return (
                         <button
                           key={i}
                           type="button"
                           className={`zkad-fu-btn ${st === 'done' ? 'is-done' : st === 'miss' ? 'is-miss' : ''}`}
-                          title={`پیگیری مرحله ${i + 1}`}
+                          title={`مرحله ${i + 1}: ${stName} — برای تغییر وضعیت کلیک کنید`}
                           onClick={() => fu(i)}
                         >
                           {st === 'done' ? <ZkCheckIcon size={12} /> : st === 'miss' ? <ZkCloseIcon size={12} /> : <span>{i + 1}</span>}
                         </button>
                       );
                     })}
+                    {(sub.followUps || []).some((x: any) => x) && (
+                      <button type="button" className="zkad-toolbtn" style={{ fontSize: 10, padding: '3px 8px' }} title="پاک‌کردن هر چهار تیک" onClick={() => fuClear()}>پاک‌کردن تیک‌ها</button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -908,52 +918,46 @@ function SubCardBase({
                   placeholder="یادداشت داخلی — به کاربر نمایش داده نمی‌شود" />
               </label>
 
-              <label className="zkad-f">
-                <span>طریقه مصرف (در صفحه پیگیری به کاربر نمایش داده می‌شود)</span>
-                <textarea className="zkad-textarea" defaultValue={sub.usageInstructions || ''}
-                  onBlur={e => { if (sub.usageInstructions !== e.target.value) patchSelf({ usageInstructions: e.target.value }, 'ویرایش طریقه مصرف'); }}
-                  placeholder="مثلاً: روزی یک پیمانه بعد از صبحانه..." />
-              </label>
-
-              {/* ─── برنامه‌ها: خوراکی + ورزشی — تولید با AI، ویرایش آزاد، خروجی TXT ─── */}
-              <div style={{ border: '1px solid rgba(120,120,140,.16)', borderRadius: 14, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10, margin: '2px 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <b style={{ fontSize: 13 }}>برنامه‌ها</b>
-                  <span style={{ fontSize: 10.5, color: '#8b8b96', fontWeight: 700 }}>خوراکی و ورزشی — در پنل کاربری و صفحه پیگیری نمایش داده می‌شود</span>
-                  <button type="button" className="zkad-btn sm" style={{ marginInlineStart: 'auto' }} disabled={plansBusy} onClick={() => {
-                    setPlansBusy(true);
-                    generatePlans(sub.id, true).then(d => {
-                      patchSelf({ ...(d.mealPlan ? { mealPlan: d.mealPlan, showMealPlan: true } : {}), ...(d.sportPlan ? { sportPlan: d.sportPlan, showSportPlan: true } : {}), plansAiAt: Date.now() }, 'تولید برنامه‌ها با هوش مصنوعی');
-                    }).catch((e: any) => alert(String(e?.message || e) || 'تولید برنامه ناموفق بود')).finally(() => setPlansBusy(false));
-                  }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
-                </div>
-                <label className="zkad-f">
-                  <span>برنامه خوراکی (وعده‌ها + پرهیز با درصد — بدون روزهای هفته)</span>
-                  <textarea key={'meal-' + String(sub.plansAiAt || '')} className="zkad-textarea" defaultValue={sub.mealPlan || ''}
-                    onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه خوراکی'); }}
-                    placeholder="صبحانه: …، ناهار: …، شام: …، میان‌وعده‌ها: …، پرهیزها: نوشابه ۹۰٪…" />
-                </label>
-                <label className="zkad-f">
-                  <span>برنامه ورزشی (فقط موضوع قد/وزن و ۶ سال به بالا — مدت زمان با دقیقه/ثانیه، نه ست و تکرار)</span>
-                  <textarea key={'sport-' + String(sub.plansAiAt || '')} className="zkad-textarea" defaultValue={sub.sportPlan || ''}
-                    onBlur={e => { if (sub.sportPlan !== e.target.value) patchSelf({ sportPlan: e.target.value }, 'ویرایش برنامه ورزشی'); }}
-                    placeholder="حرکت: مدت زمان + هر چند وقت یک‌بار… تعداد روز در هفته… مجموع زمان روزانه…" />
-                </label>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <label className="zkad-switch-row" style={{ margin: 0 }}>
-                    <input className="zkad-display-check" type="checkbox" checked={!!sub.showMealPlan}
-                      onChange={e => patchSelf({ showMealPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه خوراکی' : 'غیرفعال‌سازی نمایش برنامه خوراکی')} />
-                    <span>نمایش برنامه خوراکی</span>
+              <details className="zkad-details" style={{ margin: '2px 0' }}>
+                <summary><ZkDocIcon size={13} /> برنامه‌ها — خوراکی و ورزشی {sub.mealPlan ? '· خوراکی ✓' : ''}{sub.sportPlan ? ' · ورزشی ✓' : ''}</summary>
+                <div style={{ padding: '4px 2px 2px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10.5, color: '#8b8b96', fontWeight: 700 }}>خوراکی و ورزشی — در پنل کاربری و صفحه پیگیری نمایش داده می‌شود</span>
+                    <button type="button" className="zkad-btn sm" style={{ marginInlineStart: 'auto' }} disabled={plansBusy} onClick={() => {
+                      setPlansBusy(true);
+                      generatePlans(sub.id, true).then(d => {
+                        patchSelf({ ...(d.mealPlan ? { mealPlan: d.mealPlan, showMealPlan: true } : {}), ...(d.sportPlan ? { sportPlan: d.sportPlan, showSportPlan: true } : {}), plansAiAt: Date.now() }, 'تولید برنامه‌ها با هوش مصنوعی');
+                      }).catch((e: any) => alert(String(e?.message || e) || 'تولید برنامه ناموفق بود')).finally(() => setPlansBusy(false));
+                    }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
+                  </div>
+                  <label className="zkad-f">
+                    <span>برنامه خوراکی (وعده‌ها + پرهیز با درصد — بدون روزهای هفته)</span>
+                    <textarea key={'meal-' + String(sub.plansAiAt || '')} className="zkad-textarea sm" defaultValue={sub.mealPlan || ''}
+                      onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه خوراکی'); }}
+                      placeholder="صبحانه: …، ناهار: …، شام: …، میان‌وعده‌ها: …، پرهیزها: نوشابه ۹۰٪…" />
                   </label>
-                  <label className="zkad-switch-row" style={{ margin: 0 }}>
-                    <input className="zkad-display-check" type="checkbox" checked={!!sub.showSportPlan}
-                      onChange={e => patchSelf({ showSportPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه ورزشی' : 'غیرفعال‌سازی نمایش برنامه ورزشی')} />
-                    <span>نمایش برنامه ورزشی</span>
+                  <label className="zkad-f">
+                    <span>برنامه ورزشی (فقط موضوع قد/وزن و ۶ سال به بالا — مدت زمان با دقیقه/ثانیه، نه ست و تکرار)</span>
+                    <textarea key={'sport-' + String(sub.plansAiAt || '')} className="zkad-textarea sm" defaultValue={sub.sportPlan || ''}
+                      onBlur={e => { if (sub.sportPlan !== e.target.value) patchSelf({ sportPlan: e.target.value }, 'ویرایش برنامه ورزشی'); }}
+                      placeholder="حرکت: مدت زمان + هر چند وقت یک‌بار… تعداد روز در هفته… مجموع زمان روزانه…" />
                   </label>
-                  {!!sub.mealPlan && <button type="button" className="zkad-btn sm" onClick={() => downloadPlanTxt('برنامه خوراکی ' + String(sub.trackingCode || sub.id), sub.mealPlan)}>⬇ TXT خوراکی</button>}
-                  {!!sub.sportPlan && <button type="button" className="zkad-btn sm" onClick={() => downloadPlanTxt('برنامه ورزشی ' + String(sub.trackingCode || sub.id), sub.sportPlan)}>⬇ TXT ورزشی</button>}
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
+                    <label className="zkad-switch-row" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 11.5, flexShrink: 0 }}>
+                      <input className="zkad-display-check" type="checkbox" checked={!!sub.showMealPlan}
+                        onChange={e => patchSelf({ showMealPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه خوراکی' : 'غیرفعال‌سازی نمایش برنامه خوراکی')} />
+                      <span>نمایش خوراکی</span>
+                    </label>
+                    <label className="zkad-switch-row" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 11.5, flexShrink: 0 }}>
+                      <input className="zkad-display-check" type="checkbox" checked={!!sub.showSportPlan}
+                        onChange={e => patchSelf({ showSportPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه ورزشی' : 'غیرفعال‌سازی نمایش برنامه ورزشی')} />
+                      <span>نمایش ورزشی</span>
+                    </label>
+                    {!!sub.mealPlan && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => downloadPlanTxt('برنامه خوراکی ' + String(sub.trackingCode || sub.id), sub.mealPlan)}>⬇ TXT</button>}
+                    {!!sub.sportPlan && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => downloadPlanTxt('برنامه ورزشی ' + String(sub.trackingCode || sub.id), sub.sportPlan)}>⬇ TXT</button>}
+                  </div>
                 </div>
-              </div>
+              </details>
 
               {/* PDFها — دو کارت هم‌اندازه در یک ردیف */}
               <div className="zkad-file-grid">
@@ -1025,27 +1029,37 @@ function SubCardBase({
                     </div>
                   );
                 })}
+                <label className="zkad-f" style={{ marginTop: 8, borderTop: '1px dashed rgba(120,120,140,.25)', paddingTop: 10 }}>
+                  <span>طریقه مصرف دلخواه (انتهای همین بخش — اگر پیش‌فرض محصولات کافی نبود دستی بنویسید؛ در صفحه پیگیری نمایش داده می‌شود)</span>
+                  <textarea className="zkad-textarea sm" defaultValue={sub.usageInstructions || ''}
+                    onBlur={e => { if (sub.usageInstructions !== e.target.value) patchSelf({ usageInstructions: e.target.value }, 'ویرایش طریقه مصرف'); }}
+                    placeholder="مثلاً: روزی یک پیمانه بعد از صبحانه..." />
+                </label>
               </details>
 
-              <label className="zkad-switch-row">
-                <input className="zkad-display-check" type="checkbox" checked={!!sub.showCorrectiveTab}
-                  onChange={e => patchSelf({ showCorrectiveTab: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش اصلاحی' : 'غیرفعال‌سازی نمایش اصلاحی')} />
-                <span>نمایش تب «اصلاحی» به کاربر در صفحه پیگیری</span>
-              </label>
-
-              <label className="zkad-f">
-                <span><ZkStethoscopeIcon size={13} /> اطلاعات اصلاحی (قابل مشاهده در صفحه پیگیری)</span>
-                <textarea className="zkad-textarea" defaultValue={sub.corrective || ''}
-                  onBlur={e => { if (sub.corrective !== e.target.value) patchSelf({ corrective: e.target.value }, 'ویرایش اطلاعات اصلاحی'); }}
-                  placeholder="اطلاعات اصلاحی..." />
-              </label>
-
-              <label className="zkad-f">
-                <span>نکات قابل مشاهده توسط کاربر</span>
-                <textarea className="zkad-textarea" defaultValue={sub.userNotes || ''}
-                  onBlur={e => { if (sub.userNotes !== e.target.value) patchSelf({ userNotes: e.target.value }, 'ویرایش نکات قابل مشاهده کاربر'); }}
-                  placeholder="مواردی که کاربر در صفحه پیگیری می‌بیند..." />
-              </label>
+              <details className="zkad-details" style={{ margin: '2px 0' }}>
+                <summary><ZkStethoscopeIcon size={13} /> نکات و اطلاعات اصلاحی — قابل مشاهده کاربر {(sub.userNotes || sub.corrective) ? '· ● ثبت‌شده' : '· ○ خالی'}</summary>
+                <div style={{ fontSize: 11, color: '#8b8b96', lineHeight: 1.9, padding: '2px 2px 8px' }}>
+                  همهٔ نکاتی که کاربر باید ببیند یک‌جا: یادداشت شما و اطلاعات اصلاحی. همین متن‌ها در «صفحه پیگیری» و «پنل کاربری» نمایش داده می‌شوند؛ والدین هم می‌توانند قد/وزن و توضیح اصلاحی را از همان‌جا به‌روز کنند.
+                </div>
+                <label className="zkad-switch-row" style={{ margin: '2px 0 8px' }}>
+                  <input className="zkad-display-check" type="checkbox" checked={!!sub.showCorrectiveTab}
+                    onChange={e => patchSelf({ showCorrectiveTab: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش اصلاحی' : 'غیرفعال‌سازی نمایش اصلاحی')} />
+                  <span>نمایش تب «اصلاحی» به کاربر در صفحه پیگیری</span>
+                </label>
+                <label className="zkad-f">
+                  <span>یادداشت برای کاربر (نکات قابل مشاهده)</span>
+                  <textarea className="zkad-textarea sm" defaultValue={sub.userNotes || ''}
+                    onBlur={e => { if (sub.userNotes !== e.target.value) patchSelf({ userNotes: e.target.value }, 'ویرایش نکات قابل مشاهده کاربر'); }}
+                    placeholder="مواردی که کاربر در صفحه پیگیری می‌بیند..." />
+                </label>
+                <label className="zkad-f">
+                  <span>اطلاعات اصلاحی (متن کارشناس)</span>
+                  <textarea className="zkad-textarea sm" defaultValue={sub.corrective || ''}
+                    onBlur={e => { if (sub.corrective !== e.target.value) patchSelf({ corrective: e.target.value }, 'ویرایش اطلاعات اصلاحی'); }}
+                    placeholder="اطلاعات اصلاحی..." />
+                </label>
+              </details>
 
               <div className="zkad-actions">
                 <button type="button" className="zkad-btn" onClick={() => patchSelf({ priority: sub.priority === 'high' ? 'normal' : 'high' }, sub.priority === 'high' ? 'تغییر اولویت به عادی' : 'تغییر اولویت به زیاد')}>
