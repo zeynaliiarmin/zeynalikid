@@ -18,6 +18,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, jsonResponse, getOrigin } from "../_shared/cors.ts";
 import { centralRateLimit } from "../_shared/rateLimit.ts";
+import { sendSecurityAlert } from "../_shared/securityAlert.ts";
 
 const PREFIX = String(Deno.env.get("TRACKING_PREFIX") || "ZK").toUpperCase() === "FM" ? "FM" : "ZK";
 
@@ -260,6 +261,8 @@ const maskPhonePreview = (stored: string): string => {
   return d.slice(0, 4) + "xxxx" + last3;
 };
 
+const loginFailCounter = new Map<string, { n: number; t: number }>();
+
 serve(async (req) => {
   const optionsResp = handleOptions(req);
   if (optionsResp) return optionsResp;
@@ -402,9 +405,13 @@ serve(async (req) => {
     if (!rl.ok) return jsonResponse({ error: "تعداد درخواستها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
 
     // در حالت «پنل کاربر» کپچا همان‌جا روی فرم ورود نشسته است (فقط برای login، نه بررسی نشست)
+    const ipUP = req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() || "unknown";
     if (action === "login" && portalCfg.captchaEnabled) {
       const cap = await verifyCaptcha(body?.captchaToken);
-      if (!cap.ok) return jsonResponse({ error: cap.error }, 400, origin);
+      if (!cap.ok) {
+        void sendSecurityAlert("captcha", `fn=user-portal action=${action}; ip=${ipUP}`, `up-cap:${ipUP}`);
+        return jsonResponse({ error: cap.error }, 400, origin);
+      }
     }
 
     const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
@@ -425,6 +432,15 @@ serve(async (req) => {
       }
     }
     if (!user || user.payload?.status !== "active") {
+      // نگهبان: حدس کد/شماره در پنل کاربر — پس از ۸ خطای پیاپی در ۳۰ دقیقه به مالک گزارش می‌شود
+      try {
+        const fk = `${ipUP}|${phone}`;
+        const rec = loginFailCounter.get(fk) || { n: 0, t: Date.now() };
+        rec.n = (Date.now() - rec.t > 30 * 60_000) ? 1 : rec.n + 1;
+        rec.t = Date.now();
+        if (rec.n >= 8) { loginFailCounter.set(fk, { n: 0, t: rec.t }); void sendSecurityAlert("portal-brute", `ip=${ipUP}; phone=${phone.slice(-8)}; 8+ attempts in 30min`, `up-brute:${ipUP}`); }
+        else loginFailCounter.set(fk, rec);
+      } catch { /* گزارش‌دهی نباید ورود را خراب کند */ }
       return jsonResponse({ error: "شماره تماس یا کد پیگیری اشتباه است." }, 404, origin);
     }
     if (action === "login") {
@@ -485,6 +501,7 @@ serve(async (req) => {
         form: briefForm(p),
         usage: briefUsage(p),
         reports: briefReports(p),
+        correctiveEnabled: p.showCorrectiveTab === true,
       };
     });
     return jsonResponse({ ok: true, code, fullName: String(user.payload.fullName || ""), maskedPhone: maskPhone(phone), items, count: items.length }, 200, origin);

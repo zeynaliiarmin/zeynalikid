@@ -97,10 +97,10 @@ export async function downloadPlanPdf(o: PdfOpts): Promise<void> {
   el.innerHTML = `<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap">`
     + `<span style="font-size:21px;font-weight:900">${esc(o.title || 'برنامه‌ها')}</span>`
     + `<span style="font-size:11.5px;color:#7a7a86">${esc([o.code, new Date().toLocaleDateString('fa-IR')].filter(Boolean).join(' · '))}</span></div>`
-    + (form.length ? SEC_OPEN('📋', 'اطلاعات ثبت‌شده') + `<div style="padding-top:8px">${tableHtml(form)}</div></div>` : '')
     + usageHtml(o.usage)
     + sectionHtml('🍽', 'برنامه خوراکی', meal)
     + sectionHtml('🏃', 'برنامه ورزشی', sport)
+    + (form.length ? SEC_OPEN('📋', 'اطلاعات ثبت‌شده') + `<div style="padding-top:8px">${tableHtml(form)}</div></div>` : '')
     + growthChartHtml(o.form)
     + reportsHtml(o.reports)
     + sectionHtml('📝', 'نکات کارشناس', notes);

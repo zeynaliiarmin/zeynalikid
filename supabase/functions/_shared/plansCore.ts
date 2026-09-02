@@ -23,11 +23,14 @@ function buildPrompt(p: any): { prompt: string; allowSport: boolean } {
   const weight = numOf(p.weight);
   const topics = topicList(p);
   const topicText = topics.join("، ");
-  const sex: WhoSex = /دختر|girl/i.test(str(p.pGender)) ? "girl" : /پسر|boy/i.test(str(p.pGender)) ? "boy" : "unknown";
+  const sex: WhoSex = /دختر|girl/i.test(str(p.pGender || p.gender || p.childGender)) ? "girl" : /پسر|boy/i.test(str(p.pGender || p.gender || p.childGender)) ? "boy" : "unknown";
   const ref = Number.isFinite(age) ? whoRef(age, sex) : null;
   const focusHeight = /(قد|growth|height|بلوغ|کوتاه)/i.test(topicText);
   const focusWeight = /(وزن|چاق|لاغر|اشتها|تغذیه|غذا)/i.test(topicText);
-  const allowSport = Number.isFinite(age) && age >= 6 && (focusHeight || focusWeight || topics.length === 0);
+  // برنامهٔ ورزشی همیشه ساخته می‌شود؛ تنها استثنا: کودک زیر ۶ سال (قاعدهٔ ثابت برند).
+  const underSix = Number.isFinite(age) && age < 6;
+  const allowSport = !underSix;
+  void focusHeight; void focusWeight;
 
   const facts: string[] = [];
   const name = str(p.childName || p.pName);
@@ -73,9 +76,9 @@ function buildPrompt(p: any): { prompt: string; allowSport: boolean } {
     "۲.۱) در پایان meal بعد از یک خط جداکننده «——————» بخش «🚫 پرهیزها:» را بیاور؛ هر مورد در یک خط جدا با شروع «- » و درصد جلوی آن (نمونه: - نوشابه ۹۰٪) که درصد یعنی تا چه حد باید کنار گذاشته شود.",
     "۲.۲) فقط از مواد غذایی که در ایران به‌راحتی و با هزینه متعارف پیدا می‌شوند استفاده کن (نان سنگک/بربری، برنج، حبوبات، ماست، پنیر، تخم‌مرغ، مرغ، میوه و سبزی فصل و...). قلم وارداتی، کمیاب یا گران را فقط در گروه «مواردی که سخت پیدا میشن یا هزینه زیادی دارن» بیاور و همان وعده را در گروه اقتصادی کامل و قابل اجرا نگه دار.",
     "۳) در برنامهٔ خوراکی هرگز روز هفته، تاریخ، «شنبه تا پنجشنبه» یا جدول هفتگی نباشد.",
-    "۴) sport = برنامهٔ ورزشی خانگی؛ فقط اگر موضوع مشاوره قد یا وزن است و سن کودک ۶ سال یا بیشتر. ساختار: خط اول «🏃 برنامه ورزشی»، بعد برای هر حرکت یک خط به شکل «• نام حرکت: مدت زمان X دقیقه یا Y ثانیه — هر چند وقت یک‌بار: Z». سپس دو خط پایانی: «📅 تعداد روزهای تمرین در هفته: …» و «⏱ مجموع زمان روزانه: …». از واژه‌های «ست» و «تکرار» استفاده نکن.",
+    "۴) sport = برنامهٔ ورزشی خانگی؛ برای همهٔ کودکان ۶ سال یا بیشتر بنویس — حتی اگر موضوع مشاوره قد یا وزن نباشد؛ در آن حالت یک برنامهٔ عمومی‌تر ولی کاملاً متناسب با سن، بیماری‌ها و توضیحات تکمیلی والد بده. ساختار: خط اول «🏃 برنامه ورزشی»، بعد برای هر حرکت یک خط به شکل «• نام حرکت: مدت زمان X دقیقه یا Y ثانیه — هر چند وقت یک‌بار: Z». سپس دو خط پایانی: «📅 تعداد روزهای تمرین در هفته: …» و «⏱ مجموع زمان روزانه: …». از واژه‌های «ست» و «تکرار» استفاده نکن.",
     "۵) در انتهای sport یک خط جداکننده «——————» و بعد «🎽 کلاس‌های ورزشی پیشنهادی (به ترتیب اولویت):» بیاور؛ سه گزینه از میان بسکتبال، شنا و والیبال انتخاب کن و اولویت‌بندی‌شان را خودت بر اساس شرایط کودک (سن، قد، وزن، اشتها، تمرین‌پذیری) تعیین کن؛ هر گزینه در یک خط با شماره ۱. ۲. ۳. و یک جمله دلیل کوتاه. در خط آخر دقیقاً این را بنویس: «شرکت در یکی از همین کلاس‌ها (همان اولویت اول) کافی است و نیازی به رفتن در هر سه نیست.»",
-    "۶) اگر نوشتن برنامهٔ ورزشی لازم نیست (سن کمتر از ۶ یا موضوع غیر از قد/وزن)، مقدار sport را رشتهٔ خالی بگذار.",
+    "۶) تنها در یک حالت sport را رشتهٔ خالی بگذار: کودک زیر ۶ سال باشد.",
     "۷) زبان فارسی روان و محترمانه خطاب به والدین؛ از واژهٔ «ساده» استفاده نکن.",
     "۸) هرگز در متن برنامه‌ها جمله‌ای دربارهٔ هوش مصنوعی یا سلب مسئولیت (مانند «این برنامه با کمک هوش مصنوعی تنظیم شده» یا «جایگزین نظر پزشک نیست») و نام برند ننویس؛ هر برنامه مستقیم با عنوانش شروع شود.",
     "۹) برنامه باید کاملاً متناسب با داده‌های بالا باشد (حساسیت‌ها و بیماری‌ها را جدی بگیر؛ اگر حساسیت لبنیات ذکر شده، لبنیات را حذف یا جایگزین کن).",
@@ -175,7 +178,10 @@ export async function generateAndSavePlans(db: any, submissionId: string, opts?:
   if (loadErr || !row) throw new Error("رکورد یافت نشد");
   const p: any = row.payload || {};
   const force = opts?.force === true;
-  if (!force && String(p.mealPlan || "").trim()) {
+  const ageNum = numOf(p.age);
+  const underSixRow = Number.isFinite(ageNum) && ageNum < 6;
+  // اگر برنامهٔ خوراکی هست ولی ورزشی کم است (زیر ۶ سال نیست)، دوباره تولید می‌شود تا هر دو کامل شوند
+  if (!force && String(p.mealPlan || "").trim() && (String(p.sportPlan || "").trim() || underSixRow)) {
     return { ok: true, skipped: true, mealPlan: String(p.mealPlan || ""), sportPlan: String(p.sportPlan || ""), saved: false };
   }
   const { prompt: basePrompt, allowSport } = buildPrompt(p);

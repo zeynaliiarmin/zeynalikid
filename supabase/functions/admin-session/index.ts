@@ -14,6 +14,7 @@
 // the database hash. No plaintext credential or service_role reaches the browser.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { sendSecurityAlert } from "../_shared/securityAlert.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import {
   handleOptions, getOrigin, jsonResponse,
@@ -76,6 +77,8 @@ async function writeSecurityAudit(
   }
 }
 
+const adminFailCounter = new Map<string, { n: number; t: number }>();
+
 serve(async (req) => {
   const optionsResp = handleOptions(req);
   if (optionsResp) return optionsResp;
@@ -134,6 +137,13 @@ serve(async (req) => {
     }
     if(!credentialCheck.ok){
       await writeSecurityAudit(supabase,"admin_login_failed",phone,false,{reason:"invalid_credentials"});
+      try {
+        const ipAS=req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim()||"unknown";
+        const rec=adminFailCounter.get(phone)||{n:0,t:Date.now()};
+        rec.n=(Date.now()-rec.t>15*60_000)?1:rec.n+1; rec.t=Date.now();
+        if(rec.n>=4){adminFailCounter.set(phone,{n:0,t:rec.t});void sendSecurityAlert("admin-brute",`ip=${ipAS}; phone=${String(phone).slice(-8)}; 4+ failed logins in 15min`,`as-brute:${ipAS}`);}
+        else adminFailCounter.set(phone,rec);
+      } catch { /* ignore */ }
       return jsonResponse(invalidLogin,401,origin);
     }
 

@@ -1,3 +1,4 @@
+import { sendSecurityAlert } from "./securityAlert.ts";
 // supabase/functions/_shared/rateLimit.ts
 // Simple in-memory rate limiter for Edge Functions.
 // Note: Each Edge Function instance has its own memory, so this is a per-instance
@@ -93,6 +94,7 @@ export async function centralRateLimit(
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
   const rateKey = `${scope}:${hash}`;
+  const ipForAlert = req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() || req.headers.get("CF-Connecting-IP") || "unknown";
 
   try {
     const { getSupabaseAdmin } = await import("./supabaseClient.ts");
@@ -105,6 +107,9 @@ export async function centralRateLimit(
     });
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
+    if (row?.allowed !== true) {
+      void sendSecurityAlert("rate-limit", `scope=${scope}; ip=${ipForAlert}; retryAfter=${Number(row?.retry_after_seconds || 0)}s`, `${scope}:${ipForAlert}`);
+    }
     return {
       ok: row?.allowed === true,
       remaining: Number(row?.remaining || 0),
@@ -114,6 +119,7 @@ export async function centralRateLimit(
   } catch (error) {
     console.warn("central rate-limit fallback:", String((error as Error)?.message || error));
     const local = rateLimit(rateKey, opts);
+    if (!local.ok) void sendSecurityAlert("rate-limit", `scope=${scope}; ip=${ipForAlert}; fallback-local`, `${scope}:${ipForAlert}`);
     return {
       ...local,
       retryAfterSeconds: local.ok ? 0 : Math.max(1, Math.ceil((local.resetAt - Date.now()) / 1000)),
