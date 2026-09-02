@@ -185,7 +185,7 @@ const phoneLooseMatch = (a: string, b: string): boolean => {
 /** جست‌وجوی رکورد فقط با بدنهٔ کد (هر پیشوندی: ZK-/FM/F/M/هیچی) در هر دو ستون code و trackingCode */
 const findRecordByCode = async (supabase: any, codeRaw: string) => {
   const bodyC = codeBody(codeRaw);
-  if (bodyC.length < 6) return null;
+  if (bodyC.length < 4) return null; // کدهای قدیمی ۵رقمی (مثل FM85905) هم مجاز
   const lc = bodyC.toLowerCase();
   const cands = Array.from(new Set([`${PREFIX}-${lc}`, lc, `${PREFIX}${lc}`, bodyC]));
   for (const cand of cands) {
