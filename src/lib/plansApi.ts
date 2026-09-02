@@ -14,7 +14,7 @@ export async function generatePlans(submissionId: any, force = false): Promise<P
   const task = (async (): Promise<PlansOut> => {
     try {
       const token = getAdminSessionToken();
-      const res: any = await (supabase as any).functions.invoke('generate-plans', { body: { token, submissionId, force } });
+      const res: any = await (supabase as any).functions.invoke('generate-plans', { body: { sessionToken: token, submissionId, force } });
       if (res?.error) {
         let m = String(res.error?.message || 'تولید برنامه ناموفق بود');
         try { const j = await (res.error as any)?.context?.json?.(); if (j?.error) m = String(j.error); } catch { /* body was not JSON */ }

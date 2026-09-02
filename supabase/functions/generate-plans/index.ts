@@ -67,7 +67,9 @@ function buildPrompt(p: any): { prompt: string; allowSport: boolean } {
     "",
     "قوانین خروجی (بسیار مهم):",
     "۱) خروجی فقط یک شیء JSON معتبر به شکل {\"meal\":\"...\",\"sport\":\"...\"} است؛ بدون متن اضافه بیرون از JSON.",
-    "۲) meal = برنامهٔ خوراکی: فقط پنج بخش پشت سر هم با این عنوان‌ها: «صبحانه:»، «ناهار:»، «شام:»، «میان‌وعده‌ها:»، «پرهیزها:». جلوی هر عنوان، خوراکی‌ها را با «، » جدا کن. در بخش پرهیزها، جلوی هر مورد درصد بنویس (نمونه: نوشابه ۹۰٪، چیپس ۷۵٪) که یعنی تا چه حد باید کنار گذاشته شود.",
+    "۲) meal = برنامهٔ خوراکی. برای هر وعده (صبحانه، ناهار، شام، میان‌وعده‌ها) دقیقاً سه خط بیاور: خط اول «صبحانه:» (یا نام وعده)، خط دوم «سطح اول:» و خط سوم «سطح دوم:». سطح اول = گزینه‌های خاص‌تر یا گران‌تر؛ سطح دوم = گزینه‌های اقتصادی که هر خانواده‌ای به‌راحتی می‌تواند تهیه کند. آیتم‌های هر سطح را با «، » جدا کن.",
+    "۲.۱) در پایان meal بخش «پرهیزها:» بیاور و جلوی هر مورد درصد بنویس (نمونه: نوشابه ۹۰٪، چیپس ۷۵٪) که یعنی تا چه حد باید کنار گذاشته شود.",
+    "۲.۲) فقط از مواد غذایی که در ایران به‌راحتی و با هزینه متعارف پیدا می‌شوند استفاده کن (نان سنگک/بربری، برنج، حبوبات، ماست و پنیر محلی، تخم‌مرغ، مرغ، میوه و سبزی فصل، کره‌بادام‌زمینی ایرانی و...). هیچ قلم وارداتی، کمیاب یا گران را در سطح دوم نیاور؛ اگر قلم خاص لازم است فقط در سطح اول باشد و جایگزین ارزان همان وعده در سطح دوم ذکر شود.",
     "۳) در برنامهٔ خوراکی هرگز روز هفته، تاریخ، «شنبه تا پنجشنبه»، نوبت صبح/عصر روزانه یا جدول هفتگی نباشد؛ فقط همان پنج بخش.",
     "۴) sport = برنامهٔ ورزشی خانگی؛ فقط اگر موضوع مشاوره قد یا وزن است و سن کودک ۶ سال یا بیشتر. برای هر حرکت، مدت زمان را با دقیقه یا ثانیه بنویس و بگو هر چند وقت یک‌بار انجام شود؛ در پایان بنویس «تعداد روزهای تمرین در هفته: X» و «مجموع زمان روزانه: Y دقیقه». از واژه‌های «ست» و «تکرار» استفاده نکن.",
     "۵) در انتهای sport سه پیشنهاد کلاس ورزشی بیرون از خانه به همین ترتیب اولویت بده: ۱. بسکتبال ۲. شنا ۳. والیبال — برای هر کدام یک جمله دلیل متناسب با قد/وزن و سن کودک.",
@@ -77,6 +79,20 @@ function buildPrompt(p: any): { prompt: string; allowSport: boolean } {
     "۹) برنامه باید کاملاً متناسب با داده‌های بالا باشد (حساسیت‌ها و بیماری‌ها را جدی بگیر؛ اگر حساسیت لبنیات ذکر شده، لبنیات را حذف یا جایگزین کن).",
   ].join("\n");
   return { prompt, allowSport };
+}
+
+async function brandKnowledge(db: any, topics: string[]): Promise<string> {
+  const terms = ["تغذیه", "غذا", "غذایی", "صبحانه", "ناهار", "شام", "میان‌وعده", "میان وعده", "مکمل", "ویتامین", "پروتئین", "رشد", "قد", "وزن", "اشتها", "خواب", "ورزش", "لبنیات", "تنقلات", "نوشابه", "فست", "قند", "آهن", "کلسیم", "امگا"];
+  try {
+    const { data } = await db.from("assistant_knowledge").select("question,answer,keywords,category").limit(500);
+    const scored = (data || []).map((k: any) => {
+      const hay = `${k.question || ""} ${k.answer || ""} ${(Array.isArray(k.keywords) ? k.keywords : []).join(" ")} ${k.category || ""}`;
+      let s = terms.reduce((n: number, term) => n + (hay.includes(term) ? 1 : 0), 0);
+      s += topics.filter((tp) => tp && hay.includes(tp)).length * 2;
+      return { k, s };
+    }).filter((x: any) => x.s >= 2).sort((a: any, b: any) => b.s - a.s).slice(0, 6);
+    return scored.map((x: any) => `- ${String(x.k.answer || x.k.question || "").replace(/\s+/g, " ").slice(0, 420)}`).join("\n").slice(0, 2600);
+  } catch { return ""; }
 }
 
 function extractPlans(text: string): { meal: string; sport: string } {
@@ -162,7 +178,8 @@ serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return err("بدنهٔ نامعتبر", origin, 400); }
 
-  const sessionToken = extractSessionToken(req, body);
+  // supabase.functions.invoke هدر Authorization را با anon-key پر می‌کند؛ پس اول بدنه، بعد هدر
+  const sessionToken = String(body?.sessionToken || "").trim() || extractSessionToken(req, body);
   if (!sessionToken) return err("نشست وارد نشده است.", origin, 401);
   const sessionResult = await validateAdminSession(sessionToken);
   if (!sessionResult.ok) return err("نشست نامعتبر یا منقضی است.", origin, 401);
@@ -180,7 +197,9 @@ serve(async (req) => {
     return ok({ ok: true, skipped: true, mealPlan: String(p.mealPlan || ""), sportPlan: String(p.sportPlan || "") }, origin);
   }
 
-  const { prompt, allowSport } = buildPrompt(p);
+  const { prompt: basePrompt, allowSport } = buildPrompt(p);
+  const kn = await brandKnowledge(supabase, topicList(p));
+  const prompt = kn ? `${basePrompt}\n\nدانش تغذیه‌ای تأییدشدهٔ برند (الهام بگیر، عیناً کپی نکن، با محدودیت‌های پزشکی کودک سازگار کن):\n${kn}` : basePrompt;
   let meal = ""; let sport = "";
   try {
     const parsed = extractPlans(await callMistral(prompt));

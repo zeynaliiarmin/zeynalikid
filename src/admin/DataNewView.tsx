@@ -32,7 +32,7 @@ function NvPhoneBtn({ T, raw, sub, onCopy }: { T: any; raw: string; sub?: any; o
     <AdminPopover open={popOpen} onClose={closePop} width={122} ariaLabel={T.en ? 'Phone actions' : 'عملیات شماره تماس'}
       trigger={<button type="button" dir="ltr" aria-haspopup="menu" aria-expanded={popOpen} title={T.en ? 'Call / WhatsApp / Rubika / Copy' : 'تماس · واتساپ · روبیکا · کپی'}
         onClick={(ev) => { ev.stopPropagation(); setPopOpen(v => !v); }}
-        style={{ background: 'none', border: 0, padding: 0, margin: 0, cursor: 'pointer', font: 'inherit', fontWeight: 700, fontSize: 11.5, color: T.txt, direction: 'ltr', letterSpacing: '.3px' }}>
+        style={{ background: 'none', border: 0, padding: 0, margin: 0, cursor: 'pointer', font: 'inherit', fontWeight: 700, fontSize: 11, color: T.txt, direction: 'ltr', letterSpacing: '.3px' }}>
         {raw}
       </button>}>
       <div dir="ltr" style={{ fontSize: 11.5, fontWeight: 900, padding: '6px 8px 4px', textAlign: 'center', fontFamily: 'ui-monospace,Menlo,monospace' }}>{raw}</div>
@@ -156,30 +156,30 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     const incomplete = String(head.consultationStatus || '') === 'ناقص' || String(head.orderStatus || '') === 'ناقص';
     const consulted = kind === 'consult' && String(head.consultationStatus || '') === 'مشاوره شده';
     const advisorName = String(head.advisor?.name || head.consultedBy || '');
-    const rowStyle: CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, padding: '0 10px' };
+    const rowStyle: CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 6, padding: '0 10px' };
     return (
-      <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${nvPhone === g.key ? T.acc : T.brd}`, borderRadius: 12, background: T.card, boxShadow: nvPhone === g.key ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 7, overflow: 'hidden', padding: '10px 0 12px' }}>
+      <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${nvPhone === g.key ? T.acc : T.brd}`, borderRadius: 10, background: T.card, boxShadow: nvPhone === g.key ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 6, overflow: 'hidden', padding: '10px 0 12px' }}>
         <div style={{ ...rowStyle, paddingBottom: 0 }}>
           <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: head.priority === 'high' ? '#b91c1c' : T.txt, textAlign: 'start' }}>{head.priority === 'high' && <span title="اولویت زیاد" style={{ width: 7, height: 7, borderRadius: '50%', background: '#DC2626', display: 'inline-block', marginInlineEnd: 6, boxShadow: '0 0 8px rgba(220,38,38,.55)', verticalAlign: 'middle' }} />}{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
           <span />
           {codeChip(dataCode(g.key, head))}
         </div>
-        <div style={{ ...rowStyle, padding: '3px 10px' }}>
-          <input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={() => nvToggleIds(nvIds(g.items))} onClick={(ev) => ev.stopPropagation()} style={{ width: 14, height: 14, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select card' : 'انتخاب کارت'} />
+        <div style={{ ...rowStyle, padding: '1px 10px' }}>
+          <input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={() => nvToggleIds(nvIds(g.items))} onClick={(ev) => ev.stopPropagation()} style={{ width: 13, height: 13, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select card' : 'انتخاب کارت'} />
           <span style={{ textAlign: 'center' }}><NvPhoneBtn T={T} raw={phoneRaw} sub={head} onCopy={nvCopy} /></span>
           <select value={statLbl} onClick={(ev) => ev.stopPropagation()} onChange={(e) => { if (kind === 'consult') changeConsultStatus(head.id, e.target.value); else changeStatus(head.id, e.target.value); }}
-            style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 7, padding: '2px 6px', fontFamily: 'inherit', fontSize: 10, fontWeight: 600, outline: 'none', cursor: 'pointer', maxWidth: 118 }}>
+            style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 6, padding: '1px 5px', height: 20, fontFamily: 'inherit', fontSize: 10, fontWeight: 600, outline: 'none', cursor: 'pointer', maxWidth: 118 }}>
             {(kind === 'consult' ? consultStatuses : statusOptions).map((s: string) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div style={{ ...rowStyle, paddingTop: 3, borderTop: `1px dashed ${T.brd}` }}>
+        <div style={{ ...rowStyle, paddingTop: 1, borderTop: `1px dashed ${T.brd}` }}>
           <span style={{ fontSize: 10, color: T.mut, textAlign: 'start' }}>{fmtWhen(head)}</span>
-          <button type="button" className="zkad-toolbtn" style={{ fontSize: 10.5, padding: '2px 8px', cursor: 'pointer', justifySelf: 'center' }} onClick={() => openDetails(head, kind)}>{T.en ? 'Details' : 'جزئیات'}</button>
+          <button type="button" className="zkad-toolbtn" style={{ fontSize: 10, padding: '1px 7px', cursor: 'pointer', justifySelf: 'center' }} onClick={() => openDetails(head, kind)}>{T.en ? 'Details' : 'جزئیات'}</button>
           <span style={{ display: 'inline-flex', gap: 5, flexWrap: 'wrap', justifySelf: 'end' }}>
-            {incomplete && <span className="zkad-tag t-warn" style={{ fontSize: 9 }}>ناقص</span>}
-            {consulted && <span className="zkad-tag t-ok" style={{ fontSize: 9 }}>{advisorName ? `مشاوره شده توسط ${advisorName}` : 'مشاوره شده'}</span>}
+            {incomplete && <span className="zkad-tag t-warn" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>ناقص</span>}
+            {consulted && <span className="zkad-tag t-ok" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>{advisorName ? `مشاوره شده توسط ${advisorName}` : 'مشاوره شده'}</span>}
             {hasOther && (
-              <button type="button" className="zkad-tag t-info" style={{ fontSize: 9, cursor: 'pointer', border: 0, background: `${T.acc}14`, color: T.accText, padding: '1px 6px', borderRadius: 999 }}
+              <button type="button" className="zkad-tag t-info" style={{ fontSize: 9, cursor: 'pointer', border: 0, background: `${T.acc}14`, color: T.accText, padding: '0 5px', borderRadius: 999, lineHeight: 1.5 }}
                 title={T.en ? 'Open this person in the other tab' : 'بازکردن همین کاربر در تب دیگر'}
                 onClick={() => { setNvTab(otherType === 'course' ? 'course' : 'consult'); setNvPhone(g.key); setTimeout(() => { const el = document.getElementById('nvc-' + g.key); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); }}>
                 {kind === 'consult' ? (T.en ? 'Course ✓' : 'ثبت دوره هم کرده') : (T.en ? 'Consult ✓' : 'مشاوره هم داده')}
@@ -198,19 +198,19 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     const hasCourse = !!grp?.items.some((x: any) => x.type === 'course');
     const verified = u.status === 'active' || u.phoneConfirmed;
     return (
-      <div key={'u' + k} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, background: T.card, boxShadow: T.neuOut, marginBottom: 7, padding: '6px 10px' }}>
+      <div key={'u' + k} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, background: T.card, boxShadow: T.neuOut, marginBottom: 6, padding: '4px 10px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10 }}>
           <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: T.txt, textAlign: 'start' }}>{String(u.fullName || '—')}</b>
           <span />
           {codeChip(String(u.code || ''))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, padding: '4px 0 0' }}>
-          <input type="checkbox" checked={nvAllSel([u.id])} onChange={() => nvToggleIds([u.id])} style={{ width: 14, height: 14, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select user' : 'انتخاب کاربر'} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, padding: '2px 0 0' }}>
+          <input type="checkbox" checked={nvAllSel([u.id])} onChange={() => nvToggleIds([u.id])} style={{ width: 13, height: 13, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select user' : 'انتخاب کاربر'} />
           <span style={{ textAlign: 'center' }}><NvPhoneBtn T={T} raw={String(u.fullPhone || ('+' + k))} sub={u} onCopy={nvCopy} /></span>
-          <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, justifySelf: 'end' }}>
-            <span className={`zkad-tag ${verified ? 't-ok' : 't-warn'}`} style={{ fontSize: 9 }}>{verified ? (T.en ? 'Verified' : 'تأییدشده') : (T.en ? 'Pending' : 'در انتظار')}</span>
-            {hasConsult && <span className="zkad-tag t-warn" style={{ fontSize: 9 }}>فرم مشاوره</span>}
-            {hasCourse && <span className="zkad-tag t-info" style={{ fontSize: 9 }}>ثبت دوره</span>}
+          <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, justifySelf: 'end' }}>
+            <span className={`zkad-tag ${verified ? 't-ok' : 't-warn'}`} style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>{verified ? (T.en ? 'Verified' : 'تأییدشده') : (T.en ? 'Pending' : 'در انتظار')}</span>
+            {hasConsult && <span className="zkad-tag t-warn" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>فرم مشاوره</span>}
+            {hasCourse && <span className="zkad-tag t-info" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>ثبت دوره</span>}
             <span style={{ fontSize: 10, color: T.mut }}>{String(u.date || '')}{u.time ? ' · ' + String(u.time) : ''}</span>
           </span>
         </div>
@@ -219,32 +219,32 @@ export default function DataNewViewPanel({ app }: { app: any }) {
   };
 
   const section = (title: string, note: string, list: typeof consultList, kind: 'consult' | 'course') => (
-    <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
+    <section className="zkad-panel-card" style={{ marginBottom: 10, padding: '8px 10px' }}>
       <h3 style={{ fontSize: 12.5, color: T.ttl, margin: '0 0 2px', fontWeight: 800 }}>{title} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(list.length)})</small></h3>
-      <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 6, lineHeight: 1.6 }}>{note}</div>
+      <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 3, lineHeight: 1.5 }}>{note}</div>
       {list.length ? list.map((g) => card(g, kind)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
     </section>
   );
   const usersSection = () => (
-    <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
+    <section className="zkad-panel-card" style={{ marginBottom: 10, padding: '8px 10px' }}>
       <h3 style={{ fontSize: 12.5, color: T.ttl, margin: '0 0 2px', fontWeight: 800 }}>{T.en ? 'Panel registrations' : 'ثبت‌نام‌های پنل'} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(usersList.length)})</small></h3>
-      <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 6, lineHeight: 1.6 }}>{T.en ? 'Every account created on the portal (phone + tracking code).' : 'هر حسابی که در پنل کاربر ساخته شده (شماره تماس + کد پیگیری).'}</div>
+      <div style={{ fontSize: 10.5, color: T.mut, marginBottom: 3, lineHeight: 1.5 }}>{T.en ? 'Every account created on the portal (phone + tracking code).' : 'هر حسابی که در پنل کاربر ساخته شده (شماره تماس + کد پیگیری).'}</div>
       {usersList.length ? usersList.map((k) => usersCard(k)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
     </section>
   );
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 9 }}>
         <div className="zkad-seg" style={{ display: 'flex', gap: 6, padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
           {(['consult', 'course', 'users'] as const).map((t) => (
             <button key={t} type="button" onClick={() => setNvTab(t)}
-              style={{ padding: '7px 12px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap', gap: 4, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
+              style={{ padding: '6px 11px', borderRadius: 8, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap', gap: 4, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
               {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست مشاوره') : t === 'course' ? (T.en ? 'Courses' : 'ثبت دوره') : (T.en ? 'Signups' : 'ثبت‌نام پنل')}<small style={{ opacity: .85, marginInlineStart: 5, fontSize: 10.5 }}>({faNum(t === 'consult' ? consultList.length : t === 'course' ? courseList.length : usersList.length)})</small>
             </button>
           ))}
         </div>
-        <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 9, padding: '9px 12px', fontFamily: 'inherit', fontSize: 12.5, width: '100%', maxWidth: 320, outline: 'none' }}
+        <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 8, padding: '6px 10px', fontFamily: 'inherit', fontSize: 11.5, width: '100%', maxWidth: 320, outline: 'none' }}
           placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
         <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(nvTab === 'users' ? usersList.length : (nvTab === 'consult' ? consultList.length : courseList.length))}</span>
         <button type="button" className="zkad-toolbtn" onClick={() => toggleSelectAll(nvListIds())} title={T.en ? 'Select all cards in this list' : 'انتخاب همهٔ کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en ? 'Select all' : 'انتخاب همه'} ({faNum(nvListIds().length)})</button>
@@ -254,11 +254,10 @@ export default function DataNewViewPanel({ app }: { app: any }) {
             onClick={() => { if (!confirm(T.en ? `Move ${selectedIds.size} selected items to the trash?` : `حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`)) return; setSubs((prev: any) => prev.filter((x: any) => !selectedIds.has(x.id))); clearSelection(); setMsg(T.en ? 'Moved to trash' : 'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}>
             <ZkTrashIcon size={15}/>
           </button>
-          <button type="button" className="zkad-toolbtn" onClick={clearSelection}>{T.en ? 'Cancel selection' : 'لغو انتخاب'}</button>
         </span>}
       </div>
       <details className="zkad-nvfilters" style={{ margin: '2px 0 12px' }}>
-        <summary style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 800, color: T.mut, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', border: `1px solid ${T.brd}`, borderRadius: 10, background: T.inp, userSelect: 'none' }}><ZkFilterIcon size={13}/> {T.en ? 'Filters' : 'فیلترها'}{((nvTab === 'consult' && nvFs.stat !== 'همه') || (nvTab === 'course' && (nvFs.stat !== 'همه' || nvFs.pay !== 'همه')) || (nvTab === 'users' && nvFs.uStat !== 'همه')) || nvFs.date ? <span className="zkad-tag t-warn" style={{ fontSize: 9.5 }}>{T.en ? 'ON' : 'فعال'}</span> : null}</summary>
+        <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 800, color: T.mut, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: `1px solid ${T.brd}`, borderRadius: 10, background: T.inp, userSelect: 'none' }}><ZkFilterIcon size={13}/> {T.en ? 'Filters' : 'فیلترها'}{((nvTab === 'consult' && nvFs.stat !== 'همه') || (nvTab === 'course' && (nvFs.stat !== 'همه' || nvFs.pay !== 'همه')) || (nvTab === 'users' && nvFs.uStat !== 'همه')) || nvFs.date ? <span className="zkad-tag t-warn" style={{ fontSize: 9.5 }}>{T.en ? 'ON' : 'فعال'}</span> : null}</summary>
         <div style={{ padding: '12px 4px 2px', display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'flex-end' }}>
           {nvTab === 'consult' && <ChipGroup label="وضعیت مشاوره" options={consultStatuses} val={nvFs.stat} set={v => setNvFs(f => ({ ...f, stat: v }))} />}
           {nvTab === 'course' && <><ChipGroup label="وضعیت سفارش" options={statusOptions} val={nvFs.stat} set={v => setNvFs(f => ({ ...f, stat: v }))} /><ChipGroup label="پرداخت" options={payOptions} val={nvFs.pay} set={v => setNvFs(f => ({ ...f, pay: v }))} /></>}

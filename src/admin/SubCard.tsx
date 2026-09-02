@@ -266,11 +266,6 @@ function SubCardBase({
       : x));
   }, [sub.followUps, sub.category, sub.consultationStatus, sub.id, setSubs]);
 
-  const fuClear = useCallback(() => {
-    let cat = sub.category; let cs = sub.consultationStatus;
-    if (cat === 'آخر ماه' || cs === 'پیگیری آخر ماه') { cat = 'پیگیری'; cs = 'پیگیری'; }
-    setSubs((s: any[]) => s.map(x => x.id === sub.id ? { ...x, followUps: [null, null, null, null], category: cat, consultationStatus: cs, changeHistory: logChange(x, 'پاک‌کردن تیک‌های پیگیری') } : x));
-  }, [sub.category, sub.consultationStatus, sub.id, setSubs]);
 
   // یکپارچه‌سازی خودکار بر اساس شماره تماس
   const myPhone = digits(sub.fullPhone || '');
@@ -887,7 +882,7 @@ function SubCardBase({
                   </label>
                 )}
                 <div className="zkad-f">
-                  <span>پیگیری‌ها (۴ مرحله) — هر کلیک: بدون‌علامت ← ✓ سبز (پیگیری شد) ← ✗ قرمز (تماس، جواب نداد) ← بدون‌علامت</span>
+                  <span>پیگیری‌ها (۴ مرحله)</span>
                   <div className="zkad-fu">
                     {[0, 1, 2, 3].map(i => {
                       const st = (sub.followUps || [])[i];
@@ -904,9 +899,6 @@ function SubCardBase({
                         </button>
                       );
                     })}
-                    {(sub.followUps || []).some((x: any) => x) && (
-                      <button type="button" className="zkad-toolbtn" style={{ fontSize: 10, padding: '3px 8px' }} title="پاک‌کردن هر چهار تیک" onClick={() => fuClear()}>پاک‌کردن تیک‌ها</button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -931,10 +923,10 @@ function SubCardBase({
                     }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
                   </div>
                   <label className="zkad-f">
-                    <span>برنامه خوراکی (وعده‌ها + پرهیز با درصد — بدون روزهای هفته)</span>
+                    <span>برنامه خوراکی — دو سطحی (سطح اول: خاص/گران‌تر · سطح دوم: اقتصادی و در دسترس در ایران) + پرهیز با درصد</span>
                     <textarea key={'meal-' + String(sub.plansAiAt || '')} className="zkad-textarea sm" defaultValue={sub.mealPlan || ''}
                       onBlur={e => { if (sub.mealPlan !== e.target.value) patchSelf({ mealPlan: e.target.value }, 'ویرایش برنامه خوراکی'); }}
-                      placeholder="صبحانه: …، ناهار: …، شام: …، میان‌وعده‌ها: …، پرهیزها: نوشابه ۹۰٪…" />
+                      placeholder="صبحانه:\nسطح اول: …\nسطح دوم: …\nناهار: …\nپرهیزها: نوشابه ۹۰٪…" />
                   </label>
                   <label className="zkad-f">
                     <span>برنامه ورزشی (فقط موضوع قد/وزن و ۶ سال به بالا — مدت زمان با دقیقه/ثانیه، نه ست و تکرار)</span>
