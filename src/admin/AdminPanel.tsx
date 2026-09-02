@@ -5,6 +5,7 @@ import { lazy,memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState
 import { isSupabaseConfigured,fetchSubmissions,fetchReviews,fetchUserQuestions,updateSubmission,softDeleteMultipleSubmissions,supabase } from '../lib/supabase';
 import { productVectorIcon, AdminIcon, MenuIcon, ProductsIcon, CoursesIcon, ContactIcon, EducationIcon, LicensesIcon, SearchIcon, ChatIcon, BoxIcon } from '../components/Icons';
 import AdminLayout, { type AdminNavGroup } from './AdminLayout';
+import AdminPopover from './AdminPopover';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
 // Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
@@ -290,6 +291,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const toggleSelect=(id:any)=> setSelectedIds(prev=>{const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n;});
   const toggleSelectAll=(ids:any[])=> setSelectedIds(prev=>{ const allSelected = ids.every((id:any)=> prev.has(id)); if(allSelected) { const n=new Set(prev); ids.forEach((id:any)=> n.delete(id)); return n; } else { const n=new Set(prev); ids.forEach((id:any)=> n.add(id)); return n; }});
   const clearSelection=()=> setSelectedIds(new Set());
+  const [nvFs,setNvFs]=useState<{stat:string,pay:string,date:string,uStat:string}>({stat:'همه',pay:'همه',date:'',uStat:'همه'});
+  const nvCopy=async(value:string)=>{ if(!value)return; try{ if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(value); setMsg(T.en?'Copied to clipboard':'کپی شد ✓'); setMsgType('ok'); return; } }catch{} try{ const el=document.createElement('textarea'); el.value=value; el.style.position='fixed'; el.style.opacity='0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); el.remove(); setMsg(T.en?'Copied to clipboard':'کپی شد ✓'); setMsgType('ok'); }catch{ setMsg(T.en?'Copy failed':'کپی نشد'); setMsgType('err'); } };
   const [imageFormat,setImageFormat]=useState<'webp'|'jpg'>(()=>{try{return localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp'}catch{return 'webp'}});
   const setPersistentImageFormat=(f:'webp'|'jpg')=>{setImageFormat(f);try{localStorage.setItem('zkid_form_image_format',f)}catch{}};
   const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);alert('خطا در ساخت تصویر پرونده')}};
@@ -619,13 +622,12 @@ function DataNewViewPanel(){
   }
   for (const k of Object.keys(seen)) { dataUserByPhone[k] = seen[k]; dataUserOrder.push(k); }
  }
- const dataMask = (ph: string) => {
-  const d = digits(String(ph || ''));
-  if (d.length < 7) return String(ph || '');
-  return d.slice(0, 4) + '••••' + d.slice(-3);
- };
  const dataName = (k: string, head: any) => String(dataUserByPhone[k]?.fullName || head?.pName || head?.userName || 'بدون نام');
  const dataCode = (k: string, head: any) => String(dataUserByPhone[k]?.code || head?.userCode || head?.trackingCode || '');
+  const nvIds=(items:any[])=>items.map((x:any)=>x.id);
+  const nvAllSel=(ids:any[])=>ids.length>0&&ids.every((id:any)=>selectedIds.has(id));
+  const nvToggleIds=(ids:any[])=> setSelectedIds((prev:any)=>{const n=new Set(prev);const all=ids.length>0&&ids.every((id:any)=>n.has(id));ids.forEach((id:any)=>{if(all)n.delete(id);else n.add(id);});return n;});
+  const nvListIds=()=>{ if(nvTab==='users') return usersList.map((k:any)=>dataUserByPhone[k]?.id).filter(Boolean); const src= nvTab==='consult'?consultList:courseList; const out:any[]=[]; src.forEach((g:any)=>g.items.forEach((x:any)=>out.push(x.id))); return out; };
  const dataGroups = () => {
   const byPhone: any = {};
   for (const x of filteredAll) {
@@ -646,13 +648,20 @@ function DataNewViewPanel(){
  const consultCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'consultation'));
  const courseCards = dataGroupsCached.filter((g) => g.items.some((x: any) => x.type === 'course'));
  const q = nvQ.trim().toLowerCase();
- const filterCards = (arr: typeof consultCards) => arr.filter((g) => {
-  if (!q) return true;
-  const head = g.items[0];
-  return dataName(g.key, head).toLowerCase().includes(q) || digits(g.key).includes(q.replace(/\D/g, '')) || dataCode(g.key, head).toLowerCase().includes(q);
- });
- const consultList = filterCards(consultCards);
- const courseList = filterCards(courseCards);
+  const nvMatchesHead=(head:any,kind:'consult'|'course')=>{
+   if (nvFs.date && !String(head?.date||'').includes(nvFs.date)) return false;
+   if (kind==='consult' && nvFs.stat!=='همه' && String(head?.consultationStatus||'مشاوره اولیه')!==nvFs.stat) return false;
+   if (kind==='course') { if (nvFs.stat!=='همه' && getStatus(head)!==nvFs.stat) return false; if (nvFs.pay!=='همه' && getPay(head)!==nvFs.pay) return false; }
+   return true;
+  };
+  const filterCards = (arr: typeof consultCards, kind: 'consult'|'course') => arr.filter((g) => {
+   if (!nvMatchesHead(g.items[0], kind)) return false;
+   if (!q) return true;
+   const head = g.items[0];
+   return dataName(g.key, head).toLowerCase().includes(q) || digits(g.key).includes(q.replace(/\D/g, '')) || dataCode(g.key, head).toLowerCase().includes(q);
+  });
+ const consultList = filterCards(consultCards, 'consult');
+ const courseList = filterCards(courseCards, 'course');
  const consultStatuses = ['مشاوره اولیه', 'پیگیری', 'مشاوره شده', 'ناقص'];
  const card = (g: { key: string; items: any[] }, kind: 'consult' | 'course') => {
   const head = g.items.find((x: any) => x.type === kind) || g.items[0];
@@ -664,10 +673,11 @@ function DataNewViewPanel(){
   return (
    <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${isHi ? T.acc : T.brd}`, borderRadius: 14, background: T.card, boxShadow: isHi ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 10, overflow: 'hidden' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+<input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={()=>nvToggleIds(nvIds(g.items))} onClick={(ev)=>ev.stopPropagation()} style={{width:16,height:16,accentColor:T.acc,cursor:'pointer',flexShrink:0}} aria-label={T.en?'Select card':'انتخاب کارت'}/>
      <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color:T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(dataName(g.key, head) || '؟').trim().charAt(0)}</span>
      <span style={{ minWidth: 0, flex: 1 }}>
       <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
-      <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(g.key)} · <b style={{ color:T.accText, fontFamily: 'monospace' }}>{dataCode(g.key, head)}</b></span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}><NvPhoneBtn raw={String(head.fullPhone||head.pPhone||('+'+g.key))} sub={head}/> · <b onClick={(ev)=>{ev.stopPropagation();nvCopy(String(dataCode(g.key, head)||''));}} title={T.en?'Click to copy the tracking code':'کلیک برای کپی کد پیگیری'} style={{ color:T.accText, fontFamily: 'monospace', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 3 }}>{dataCode(g.key, head) || '—'}</b></span>
      </span>
      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <span className={`zkad-tag ${kind === 'consult' ? 't-warn' : 't-info'}`} style={{ fontSize: 10.5 }}>{kind === 'consult' ? `مشاوره ×${faNum(count)}` : `دوره ×${faNum(count)}`}</span>
@@ -700,17 +710,18 @@ function DataNewViewPanel(){
    {list.length ? list.map((g) => card(g, kind)) : <div className="zkad-empty" style={{ padding: '20px 12px' }}><p>{T.en ? 'Nothing here yet.' : 'موردی نیست.'}</p></div>}
   </section>
  );
-  const usersList = dataUserOrder.filter((k) => { if (!q) return true; const u = dataUserByPhone[k] || {}; return String(u.fullName||'').toLowerCase().includes(q) || digits(k).includes(q.replace(/\D/g,'')) || String(u.code||'').toLowerCase().includes(q); });
+  const usersList = dataUserOrder.filter((k) => { const u = dataUserByPhone[k] || {}; if (nvFs.date && !String(u.date||'').includes(nvFs.date)) return false; if (nvFs.uStat!=='همه') { const st=(u.status==='active'||u.phoneConfirmed)?'تأییدشده':'در انتظار'; if (st!==nvFs.uStat) return false; } if (!q) return true; return String(u.fullName||'').toLowerCase().includes(q) || digits(k).includes(q.replace(/\D/g,'')) || String(u.code||'').toLowerCase().includes(q); });
   const usersSection = () => (
    <section className="zkad-panel-card" style={{ marginBottom: 14 }}>
     <h3 style={{ fontSize: 14, color: T.ttl, margin: '0 0 4px', fontWeight: 900 }}>{T.en ? 'Panel registrations' : 'ثبت‌نام‌های پنل'} <small style={{ color: T.mut, fontWeight: 600 }}>({faNum(usersList.length)})</small></h3>
     <div style={{ fontSize: 11.5, color: T.mut, marginBottom: 12, lineHeight: 1.8 }}>{T.en ? 'Every account created on the portal (phone + tracking code).' : 'هر حسابی که در پنل کاربر ساخته شده (شماره تماس + کد پیگیری).'}</div>
     {usersList.length ? usersList.map((k) => { const u = dataUserByPhone[k] || {}; return (
       <div key={'u'+k} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, background: T.card, boxShadow: T.neuOut, marginBottom: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+<input type="checkbox" checked={nvAllSel([u.id])} onChange={()=>nvToggleIds([u.id])} style={{width:16,height:16,accentColor:T.acc,cursor:'pointer',flexShrink:0}} aria-label={T.en?'Select user':'انتخاب کاربر'}/>
        <span style={{ width: 42, height: 42, borderRadius: 13, background: `${T.acc}18`, color: T.accText, display: 'grid', placeItems: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0 }}>{String(u.fullName||'؟').trim().charAt(0)}</span>
        <span style={{ minWidth: 0, flex: 1 }}>
         <b style={{ display: 'block', fontSize: 13.5, color: T.txt }}>{String(u.fullName||'—')}</b>
-        <span style={{ display: 'block', fontSize: 11, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}>{dataMask(k)} · <b style={{ color: T.accText, fontFamily: 'monospace' }}>{String(u.code||'—')}</b></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.mut, marginTop: 2, direction: 'ltr', textAlign: 'start' }}><NvPhoneBtn raw={String(u.fullPhone||('+'+k))} sub={u}/> · <b onClick={()=>nvCopy(String(u.code||''))} title={T.en?'Click to copy the tracking code':'کلیک برای کپی کد پیگیری'} style={{ color: T.accText, fontFamily: 'monospace', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 3 }}>{String(u.code||'—')}</b></span>
        </span>
        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
         <span className={`zkad-tag ${(u.status==='active'||u.phoneConfirmed)?'t-ok':'t-warn'}`} style={{ fontSize: 10.5 }}>{(u.status==='active'||u.phoneConfirmed)?(T.en?'Verified':'تأییدشده'):(T.en?'Pending':'در انتظار')}</span>
@@ -734,13 +745,47 @@ function DataNewViewPanel(){
     <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 9, padding: '9px 12px', fontFamily: 'inherit', fontSize: 12.5, width: '100%', maxWidth: 320, outline: 'none' }}
      placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
     <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(consultList.length + courseList.length)}</span>
+    <button type="button" className="zkad-toolbtn" onClick={()=>toggleSelectAll(nvListIds())} title={T.en?'Select all cards in this list':'انتخاب همهٔ کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en?'Select all':'انتخاب همه'} ({faNum(nvListIds().length)})</button>
+    {selectedIds.size>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:12,color:T.accText,fontWeight:800}}>{faNum(selectedIds.size)} {T.en?'selected':'انتخاب‌شده'}
+     <button type="button" className="zkad-toolbtn zkad-selected-delete" onClick={()=>{ if(!confirm(T.en?`Move ${selectedIds.size} selected items to the trash?`:`حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`)) return; setSubs((prev:any)=>prev.filter((x:any)=>!selectedIds.has(x.id))); clearSelection(); setMsg(T.en?'Moved to trash':'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}><ZkTrashIcon size={13}/> {T.en?'Delete selected':'حذف انتخاب‌شده‌ها'}</button>
+     <button type="button" className="zkad-toolbtn" onClick={clearSelection}>{T.en?'Cancel selection':'لغو انتخاب'}</button>
+    </span>}
    </div>
+   <details className="zkad-nvfilters" style={{ margin:'2px 0 12px' }}>
+    <summary style={{ cursor:'pointer', fontSize:12.5, fontWeight:800, color:T.mut, display:'inline-flex', alignItems:'center', gap:6, padding:'7px 12px', border:`1px solid ${T.brd}`, borderRadius:10, background:T.inp, userSelect:'none' }}><ZkFilterIcon size={13}/> {T.en?'Filters':'فیلترها'}{((nvTab==='consult'&&nvFs.stat!=='همه')||(nvTab==='course'&&(nvFs.stat!=='همه'||nvFs.pay!=='همه'))||(nvTab==='users'&&nvFs.uStat!=='همه'))||nvFs.date?<span className="zkad-tag t-warn" style={{ fontSize:9.5 }}>{T.en?'ON':'فعال'}</span>:null}</summary>
+    <div style={{ padding:'12px 4px 2px', display:'flex', flexWrap:'wrap', gap:14, alignItems:'flex-end' }}>
+     {nvTab==='consult'&&<ChipGroup label="وضعیت مشاوره" options={consultStatuses} val={nvFs.stat} set={v=>setNvFs((fr:any)=>({...fr,stat:v}))}/>}
+     {nvTab==='course'&&<><ChipGroup label="وضعیت سفارش" options={statusOptions} val={nvFs.stat} set={v=>setNvFs((fr:any)=>({...fr,stat:v}))}/><ChipGroup label="پرداخت" options={payOptions} val={nvFs.pay} set={v=>setNvFs((fr:any)=>({...fr,pay:v}))}/></>}
+     {nvTab==='users'&&<ChipGroup label="وضعیت حساب" options={['همه','تأییدشده','در انتظار']} val={nvFs.uStat} set={v=>setNvFs((fr:any)=>({...fr,uStat:v}))}/>}
+     <label style={{ display:'flex', flexDirection:'column', gap:4, fontSize:11, fontWeight:800, color:T.mut }}>{T.en?'Date contains':'شامل تاریخ'}<input dir="ltr" placeholder="1405/06/10" value={nvFs.date} onChange={(e)=>setNvFs((fr:any)=>({...fr,date:e.target.value}))} style={{ background:T.inp, border:`1px solid ${T.brd}`, color:T.txt, borderRadius:9, padding:'8px 10px', fontFamily:'inherit', fontSize:12, width:150, outline:'none' }}/></label>
+     <button type="button" className="zkad-toolbtn" onClick={()=>setNvFs({stat:'همه',pay:'همه',date:'',uStat:'همه'})}><ZkResetIcon size={13}/> {T.en?'Reset':'بازنشانی فیلترها'}</button>
+    </div>
+   </details>
    {nvTab === 'users' ? usersSection() : nvTab === 'consult'
     ? section(T.en ? 'Consultation requests' : 'درخواست‌های مشاوره', T.en ? 'One card per user. Each card shows when the same person also registered a course.' : 'هر کارت = یک کاربر؛ اگر همین شخص دوره هم ثبت کرده باشد، روی کارت مشخص است.', consultList, 'consult')
     : section(T.en ? 'Course registrations' : 'ثبت‌نام دوره‌ها', T.en ? 'One card per user. Each card shows when the same person also sent a consultation.' : 'هر کارت = یک کاربر؛ اگر همین شخص مشاوره هم داده باشد، روی کارت مشخص است.', courseList, 'course')}
    {modalSub && <Modal T={T} onClose={() => setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO} /></Modal>}
   </div>
  );
+}
+
+ function NvPhoneBtn({ raw, sub }:{raw:string;sub?:any}){
+  const [popOpen,setPopOpen]=useState(false);
+  const closePop=useCallback(()=>setPopOpen(false),[]);
+  if(!raw) return <span className="zkad-mut">—</span>;
+  const cc=String(sub?.cc||sub?.shipping?.phoneCc||'');
+  const wa=digits(raw.startsWith('+')||raw.startsWith('00')?raw:`${cc}${raw}`);
+  const isIran=cc==='+98'||raw.startsWith('+98')||raw.startsWith('0098')||raw.startsWith('09');
+  return (
+   <AdminPopover open={popOpen} onClose={closePop} width={244} ariaLabel={T.en?'Phone actions':'عملیات شماره تماس'}
+    trigger={<button type="button" className="zkad-phone-btn" aria-haspopup="menu" aria-expanded={popOpen} onClick={(ev)=>{ev.stopPropagation();setPopOpen((v)=>!v);}}><ZkPhoneIcon size={12}/><span className="zkad-phone-num">{raw}</span></button>}>
+    <div className="zkad-pop-head" dir="ltr">{raw}</div>
+    <a href={`tel:${raw}`} className="zkad-pop-item" role="menuitem" onClick={closePop}><ZkPhoneIcon size={14}/> {T.en?'Call':'تماس تلفنی'}</a>
+    <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="zkad-pop-item t-ok" role="menuitem" onClick={closePop}><span className="zkad-pop-dot t-ok"/> {T.en?'WhatsApp':'واتساپ'}</a>
+    {isIran&&<a href={`https://rubika.ir/${wa}`} target="_blank" rel="noreferrer" className="zkad-pop-item t-warn" role="menuitem" onClick={closePop}><span className="zkad-pop-dot t-warn"/> {T.en?'Rubika':'روبیکا'}</a>}
+    <button type="button" className="zkad-pop-item" role="menuitem" onClick={async()=>{await nvCopy(raw);closePop();}}><ZkCopyIcon size={14}/> {T.en?'Copy':'کپی'}</button>
+   </AdminPopover>
+  );
 }
 }
 
