@@ -1,7 +1,7 @@
 // UserPortalPage — پنل کاربر: ثبت‌نام (شماره + نام واقعی + کد تأیید) / ورود با کد پیگیری / داشبورد
 // زبان طراحی: نسخهٔ A (نئومورفیک گرم + بنفش + ممفیس) — اما چیدمان کاملاً متمایز از صفحهٔ پیگیری
 import { useAppContext } from '../app/AppContext';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
@@ -47,6 +47,7 @@ export default function UserPortalPage() {
   const [copied, setCopied] = useState(false);
   const [nextPath, setNextPath] = useState(() => takePortalNext());
   const [phonePreview, setPhonePreview] = useState('');
+  const [openRec, setOpenRec] = useState('');
   // پذیرای همه شکل‌ها: FM-1x2tsvy / F1x2tsvy / M-1x2tsvy / 1x2tsvy / هر خطای فاصله و خط تیره
   // همان قاعدهٔ سرور: حذف نویز + گرفتن بدنهٔ کد از اولین رقم به بعد («FM-1x2»، «F 1x2»، «1x2» یکی می‌شوند)
   const codeCore = normalizeLoginCode;
@@ -63,6 +64,19 @@ export default function UserPortalPage() {
   // درِ مخفی پنل مدیریت: فقط در فیلد شماره تماس و فقط وقتی کلّ مقدار دقیقاً ۶۳۹ باشد
   const onPhoneInput = (v: string) => {
     if (p2e(String(v || '')).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; }
+    // تشخیص هوشمند کشور از خودِ شماره: 09xx / 9xx / 98xx / 0098 / ‎+98 → ایران؛ ‎+cc دیگر → سوییچ خودکار پرچم
+    try {
+      const dig = p2e(String(v || '')).replace(/\D/g, '');
+      const isIrShape = (dig.length === 10 || dig.length === 11 || dig.length === 12 || dig.length === 14)
+        && /^(0098)?(98)?0?9\d{9}$/.test(dig);
+      if (isIrShape) { if (cc !== '+98') setCc('+98'); }
+      else if (/^\s*\+/.test(String(v || '')) && dig.length >= 9) {
+        const m = (countries || []).map((c: any) => ({ c, d: String(c.code || '').replace(/\D/g, '') }))
+          .filter((x: any) => x.d.length >= 1 && x.d !== '98' && dig.startsWith(x.d))
+          .sort((a: any, b: any) => b.d.length - a.d.length)[0];
+        if (m && m.c.code !== cc) setCc(m.c.code);
+      }
+    } catch { /* بی‌خطر */ }
     setPhone(v);
   };
   const ctryNow = () => countries.find((c: any) => c.code === cc) || countries[0];
@@ -304,6 +318,45 @@ export default function UserPortalPage() {
                       {(it.mealPlan || it.sportPlan) && <button type="button" onClick={() => { void downloadPlanPdf({ title: String(it.title || ''), code: String(it.id || ''), meal: it.mealPlan || '', sport: it.sportPlan || '', userNotes: it.userNotes || '' }); }} style={{ alignSelf: 'flex-start', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--zp-acc)', fontWeight: 800, fontSize: 11, padding: 0 }}>{en ? '⬇ Download PDF' : '⬇ دانلود PDF برنامه‌ها'}</button>}
                     </div>
                   )}
+                  {((it.form && it.form.length) || (it.usage && (it.usage.rows?.length || it.usage.instructions)) || (it.reports && (it.reports.followUps?.length || it.reports.corrective?.length))) ? (
+                    <div style={{ marginTop: 2 }}>
+                      <button type="button" className="zp-link" style={{ fontSize: 11.5, padding: 0 }} onClick={() => setOpenRec(openRec === it.id ? '' : it.id)}>
+                        {openRec === it.id ? (en ? 'Hide record details' : 'بستن جزئیات پرونده') : (en ? 'Record details — plans, usage, reports' : 'جزئیات پرونده — برنامه‌ها، طریقهٔ مصرف، گزارش‌ها')}
+                      </button>
+                      {openRec === it.id && (
+                        <div style={{ marginTop: 6, background: 'rgba(125,125,145,.06)', borderRadius: 12, padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {!!(it.form && it.form.length) && (
+                            <div>
+                              <b style={{ fontSize: 11.5, display: 'block', marginBottom: 4, color: 'var(--zp-ink)' }}>{en ? 'Submitted information' : 'اطلاعات ثبت‌شدهٔ شما'}</b>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 10px', fontSize: 11.5 }}>
+                                {it.form.map((f: any) => (<Fragment key={f.label}><span style={{ color: 'var(--zp-sub)', fontWeight: 700 }}>{f.label}</span><span style={{ color: 'var(--zp-ink)' }}>{f.value}</span></Fragment>))}
+                              </div>
+                            </div>
+                          )}
+                          {(it.usage && (it.usage.rows?.length || it.usage.instructions)) ? (
+                            <div style={{ borderTop: '1px dashed var(--zp-fsh1)', paddingTop: 7 }}>
+                              <b style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>{en ? 'How to use products' : 'طریقهٔ مصرف محصولات'}</b>
+                              {(it.usage.rows || []).map((u: any, ui: number) => (
+                                <div key={ui} style={{ marginBottom: 4 }}>
+                                  <b style={{ fontSize: 11 }}>{u.name}</b>
+                                  {(u.lines || []).map((ln: string, li: number) => <div key={li} style={{ fontSize: 11, color: 'var(--zp-sub)' }}>{ln}</div>)}
+                                </div>
+                              ))}
+                              {it.usage.instructions ? <div style={{ fontSize: 11.5, whiteSpace: 'pre-wrap', marginTop: 2 }}>{it.usage.instructions}</div> : null}
+                            </div>
+                          ) : null}
+                          {(it.reports && (it.reports.followUps?.length || it.reports.corrective?.length)) ? (
+                            <div style={{ borderTop: '1px dashed var(--zp-fsh1)', paddingTop: 7 }}>
+                              <b style={{ fontSize: 11.5, display: 'block', marginBottom: 4 }}>{en ? 'Reports' : 'گزارش‌ها'}</b>
+                              {(it.reports.followUps || []).map((fup: any) => <div key={fup.step} style={{ fontSize: 11, marginBottom: 2 }}>{en ? `Step ${fup.step}: ` : `مرحلهٔ ${fup.step}: `}{fup.state}</div>)}
+                              {(it.reports.corrective || []).map((c: any) => <div key={c.label} style={{ fontSize: 11 }}>{c.label}: <b>{c.value}</b></div>)}
+                            </div>
+                          ) : null}
+                          <button type="button" className="zp-ghost" style={{ marginTop: 2, minHeight: 34, fontSize: 12 }} onClick={() => { void downloadPlanPdf({ title: it.type === 'course' ? (en ? 'Course information' : 'اطلاعات دوره') : (en ? 'Consultation information' : 'اطلاعات مشاوره'), code: String(it.code || it.id || ''), meal: it.mealPlan || '', sport: it.sportPlan || '', userNotes: it.userNotes || '', form: it.form, usage: it.usage, reports: it.reports }); }}>{en ? 'Download full PDF' : 'دریافت PDF کامل پرونده'}</button>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

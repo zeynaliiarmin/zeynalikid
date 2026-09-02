@@ -21,11 +21,11 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
   registration: {
     fa: {
       title: 'خطا در ثبت اطلاعات',
-      message: `والدین زیادی روزانه ثبت درخواست مشاوره می‌دهند. ${PREVENT}`,
+      message: `اتصال به سرور برقرار نشد یا ثبت موقتاً ممکن نیست؛ اینترنت را بررسی کنید و چند لحظهٔ دیگر دوباره امتحان کنید (اگر فرم قبلاً ثبت شده باشد، دوباره ثبت نکنید). ${PREVENT}`,
     },
     en: {
       title: 'Registration error',
-      message: `Many parents register every day. ${PREVENT_EN}`,
+      message: `The server could not be reached or the submission was temporarily unavailable. Check your connection and try again in a moment (if it was already submitted, don't submit twice). ${PREVENT_EN}`,
     },
   },
   receipt: {

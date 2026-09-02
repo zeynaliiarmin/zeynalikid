@@ -108,7 +108,8 @@ export default function CoursePaymentPage(){
   if(sharePromise){try{await sharePromise;setToast(copiedDefault?(lang==='en'?'Default card copied; choose a payment application.':'شماره کارت پیش‌فرض کپی شد؛ برنامه پرداخت را انتخاب کنید.'):(lang==='en'?'Your previously copied payment information was preserved.':'اطلاعاتی که قبلاً کپی کرده‌اید بدون تغییر حفظ شد.'))}catch(error){if((error as Error)?.name!=='AbortError')setToast(lang==='en'?'The application chooser could not be opened.':'امکان بازکردن فهرست برنامه‌ها وجود نداشت.');else if(copiedDefault)setToast(lang==='en'?'Default card copied.':'شماره کارت پیش‌فرض کپی شد.')}}else setToast(copiedDefault?(lang==='en'?'Default card copied; open your banking app.':'شماره کارت پیش‌فرض کپی شد؛ همراه‌بانک را باز کنید.'):(lastCopiedPayment?(lang==='en'?'Your copied payment information was preserved; open your payment app.':'اطلاعات کپی‌شده شما تغییر نکرد؛ برنامه پرداخت را باز کنید.'):(lang==='en'?'Open your preferred payment application.':'برنامه پرداخت دلخواه را باز کنید.')));
   setTimeout(()=>setToast(''),4500);
  };
- const submitPayment=()=>{if(!paymentDetails.unlocked){setToast(lang==='en'?'Complete the security check first.':'ابتدا بررسی امنیتی را تکمیل کنید.');setTimeout(()=>setToast(''),3500);return}const pay=course.payment||{};const receiptText=receiptTextRef.current?.value||pay.receiptText||''; if(!pay.receipt&&!String(receiptText).trim()){setToast('لطفاً فیش واریزی را آپلود کنید یا متن پیامک را وارد کنید.');setTimeout(()=>setToast(''),3000);return}Promise.resolve(finalizeCourseRegistration({...pay,bankId:chosen?.id||pay.bankId,receiptText,receiptMethod:pay.receipt?'image':String(receiptText).trim()?'text':null})).catch((e:any)=>{console.error('finalize failed',e);reportError('payment_finalize','finalize failed',String(e?.message||e));triggerErrorAlert('registration');setToast(lang==='en'?'An error occurred while submitting your information. Please contact support.':'خطایی در ثبت اطلاعات رخ داده است. لطفاً با پشتیبانی تماس بگیرید.');setTimeout(()=>setToast(''),6000)})};
+ const [payBusy,setPayBusy]=useState(false);
+ const submitPayment=async()=>{if(payBusy)return;if(!paymentDetails.unlocked){setToast(lang==='en'?'Complete the security check first.':'ابتدا بررسی امنیتی را تکمیل کنید.');setTimeout(()=>setToast(''),3500);return}const pay=course.payment||{};const receiptText=receiptTextRef.current?.value||pay.receiptText||''; if(!pay.receipt&&!String(receiptText).trim()){setToast('لطفاً فیش واریزی را آپلود کنید یا متن پیامک را وارد کنید.');setTimeout(()=>setToast(''),3000);return}setPayBusy(true);try{await finalizeCourseRegistration({...pay,bankId:chosen?.id||pay.bankId,receiptText,receiptMethod:pay.receipt?'image':String(receiptText).trim()?'text':null})}catch(e:any){console.error('finalize failed',e);reportError('payment_finalize','finalize failed',String(e?.message||e));triggerErrorAlert('registration');setToast(lang==='en'?'An error occurred while submitting your information. Please contact support.':'خطایی در ثبت اطلاعات رخ داده است. لطفاً با پشتیبانی تماس بگیرید.');setTimeout(()=>setToast(''),6000)}finally{setPayBusy(false)}};
  const formatCard=(v:any)=>String(v||'').replace(/\s+/g,'').replace(/(.{4})/g,'$1 ').trim(); const formatIban=(v:any)=>{let s=String(v||'').replace(/\s+/g,''); const ir=/^IR/i.test(s); s=s.replace(/^IR/i,''); const d=s.replace(/[^0-9]/g,''); return (ir?'IR ':'')+d.replace(/([0-9]{2})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{4})([0-9]{2})/, '$1 $2 $3 $4 $5 $6 $7').trim();};
  // اصلاح ۶: رنگ کارت بانکی اکنون از b.color (مقدار انتخاب‌شده در پنل مدیریت — ShippingBankEditor) خوانده می‌شود؛
  // نام بانک دیگر برای تشخیص رنگ استفاده نمی‌شود تا با تغییر رنگ در تنظیمات، صفحه پرداخت هم‌زمان به‌روزرسانی شود.
@@ -275,11 +276,13 @@ export default function CoursePaymentPage(){
     </div>
   )}
 </div>{/* Stage 5: Large, calm, pill payment CTA with reassurance */}
+<style>{"@keyframes zspin{to{transform:rotate(360deg)}}"}</style>
 <button 
-  style={{...S.btn, width:'100%', marginTop:16, marginBottom:8, padding:'16px', minHeight:56, fontSize:16, flexShrink:0, borderRadius:9999}} 
-  onClick={submitPayment}
+  style={{...S.btn, width:'100%', marginTop:16, marginBottom:8, padding:'16px', minHeight:56, fontSize:16, flexShrink:0, borderRadius:9999, opacity:payBusy?.72:1, cursor:payBusy?'wait':'pointer'}} 
+  onClick={()=>{void submitPayment()}} disabled={payBusy}
+ aria-busy={payBusy}
 >
-  {lang==='en' ? 'Initial Registration' : 'ثبت‌نام اولیه'}
+  {payBusy ? <span style={{display:'inline-flex',alignItems:'center',gap:8,verticalAlign:'middle'}}><i style={{width:14,height:14,border:'2px solid currentColor',borderTopColor:'transparent',borderRadius:'50%',display:'inline-block',animation:'zspin .7s linear infinite'}} />{lang==='en'?'Submitting…':'در حال ثبت…'}</span> : (lang==='en' ? 'Initial Registration' : 'ثبت‌نام اولیه')}
 </button>
 </div>{toast&&<div style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:T.pop,border:`1px solid ${toast.includes('نشد')||toast.includes('لطفاً')||toast.includes('بیشتر')?T.err:T.ok}`,color:toast.includes('نشد')||toast.includes('لطفاً')||toast.includes('بیشتر')?T.err:T.ok,borderRadius:12,padding:'10px 16px',fontSize:13,fontWeight:800,boxShadow:'0 14px 35px rgba(0,0,0,.25)',animation:'fadeSlide .65s ease both'}}>{toast}</div>}</div>
 }

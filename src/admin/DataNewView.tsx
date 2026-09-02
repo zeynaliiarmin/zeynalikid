@@ -32,7 +32,7 @@ function NvPhoneBtn({ T, raw, sub, onCopy }: { T: any; raw: string; sub?: any; o
     <AdminPopover open={popOpen} onClose={closePop} width={122} ariaLabel={T.en ? 'Phone actions' : 'عملیات شماره تماس'}
       trigger={<button type="button" dir="ltr" aria-haspopup="menu" aria-expanded={popOpen} title={T.en ? 'Call / WhatsApp / Rubika / Copy' : 'تماس · واتساپ · روبیکا · کپی'}
         onClick={(ev) => { ev.stopPropagation(); setPopOpen(v => !v); }}
-        style={{ background: 'none', border: 0, padding: 0, margin: 0, cursor: 'pointer', font: 'inherit', fontWeight: 700, fontSize: 11, color: T.txt, direction: 'ltr', letterSpacing: '.3px' }}>
+        style={{ background: 'none', border: 0, padding: 0, margin: 0, cursor: 'pointer', font: 'inherit', fontWeight: 700, fontSize: 10.5, color: T.txt, direction: 'ltr', letterSpacing: '.2px' }}>
         {raw}
       </button>}>
       <div dir="ltr" style={{ fontSize: 11.5, fontWeight: 900, padding: '6px 8px 4px', textAlign: 'center', fontFamily: 'ui-monospace,Menlo,monospace' }}>{raw}</div>
@@ -82,7 +82,10 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     }
     for (const k of Object.keys(seen)) { dataUserByPhone[k] = seen[k]; dataUserOrder.push(k); }
   }
-  const dataName = (k: string, head: any) => String(dataUserByPhone[k]?.fullName || head?.pName || head?.userName || 'بدون نام');
+  const dataName = (k: string, head: any) => {
+    const cands = [head?.pName, head?.fullName, head?.childName, head?.userName, dataUserByPhone[k]?.fullName];
+    return cands.map((v: any) => String(v || '').trim()).filter((v: string) => v && v !== 'والدین')[0] || 'بدون نام';
+  };
   const dataCode = (k: string, head: any) => String(dataUserByPhone[k]?.code || head?.userCode || head?.trackingCode || '');
   const nvIds = (items: any[]) => items.map((x: any) => x.id);
   const nvAllSel = (ids: any[]) => ids.length > 0 && ids.every((id: any) => selectedIds.has(id));
@@ -141,7 +144,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
   const codeChip = (code: string) => (
     <button type="button" onClick={(ev) => { ev.stopPropagation(); nvCopy(String(code || '')); }}
       title={T.en ? 'Click to copy the tracking code' : 'کلیک برای کپی کد پیگیری'}
-      style={{ background: 'none', border: 0, padding: 0, color: T.accText, fontFamily: 'monospace', fontSize: 11, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 3, direction: 'ltr' }}>
+      style={{ background: 'none', border: 0, padding: 0, color: T.accText, fontFamily: 'monospace', fontSize: 10.5, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline dotted 1px', textUnderlineOffset: 2, direction: 'ltr' }}>
       {code || '—'}
     </button>
   );
@@ -150,36 +153,32 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     const head = g.items.find((x: any) => x.type === kind) || g.items[0];
     const otherType = kind === 'consult' ? 'course' : 'consultation';
     const hasOther = g.items.some((x: any) => x.type === otherType);
-    const isUser = !!dataUserByPhone[g.key];
     const statLbl = kind === 'consult' ? (head.consultationStatus || 'مشاوره اولیه') : getStatus(head);
     const phoneRaw = String(head.fullPhone || head.pPhone || ('+' + g.key));
     const incomplete = String(head.consultationStatus || '') === 'ناقص' || String(head.orderStatus || '') === 'ناقص';
     const consulted = kind === 'consult' && String(head.consultationStatus || '') === 'مشاوره شده';
     const advisorName = String(head.advisor?.name || head.consultedBy || '');
-    const rowStyle: CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 6, padding: '0 10px' };
+    const hi = head.priority === 'high';
     return (
-      <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${nvPhone === g.key ? T.acc : T.brd}`, borderRadius: 10, background: T.card, boxShadow: nvPhone === g.key ? `0 0 0 3px ${T.acc}33` : T.neuOut, marginBottom: 6, overflow: 'hidden', padding: '10px 0 12px' }}>
-        <div style={{ ...rowStyle, paddingBottom: 0 }}>
-          <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: head.priority === 'high' ? '#b91c1c' : T.txt, textAlign: 'start' }}>{head.priority === 'high' && <span title="اولویت زیاد" style={{ width: 7, height: 7, borderRadius: '50%', background: '#DC2626', display: 'inline-block', marginInlineEnd: 6, boxShadow: '0 0 8px rgba(220,38,38,.55)', verticalAlign: 'middle' }} />}{dataName(g.key, head)} {!isUser && <span className="zkad-tag" style={{ fontSize: 9.5 }}>{T.en ? 'Guest' : 'مهمان'}</span>}</b>
-          <span />
-          {codeChip(dataCode(g.key, head))}
-        </div>
-        <div style={{ ...rowStyle, padding: '1px 10px' }}>
-          <input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={() => nvToggleIds(nvIds(g.items))} onClick={(ev) => ev.stopPropagation()} style={{ width: 13, height: 13, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select card' : 'انتخاب کارت'} />
-          <span style={{ textAlign: 'center' }}><NvPhoneBtn T={T} raw={phoneRaw} sub={head} onCopy={nvCopy} /></span>
+      <div key={kind + g.key} id={'nvc-' + g.key} style={{ border: `1px solid ${nvPhone === g.key ? T.acc : T.brd}`, borderRadius: 9, background: T.card, boxShadow: nvPhone === g.key ? `0 0 0 3px ${T.acc}33` : 'none', margin: '0 0 4px', padding: '1px 8px 2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: 7, minHeight: 19 }}>
+          <input type="checkbox" checked={nvAllSel(nvIds(g.items))} onChange={() => nvToggleIds(nvIds(g.items))} onClick={(ev) => ev.stopPropagation()} style={{ width: 12, height: 12, accentColor: T.acc, cursor: 'pointer', margin: 0 }} />
+          <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11.5, lineHeight: 1.3, color: hi ? '#b91c1c' : T.txt, textAlign: 'start' }}>{hi && <span title="اولویت زیاد" style={{ width: 6, height: 6, borderRadius: '50%', background: '#DC2626', display: 'inline-block', marginInlineEnd: 5, boxShadow: '0 0 6px rgba(220,38,38,.6)', verticalAlign: 'middle' }} />}{dataName(g.key, head)}</b>
+          <NvPhoneBtn T={T} raw={phoneRaw} sub={head} onCopy={nvCopy} />
           <select value={statLbl} onClick={(ev) => ev.stopPropagation()} onChange={(e) => { if (kind === 'consult') changeConsultStatus(head.id, e.target.value); else changeStatus(head.id, e.target.value); }}
-            style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 6, padding: '1px 5px', height: 20, fontFamily: 'inherit', fontSize: 10, fontWeight: 600, outline: 'none', cursor: 'pointer', maxWidth: 118 }}>
+            style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 6, padding: '0 4px', height: 18, fontFamily: 'inherit', fontSize: 9.5, fontWeight: 600, outline: 'none', cursor: 'pointer', maxWidth: 106 }}>
             {(kind === 'consult' ? consultStatuses : statusOptions).map((s: string) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div style={{ ...rowStyle, paddingTop: 1, borderTop: `1px dashed ${T.brd}` }}>
-          <span style={{ fontSize: 10, color: T.mut, textAlign: 'start' }}>{fmtWhen(head)}</span>
-          <button type="button" className="zkad-toolbtn" style={{ fontSize: 10, padding: '1px 7px', cursor: 'pointer', justifySelf: 'center' }} onClick={() => openDetails(head, kind)}>{T.en ? 'Details' : 'جزئیات'}</button>
-          <span style={{ display: 'inline-flex', gap: 5, flexWrap: 'wrap', justifySelf: 'end' }}>
-            {incomplete && <span className="zkad-tag t-warn" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>ناقص</span>}
-            {consulted && <span className="zkad-tag t-ok" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>{advisorName ? `مشاوره شده توسط ${advisorName}` : 'مشاوره شده'}</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, borderTop: `1px dashed ${T.brd}`, paddingTop: 1, minHeight: 15, fontSize: 9.5, flexWrap: 'wrap' }}>
+          {codeChip(dataCode(g.key, head))}
+          <span style={{ color: T.mut }}>{fmtWhen(head)}</span>
+          <button type="button" className="zkad-toolbtn" style={{ fontSize: 9, padding: '0 6px', height: 15, lineHeight: '14px', cursor: 'pointer' }} onClick={() => openDetails(head, kind)}>{T.en ? 'Details' : 'جزئیات'}</button>
+          <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap', marginInlineStart: 'auto', alignItems: 'center' }}>
+            {incomplete && <span className="zkad-tag t-warn" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>ناقص</span>}
+            {consulted && <span className="zkad-tag t-ok" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>{advisorName ? `مشاوره شده توسط ${advisorName}` : 'مشاوره شده'}</span>}
             {hasOther && (
-              <button type="button" className="zkad-tag t-info" style={{ fontSize: 9, cursor: 'pointer', border: 0, background: `${T.acc}14`, color: T.accText, padding: '0 5px', borderRadius: 999, lineHeight: 1.5 }}
+              <button type="button" className="zkad-tag t-info" style={{ fontSize: 8.5, cursor: 'pointer', border: 0, background: `${T.acc}14`, color: T.accText, padding: '0 5px', borderRadius: 999, lineHeight: 1.4 }}
                 title={T.en ? 'Open this person in the other tab' : 'بازکردن همین کاربر در تب دیگر'}
                 onClick={() => { setNvTab(otherType === 'course' ? 'course' : 'consult'); setNvPhone(g.key); setTimeout(() => { const el = document.getElementById('nvc-' + g.key); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); }}>
                 {kind === 'consult' ? (T.en ? 'Course ✓' : 'ثبت دوره هم کرده') : (T.en ? 'Consult ✓' : 'مشاوره هم داده')}
@@ -197,22 +196,20 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     const hasConsult = !!grp?.items.some((x: any) => x.type === 'consultation');
     const hasCourse = !!grp?.items.some((x: any) => x.type === 'course');
     const verified = u.status === 'active' || u.phoneConfirmed;
+    const uName = String(u.fullName || '').trim() === 'والدین' ? 'بی‌نام' : String(u.fullName || '—');
     return (
-      <div key={'u' + k} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, background: T.card, boxShadow: T.neuOut, marginBottom: 6, padding: '4px 10px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10 }}>
-          <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: T.txt, textAlign: 'start' }}>{String(u.fullName || '—')}</b>
-          <span />
+      <div key={'u' + k} style={{ border: `1px solid ${T.brd}`, borderRadius: 9, background: T.card, boxShadow: 'none', marginBottom: 4, padding: '1px 8px 2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: 7, minHeight: 19 }}>
+          <input type="checkbox" checked={nvAllSel([u.id])} onChange={() => nvToggleIds([u.id])} style={{ width: 12, height: 12, accentColor: T.acc, cursor: 'pointer', margin: 0 }} aria-label={T.en ? 'Select user' : 'انتخاب کاربر'} />
+          <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11.5, lineHeight: 1.3, color: T.txt, textAlign: 'start' }}>{uName}</b>
+          <span><NvPhoneBtn T={T} raw={String(u.fullPhone || ('+' + k))} sub={u} onCopy={nvCopy} /></span>
           {codeChip(String(u.code || ''))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, padding: '2px 0 0' }}>
-          <input type="checkbox" checked={nvAllSel([u.id])} onChange={() => nvToggleIds([u.id])} style={{ width: 13, height: 13, accentColor: T.acc, cursor: 'pointer', flexShrink: 0, margin: 0 }} aria-label={T.en ? 'Select user' : 'انتخاب کاربر'} />
-          <span style={{ textAlign: 'center' }}><NvPhoneBtn T={T} raw={String(u.fullPhone || ('+' + k))} sub={u} onCopy={nvCopy} /></span>
-          <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, justifySelf: 'end' }}>
-            <span className={`zkad-tag ${verified ? 't-ok' : 't-warn'}`} style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>{verified ? (T.en ? 'Verified' : 'تأییدشده') : (T.en ? 'Pending' : 'در انتظار')}</span>
-            {hasConsult && <span className="zkad-tag t-warn" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>فرم مشاوره</span>}
-            {hasCourse && <span className="zkad-tag t-info" style={{ fontSize: 9, padding: '0 6px', lineHeight: 1.5 }}>ثبت دوره</span>}
-            <span style={{ fontSize: 10, color: T.mut }}>{String(u.date || '')}{u.time ? ' · ' + String(u.time) : ''}</span>
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, borderTop: `1px dashed ${T.brd}`, paddingTop: 1, minHeight: 15, fontSize: 9, flexWrap: 'wrap' }}>
+          <span className={`zkad-tag ${verified ? 't-ok' : 't-warn'}`} style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>{verified ? (T.en ? 'Verified' : 'تأییدشده') : (T.en ? 'Pending' : 'در انتظار')}</span>
+          {hasConsult && <span className="zkad-tag t-warn" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>فرم مشاوره</span>}
+          {hasCourse && <span className="zkad-tag t-info" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>ثبت دوره</span>}
+          <span style={{ color: T.mut, marginInlineStart: 'auto' }}>{String(u.date || '')}{u.time ? ' · ' + String(u.time) : ''}</span>
         </div>
       </div>
     );

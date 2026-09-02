@@ -35,6 +35,51 @@ const faDigits = (v: string) =>
 const digitsOnly = (v: string) => faDigits(v).replace(/\D/g, "");
 
 /** نرمال‌سازی: ۰۹۱۲… / ۹۱۲… / +98912… / 0098912… → +98912… (برای بقیه +CC…) */
+// ─── برچسب‌های نمایشی برای پنل کاربر: خلاصهٔ فرم، طریقهٔ مصرف، گزارش‌ها ───
+const briefForm = (p: any) => {
+  const norm = (v: any) => { const t = Array.isArray(v) ? v.map((x: any) => String(x ?? "").trim()).filter(Boolean).join("، ") : String(v ?? "").trim(); return t.slice(0, 300); };
+  const rows = [
+    ["نام و نام خانوادگی", norm(p.pName || p.fullName)],
+    ["نام کودک", norm(p.childName)],
+    ["سن", norm(p.age)],
+    ["جنسیت", p.gender === "female" ? "دختر" : p.gender === "male" ? "پسر" : ""],
+    ["قد (سانتی‌متر)", norm(p.height)],
+    ["وزن (کیلوگرم)", norm(p.weight)],
+    ["اشتها", norm(p.appetite)],
+    ["خواب", norm(p.sleep)],
+    ["فعالیت روزانه", norm(p.activity)],
+    ["بیماری / عارضه / جراحی", norm(p.disease || p.diseases)],
+    ["دفع و اجابت مزاج", norm(p.digest)],
+    ["حساسیت غذایی", norm(p.allergies)],
+    ["دارو", norm(p.medications)],
+    ["موضوعات مشاوره", norm(p.topics)],
+    ["توضیحات تکمیلی", norm(p.notes || p.additionalDesc || p.additionalNotes)],
+  ];
+  return rows.filter((r) => r[1] && r[1] !== "ندارد").map((r) => ({ label: r[0], value: r[1] }));
+};
+const briefUsage = (p: any) => {
+  const labels: Record<string, string> = { time: "زمان مصرف", dosage: "مقدار مصرف", how: "نحوه مصرف", before: "قبل از غذا", after: "بعد از غذا", note: "یادداشت", text: "توضیح", when: "زمان مصرف" };
+  const prods = Array.isArray(p.course?.products) ? p.course.products : [];
+  const pu = p.productUsage || {};
+  const rows: { name: string; lines: string[] }[] = [];
+  for (const k of Object.keys(pu)) {
+    const u = pu[k] || {};
+    if (u.enabled === false) continue;
+    const pr = prods.find((x: any) => String(x?.id ?? "") === String(k));
+    const lines = Object.keys(u).filter((kk) => kk !== "enabled" && typeof u[kk] === "string" && String(u[kk]).trim())
+      .map((kk) => `${labels[kk] || kk}: ${String(u[kk]).trim().slice(0, 200)}`);
+    if (lines.length) rows.push({ name: String(pr?.title || pr?.name || k), lines });
+  }
+  return { instructions: String(p.usageInstructions || "").trim().slice(0, 1200), rows };
+};
+const briefReports = (p: any) => {
+  const fups = (Array.isArray(p.followUps) ? p.followUps : []).map((s: any, i: number) => ({ step: i + 1, state: s === "done" ? "پیگیری انجام شد" : s === "miss" ? "تماس بدون پاسخ" : "در انتظار پیگیری" })).filter((x) => x.state !== "در انتظار پیگیری");
+  const c = p.correctiveData && typeof p.correctiveData === "object" ? p.correctiveData : {};
+  const cn = (v: any) => String(v ?? "").trim().slice(0, 300);
+  const corr = [["قد (سانتی‌متر)", cn(c.height)], ["وزن (کیلوگرم)", cn(c.weight)], ["توضیح خانواده", cn(c.notes || c.description)]].filter((r) => r[1]).map((r) => ({ label: r[0], value: r[1] }));
+  return { followUps: fups, corrective: corr };
+};
+
 const normalizePhone = (raw: string): string => {
   let d = digitsOnly(raw);
   if (d.length < 7) return "";
@@ -372,7 +417,7 @@ serve(async (req) => {
       const found = await findRecordByCode(supabase, code);
       if (found && phoneLooseMatch(String(found.full_phone || ""), phone)) {
         const keepCode = String(found.payload?.trackingCode || found.payload?.code || "") || code;
-        const nm = [found.payload?.fullName, found.payload?.parentName].map((v: any) => String(v || "").trim()).filter(Boolean)[0] || "والدین";
+        const nm = [found.payload?.fullName, found.payload?.parentName, found.payload?.pName, found.payload?.childName].map((v: any) => String(v || "").trim()).filter(Boolean)[0] || "";
         await upsertUser(supabase, phone, { status: "active", code: keepCode, fullName: nm, origin: "guest" });
         await linkPastRecords(supabase, phone, keepCode, nm);
         const again = await getUserRecord(supabase, phone, code);
@@ -436,6 +481,10 @@ serve(async (req) => {
         mealPlan: p.showMealPlan === true ? String(p.mealPlan || "").slice(0, 6000) : "",
         sportPlan: p.showSportPlan === true ? String(p.sportPlan || "").slice(0, 6000) : "",
         userNotes: String(p.userNotes || "").slice(0, 1500),
+        code: String(p.trackingCode || ""),
+        form: briefForm(p),
+        usage: briefUsage(p),
+        reports: briefReports(p),
       };
     });
     return jsonResponse({ ok: true, code, fullName: String(user.payload.fullName || ""), maskedPhone: maskPhone(phone), items, count: items.length }, 200, origin);
@@ -496,6 +545,16 @@ async function upsertUser(supabase: any, phone: string, fields: Record<string, u
     const { error } = await supabase.from("submissions").update({ payload }).eq("id", existing.id);
     return { error };
   }
+  // حسابِ حذف‌شدهٔ نرم‌افزاریِ همین شماره؟ به‌جای ساخت حساب دوم، همان بازیابی می‌شود
+  try {
+    const { data: del } = await supabase.from("submissions").select("id")
+      .eq("full_phone", phone).eq("payload->>type", "user").not("deleted_at", "is", null)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (del) {
+      const { error } = await supabase.from("submissions").update({ payload, deleted_at: null }).eq("id", del.id);
+      return { error: error || null };
+    }
+  } catch { /* عادی‌سازی بی‌خطر */ }
   const { error } = await supabase.from("submissions").insert({ full_phone: phone, payload, deleted_at: null });
   return { error };
 }
