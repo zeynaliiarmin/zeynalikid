@@ -27,7 +27,7 @@ initErrorLogging();
 // مسیرهای /admin/* از manifest و SW مستقل مدیریت استفاده می‌کنند تا
 // اپ PWA "زینالیکید | مدیریت" به‌صورت یک اپ جداگانه نصب شود.
 function isAdminRoute(pathname: string): boolean {
-  return pathname === '/admin' || pathname.startsWith('/admin/');
+  return pathname === '/desk' || pathname.startsWith('/desk/');
 }
 
 function applyAdminPwaMeta() {
@@ -38,7 +38,7 @@ function applyAdminPwaMeta() {
     manifestLink.rel = 'manifest';
     document.head.appendChild(manifestLink);
   }
-  manifestLink.href = '/admin-manifest.webmanifest';
+  manifestLink.href = '/desk-manifest.webmanifest';
 
   // apple-touch-icon
   let appleTouch = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
@@ -162,7 +162,7 @@ function setupPwaForCurrentRoute() {
       // Admin route: only register the admin SW (scope /admin/).
       // Do NOT register the public sw.js here — it would conflict with admin-sw.js
       // because both would try to control /admin/* navigations.
-      navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin/' })
+      navigator.serviceWorker.register('/desk-sw.js', { scope: '/desk/' })
         .catch((err) => { console.warn('[admin] SW registration failed:', err); });
     } else {
       // Public route: register the public sw.js (scope /).

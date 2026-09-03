@@ -1,25 +1,25 @@
 /* Zeynalikid Admin Service Worker
- * Scope: /admin/
+ * Scope: /desk/
  * Separate from the public site's sw.js to avoid cache interference.
  *
  * Strategy:
- *  - Navigation requests (HTML) under /admin/: Network-First, fallback to cached /admin/login.
+ *  - Navigation requests (HTML) under /desk/: Network-First, fallback to cached /desk.
  *  - Static assets (JS/CSS/icons/images under /assets/, /icons/): Stale-While-Revalidate.
  *  - API/Supabase requests: NEVER cached (bypass).
  *  - POST/PUT/DELETE: NEVER intercepted.
  */
 
-const VERSION = 'zkid-admin-v8-2026-08-30-design-a';
+const VERSION = 'zkid-desk-v9-2026-09-03-url-migration';
 const STATIC_CACHE = 'admin-static-' + VERSION;
 const NAV_CACHE = 'admin-nav-' + VERSION;
 
 // Pre-cache the admin entry points at install time.
-// Note: the SPA serves the same index.html for all /admin/* routes (vercel.json rewrites).
+// Note: the SPA serves the same index.html for all /admin/* routes (vercel.json rewrites to spa.html; R21: URLs moved from /admin/* to /desk/*).
 const PRECACHE_URLS = [
-  '/admin/login',
-  '/admin/app',
-  '/admin/',
-  '/admin-manifest.webmanifest',
+  '/desk',
+  '/desk/app',
+  '/desk/',
+  '/desk-manifest.webmanifest',
   '/icons/admin-icon-192.png',
   '/icons/admin-icon-512.png',
   '/icons/admin-icon-maskable-512.png',
@@ -72,10 +72,10 @@ self.addEventListener('fetch', (e) => {
 
   // Only handle requests under /admin/* (our scope).
   // The browser enforces scope at registration, but this is a defensive check.
-  if (!url.pathname.startsWith('/admin/') && url.pathname !== '/admin') return;
+  if (!url.pathname.startsWith('/desk/') && url.pathname !== '/desk') return;
 
   // Don't intercept the public sw.js or this admin-sw.js
-  if (url.pathname === '/sw.js' || url.pathname === '/admin-sw.js') return;
+  if (url.pathname === '/sw.js' || url.pathname === '/desk-sw.js') return;
 
   // Navigation requests: Network-First
   if (req.mode === 'navigate') {
@@ -89,8 +89,8 @@ self.addEventListener('fetch', (e) => {
         // Offline: try cached nav, then fallback to /admin/login (which the SPA will route).
         const cached = await caches.match(req, { ignoreSearch: true });
         if (cached) return cached;
-        const fallback = await caches.match('/admin/login');
-        return fallback || caches.match('/admin/');
+        const fallback = await caches.match('/desk');
+        return fallback || caches.match('/desk/');
       }
     })());
     return;
@@ -100,7 +100,7 @@ self.addEventListener('fetch', (e) => {
   const isStatic = /\.(js|css|woff2?|ttf|png|jpe?g|webp|svg|ico|xml|webmanifest)(\?.*)?$/i.test(url.pathname)
     || url.pathname.startsWith('/assets/')
     || url.pathname.startsWith('/icons/')
-    || url.pathname === '/admin-manifest.webmanifest';
+    || url.pathname === '/desk-manifest.webmanifest';
 
   if (!isStatic) return;
 

@@ -35,8 +35,8 @@ async function callAdminApi(action: string, payload: Record<string, any> = {}, o
     if (options.autoRedirectOn401 !== false) {
       clearAdminSession();
       // Use location.href for a hard redirect (more reliable than router in edge cases)
-      if (typeof window !== 'undefined' && window.location.pathname !== '/admin/login') {
-        window.location.href = '/admin/login';
+      if (typeof window !== 'undefined' && window.location.pathname !== '/desk') {
+        window.location.href = '/desk';
       }
     }
     throw new AdminApiError('نشست ادمین یافت نشد. لطفاً دوباره وارد شوید.', 401);
@@ -67,9 +67,9 @@ async function callAdminApi(action: string, payload: Record<string, any> = {}, o
     const message = body?.error || `خطای سرور (${resp.status})`;
     if (resp.status === 401 && options.autoRedirectOn401 !== false) {
       clearAdminSession();
-      if (typeof window !== 'undefined' && window.location.pathname !== '/admin/login') {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/desk') {
         // Defer redirect to allow caller to show error first if needed
-        setTimeout(() => { window.location.href = '/admin/login'; }, 100);
+        setTimeout(() => { window.location.href = '/desk'; }, 100);
       }
     }
     throw new AdminApiError(message, resp.status);
@@ -304,7 +304,7 @@ export async function adminCleanupReceiptsDryRun(): Promise<{ targetFiles: numbe
   if (!resp.ok) {
     if (resp.status === 401) {
       clearAdminSession();
-      setTimeout(() => { window.location.href = '/admin/login'; }, 100);
+      setTimeout(() => { window.location.href = '/desk'; }, 100);
     }
     throw new AdminApiError(body?.error || 'خطا در بررسی فیش‌ها', resp.status);
   }
@@ -330,7 +330,7 @@ export async function adminCleanupReceiptsExecute(): Promise<{ deleted: number; 
   if (!resp.ok) {
     if (resp.status === 401) {
       clearAdminSession();
-      setTimeout(() => { window.location.href = '/admin/login'; }, 100);
+      setTimeout(() => { window.location.href = '/desk'; }, 100);
     }
     throw new AdminApiError(body?.error || 'خطا در پاک‌سازی فیش‌ها', resp.status);
   }

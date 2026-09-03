@@ -61,20 +61,20 @@ function App(){
  const [adminSettingsLoading,setAdminSettingsLoading]=useState(()=>adminAuthed&&isSupabaseConfigured);
  const [adminTab,setAdminTab]=useState('dashboard');
  // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
- useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&!adminAuthed){ navigate('/admin/login',{replace:true}); } },[location.pathname,adminAuthed,navigate]);
+ /* R21: ریدایرکت /admin حذف شد — این مسیرها دیگر در اپ وجود ندارند و مستقیمٍ تایپ‌شده با ۴۰۴ ایستا پاسخ داده می‌شود */
  // Phase 3: هنگام ورود به /admin/app، validate_session را با Edge Function بررسی کن.
  // فقط وجود token در sessionStorage کافی نیست — session ممکن است منقضی یا revoke شده باشد.
  // برای کاهش تأخیر ورود، اگر همین لحظه‌ها تازه لاگین انجام شده باشد (لاگین همین حالا نشست را ساخته)
  // از validate مجدد صرف‌نظر می‌کنیم تا ورود «لحظه‌ای» شود؛ در بارگذاری مستقیم صفحه validate انجام می‌شود.
- useEffect(()=>{ const p=location.pathname; if((p==='/admin'||p==='/admin/app')&&getAdminSessionToken()){
+ useEffect(()=>{ const p=location.pathname; if((p==='/desk'||p==='/desk/app')&&getAdminSessionToken()){
    let justLoggedIn=false; try{ const t=Number(localStorage.getItem('zk_admin_login_at')||0); justLoggedIn = (Date.now()-t)<8000; }catch{}
    if(justLoggedIn)return;
-   let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/admin/login',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/admin/login',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
+   let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/desk',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/desk',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
  const [consultationComplete,setConsultationComplete]=useState(false);useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.flow==='consultation')setConsultationComplete(detail.complete===true)};window.addEventListener('zk-flow-complete',handler);return()=>window.removeEventListener('zk-flow-complete',handler)},[]);
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
- useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/admin-login',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
+ useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/desk',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
  const [lang,setLang]=useState<Lang>(()=>getLS('zkid_lang','fa'));
  // ─── سیستم مدیریت دیزاین و تم (مرحله ۲ - بازطراحی تدریجی) ───
  const designSystem = cfg.designSystem || configDefaultSettings.designSystem;
@@ -92,7 +92,7 @@ function App(){
  };
  // Resolve design ids without ever writing compatibility changes back to stored settings.
  const getDesignForPath = (path: string, settings: DynamicRecord): string => {
-  if (path.startsWith('/admin') || path.startsWith('/admin-login')) return 'classic';
+  if (path.startsWith('/desk')) return 'classic';
   const configured = normalizeDesignId(settings?.sections?.public?.design, 'wellness');
   try {
    const localDesign = localStorage.getItem('zk_design_system');
@@ -102,7 +102,7 @@ function App(){
  };
 
  // تعیین دیزاین فعال
- const isAdminLoginView = ['/admin-login','/admin/login'].includes(location.pathname.replace(/\/+$/,''));
+ const isAdminLoginView = ['/desk'].includes(location.pathname.replace(/\/+$/,''));
  const activeDesign = isAdminLoginView ? resolvePublicDesign() : getDesignForPath(location.pathname, designSystem);
 
  // Personal header choice is local to this browser/domain and wins on admin + public routes.
@@ -119,7 +119,7 @@ function App(){
  const [publicThemeTick,setPublicThemeTick]=useState(0);
  useEffect(()=>{const timer=window.setInterval(()=>setPublicThemeTick(x=>x+1),60000);return()=>window.clearInterval(timer)},[]);
  useEffect(()=>{const sync=(event:StorageEvent)=>{if(event.key!=='zk_public_theme_mode')return;setCfg((current:DynamicRecord)=>({...current,publicThemeMode:normalizePublicColorMode(event.newValue)}))};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync)},[]);
- const isAdminRoute=location.pathname.startsWith('/admin');
+ const isAdminRoute=location.pathname.startsWith('/desk');
 
  const publicThemeMode=normalizePublicColorMode(cfg.publicThemeMode);
  useEffect(()=>{try{localStorage.setItem('zk_public_theme_mode',publicThemeMode)}catch{}},[publicThemeMode]);
@@ -460,7 +460,7 @@ const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data
  },[view,flowDeadline]);
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
  const app:AppContextValue={cfg,saveCfg,mergeSettings,T,TH,S,css, publicDesign: resolvePublicDesign(), publicColorMode: effectivePublicMode,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code))};
- // ورود مستقیم به /admin بدون لاگین ممنوع: در نبود نشست فعال کاربر به admin-login هدایت می‌شود (بدون تغییر ظاهر/رفتار قبلی)
+ // R21: مسیرهای admin از اپ حذف شدند؛ ورود مستقیم هر آدرسِ حاوی admin با ۴۰۴ ایستا پاسخ داده می‌شود و پنل در /desk/app با گاردِ نشست محافظت می‌شود
  // اصلاح چانک-۱: Suspense برای Lazy Loading
  
 const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referralReady} referralConsultant={referralConsultant}/>;

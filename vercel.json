@@ -57,19 +57,11 @@
       "destination": "/spa.html"
     },
     {
-      "source": "/admin-login",
+      "source": "/desk",
       "destination": "/spa.html"
     },
     {
-      "source": "/admin/login",
-      "destination": "/spa.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/spa.html"
-    },
-    {
-      "source": "/admin/app",
+      "source": "/desk/app",
       "destination": "/spa.html"
     },
     {

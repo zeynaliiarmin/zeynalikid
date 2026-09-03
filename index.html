@@ -74,7 +74,7 @@
         var globalKey = 'zk_public_theme_mode';
         var personalKey = 'zk_personal_color_mode';
         var globalMode = 'auto';
-        var isAdmin = function () { return /^\/admin(?:[/-]|$)/.test(location.pathname); };
+        var isAdmin = function () { return /^\/desk(?:[/-]|$)/.test(location.pathname); };
         var validGlobal = function (value) { return value === 'light' || value === 'dark' || value === 'auto'; };
         var validPersonal = function (value) { return value === 'light' || value === 'dark'; };
         var readPersonal = function () {
@@ -120,7 +120,7 @@
     </script>
   </head>
   <body>
-    <script>if (!/^\/admin(?:\/|$)/.test(location.pathname) && document.documentElement.hasAttribute('data-public-theme')) document.body.classList.add('public-root');</script>
+    <script>if (!/^\/desk(?:\/|$)/.test(location.pathname) && document.documentElement.hasAttribute('data-public-theme')) document.body.classList.add('public-root');</script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

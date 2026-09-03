@@ -1180,7 +1180,7 @@ function DesignManagerEditor(){
   // همان صفحهٔ ورود باز شود (نه صفحهٔ هوم). دکمهٔ نصب این کار را خودکار انجام می‌دهد.
   const onInstallClick=async()=>{
    if(done)return;
-   if(ios){ setShowIosGuide(true); try{ window.location.href='/admin/login'; }catch(e){} return; }
+   if(ios){ setShowIosGuide(true); try{ window.location.href='/desk'; }catch(e){} return; }
    if(prompt){ setInstalling(true); try{ await prompt.prompt(); const c=await prompt.userChoice; if(c&&c.outcome==='accepted')setDone(true); }catch(e){} setInstalling(false); setPrompt(null); return; }
    setShowIosGuide(true);
   };

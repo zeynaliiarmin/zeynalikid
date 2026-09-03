@@ -68,10 +68,9 @@ export default function AppRoutes({ app, adminAuthed, referralReady, referralCon
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/form" element={<ConsultationPage />} />
           <Route path="/consultation" element={<ConsultationPage />} />
-          <Route path="/admin-login" element={<AdminLoginPage />} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin" element={adminAuthed ? <AdminPanel /> : <Navigate to="/admin/login" replace />} />
-          <Route path="/admin/app" element={adminAuthed ? <AdminPanel /> : <Navigate to="/admin/login" replace />} />
+          {/* R21: ورود و پنل مدیریت در مسیر بی‌نام (desk) — هر آدرسِ حاوی admin از روتر حذف است؛ تایپِ مستقیمش با ۴۰ واقعیِ ایستا سرو می‌شود */}
+          <Route path="/desk" element={<AdminLoginPage />} />
+          <Route path="/desk/app" element={adminAuthed ? <AdminPanel /> : <Navigate to="/desk" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
