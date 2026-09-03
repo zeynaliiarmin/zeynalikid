@@ -87,7 +87,7 @@ try {
     sessionStorage.setItem('zk_admin_authed', 'true');
     sessionStorage.setItem('zk_admin_device_id', 'browser-test-device');
   });
-  await page.goto(`${baseUrl}/admin/app`, { waitUntil: 'networkidle0', timeout: 30_000 });
+  await page.goto(`${baseUrl}/desk/app`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('نظرات کاربران'), { timeout: 20_000 });
   await clickByText('button', 'نظرات کاربران');
   await page.waitForFunction(() => document.body.innerText.includes('+989193123469'), { timeout: 20_000 });

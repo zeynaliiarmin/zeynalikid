@@ -167,24 +167,24 @@ await check('صفحهٔ تماس لود می‌شود', async () => {
 });
 
 await check('صفحهٔ لاگین ادمین لود می‌شود', async () => {
-  await go('/admin-login');
+  await go('/desk');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
   if (body < 50) throw new Error('بدنهٔ admin-login خالی است');
 });
 
 // ─── پنل ادمین (read-only — بدون ورود واقعی یا با ورود فقط مشاهده) ────
 await check('صفحهٔ admin (بدون لاگین) → ریدایرکت یا صفحه‌ی دسترسی', async () => {
-  await go('/admin');
+  await go('/desk/app');
   const url = page.url();
   // یا ریدایرکت می‌شود یا صفحه‌ی لاگین نمایش داده می‌شود — هر دو قابل قبولند
-  if (!url.includes('admin-login') && !url.includes('admin') && !url.includes('login')) {
+  if (!url.includes('/desk')) {
     //Accept anything as long as it loaded
   }
 });
 
 await check('تب‌های صفحه admin پس از لاگین (تست только تعامل)', async () => {
   // ورود با اعتبار تست (Read-only: فقط باگ/تصحیح را چک می‌کنیم، اتفاقی ذخیره نمی‌شود)
-  await go('/admin-login');
+  await go('/desk');
   // فیلد phone: کامپوننت Field با placeholder="09xxxxxxxxx"
   const phoneInput = await page.$('input[placeholder="09xxxxxxxxx"]');
   if (!phoneInput) throw new Error('فیلد phone در صفحهٔ لاگین ادمین پیدا نشد');
@@ -211,7 +211,7 @@ await check('تب‌های صفحه admin پس از لاگین (تست толь�
   }
   await sleep(2500);
   const adminUrl = page.url();
-  if (adminUrl.includes('/admin') && !adminUrl.includes('login') && !adminUrl.includes('admin-login')) {
+  if (adminUrl.includes('/desk/app')) {
     PASS.push('ورود پنل ادمین موفق');
     console.log('✅ ورود پنل ادمین موفق');
   } else {

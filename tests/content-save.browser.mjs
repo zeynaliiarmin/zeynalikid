@@ -154,7 +154,7 @@ async function typeAndImmediatelySave(itemTitle, fieldLabel, value) {
 }
 
 try {
-  await page.goto(`${baseUrl}/admin/app`, { waitUntil: 'networkidle0', timeout: 30_000 });
+  await page.goto(`${baseUrl}/desk/app`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('محتوا و صفحات'), { timeout: 20_000 });
   await page.waitForFunction(() => true, { timeout: 100 });
   assert(listSettingsCount > 0, 'mocked full settings were not loaded');

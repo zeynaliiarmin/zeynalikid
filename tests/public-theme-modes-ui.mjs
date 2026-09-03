@@ -173,7 +173,7 @@ try{
  mockedMode='light';
  await setStorage(page,{'zk_personal_color_mode':'light','zk_theme':'classic','zk_public_theme_mode':'light','zk_admin_authed':'true','zk_admin_session_token':'test-session','zk_admin_login_at':String(Date.now())});
  await page.evaluate(()=>localStorage.setItem('zk_admin_login_at',String(Date.now())));
- await page.goto(`${base}/admin/app?test-hour=12`,{waitUntil:'domcontentloaded',timeout:30000});
+ await page.goto(`${base}/desk/app?test-hour=12`,{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForSelector('.zkth-toggle',{timeout:20000});
  await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});
  await page.click('.zkth-toggle');
@@ -183,12 +183,12 @@ try{
  await page.goto(`${base}/form?test-hour=12&from-admin=1`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'dark');assertMode(await readFormState(page),'dark','admin choice on public page','personal');
 
  mockedMode='dark';
- await page.goto(`${base}/admin/app?test-hour=12&toggle-light=1`,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('.zkth-toggle');await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});await page.click('.zkth-toggle');
+ await page.goto(`${base}/desk/app?test-hour=12&toggle-light=1`,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('.zkth-toggle');await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});await page.click('.zkth-toggle');
  await page.waitForFunction(()=>localStorage.getItem('zk_personal_color_mode')==='light'&&document.documentElement.dataset.theme==='light');
  await page.goto(`${base}/form?test-hour=12&from-admin=2`,{waitUntil:'domcontentloaded',timeout:30000});await waitForMode(page,'light');assertMode(await readFormState(page),'light','admin light over global dark','personal');
 
  // The design-page selector has the required three global policies and saves only through the explicit settings action.
- await page.goto(`${base}/admin/app?global-save-test=1`,{waitUntil:'domcontentloaded',timeout:30000});
+ await page.goto(`${base}/desk/app?global-save-test=1`,{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForSelector('.admin-main',{timeout:20000});await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});
  const openedSettings=await page.evaluate(()=>{const item=[...document.querySelectorAll('.zkad-nav-main')].find(node=>(node.textContent||'').trim()==='تنظیمات');if(!item)return false;item.click();return true});
  assert(openedSettings,'Settings navigation was not available');await sleep(150);

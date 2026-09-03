@@ -201,7 +201,7 @@ try {
     sessionStorage.setItem('zk_admin_authed', 'true');
   });
   await installMocks(adminPage);
-  await adminPage.goto(`${baseUrl}/admin`, { waitUntil: 'domcontentloaded' });
+  await adminPage.goto(`${baseUrl}/desk/app`, { waitUntil: 'domcontentloaded' });
   await waitForText(adminPage, 'سوالات مخاطبین');
   await adminPage.evaluate(() => {
     const target = [...document.querySelectorAll('button')].find((button) => button.textContent?.includes('سوالات مخاطبین'));

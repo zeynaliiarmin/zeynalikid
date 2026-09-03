@@ -1,7 +1,7 @@
 /* tests/design-a-warm-ui.mjs — قرارداد «طراحی A گرم» (design-A-warm.html)
    ۱) هر چهار دیزاین در روشن و تاریک، پالت اختصاصی خودش را روی صفحات
       ورود/ثبت‌نام کاربر، پیگیری دوره و ورود مدیریت می‌گذارد (رنگ دکمه‌ها دقیقاً همان فایل).
-   ۲) هدر واقعی سایت (منوی همبرگری + تعویض زبان + دستیار) روی این صفحات دست‌نخورده می‌ماند.
+   ۲) هدر واقعی سایت (منوی همبرگری + دستیار) روی این صفحه‌ها دست‌نخورده می‌ماند و تعویض زبان داخل منو است.
    ۳) هیچ متن کوتاهی روی هیچ پس‌زمینه‌ای خوانا نیست مگر نسبت کنتراست ≥ 4.5 (متن درشت ≥ 3.0).
    اجرا: TEST_BASE_URL=http://127.0.0.1:4173 node tests/design-a-warm-ui.mjs
 */
@@ -22,7 +22,7 @@ const ACCENTS = {
 };
 const designs = Object.keys(ACCENTS);
 const modes = ['light', 'dark'];
-const pages = ['/portal', '/track', '/admin/login'];
+const pages = ['/portal', '/track', '/desk'];
 
 const fail = [];
 const assert = (cond, message, detail) => { if (!cond) fail.push(`${message}${detail ? `\n${JSON.stringify(detail)}` : ''}`); };
@@ -64,7 +64,7 @@ async function open(design, mode, path) {
     localStorage.setItem('zkid_lang', 'fa');
   }, design, mode);
   await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded', timeout: 45000 });
-  if (path.startsWith('/admin')) {
+  if (path.startsWith('/desk')) {
     await page.waitForFunction(() => !!document.querySelector('.zp-root .zp-btn'), { timeout: 25000 });
   } else {
     await page.waitForFunction((expected) => document.documentElement.dataset.publicTheme === expected, { timeout: 25000 }, mode);
@@ -154,7 +154,7 @@ for (const design of designs) {
       const label = `${design}/${mode}${path}`;
       await open(design, mode, path);
       const t = await readTokens();
-      if (path.startsWith('/admin')) assert(/^admin-(light|dark)$/.test(t.theme), `${label}: پوستهٔ مدیریتی عوض شده`, t.theme);
+      if (path.startsWith('/desk')) assert(/^admin-(light|dark)$/.test(t.theme), `${label}: پوستهٔ مدیریتی عوض شده`, t.theme);
       else assert(t.theme === (mode === 'dark' ? `${design}-dark` : design), `${label}: پوستهٔ اختصاصی دیزاین انتخاب نشد`, t.theme);
       const expect = { '--zp-acc': pal.acc, '--zp-g2': pal.g2, '--zp-deep': pal.deep, '--zp-soft': pal.soft, '--zp-bg': pal.bg, '--zp-ink': pal.ink, '--zp-ttl': pal.ttl, '--zp-card0': pal.card0, '--zp-card1': pal.card1, '--zp-fbg': pal.fbg, '--zp-btnfg': pal.btnfg };
       for (const [name, value] of Object.entries(expect)) assert(t.vars[name].toLowerCase() === value.toLowerCase(), `${label}: متغیر ${name} با فایل فرق دارد`, { got: t.vars[name], want: value });
@@ -167,22 +167,45 @@ for (const design of designs) {
       } else fail.push(`${label}: دکمهٔ اصلی صفحه پیدا نشد`);
       assert(t.box && /17px/.test(t.box.radius), `${label}: فیلد نئومورفیک فایل اجرا نشده`, t.box);
       assert(t.card && /26px/.test(t.card.radius), `${label}: کارت ۲۶px فایل اجرا نشده`, t.card);
-      // هدر واقعی سایت باید دست‌نخورده بماند
+      // هدر واقعی سایت باید دست‌نخورده بماند؛ انتخاب زبان عمداً درون منو است، نه بالای صفحه.
       const header = await page.evaluate(() => {
         const has = sel => !!document.querySelector(sel);
         const label = t => `[aria-label="${t}"]`;
         return {
           burger: has(label('باز کردن منو')) || has(label('Open menu')),
-          lang: has(label('تغییر زبان')) || has(label('Change language')),
+          languageInHeader: [...document.querySelectorAll('header button')].some(button => /(?:فارسی|English)/.test(button.textContent || '')),
           assistant: has('.zka-launch') || has(label('بازکردن راهنمای سایت')) || has(label('Open site guide')),
           headerEl: has('header') || has('.zku-header'),
         };
       });
       assert(header.headerEl, `${label}: هدر عمومی از این صفحات حذف شده`);
-      assert(header.headerEl, `${label}: هدر عمومی از این صفحات حذف شده`);
-      assert(header.lang, `${label}: تعویض زبان هدر حذف شده`);
+      assert(!header.languageInHeader, `${label}: انتخاب زبان نباید به هدر برگردد`);
       assert(header.assistant, `${label}: دکمهٔ دستیار هدر حذف شده`);
-      if (path === '/track' || path === '/admin/login') assert(header.burger, `${label}: منوی همبرگری هدر حذف شده`);
+      if (path === '/track' || path === '/desk') assert(header.burger, `${label}: منوی همبرگری هدر حذف شده`);
+      const openedMenu = await page.evaluate(() => {
+        const button = document.querySelector('[aria-label="باز کردن منو"], [aria-label="Open menu"]');
+        if (!(button instanceof HTMLButtonElement)) return false;
+        button.click();
+        return true;
+      });
+      assert(openedMenu, `${label}: منو برای رسیدن به انتخاب زبان باز نشد`);
+      if (openedMenu) {
+        await page.waitForSelector('aside[aria-label="منوی اصلی"], aside[aria-label="Main menu"]', { timeout: 25000 });
+        const languageInMenu = await page.evaluate(() => {
+          const menu = document.querySelector('aside[aria-label="منوی اصلی"], aside[aria-label="Main menu"]');
+          const labels = [...(menu?.querySelectorAll('button') || [])].map(button => (button.textContent || '').trim());
+          return labels.includes('🇮🇷 فارسی') && labels.includes('🇬🇧 English');
+        });
+        assert(languageInMenu, `${label}: انتخاب زبان داخل منو پیدا نشد`);
+        const closedMenu = await page.evaluate(() => {
+          const button = document.querySelector('[aria-label="بستن منو"], [aria-label="Close menu"]');
+          if (!(button instanceof HTMLButtonElement)) return false;
+          button.click();
+          return true;
+        });
+        assert(closedMenu, `${label}: منوی بازشده بسته نشد`);
+        if (closedMenu) await page.waitForFunction(() => !document.querySelector('aside[aria-label="منوی اصلی"], aside[aria-label="Main menu"]'), { timeout: 25000 });
+      }
       const audit = await auditContrast();
       assert(audit.badCount === 0, `${label}: ${audit.badCount} متن با کنتراست ناکافی (بررسی‌شده: ${audit.checked})`, audit.bad);
     }
