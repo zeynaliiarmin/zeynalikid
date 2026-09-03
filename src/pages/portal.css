@@ -163,6 +163,6 @@
 .zp-rec-row.sel{background:color-mix(in srgb,var(--zp-acc) 10%,transparent)}
 .zp-edit-row{display:grid;gap:4px;font-size:12px;font-weight:800;color:var(--zp-sub)}
 .zp-edit-row input,.zp-edit-row select,.zp-edit-row textarea{border:1px solid var(--zp-cardbd,#d8d3e6);border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13px;background:var(--zp-card0,#fff);color:var(--zp-ink);width:100%;box-sizing:border-box}
-#zka-header-slot{display:inline-block;width:40px;height:40px;flex-shrink:0;border:0;padding:0;background:transparent}
+#zka-header-slot{display:inline-block;width:48px;height:48px;flex-shrink:0;border:0;padding:0;background:transparent}
 body.zka-off #zka-header-slot{width:0}
 
