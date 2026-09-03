@@ -44,6 +44,8 @@
 .zp-fic{color:color-mix(in srgb,var(--zp-acc) 70%,#888);display:flex}
 .zp-fic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .zp-box input{flex:1;min-width:0;background:transparent;border:0;color:var(--zp-ink);font-size:15px;font-family:inherit;outline:none;font-weight:800}
+/* R22: فقط مقادیرِ تایپ‌شده در فیلدهای مشخص‌شده (ورود/ثبت‌نام والد، پیگیری) — یک سایز بزرگ‌تر */
+.zp-box.zp-bigv input{font-size:16px}
 .zp-box input::placeholder{color:var(--zp-ph);font-weight:600}
 .zp-tag{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:900;color:var(--zp-accText);background:transparent;border:0;box-shadow:none;border-radius:0;padding:0;letter-spacing:.6px}
 .zp-eye{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;padding:0;border:0;border-radius:11px;background:transparent;color:var(--zp-ttl);font-family:inherit;cursor:pointer;display:grid;place-items:center;transition:.16s}
