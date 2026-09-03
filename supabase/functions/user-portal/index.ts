@@ -37,6 +37,16 @@ const digitsOnly = (v: string) => faDigits(v).replace(/\D/g, "");
 
 /** نرمال‌سازی: ۰۹۱۲… / ۹۱۲… / +98912… / 0098912… → +98912… (برای بقیه +CC…) */
 // ─── برچسب‌های نمایشی برای پنل کاربر: خلاصهٔ فرم، طریقهٔ مصرف، گزارش‌ها ───
+// وضعیت آموزشیِ دوره فقط برای پنل کاربر: پس از ثبت فیش/اس‌ام‌اس، «در انتظار پرداخت» نه، بلکه «ثبت شد – در انتظار تأیید»
+const coursePortalStatus = (p: any): string => {
+  const os = String(p?.orderStatus || "").trim();
+  if (os && os !== "جدید" && os !== "در انتظار پرداخت" && os !== "ثبتی") return os; // وضعیتِ تنظیم‌شده توسط ادمین دست‌نخورده می‌ماند
+  const pay = p?.payment || {};
+  const hasProof = !!(pay.receipt || pay.receipt_image || String(pay.receiptText || "").trim() || String(pay.receipt_text || "").trim() || pay.receiptMethod);
+  if (hasProof) return "دوره ثبت شد – در انتظار تأیید";
+  return os || "جدید";
+};
+
 const briefForm = (p: any) => {
   const norm = (v: any) => { const t = Array.isArray(v) ? v.map((x: any) => String(x ?? "").trim()).filter(Boolean).join("، ") : String(v ?? "").trim(); return t.slice(0, 300); };
   const rows = [
@@ -488,7 +498,7 @@ serve(async (req) => {
       return {
         id: String(r.id || ""),
         type: p.type === "course" ? "course" : "consultation",
-        status: p.type === "course" ? (p.orderStatus || "جدید") : (p.consultationStatus || "مشاوره اولیه"),
+        status: p.type === "course" ? coursePortalStatus(p) : (p.consultationStatus || "مشاوره اولیه"),
         title: p.course?.title || (p.type === "course" ? "ثبتنام دوره" : "درخواست مشاوره"),
         amount: p.payment?.amount || "",
         date: String(p.date || ""),

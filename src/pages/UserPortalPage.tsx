@@ -287,7 +287,7 @@ export default function UserPortalPage() {
 
           <div className="zp-stats">
             <div className="zp-stat"><b>{stats.all}</b><span>{en ? 'Records' : 'دورهها و فرمها'}</span></div>
-            <div className="zp-stat"><b>{stats.pending}</b><span>{en ? 'Pending' : 'در انتظار پرداخت'}</span></div>
+            <div className="zp-stat"><b>{stats.pending}</b><span>{en ? 'Pending confirmation' : 'در انتظار تأیید'}</span></div>
             <div className="zp-stat"><b>{stats.consults}</b><span>{en ? 'Consultations' : 'مشاورهها'}</span></div>
           </div>
 

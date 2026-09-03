@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import LanguageSwitcher from './LanguageSwitcher';
 import { fetchUserQuestions } from '../lib/supabase';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getUserSession, clearUserSession } from '../utils/userPortal';
 import { BellIcon } from './Icons';
 
 type Lang = 'fa' | 'en';
@@ -11,6 +12,10 @@ type Props = {
   setLang: (l: Lang) => void;
   adminAuthed?: boolean;
   onAdminQuestions?: () => void;
+  /** فقط در حالت «پنل کاربر» — دکمهٔ آدمک/خروج در هدر صفحات عمومی */
+  portalMode?: boolean;
+  /** کاربر همین حالا فرم مشاوره را موفقیت‌آمیز ثبت کرده (صفحهٔ تأیید) */
+  consultationComplete?: boolean;
 };
 
 export default function Header({
@@ -19,9 +24,27 @@ export default function Header({
   setLang,
   adminAuthed,
   onAdminQuestions,
+  portalMode,
+  consultationComplete,
 }: Props) {
+  void setLang;
   const topH = T.topbarHeight || 64;
   const [pendingCount, setPendingCount] = useState(0);
+  const navigate = useNavigate();
+  const loc = useLocation();
+  const [signedIn, setSignedIn] = useState(() => !!getUserSession());
+  useEffect(() => {
+    const sync = () => setSignedIn(!!getUserSession());
+    window.addEventListener('zk-portal-session', sync);
+    return () => window.removeEventListener('zk-portal-session', sync);
+  }, []);
+  const path = (loc.pathname || '/').replace(/\/+$/, '') || '/';
+  const onPortal = path === '/track' || path === '/portal';
+  const inFlow = ['/form', '/consultation', '/child-info', '/course-shipping', '/course-payment', '/course-payment/verify'].includes(path);
+  const consultDoneHere = (path === '/form' || path === '/consultation') && consultationComplete === true;
+  // دکمه فقط برای کاربرِ واردشده؛ در میانهٔ فرم ثبت دوره/مشاوره پنهان (حواس پرت نشود) — در صفحهٔ تأییدها نمایان
+  const showUserBtn = portalMode === true && signedIn && (onPortal || !inFlow || consultDoneHere);
+  const showLogout = showUserBtn && onPortal;
 
   useEffect(() => {
     if (!adminAuthed) return;
@@ -114,7 +137,24 @@ export default function Header({
             )}
           </button>
         )}
-        <LanguageSwitcher lang={lang} setLang={setLang} T={T} glass />
+        {showUserBtn ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (showLogout) { try { clearUserSession(); } catch { /* ignore */ } navigate('/'); }
+              else { try { navigate('/portal'); } catch { /* ignore */ } }
+            }}
+            aria-label={showLogout ? (lang === 'en' ? 'Log out' : 'خروج از پنل') : (lang === 'en' ? 'Parent panel' : 'پنل والد')}
+            title={showLogout ? (lang === 'en' ? 'Log out of your panel' : 'خروج از پنل کاربری') : (lang === 'en' ? 'Go to your panel' : 'پنل کاربری — دوره‌ها و برنامه‌ها')}
+            style={{ width: 38, height: 38, borderRadius: T.btnRadius || 12, border: `1px solid ${T.brd}`, background: T.card || '#fff', color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontFamily: 'inherit' }}
+          >
+            {showLogout ? (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+            ) : (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4.5 21c1.4-3.8 4.2-5.8 7.5-5.8s6.1 2 7.5 5.8" /></svg>
+            )}
+          </button>
+        ) : null}
       </div>
 
       <div
