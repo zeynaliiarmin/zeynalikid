@@ -238,7 +238,7 @@ export default function TrackPage() {
           </div>
           <div className="zp-field">
             <span className="zp-lbl">{lang === 'en' ? 'Phone number' : 'شماره تماس'}</span>
-            <div className="zp-box zp-bigv"><span className="zp-fic"><PhoneIcon size={19} /></span><input dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => { const v = e.target.value; if (p2e(v).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; } setPhone(v); }} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
+            <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic"><PhoneIcon size={19} /></span><input dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => { const v = e.target.value; if (p2e(v).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; } setPhone(v); }} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
           </div>
           {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
           <button className="zp-btn" onClick={search} disabled={loading}>{loading ? '…' : (lang === 'en' ? 'Track course' : 'پیگیری دوره')}</button>

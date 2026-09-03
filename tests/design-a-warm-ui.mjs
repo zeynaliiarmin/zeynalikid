@@ -91,6 +91,23 @@ const readTokens = () => page.evaluate(() => {
   };
 });
 
+// قرارداد بصری: کادر شمارهٔ تماس باید دقیقاً هم‌قدِ کادر کد پیگیری بماند.
+// در ثبت‌نام، مرجعِ کد از نمای ورود همان صفحه گرفته می‌شود چون کد در آن مرحله نمایش ندارد.
+const readAnswerFieldHeights = () => page.evaluate(() => {
+  const read = label => {
+    const field = [...document.querySelectorAll('.zp-field')].find(item => (item.querySelector('.zp-lbl')?.textContent || '').trim().includes(label));
+    const box = field?.querySelector('.zp-box');
+    const countryButton = box?.querySelector('button');
+    if (!(box instanceof HTMLElement)) return null;
+    return {
+      height: box.getBoundingClientRect().height,
+      className: box.className,
+      countryButtonHeight: countryButton instanceof HTMLElement ? countryButton.getBoundingClientRect().height : null,
+    };
+  };
+  return { code: read('کد پیگیری'), phone: read('شماره تماس') };
+});
+
 /* خوانایی: هر گره متنی که پس‌زمینهٔ ساده (بدون تصویر/گرادیان) دارد سنجیده می‌شود */
 const auditContrast = () => page.evaluate(() => {
   const chan = v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
@@ -154,6 +171,30 @@ for (const design of designs) {
       const label = `${design}/${mode}${path}`;
       await open(design, mode, path);
       const t = await readTokens();
+      if (path === '/portal' || path === '/track') {
+        const loginFields = await readAnswerFieldHeights();
+        assert(loginFields.code && loginFields.phone, `${label}: کادر کد پیگیری یا شمارهٔ تماس پیدا نشد`, loginFields);
+        if (loginFields.code && loginFields.phone) {
+          assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شمارهٔ تماس با کد پیگیری برابر نیست`, loginFields);
+        }
+        if (path === '/portal' && loginFields.code) {
+          const openedRegister = await page.evaluate(() => {
+            const tab = document.querySelectorAll('.zp-tabs .zp-tab')[1];
+            if (!(tab instanceof HTMLButtonElement)) return false;
+            tab.click();
+            return true;
+          });
+          assert(openedRegister, `${label}: تب ثبت‌نام برای بررسی ارتفاع پیدا نشد`);
+          if (openedRegister) {
+            await page.waitForFunction(() => ![...document.querySelectorAll('.zp-lbl')].some(item => (item.textContent || '').trim().includes('کد پیگیری')), { timeout: 10000 });
+            const registerFields = await readAnswerFieldHeights();
+            assert(registerFields.phone, `${label}: کادر شمارهٔ تماس ثبت‌نام پیدا نشد`, registerFields);
+            if (registerFields.phone) {
+              assert(Math.abs(registerFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع شمارهٔ تماس ثبت‌نام با کد پیگیری برابر نیست`, { login: loginFields.code, register: registerFields.phone });
+            }
+          }
+        }
+      }
       if (path.startsWith('/desk')) assert(/^admin-(light|dark)$/.test(t.theme), `${label}: پوستهٔ مدیریتی عوض شده`, t.theme);
       else assert(t.theme === (mode === 'dark' ? `${design}-dark` : design), `${label}: پوستهٔ اختصاصی دیزاین انتخاب نشد`, t.theme);
       const expect = { '--zp-acc': pal.acc, '--zp-g2': pal.g2, '--zp-deep': pal.deep, '--zp-soft': pal.soft, '--zp-bg': pal.bg, '--zp-ink': pal.ink, '--zp-ttl': pal.ttl, '--zp-card0': pal.card0, '--zp-card1': pal.card1, '--zp-fbg': pal.fbg, '--zp-btnfg': pal.btnfg };

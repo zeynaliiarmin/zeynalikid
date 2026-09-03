@@ -39,6 +39,11 @@
 .zp-box{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--zp-fbg);border:1px solid rgba(0,0,0,.03);
   border-radius:17px;padding:14px 16px;min-height:52px;
   box-shadow:inset 3px 3px 7px var(--zp-fsh1),inset -3px -3px 7px var(--zp-fsh2),0 1px 0 var(--zp-cardbd);transition:.16s}
+/* همهٔ پاسخ‌های کوتاهِ ورود، ثبت‌نام و پیگیری یک ارتفاع بیرونی ثابت دارند. کنترل کشورِ شماره
+   همچنان هدف لمسی ۴۸px خود را نگه می‌دارد؛ فقط پدینگ عمودیِ همان کادر فشرده شده است. */
+.zp-box.zp-bigv{height:58px;min-height:58px;flex-wrap:nowrap}
+.zp-box.zp-phonebox{padding-block:4px}
+.zp-box.zp-phonebox>div{flex:0 0 auto}
 .zp-box:focus-within{background:var(--zp-fbg);outline:none;
   box-shadow:inset 3px 3px 7px var(--zp-fsh1),inset -3px -3px 7px var(--zp-fsh2),0 0 0 3px color-mix(in srgb,var(--zp-acc) 18%,transparent)}
 .zp-fic{color:color-mix(in srgb,var(--zp-acc) 70%,#888);display:flex}
