@@ -18,6 +18,7 @@ import './portal.css';
 import { designModeFromThemeId, warmZpVars } from '../theme/warmPalettes';
 import { PlanView } from '../lib/PlanView';
 import { downloadPlanPdf } from '../lib/planPdf';
+import EntryBackButton from '../components/EntryBackButton';
 
 type AuthView = 'login' | 'register';
 type RegStep = 'form' | 'otp';
@@ -251,6 +252,7 @@ export default function UserPortalPage() {
       <div className="zp-content">
         {!session && (
           <div className="zp-card" style={{ maxWidth: 400 }}>
+            <EntryBackButton lang={lang} />
             <div style={{ textAlign: 'center' }}>
               <span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.4A7 7 0 0 1 12.5 3z" /></svg>{en ? 'USER PORTAL' : 'پنل کاربر'}</span>
             </div>
@@ -263,12 +265,12 @@ export default function UserPortalPage() {
 
             {auth === 'login' && (<>
               <div className="zp-field">
-                <span className="zp-lbl">{en ? 'Tracking code' : 'کد پیگیری'}</span>
-                <div className="zp-box zp-bigv"><span className="zp-fic"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 26))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
+                <span className="zp-lbl zp-entry-field-label">{en ? 'Tracking code' : 'کد پیگیری'}</span>
+                <div className="zp-box zp-bigv"><span className="zp-fic zp-entry-field-icon"><I d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></span><input className="zp-entry-field-input zp-entry-code-input" dir="ltr" inputMode="text" placeholder="12739" value={code} onChange={(e) => setCode(p2e(e.target.value).toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 26))} onKeyDown={(e) => e.key === 'Enter' && doLogin()} style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '2px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
               </div>
               <div className="zp-field">
-                <div className="zp-label"><span className="zp-lbl">{en ? 'Phone number' : 'شماره تماس'}</span>{phonePreview ? <small className="zp-lblpreview" aria-live="polite">{en ? 'Registered with:' : 'ثبت‌نام با:'} <b dir="ltr">{phonePreview}</b></small> : null}</div>
-                <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} /><CountryCodePicker flat T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
+                <div className="zp-label"><span className="zp-lbl zp-entry-field-label">{en ? 'Phone number' : 'شماره تماس'}</span>{phonePreview ? <small className="zp-lblpreview" aria-live="polite">{en ? 'Registered with:' : 'ثبت‌نام با:'} <b dir="ltr">{phonePreview}</b></small> : null}</div>
+                <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic zp-entry-field-icon"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input className="zp-entry-field-input zp-entry-phone-input" dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} /><CountryCodePicker flat className="zp-entry-country-picker" T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}
@@ -278,12 +280,12 @@ export default function UserPortalPage() {
 
             {auth === 'register' && step === 'form' && (<>
               <div className="zp-field">
-                <span className="zp-lbl">{en ? 'Full name' : 'نام و نام خانوادگی'}</span>
-                <div className="zp-box zp-bigv"><span className="zp-fic"><I d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0" /></span><input placeholder={en ? 'e.g. Ali Mohammad Rezaei' : 'مثلاً: علی محمد رضایی'} value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+                <span className="zp-lbl zp-entry-field-label">{en ? 'Full name' : 'نام و نام خانوادگی'}</span>
+                <div className="zp-box zp-bigv"><span className="zp-fic zp-entry-field-icon"><I d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0" /></span><input className="zp-entry-field-input zp-entry-name-input" placeholder={en ? 'e.g. Ali Mohammad Rezaei' : 'مثلاً: علی محمد رضایی'} value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
               </div>
               <div className="zp-field">
-                <span className="zp-lbl">{en ? 'Phone number' : 'شماره تماس'}</span>
-                <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doStart()} /><CountryCodePicker flat T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
+                <span className="zp-lbl zp-entry-field-label">{en ? 'Phone number' : 'شماره تماس'}</span>
+                <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic zp-entry-field-icon"><I d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.8.7a2 2 0 0 1 1.7 2z" /></span><input className="zp-entry-field-input zp-entry-phone-input" dir="ltr" inputMode="tel" placeholder={phonePlaceholder(cc, lang)} value={phone} onChange={(e) => onPhoneInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doStart()} /><CountryCodePicker flat className="zp-entry-country-picker" T={T} countries={countries} lang={lang} value={cc} onChange={setCc} /></div>
               </div>
               {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
 {captchaOn && <TurnstileGate key={`${auth}:${captchaAttempt}`} variant="auth" siteKey={TURNSTILE_SITE_KEY} lang={lang} T={T} includeCrypto={false} onVerify={onCaptchaVerify} onReset={onCaptchaReset} />}

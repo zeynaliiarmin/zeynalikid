@@ -33,14 +33,14 @@ await page.setViewport({ width: 1360, height: 900, deviceScaleFactor: 1 });
 
 /* تنظیمات را همین‌جا می‌سازیم: دیزاین انتخابی، حالت روشن/تاریک و حالت ورودی «پنل کاربر»
    تا صفحات ورود/ثبت‌نام در هر دو پروژه بررسی شوند (در فرزند من پیش‌فرض پیگیری است). */
-let mock = { design: 'wellness', mode: 'light' };
+let mock = { design: 'wellness', mode: 'light', entryMode: 'user' };
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
 await page.setRequestInterception(true);
 page.on('request', request => {
   const url = request.url();
   if (url.includes('/functions/v1/public-settings')) {
     if (request.method() === 'OPTIONS') return request.respond({ status: 204, headers: cors, body: '' });
-    return request.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ settings: { publicThemeMode: mock.mode, entryMode: 'user', designSystem: { sections: { public: { design: mock.design } } } } }) });
+    return request.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ settings: { publicThemeMode: mock.mode, entryMode: mock.entryMode, designSystem: { sections: { public: { design: mock.design } } } } }) });
   }
   if (url.includes('/functions/v1/assistant-public')) {
     if (request.method() === 'OPTIONS') return request.respond({ status: 204, headers: cors, body: '' });
@@ -53,10 +53,25 @@ page.on('request', request => {
   request.continue();
 });
 
-async function open(design, mode, path) {
-  mock = { design, mode };
+async function open(design, mode, path, entryMode = 'user') {
+  mock = { design, mode, entryMode };
+  // فایل SSG تنظیمات را پیش از اجرای React روی window می‌نویسد؛ setter آن را با حالت
+  // مورد آزمون جایگزین می‌کند تا هم UserPortal و هم TrackPage واقعی پوشش داده شوند.
+  await page.evaluateOnNewDocument((wantedEntryMode) => {
+    let preloaded;
+    Object.defineProperty(window, '__APP_SSG_SETTINGS__', {
+      configurable: true,
+      get: () => preloaded,
+      set: (value) => {
+        preloaded = value && typeof value === 'object' && !Array.isArray(value)
+          ? { ...value, entryMode: wantedEntryMode }
+          : value;
+      },
+    });
+  }, entryMode);
   await page.evaluateOnNewDocument((d, m) => {
     try { localStorage.clear(); } catch { }
+    try { sessionStorage.clear(); } catch { }
     localStorage.setItem('zk_design_system', d);
     localStorage.setItem('zk_public_theme_mode', m);
     // پوستهٔ مدیریتی (صفحهٔ ورود مدیریت) با سلیقهٔ شخصی خودش روشن/تاریک می‌شود
@@ -107,6 +122,54 @@ const readAnswerFieldHeights = () => page.evaluate(() => {
   };
   return { code: read('کد پیگیری'), phone: read('شماره تماس') };
 });
+
+const readEntryFormPresentation = () => page.evaluate(() => {
+  const rect = node => {
+    if (!(node instanceof HTMLElement)) return null;
+    const value = node.getBoundingClientRect();
+    return { left: value.left, right: value.right, top: value.top, bottom: value.bottom, width: value.width, height: value.height };
+  };
+  const entryInputs = [...document.querySelectorAll('.zp-entry-field-input')].map(input => {
+    const style = getComputedStyle(input);
+    const box = input.closest('.zp-box');
+    const field = input.closest('.zp-field');
+    return { fontSize: style.fontSize, lineHeight: style.lineHeight, box: rect(box), marginBottom: field instanceof HTMLElement ? getComputedStyle(field).marginBottom : '' };
+  });
+  const labels = [...document.querySelectorAll('.zp-entry-field-label')].map(label => {
+    const style = getComputedStyle(label);
+    return { fontSize: style.fontSize, lineHeight: style.lineHeight };
+  });
+  const icons = [...document.querySelectorAll('.zp-entry-field-icon svg')].map(icon => {
+    const value = icon.getBoundingClientRect();
+    return { width: value.width, height: value.height };
+  });
+  const country = document.querySelector('.zp-entry-country-picker');
+  const back = document.querySelector('[data-testid="public-entry-back"]');
+  const row = back?.closest('.zp-entry-backrow');
+  const card = back?.closest('.zp-card');
+  const chip = card?.querySelector('.zp-chip');
+  return {
+    entryInputs,
+    labels,
+    icons,
+    country: country instanceof HTMLElement ? { fontSize: getComputedStyle(country).fontSize, height: country.getBoundingClientRect().height } : null,
+    back: back instanceof HTMLElement ? { direction: document.querySelector('.zp-root')?.getAttribute('dir') || '', position: getComputedStyle(back).position, height: back.getBoundingClientRect().height, rect: rect(back), row: rect(row), card: rect(card), chip: rect(chip) } : null,
+  };
+});
+
+const assertEntryFormPresentation = (entry, label, hasCountry) => {
+  assert(entry.entryInputs.length === 2, `${label}: exactly two requested entry inputs must be shown`, entry);
+  assert(entry.entryInputs.every(input => input.fontSize === '23px' && input.lineHeight === '26px'), `${label}: requested input typography is not 23px / 26px`, entry.entryInputs);
+  assert(entry.entryInputs.every(input => Math.abs(input.box?.height - 58) <= 0.5 && input.marginBottom === '16px'), `${label}: field height or field spacing changed`, entry.entryInputs);
+  assert(entry.labels.length === 2 && entry.labels.every(item => item.fontSize === '16px' && item.lineHeight === '21.6px'), `${label}: requested field titles are not exactly 4px larger`, entry.labels);
+  assert(entry.icons.length === 2 && entry.icons.every(item => Math.abs(item.width - 22) <= 0.5 && Math.abs(item.height - 22) <= 0.5), `${label}: field vectors are not the coordinated 22px size`, entry.icons);
+  if (hasCountry) assert(entry.country?.fontSize === '17px' && entry.country.height >= 44, `${label}: country-code control or flag is not scaled safely`, entry.country);
+  else assert(entry.country === null, `${label}: tracking page must not gain a country selector`, entry.country);
+  assert(entry.back && entry.back.position === 'static' && entry.back.height >= 48 && entry.back.rect && entry.back.row && entry.back.chip && entry.back.row.top < entry.back.chip.top, `${label}: back button must stay in-flow at the start of the card`, entry.back);
+  if (entry.back?.direction === 'rtl') assert(Math.abs(entry.back.rect.right - entry.back.row.right) <= 0.5, `${label}: Persian back button must align to the right`, entry.back);
+  else if (entry.back?.direction === 'ltr') assert(Math.abs(entry.back.rect.left - entry.back.row.left) <= 0.5, `${label}: English back button must align to the left`, entry.back);
+  else assert(false, `${label}: entry form direction was not set`, entry.back);
+};
 
 /* خوانایی: هر گره متنی که پس‌زمینهٔ ساده (بدون تصویر/گرادیان) دارد سنجیده می‌شود */
 const auditContrast = () => page.evaluate(() => {
@@ -173,10 +236,12 @@ for (const design of designs) {
       const t = await readTokens();
       if (path === '/portal' || path === '/track') {
         const loginFields = await readAnswerFieldHeights();
+        const loginPresentation = await readEntryFormPresentation();
         assert(loginFields.code && loginFields.phone, `${label}: کادر کد پیگیری یا شمارهٔ تماس پیدا نشد`, loginFields);
         if (loginFields.code && loginFields.phone) {
           assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شمارهٔ تماس با کد پیگیری برابر نیست`, loginFields);
         }
+        assertEntryFormPresentation(loginPresentation, `${label}: ورود`, true);
         if (path === '/portal' && loginFields.code) {
           const openedRegister = await page.evaluate(() => {
             const tab = document.querySelectorAll('.zp-tabs .zp-tab')[1];
@@ -188,10 +253,12 @@ for (const design of designs) {
           if (openedRegister) {
             await page.waitForFunction(() => ![...document.querySelectorAll('.zp-lbl')].some(item => (item.textContent || '').trim().includes('کد پیگیری')), { timeout: 10000 });
             const registerFields = await readAnswerFieldHeights();
+            const registerPresentation = await readEntryFormPresentation();
             assert(registerFields.phone, `${label}: کادر شمارهٔ تماس ثبت‌نام پیدا نشد`, registerFields);
             if (registerFields.phone) {
               assert(Math.abs(registerFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع شمارهٔ تماس ثبت‌نام با کد پیگیری برابر نیست`, { login: loginFields.code, register: registerFields.phone });
             }
+            assertEntryFormPresentation(registerPresentation, `${label}: ثبت‌نام`, true);
           }
         }
       }
@@ -269,6 +336,50 @@ for (const design of designs) {
     }
   }
 }
+
+// مستقل از حالت «پنل کاربر»، نسخهٔ واقعی صفحهٔ پیگیری هم همین قرارداد را نگه می‌دارد.
+await open('wellness', 'light', '/track', 'track');
+const standaloneTrack = await readEntryFormPresentation();
+assertEntryFormPresentation(standaloneTrack, 'standalone tracking page', false);
+
+// انتخاب English از منوی واقعی باید جای دکمه را از راست به چپ ببرد.
+const openedLanguageMenu = await page.evaluate(() => {
+  const trigger = document.querySelector('button[aria-label="باز کردن منو"]');
+  if (!(trigger instanceof HTMLButtonElement)) return false;
+  trigger.click();
+  return true;
+});
+assert(openedLanguageMenu, 'tracking page: language menu trigger was not found');
+if (openedLanguageMenu) {
+  await page.waitForSelector('aside[aria-label="منوی اصلی"]', { timeout: 15000 });
+  const switchedToEnglish = await page.evaluate(() => {
+    const menu = document.querySelector('aside[aria-label="منوی اصلی"]');
+    const english = [...(menu?.querySelectorAll('button') || [])].find(button => (button.textContent || '').includes('English'));
+    if (!(english instanceof HTMLButtonElement)) return false;
+    english.click();
+    return true;
+  });
+  assert(switchedToEnglish, 'tracking page: English language choice was not found');
+  if (switchedToEnglish) {
+    await page.waitForFunction(() => document.querySelector('.zp-root')?.getAttribute('dir') === 'ltr', { timeout: 15000 });
+    await sleep(250);
+    assertEntryFormPresentation(await readEntryFormPresentation(), 'standalone tracking page in English', false);
+  }
+}
+
+// دکمهٔ بازگشت باید به صفحهٔ واقعی قبل برگردد، نه اینکه صفحه را بپوشاند یا شناور بماند.
+await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 45000 });
+// اجازه بده React مسیر صفحهٔ قبل را کامل در history ثبت کند؛ سپس رفتار واقعی دکمه را می‌سنجیم.
+await sleep(1000);
+await page.goto(`${base}/track`, { waitUntil: 'domcontentloaded', timeout: 45000 });
+await page.waitForSelector('[data-testid="public-entry-back"]', { timeout: 25000 });
+// تنظیمات عمومی پس از mount به‌صورت async یک‌بار همگام می‌شود؛ دکمه را روی نمای پایدار می‌زنیم.
+await sleep(1000);
+await page.click('[data-testid="public-entry-back"]');
+// history traversal creates a new document; waitForFunction is tied to the old realm in Puppeteer.
+await sleep(1200);
+const returnedPath = await page.evaluate(() => location.pathname);
+assert(returnedPath === '/', 'back button did not return to the prior public page', { returnedPath });
 
 await browser.close();
 if (fail.length) { console.error(`✗ design-A-warm contracts failed (${fail.length}):`); for (const f of fail) console.error('  –', f); process.exit(1); }
