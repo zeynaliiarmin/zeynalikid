@@ -39,3 +39,7 @@ export const portalLogin = (phone: string, code: string, captchaToken?: string):
 /** تاریخچهٔ دوره‌ها و مشاوره‌های کاربر */
 export const portalHistory = (phone: string, code: string): Promise<PortalResponse> =>
   call('history', { phone, code });
+
+/** ویرایش محدود اطلاعات ثبت‌شده از پنل کاربر (با ثبت نسخهٔ قبلی برای پنل متخصص) */
+export const portalUpdateInfo = (phone: string, code: string, id: string, fields: Record<string, string>): Promise<PortalResponse> =>
+  call('update-info', { phone, code, id, fields });

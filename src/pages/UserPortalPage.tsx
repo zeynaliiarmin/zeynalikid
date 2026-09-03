@@ -1,12 +1,12 @@
 // UserPortalPage — پنل کاربر: ثبت‌نام (شماره + نام واقعی + کد تأیید) / ورود با کد پیگیری / داشبورد
 // زبان طراحی: نسخهٔ A (نئومورفیک گرم + بنفش + ممفیس) — اما چیدمان کاملاً متمایز از صفحهٔ پیگیری
 import { useAppContext } from '../app/AppContext';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { getCountryFlag } from '../utils/phone';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { portalStart, portalConfirm, portalLogin, portalHistory, portalPhonePreview } from '../lib/userPortalApi';
+import { portalStart, portalConfirm, portalLogin, portalHistory, portalPhonePreview, portalUpdateInfo } from '../lib/userPortalApi';
 import { TURNSTILE_SITE_KEY, TRACKING_PREFIX } from '../config/project';
 import TurnstileGate from '../components/TurnstileGate';
 import {
@@ -21,6 +21,22 @@ import { downloadPlanPdf } from '../lib/planPdf';
 
 type AuthView = 'login' | 'register';
 type RegStep = 'form' | 'otp';
+
+const EDIT_FIELDS: Array<[string, string, string]> = [
+  ['childName', 'نام کودک', 'Child name'],
+  ['age', 'سن', 'Age'],
+  ['gender', 'جنسیت', 'Gender'],
+  ['height', 'قد (سانتی‌متر)', 'Height (cm)'],
+  ['weight', 'وزن (کیلوگرم)', 'Weight (kg)'],
+  ['appetite', 'اشتها', 'Appetite'],
+  ['sleep', 'خواب', 'Sleep'],
+  ['activity', 'فعالیت روزانه', 'Daily activity'],
+  ['disease', 'بیماری / عارضه / جراحی', 'Disease / surgery'],
+  ['digest', 'دفع و اجابت مزاج', 'Digestion'],
+  ['allergies', 'حساسیت غذایی', 'Food allergies'],
+  ['medications', 'دارو', 'Medications'],
+  ['notes', 'توضیحات تکمیلی', 'Additional notes'],
+];
 
 const empty = { o: 0, p: 0, c: 0 };
 
@@ -45,6 +61,18 @@ export default function UserPortalPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  // R19: فیلترها، انتخاب رکورد، تب‌های چسبان، ویرایش، تگ معرفی‌کننده
+  const [filter, setFilter] = useState('');
+  const [selId, setSelId] = useState('');
+  const [tabId, setTabId] = useState('');
+  const [stuck, setStuck] = useState(false);
+  const [advisor, setAdvisor] = useState('');
+  const [editOn, setEditOn] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editErr, setEditErr] = useState('');
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
   const [nextPath, setNextPath] = useState(() => takePortalNext());
   const [phonePreview, setPhonePreview] = useState('');
   // پذیرای همه شکل‌ها: FM-1x2tsvy / F1x2tsvy / M-1x2tsvy / 1x2tsvy / هر خطای فاصله و خط تیره
@@ -92,20 +120,31 @@ export default function UserPortalPage() {
     }, 550);
     return () => window.clearTimeout(timer);
   }, [code, auth]);
+  const loadHistory = useCallback(async (s?: any) => {
+    const sess = s || getUserSession();
+    if (!sess) return;
+    try {
+      const r = await portalHistory(sess.phone, sess.code);
+      setItems(r.items || []);
+      setAdvisor(String((r as any).advisorName || ''));
+    } catch (e: any) {
+      // نشست محلی نامعتبر شد؟ فقط تاریخچه خراب است — کاربر همچنان وارد است
+      console.warn('history failed', e);
+    } finally { setLoaded(true); }
+  }, []);
+  useEffect(() => { if (session) void loadHistory(session); }, [session, loadHistory]);
   useEffect(() => {
-    if (!session) return;
-    let alive = true;
-    (async () => {
-      try {
-        const r = await portalHistory(session.phone, session.code);
-        if (alive) { setItems(r.items || []); }
-      } catch (e: any) {
-        // نشست محلی نامعتبر شد؟ فقط تاریخچه خراب است — کاربر همچنان وارد است
-        console.warn('history failed', e);
-      } finally { if (alive) setLoaded(true); }
-    })();
-    return () => { alive = false; };
-  }, [session]);
+    if (!selId) { setStuck(false); return; }
+    const onScroll = () => {
+      const s = sentinelRef.current, b = barRef.current;
+      if (!s || !b) return;
+      setStuck(b.getBoundingClientRect().top > s.getBoundingClientRect().bottom + 1);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
+  }, [selId, tabId, editOn]);
 
   // پالت اختصاصی همین دیزاین در همین حالت (روشن/تاریک) — دقیقاً از فایل design-A-warm
   const zpTheme = designModeFromThemeId(T.id);
@@ -171,14 +210,26 @@ export default function UserPortalPage() {
     try { await navigator.clipboard.writeText(String(session?.code || '')); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* ignore */ }
   };
 
-  const stats = useMemo(() => {
+  const counts = useMemo<Record<string, number>>(() => {
     const list = items || [];
     return {
-      all: list.length,
-      pending: list.filter((x: any) => String(x.status || '').includes('انتظار') || String(x.status || '').includes('جدید') || String(x.status || '').includes('ناقص')).length,
+      courses: list.filter((x: any) => x.type === 'course').length,
+      pending: list.filter((x: any) => /انتظار|جدید|ناقص/.test(String(x.status || ''))).length,
       consults: list.filter((x: any) => x.type === 'consultation').length,
     };
   }, [items]);
+  const filtered = useMemo(() => {
+    const list = items || [];
+    if (filter === 'courses') return list.filter((x: any) => x.type === 'course');
+    if (filter === 'consults') return list.filter((x: any) => x.type === 'consultation');
+    if (filter === 'pending') return list.filter((x: any) => /انتظار|جدید|ناقص/.test(String(x.status || '')));
+    return list;
+  }, [items, filter]);
+  const childFirst = (it: any): string => {
+    const rows = (it && it.form) || [];
+    const pick = (re: RegExp) => { const r = rows.find((f: any) => re.test(String(f.label || ''))); return r ? String(r.value || '').trim().split(/\s+/)[0] : ''; };
+    return pick(/نام کودک|نام فرزند/) || pick(/نام و نام خانوادگی/);
+  };
 
   const goto = (p: string) => { setNextPath(''); setView(p); };
 
@@ -283,83 +334,129 @@ export default function UserPortalPage() {
               <b style={{ marginInlineStart: 'auto', fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: 2 }}>{session.code}</b>
             </button>
             {copied && <div style={{ position: 'relative', zIndex: 2, marginTop: 6, fontSize: 11, fontWeight: 800, opacity: .9 }}>{en ? 'Copied' : 'کپی شد'}</div>}
+            {advisor ? <div className="zp-advchip">🤝 {en ? `Referred by ${advisor}` : `با معرفیِ ${advisor}`}</div> : null}
           </div>
 
-          <div className="zp-stats">
-            <div className="zp-stat"><b>{stats.all}</b><span>{en ? 'Records' : 'دورهها و فرمها'}</span></div>
-            <div className="zp-stat"><b>{stats.pending}</b><span>{en ? 'Pending confirmation' : 'در انتظار تأیید'}</span></div>
-            <div className="zp-stat"><b>{stats.consults}</b><span>{en ? 'Consultations' : 'مشاورهها'}</span></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%', marginBottom: 12 }}>
             <button className="zp-btn" style={{ minHeight: 46, fontSize: 13.5 }} onClick={() => goto('courses')}>{en ? 'Register a course' : 'ثبت دورهٔ جدید'}</button>
             <button className="zp-ghost" style={{ marginTop: 0, minHeight: 46, fontSize: 13.5 }} onClick={() => goto('form')}>{en ? 'Consultation' : 'درخواست مشاوره'}</button>
           </div>
 
-          <div style={{ width: '100%', display: 'grid', gap: 12 }}>
-            <div className="zp-rc">
-              <div className="zp-k"><span className="zp-ki"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z M8 20h8" /></svg></span>{en ? 'My records' : 'سوابق من'}</div>
-              {!loaded && <div style={{ fontSize: 12, color: 'var(--zp-sub)' }}>{en ? 'Loading…' : 'در حال بارگذاری…'}</div>}
-              {loaded && items.length === 0 && <div style={{ fontSize: 12.5, color: 'var(--zp-sub)', lineHeight: 2 }}>{en ? 'No records yet — register a course or request a consultation.' : 'هنوز سابقهای ثبت نشده — یک دوره ثبت کنید یا مشاوره بگیرید.'}</div>}
-              {items.map((it: any) => {
-                const usage = it.usage || { rows: [], instructions: "" };
-                const hasUsage = !!(String(usage.instructions || "").trim() || (usage.rows || []).length);
-                const reports = it.reports || { followUps: [], corrective: [] };
-                const hasCorr = it.correctiveEnabled === true && (((reports.corrective || []).length) || ((reports.followUps || []).length));
-                const form = it.form || [];
-                const anyBody = hasUsage || !!it.mealPlan || !!it.sportPlan || form.length > 0 || hasCorr || !!it.userNotes;
-                return (
-                <div key={it.id} style={{ borderTop: '1px dashed var(--zp-fsh1)', padding: '10px 2px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <b style={{ fontSize: 13, color: 'var(--zp-ink)' }}>{it.title}</b>
-                    <span className="zp-sdot" style={{ padding: '3px 10px', fontSize: 11, marginInlineStart: 'auto' }}><i />{it.status}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--zp-sub)', fontWeight: 700 }}>{it.date} {it.time && `· ${it.time}`}{it.amount ? ` · ${it.amount}` : ''}</div>
-                  {hasUsage && (
-                    <div className="zp-sec">
-                      <b className="zp-sech">💊 {en ? 'Product usage instructions' : 'طریقهٔ مصرف محصولات'}</b>
-                      {(usage.rows || []).map((u: any, ui: number) => (
-                        <div key={ui} style={{ fontSize: 11.5 }}>
-                          <b>{u.name}</b>
-                          {(u.lines || []).map((ln: string, li: number) => <div key={li} style={{ color: 'var(--zp-sub)', paddingInlineStart: 8 }}>{ln}</div>)}
-                        </div>
-                      ))}
-                      {usage.instructions ? <div style={{ fontSize: 11.5, whiteSpace: 'pre-wrap' }}>{usage.instructions}</div> : null}
-                    </div>
-                  )}
-                  {it.mealPlan && (
-                    <div className="zp-sec"><b className="zp-sech">🍽 {en ? 'Meal plan' : 'برنامه خوراکی'}</b><PlanView text={it.mealPlan} small /></div>
-                  )}
-                  {it.sportPlan && (
-                    <div className="zp-sec"><b className="zp-sech">{String(it.sportPlan).trim().startsWith('🌳') ? `🌳 ${en ? 'Daily activity (under 6)' : 'فعالیت روزانه (زیر ۶ سال)'}` : `🏃 ${en ? 'Sport plan' : 'برنامه ورزشی'}`}</b><PlanView text={it.sportPlan} small /></div>
-                  )}
-                  {form.length > 0 && (
-                    <div className="zp-sec">
-                      <b className="zp-sech">📋 {en ? 'Your submitted information' : 'اطلاعات ثبت‌شدهٔ شما'}</b>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 10px', fontSize: 11.5 }}>
-                        {form.map((f: any) => (<Fragment key={f.label}><span style={{ color: 'var(--zp-sub)', fontWeight: 700 }}>{f.label}</span><span style={{ color: 'var(--zp-ink)' }}>{f.value}</span></Fragment>))}
-                      </div>
-                    </div>
-                  )}
-                  {hasCorr && (
-                    <div className="zp-sec">
-                      <b className="zp-sech">🛠 {en ? 'Corrective reports' : 'گزارش‌های اصلاحی'}</b>
-                      {(reports.followUps || []).map((fup: any) => <div key={fup.step} style={{ fontSize: 11.5 }}>{en ? `Step ${fup.step}: ` : `مرحلهٔ ${fup.step}: `}{fup.state}</div>)}
-                      {(reports.corrective || []).map((c: any) => <div key={c.label} style={{ fontSize: 11.5 }}>{c.label}: <b>{c.value}</b></div>)}
-                    </div>
-                  )}
-                  {it.userNotes && (
-                    <div className="zp-sec"><b className="zp-sech">📝 {en ? 'Advisor note' : 'نکات کارشناس'}</b><div style={{ whiteSpace: 'pre-wrap', fontSize: 11.5 }}>{it.userNotes}</div></div>
-                  )}
-                  {anyBody && (
-                    <button type="button" className="zp-ghost" style={{ marginTop: 2, minHeight: 34, fontSize: 12 }} onClick={() => { void downloadPlanPdf({ title: it.type === 'course' ? (en ? 'Course information' : 'اطلاعات دوره') : (en ? 'Consultation information' : 'اطلاعات مشاوره'), code: String(it.code || it.id || ''), meal: it.mealPlan || '', sport: it.sportPlan || '', userNotes: it.userNotes || '', form, usage, reports: hasCorr ? reports : undefined }); }}>📄 {en ? 'Download full PDF' : 'دریافت PDF کامل پرونده'}</button>
-                  )}
-                </div>
-                );
-              })}
-            </div>
-            <button type="button" className="zp-link" onClick={logout}>{en ? 'Sign out' : 'خروج از پنل'}</button>
+          <div className="zp-stats">
+            {([['courses', en ? 'Courses' : 'دوره‌ها'], ['pending', en ? 'Pending approval' : 'در انتظار تأیید'], ['consults', en ? 'Consultations' : 'مشاوره‌ها']] as Array<[string, string]>).map(([k, lbl]) => (
+              <button key={k} type="button" className={`zp-stat zp-filt${filter === k ? ' on' : ''}`} onClick={() => { setFilter(filter === k ? '' : k); setSelId(''); setTabId(''); setEditOn(false); }}>
+                <b>{counts[k]}</b><span>{lbl}</span>
+              </button>
+            ))}
           </div>
+
+          {(() => {
+            const sel = selId ? (filtered.find((x: any) => x.id === selId) || null) : null;
+            const usage = sel?.usage || { rows: [], instructions: '' };
+            const hasUsage = !!(sel && (String(usage.instructions || '').trim() || (usage.rows || []).length));
+            const reports = sel?.reports || { followUps: [], corrective: [] };
+            const hasCorr = !!(sel && sel.correctiveEnabled === true && (((reports.corrective || []).length) || ((reports.followUps || []).length)));
+            const formRows: any[] = (sel && sel.form) || [];
+            const childName = childFirst(sel);
+            const tabs: Array<{ id: string; label: string }> = [];
+            if (sel) {
+              if (hasUsage) tabs.push({ id: 'usage', label: en ? 'Usage' : 'طریقه مصرف' });
+              if (sel.mealPlan) tabs.push({ id: 'meal', label: en ? 'Meal plan' : 'برنامه غذایی' });
+              if (sel.sportPlan) tabs.push({ id: 'sport', label: String(sel.sportPlan).trim().startsWith('🌳') ? (en ? 'Daily activity' : 'فعالیت روزانه') : (en ? 'Sport plan' : 'برنامه ورزشی') });
+              tabs.push({ id: 'info', label: en ? 'Information' : 'اطلاعات' });
+              if (hasCorr || sel.userNotes) tabs.push({ id: 'reports', label: en ? 'Reports' : 'گزارش‌ها' });
+            }
+            const activeTab = tabs.some((t) => t.id === tabId) ? tabId : (tabs[0]?.id || '');
+            return (<>
+              {sel && (
+                <div className="zp-tabwrap">
+                  <div ref={sentinelRef} style={{ height: 1 }} />
+                  <div ref={barRef} className={`zp-rec-tabs${stuck ? ' zp-stuck' : ''}`} style={{ top: `calc(${Number((T as any)?.topbarHeight) || 64}px + var(--zk-safe-top, 0px))` }}>
+                    <b className="zp-rec-tabs-title">{childName ? (en ? `${childName}’s plan` : `برنامه ${childName}جان`) : (en ? 'Record' : 'سابقه')}</b>
+                    {tabs.map((t) => <button key={t.id} type="button" className={activeTab === t.id ? 'on' : ''} onClick={() => setTabId(t.id)}>{t.label}</button>)}
+                    <button type="button" className="zp-rec-tabs-x" aria-label={en ? 'Close' : 'بستن'} onClick={() => { setSelId(''); setTabId(''); setEditOn(false); }}>×</button>
+                  </div>
+                  <div className="zp-rec-tab-body">
+                    {activeTab === 'usage' && (
+                      <div className="zp-sec"><b className="zp-sech">💊 {en ? 'Product usage instructions' : 'طریقهٔ مصرف محصولات'}</b>
+                        {(usage.rows || []).map((u: any, ui: number) => (
+                          <div key={ui} style={{ fontSize: 11.5 }}>
+                            <b>{u.name}</b>
+                            {(u.lines || []).map((ln: string, li: number) => <div key={li} style={{ color: 'var(--zp-sub)', paddingInlineStart: 8 }}>{ln}</div>)}
+                          </div>
+                        ))}
+                        {usage.instructions ? <div style={{ fontSize: 11.5, whiteSpace: 'pre-wrap' }}>{usage.instructions}</div> : null}
+                      </div>
+                    )}
+                    {activeTab === 'meal' && sel.mealPlan ? (<div className="zp-sec"><b className="zp-sech">🍽 {en ? 'Meal plan' : 'برنامه خوراکی'}</b><PlanView text={sel.mealPlan} small /></div>) : null}
+                    {activeTab === 'sport' && sel.sportPlan ? (<div className="zp-sec"><b className="zp-sech">{String(sel.sportPlan).trim().startsWith('🌳') ? `🌳 ${en ? 'Daily activity (under 6)' : 'فعالیت روزانه (زیر ۶ سال)'}` : `🏃 ${en ? 'Sport plan' : 'برنامه ورزشی'}`}</b><PlanView text={sel.sportPlan} small /></div>) : null}
+                    {activeTab === 'reports' && (
+                      <div className="zp-sec"><b className="zp-sech">🛠 {en ? 'Reports & advisor notes' : 'گزارش‌ها و نکات کارشناس'}</b>
+                        {(reports.followUps || []).map((fup: any) => <div key={fup.step} style={{ fontSize: 11.5 }}>{en ? `Step ${fup.step}: ` : `مرحلهٔ ${fup.step}: `}{fup.state}</div>)}
+                        {(reports.corrective || []).map((c: any) => <div key={c.label} style={{ fontSize: 11.5 }}>{c.label}: <b>{c.value}</b></div>)}
+                        {sel.userNotes ? <div style={{ whiteSpace: 'pre-wrap', fontSize: 11.5, marginTop: 4 }}>📝 {sel.userNotes}</div> : null}
+                      </div>
+                    )}
+                    {activeTab === 'info' && (
+                      <div className="zp-sec">
+                        <b className="zp-sech">📋 {en ? 'Your submitted information' : 'اطلاعات ثبت‌شدهٔ شما'}</b>
+                        {!editOn && (<>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 10px', fontSize: 11.5 }}>
+                            {formRows.map((f: any) => (<Fragment key={f.label}><span style={{ color: 'var(--zp-sub)', fontWeight: 700 }}>{f.label}</span><span style={{ color: 'var(--zp-ink)' }}>{f.value}</span></Fragment>))}
+                          </div>
+                          <button type="button" className="zp-ghost" style={{ marginTop: 8, minHeight: 34, fontSize: 12, width: 'max-content', paddingInline: 16 }} onClick={() => { const init: Record<string, string> = {}; for (const [key, faL, enL] of EDIT_FIELDS) { const want = en ? enL : faL; const r = formRows.find((f: any) => String(f.label || '').trim() === want || String(f.label || '').startsWith(want)); init[key] = key === 'gender' ? (String(r?.value || '').includes('دختر') || String(r?.value || '').toLowerCase() === 'girl' ? 'female' : (String(r?.value || '').includes('پسر') || String(r?.value || '').toLowerCase() === 'boy') ? 'male' : '') : String(r?.value || ''); } setEditForm(init); setEditErr(''); setEditOn(true); }}>{en ? '✏️ Edit information' : '✏️ ویرایش اطلاعات'}</button>
+                        </>)}
+                        {editOn && (
+                          <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+                            {EDIT_FIELDS.map(([key, faL, enL]) => (
+                              <label key={key} className="zp-edit-row"><span>{en ? enL : faL}</span>
+                                {key === 'gender' ? (
+                                  <select dir={en ? 'ltr' : 'rtl'} value={editForm[key] || ''} onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}>
+                                    <option value="">{en ? 'No change' : 'بدون تغییر'}</option><option value="male">{en ? 'Boy' : 'پسر'}</option><option value="female">{en ? 'Girl' : 'دختر'}</option>
+                                  </select>
+                                ) : key === 'notes' ? (
+                                  <textarea rows={3} value={editForm[key] ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))} />
+                                ) : (
+                                  <input value={editForm[key] ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))} />
+                                )}
+                              </label>
+                            ))}
+                            {editErr ? <div className="zp-err" style={{ margin: 0 }}><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{editErr}</div> : null}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                              <button type="button" className="zp-btn" style={{ minHeight: 40, fontSize: 13 }} disabled={editBusy} onClick={async () => { if (!session) return; setEditBusy(true); setEditErr(''); try { await portalUpdateInfo(session.phone, session.code, String(sel.id), editForm); setEditOn(false); await loadHistory(session); } catch (e: any) { setEditErr(e?.message || (en ? 'Save failed.' : 'ذخیره نشد.')); } finally { setEditBusy(false); } }}>{editBusy ? (en ? 'Saving…' : 'ذخیره…') : (en ? 'Save changes' : 'ذخیرهٔ تغییرات')}</button>
+                              <button type="button" className="zp-ghost" style={{ marginTop: 0, minHeight: 40, fontSize: 13 }} onClick={() => { setEditOn(false); setEditErr(''); }}>{en ? 'Cancel' : 'انصراف'}</button>
+                            </div>
+                            <small style={{ color: 'var(--zp-sub)', fontSize: 10.5, lineHeight: 1.8 }}>{en ? 'Changes are recorded in the expert panel as «edited» and are comparable with the previous version.' : 'تغییرات در پنل متخصص به‌عنوان «edited» ثبت می‌شود و با نسخهٔ قبلی قابل مقایسه است.'}</small>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {(formRows.length > 0 || hasUsage || sel.mealPlan || sel.sportPlan) ? (
+                      <button type="button" className="zp-ghost" style={{ marginTop: 2, minHeight: 34, fontSize: 12 }} onClick={() => { void downloadPlanPdf({ title: sel.type === 'course' ? (en ? 'Course information' : 'اطلاعات دوره') : (en ? 'Consultation information' : 'اطلاعات مشاوره'), code: String(sel.code || sel.id || ''), meal: sel.mealPlan || '', sport: sel.sportPlan || '', userNotes: sel.userNotes || '', form: formRows, usage, reports: hasCorr ? reports : undefined }); }}>📄 {en ? 'Download full PDF' : 'دریافت PDF کامل پرونده'}</button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+              <div style={{ width: '100%', display: 'grid', gap: 12 }}>
+                <div className="zp-rc">
+                  <div className="zp-k"><span className="zp-ki"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z M8 20h8" /></svg></span>{sel ? (en ? 'Select another record' : 'انتخاب رکورد دیگر') : (en ? 'My records' : 'سوابق من')}</div>
+                  {!loaded && <div style={{ fontSize: 12, color: 'var(--zp-sub)' }}>{en ? 'Loading…' : 'در حال بارگذاری…'}</div>}
+                  {loaded && filtered.length === 0 && <div style={{ fontSize: 12.5, color: 'var(--zp-sub)', lineHeight: 2 }}>{en ? 'Nothing in this section yet — register a course or request a consultation.' : 'موردی در این دسته نیست — یک دوره ثبت کنید یا مشاوره بگیرید.'}</div>}
+                  {filtered.map((it: any) => (
+                    <button key={it.id} type="button" className={`zp-rec-row${selId === it.id ? ' sel' : ''}`} onClick={() => { if (selId === it.id) { setSelId(''); setTabId(''); setEditOn(false); } else { setSelId(it.id); setTabId(''); setEditOn(false); setEditErr(''); } }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                        <b style={{ fontSize: 13, color: 'var(--zp-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</b>
+                        <span className="zp-sdot" style={{ padding: '3px 10px', fontSize: 10.5 }}><i />{it.status}</span>
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--zp-sub)', fontWeight: 700, whiteSpace: 'nowrap' }}>{it.date}{it.amount ? ` · ${it.amount}` : ''}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ flexShrink: 0, transform: en ? 'scaleX(-1)' : 'none', color: 'var(--zp-sub)' }}><path d="M9 6l6 6-6 6" /></svg>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="zp-link" onClick={logout}>{en ? 'Sign out' : 'خروج از پنل'}</button>
+              </div>
+            </>);
+          })()}
         </>)}
 
         {!isSupabaseConfigured && (

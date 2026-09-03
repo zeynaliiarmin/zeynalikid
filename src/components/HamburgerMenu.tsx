@@ -31,7 +31,7 @@ export default function HamburgerMenu({T,lang,setLang,cfg,publicText,APP_A_URL,s
  const [portalSignedIn,setPortalSignedIn]=useState(()=>!!getUserSession());
  useEffect(()=>{const sync=()=>setPortalSignedIn(!!getUserSession());window.addEventListener('zk-portal-session',sync);return()=>window.removeEventListener('zk-portal-session',sync)},[]);
  const portalEntryLabel=entryMode==='user'
-   ?(lang==='en'?(portalSignedIn?'User panel':'User sign in'):(portalSignedIn?'پنل کاربر':'ورود کاربر'))
+   ?(lang==='en'?(portalSignedIn?'Parent panel':'Parent sign in'):(portalSignedIn?'پنل والد':'ورود والد'))
    :(lang==='en'?'Enter tracking code':'وارد کردن کد پیگیری');
  const itemsBase:Record<string,{label:string; icon:React.ReactNode; to?:string; fn?:()=>void; separator?:boolean}>=Object.fromEntries([
   ['home',{label: lang==='en'?'Home':publicText('menuHome','خانه'), icon: <HomeIcon size={20} color={T.acc} />, to:'/'}],

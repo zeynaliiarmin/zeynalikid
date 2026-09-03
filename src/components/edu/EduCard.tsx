@@ -28,20 +28,22 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)
   const isImage = item.type === 'image';
-  const [coverFailed, setCoverFailed] = useState(false);
+  const [coverStage, setCoverStage] = useState(0);
   // اگر ویدیو هیچ تصویر بندانگشتی نداشته باشد و آپارات باشد، poster واقعی از Edge Function گرفته می‌شود
   const aparatHash = (item as any)?._aparatHash || '';
-  let coverSrc = item.cover || '';
-  if (!coverSrc && aparatHash) {
+  let thumbFn = '';
+  if (aparatHash) {
     try {
       const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/+$/, '');
-      if (base) coverSrc = `${base}/functions/v1/aparat-thumb?uid=${encodeURIComponent(aparatHash)}`;
-    } catch { coverSrc = ''; }
+      if (base) thumbFn = `${base}/functions/v1/aparat-thumb?uid=${encodeURIComponent(aparatHash)}`;
+    } catch { thumbFn = ''; }
   }
+  const coverSrc = coverStage === 0 ? (item.cover || thumbFn) : coverStage === 1 ? thumbFn : '';
+  const coverFailed = !coverSrc;
   return (
     <article className="zke-card">
       <button type="button" className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
-        {coverSrc && !coverFailed ? <img src={coverSrc} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setCoverFailed(true)} style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
+        {coverSrc && !coverFailed ? <img src={coverSrc} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setCoverStage((s) => (s === 0 && item.cover && thumbFn ? 1 : 2))} style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
         <span className={`zke-badge ${badgeCls}`}><Icon size={12} /> {typeLabel(item.type, lang)}</span>
         {item.type === 'video' && <span className="zke-play-ov"><PlayGlyph /></span>}
         {item.type === 'audio' && <Wave />}

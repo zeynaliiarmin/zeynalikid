@@ -146,3 +146,23 @@
 /* R16: بخش‌بندی پرونده در پنل کاربر */
 .zp-sec { background: rgba(125,125,145,.07); border: 1px solid rgba(125,125,145,.18); border-radius: 12px; padding: 9px 12px; display: flex; flex-direction: column; gap: 6px; }
 .zp-sech { font-size: 12px; font-weight: 900; color: var(--zp-ink); display: flex; align-items: center; gap: 6px; }
+/* R19 — فیلترهای کلیدشدنی، تب‌های چسبان شیشه‌ای، ردیف رکورد، فرم ویرایش، تگ معرفی‌کننده، اسلات دستیار */
+.zp-filt{appearance:none;-webkit-appearance:none;font-family:inherit;color:inherit;cursor:pointer;display:block;text-align:center}
+.zp-filt.on{outline:2px solid var(--zp-acc);outline-offset:-2px}
+.zp-advchip{position:relative;z-index:2;margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--zp-ttl,#4c1d95);background:color-mix(in srgb,var(--zp-acc) 14%,transparent);border-radius:999px;padding:6px 12px}
+.zp-tabwrap{width:100%;margin-bottom:10px}
+.zp-rec-tabs{position:sticky;z-index:1100;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:6px;border-radius:16px;background:transparent;overscroll-behavior-x:contain}
+.zp-rec-tabs::-webkit-scrollbar{display:none}
+.zp-rec-tabs.zp-stuck{background:color-mix(in srgb,var(--zp-card0,#fff) 62%,transparent);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);box-shadow:0 12px 30px rgba(15,23,42,.14);border-bottom:1px solid color-mix(in srgb,var(--zp-cardbd,#ddd) 70%,transparent)}
+.zp-rec-tabs-title{flex:0 0 auto;font-size:12.5px;font-weight:900;color:var(--zp-ink);margin-inline-start:4px;white-space:nowrap}
+.zp-rec-tabs button{flex:0 0 auto;border:0;background:color-mix(in srgb,var(--zp-acc) 12%,transparent);color:var(--zp-ink);border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:none}
+.zp-rec-tabs button.on{background:var(--zp-acc);color:#fff}
+.zp-rec-tabs .zp-rec-tabs-x{margin-inline-start:auto;background:transparent;color:var(--zp-sub);font-size:18px;line-height:1;padding:4px 10px}
+.zp-rec-tab-body{display:grid;gap:10px;padding:4px 0 2px}
+.zp-rec-row{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;border-radius:12px;padding:10px 8px;cursor:pointer;font-family:inherit;text-align:start}
+.zp-rec-row.sel{background:color-mix(in srgb,var(--zp-acc) 10%,transparent)}
+.zp-edit-row{display:grid;gap:4px;font-size:12px;font-weight:800;color:var(--zp-sub)}
+.zp-edit-row input,.zp-edit-row select,.zp-edit-row textarea{border:1px solid var(--zp-cardbd,#d8d3e6);border-radius:10px;padding:9px 10px;font-family:inherit;font-size:13px;background:var(--zp-card0,#fff);color:var(--zp-ink);width:100%;box-sizing:border-box}
+#zka-header-slot{display:inline-block;width:40px;height:40px;flex-shrink:0;border:0;padding:0;background:transparent}
+body.zka-off #zka-header-slot{width:0}
+

@@ -49,7 +49,7 @@ export default function EduPlayer({ item, kind, lang }: { item: EduItem; kind: '
     // تا پلیر خودِ آپارات/یوتیوب مستقیم با یک دکمه نمایش داده شود.
     const realThumb = ((item as any).thumbnail)
       || ((item as any)._autoCover ? '' : (item.cover || ''));
-    const hasThumb = !!realThumb;
+    const hasThumb = false; // R19: در جزئیات، پلیر مستقیم نمایش داده می‌شود (حذف یک کلیک اضافه)
     if (kind === 'video' && hasThumb && !playing) {
       return (
         <div className="zke-player" style={{ border: 0, padding: 0, background: 'transparent' }}>

@@ -308,6 +308,13 @@ serve(async (req) => {
       list.filter((c: any) => c?.active !== false && String(c?.referralCode || "").trim())
         .map((c: any) => String(c.referralCode).trim().toLowerCase()),
     );
+    const _nm = new Map<string, string>();
+    for (const c of list) {
+      const rc = String(c?.referralCode || "").trim().toLowerCase();
+      const cn = String(c?.name || "").trim();
+      if (rc && c?.active !== false && cn) _nm.set(rc, cn);
+    }
+    portalCfg.referralNames = _nm;
   } catch { /* پیشفرضها */ }
 
   // ─────────────── اکشن: preview-phone (پیش‌نمایش ماسک‌شدهٔ شماره با کد پیگیری) ───────────────
@@ -514,7 +521,60 @@ serve(async (req) => {
         correctiveEnabled: p.showCorrectiveTab === true,
       };
     });
-    return jsonResponse({ ok: true, code, fullName: String(user.payload.fullName || ""), maskedPhone: maskPhone(phone), items, count: items.length }, 200, origin);
+    const advName = (() => {
+      try {
+        const rc = String((user.payload as any)?.referralCode || "").trim().toLowerCase();
+        return rc && portalCfg.referralNames && portalCfg.referralNames.get ? String(portalCfg.referralNames.get(rc) || "") : "";
+      } catch { return ""; }
+    })();
+    return jsonResponse({ ok: true, code, fullName: String(user.payload.fullName || ""), maskedPhone: maskPhone(phone), items, count: items.length, advisorName: advName }, 200, origin);
+  }
+
+  // ─────────────── اکشن: update-info (ویرایش کاربر از پنل — با editHistory برای پنل متخصص) ───────────────
+  if (action === "update-info") {
+    const rl = await centralRateLimit(req, "user-portal-edit", { maxRequests: 15, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
+    if (!rl.ok) return jsonResponse({ error: "تعداد ویرایش‌ها بیش از حد مجاز است؛ کمی بعد تلاش کنید." }, 429, origin);
+    const code = String(body?.code || "").replace(/\s+/g, "").toUpperCase();
+    if (!code) return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);
+    const supabase = getSupabaseAdmin();
+    const user = await getUserRecord(supabase, phone, code);
+    if (!user || user.payload?.status !== "active") {
+      return jsonResponse({ error: "نشست شما معتبر نیست؛ دوباره وارد شوید." }, 404, origin);
+    }
+    const idRaw = String(body?.id || "").trim();
+    if (!idRaw) return jsonResponse({ error: "شناسهٔ رکورد لازم است" }, 400, origin);
+    const LIMITS: Record<string, number> = { childName: 80, age: 40, gender: 10, height: 20, weight: 20, appetite: 300, sleep: 300, activity: 300, disease: 1200, digest: 300, allergies: 300, medications: 600, notes: 2000 };
+    const clean: Record<string, string> = {};
+    for (const [k, max] of Object.entries(LIMITS)) {
+      const v = (body?.fields as any)?.[k];
+      if (v === undefined || v === null) continue;
+      if (k === "gender") { const g = String(v).trim().toLowerCase(); clean[k] = g === "male" || g === "female" ? g : ""; continue; }
+      clean[k] = String(v).trim().slice(0, max);
+    }
+    let q = supabase.from("submissions").select("id,payload").eq("full_phone", phone).is("deleted_at", null).not("payload->>type", "eq", "user");
+    q = /^\d+$/.test(idRaw) ? q.eq("id", Number(idRaw)) : q.eq("id", idRaw);
+    const { data: rec, error: recErr } = await q.maybeSingle();
+    if (recErr || !rec) return jsonResponse({ error: "رکوردی پیدا نشد." }, 404, origin);
+    const p: Record<string, any> = (rec.payload && typeof rec.payload === "object") ? rec.payload : {};
+    const changed = Object.keys(clean).filter((k) => String(p[k] ?? "") !== clean[k]);
+    if (!changed.length) return jsonResponse({ ok: true, updated: false, message: "تغییری ثبت نشد." }, 200, origin);
+    const faDate = (): string => {
+      try {
+        const parts = new Intl.DateTimeFormat("en-US-u-ca-persian", { year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+        const y = parts.find((x) => x.type === "year")?.value || "";
+        const m = parts.find((x) => x.type === "month")?.value || "";
+        const d = parts.find((x) => x.type === "day")?.value || "";
+        return `${y}/${m}/${d}`;
+      } catch { return new Date().toISOString().slice(0, 10); }
+    };
+    const faTime = (): string => { try { return new Date().toLocaleTimeString("en-GB", { hour12: false }); } catch { return ""; } };
+    const prevData: Record<string, string> = {};
+    for (const k of changed) prevData[k] = String(p[k] ?? "");
+    const historyEntry = { date: faDate(), time: faTime(), actor: `کاربر (پنل) — ${maskPhone(phone)}`, fields: changed, data: prevData };
+    const newPayload = { ...p, ...Object.fromEntries(changed.map((k) => [k, clean[k]])), editHistory: [...(Array.isArray(p.editHistory) ? p.editHistory : []), historyEntry] };
+    const { error: upErr } = await supabase.from("submissions").update({ payload: newPayload, updated_at: new Date().toISOString() }).eq("id", (rec as any).id);
+    if (upErr) return jsonResponse({ error: "ذخیرهٔ تغییرات انجام نشد." }, 500, origin);
+    return jsonResponse({ ok: true, updated: true, fields: changed }, 200, origin);
   }
 
   return jsonResponse({ error: "اکشن نامعتبر است" }, 400, origin);

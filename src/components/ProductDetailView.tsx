@@ -78,12 +78,12 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         />
 
         {/* Top actions — correct RTL: back in top-right (RTL), top-left (LTR) */}
-        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
+        <div style={{ position: 'absolute', top: 12, ...(isFa ? { right: 12 } : { left: 12 }), zIndex: 10 }}>
           {/* Back button */}
           <button 
             onClick={onClose} 
             style={{ 
-              background: 'rgba(255,255,255,0.95)', 
+              background: 'transparent', 
               border: 0, 
               borderRadius: 999, 
               width: 36, 
