@@ -37,7 +37,7 @@ page.on('request', request => {
     return request.respond({ status: 200, contentType: 'image/gif', body: onePixelGif });
   }
   if (url.includes('www.aparat.com/video/video/embed/') || url.includes('www.youtube.com/embed/') || url.includes('player.example.test/embed/')) {
-    return request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>mock native platform player</title>' });
+    return request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>mock native platform player</title><button data-native-platform-play>Native platform play</button>' });
   }
   return request.continue();
 });
@@ -89,6 +89,14 @@ async function openByCardBody(id) {
   await sleep(450);
 }
 
+async function assertNativePlatformControlIsVisible() {
+  const frameHandle = await page.$('[role="dialog"] iframe');
+  const frame = await frameHandle?.contentFrame();
+  assert(!!frame, 'the detail iframe must load a real platform document');
+  const nativePlay = await frame.$('[data-native-platform-play]');
+  assert(!!nativePlay, 'the detail shows the platform-native play control instead of an application overlay');
+}
+
 async function closeDetail() {
   const selector = '[data-testid="public-media-detail-back"]';
   const probe = await page.$eval(selector, button => {
@@ -124,24 +132,31 @@ try {
   assert(other.coverImage.includes('image.example.test/other-cover.jpg'), 'a supplied manual cover remains the card cover', other);
 
   await openByCover('preview-youtube');
-  const youtubeDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox'), allow: frame.getAttribute('allow') }));
+  const youtubeDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox'), allow: frame.getAttribute('allow'), referrerPolicy: frame.getAttribute('referrerpolicy') }));
   assert(youtubeDetail.src === 'https://www.youtube.com/embed/abcdefghi12', 'YouTube detail uses the official embed URL', youtubeDetail);
   assert(youtubeDetail.sandbox === 'allow-scripts allow-same-origin allow-presentation', 'YouTube detail gets the verified native-control sandbox', youtubeDetail);
+  assert(youtubeDetail.referrerPolicy === 'strict-origin-when-cross-origin', 'YouTube detail retains the secure origin referrer needed by the provider', youtubeDetail);
   assert(!youtubeDetail.sandbox.includes('allow-popups'), 'YouTube detail does not receive unnecessary popup permission', youtubeDetail);
+  await assertNativePlatformControlIsVisible();
   await closeDetail();
 
   await openByCover('preview-aparat');
-  const aparatDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox') }));
+  const aparatDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox'), referrerPolicy: frame.getAttribute('referrerpolicy') }));
   assert(aparatDetail.src?.includes('/videohash/rgzh6ht/vt/frame'), 'Aparat detail extracts the official iframe source from saved HTML', aparatDetail);
-  assert(aparatDetail.sandbox === 'allow-scripts allow-presentation', 'Aparat detail stays isolated while keeping its native player', aparatDetail);
+  assert(aparatDetail.sandbox === 'allow-scripts allow-same-origin allow-presentation', 'Aparat detail receives the verified native-control sandbox', aparatDetail);
+  assert(aparatDetail.referrerPolicy === 'strict-origin-when-cross-origin', 'Aparat detail retains the secure origin referrer needed by its player', aparatDetail);
+  assert(!aparatDetail.sandbox.includes('allow-popups'), 'Aparat detail does not receive unnecessary popup permission', aparatDetail);
+  await assertNativePlatformControlIsVisible();
   await closeDetail();
 
   // A real pointer click on the card body (not its cover) also opens details,
   // without mounting or playing anything inline.
   await openByCardBody('preview-other');
-  const otherDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox') }));
+  const otherDetail = await page.$eval('[role="dialog"] iframe', frame => ({ src: frame.getAttribute('src'), sandbox: frame.getAttribute('sandbox'), referrerPolicy: frame.getAttribute('referrerpolicy') }));
   assert(otherDetail.src === 'https://player.example.test/embed/example', 'other valid embed opens only in detail', otherDetail);
   assert(otherDetail.sandbox === 'allow-scripts allow-presentation', 'unknown embeds remain tightly sandboxed', otherDetail);
+  assert(otherDetail.referrerPolicy === 'strict-origin-when-cross-origin', 'unknown embed receives only the secure origin referrer policy', otherDetail);
+  await assertNativePlatformControlIsVisible();
   await closeDetail();
 
   assert(errors.length === 0, 'media preview UI emitted runtime errors', errors);

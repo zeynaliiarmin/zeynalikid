@@ -157,20 +157,50 @@ const readEntryFormPresentation = () => page.evaluate(() => {
       const style = getComputedStyle(back);
       const icon = back.querySelector('.zk-public-back__icon');
       const iconStyle = icon instanceof HTMLElement ? getComputedStyle(icon) : null;
+      const backLabel = back.querySelector('.zk-public-back__label');
+      const arrow = icon?.querySelector('svg');
+      const arrowHead = arrow?.querySelector('path:last-child');
       return {
         direction: document.querySelector('.zp-root')?.getAttribute('dir') || '',
+        controlDirection: back.getAttribute('data-direction') || '',
         position: style.position,
         height: back.getBoundingClientRect().height,
         color: style.color,
         iconBackground: iconStyle?.backgroundColor || '',
         iconColor: iconStyle?.color || '',
-        rect: rect(back), row: rect(row), title: rect(title),
+        rect: rect(back), row: rect(row), title: rect(title), labelRect: rect(backLabel), iconRect: rect(icon),
+        arrow: arrow instanceof SVGElement ? { path: arrowHead?.getAttribute('d') || '', transform: getComputedStyle(arrow).transform } : null,
       };
     })() : null,
   };
 });
 
 const asRgb = hex => `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`;
+
+// The SVG source points right in LTR; RTL mirrors only that same SVG so both
+// arrows point away from the page content at the outside edge of the control.
+const arrowScaleX = transform => {
+  if (transform === 'none') return 1;
+  const scale = Number(String(transform).match(/^matrix\(\s*([^,\s]+)/)?.[1]);
+  return Number.isFinite(scale) ? scale : Number.NaN;
+};
+const assertBackContents = (back, label) => {
+  if (!back?.labelRect || !back?.iconRect || !back?.arrow) {
+    assert(false, `${label}: return control is missing its labelled round-arrow structure`, back);
+    return;
+  }
+  const scaleX = arrowScaleX(back.arrow.transform);
+  assert(back.controlDirection === back.direction, `${label}: return control direction must follow the active language, not an outer stale direction`, back);
+  assert(back.arrow.path === 'm12 5 7 7-7 7', `${label}: return icon must retain the outward-arrow SVG path`, back);
+  if (back.controlDirection === 'rtl') {
+    assert(back.iconRect.right <= back.labelRect.left + 0.5, `${label}: Persian circle must be outer-left and its label inner-right`, back);
+    assert(scaleX < 0, `${label}: Persian SVG arrow must mirror to point outward left`, back);
+  } else if (back.controlDirection === 'ltr') {
+    assert(back.labelRect.right <= back.iconRect.left + 0.5, `${label}: English label must be inner-left and its circle outer-right`, back);
+    assert(scaleX > 0, `${label}: English SVG arrow must point outward right without mirroring`, back);
+  }
+};
+
 const assertEntryFormPresentation = (entry, label, hasCountry, palette) => {
   assert(entry.entryInputs.length === 2, `${label}: exactly two requested entry inputs must be shown`, entry);
   assert(entry.entryInputs.every(input => input.fontSize === '20px' && input.lineHeight === '26px'), `${label}: requested input typography is not 20px / 26px`, entry.entryInputs);
@@ -187,6 +217,7 @@ const assertEntryFormPresentation = (entry, label, hasCountry, palette) => {
   } else {
     assert(false, `${label}: entry form direction was not set`, entry.back);
   }
+  assertBackContents(entry.back, label);
   if (palette && entry.back) {
     assert(entry.back.color === asRgb(palette.accText || palette.acc), `${label}: return-label colour does not follow the active design`, entry.back);
     assert(entry.back.iconBackground === asRgb(palette.acc), `${label}: return-icon colour does not follow the active design`, entry.back);
@@ -207,10 +238,15 @@ const readPublicBackPresentation = () => page.evaluate(() => {
   const style = getComputedStyle(back);
   const icon = back.querySelector('.zk-public-back__icon');
   const iconStyle = icon instanceof HTMLElement ? getComputedStyle(icon) : null;
+  const backLabel = back.querySelector('.zk-public-back__label');
+  const arrow = icon?.querySelector('svg');
+  const arrowHead = arrow?.querySelector('path:last-child');
   return {
     direction: document.documentElement.getAttribute('dir') || '',
+    controlDirection: back.getAttribute('data-direction') || '',
     position: style.position,
-    rect: rect(back), row: rect(row), title: rect(title),
+    rect: rect(back), row: rect(row), title: rect(title), labelRect: rect(backLabel), iconRect: rect(icon),
+    arrow: arrow instanceof SVGElement ? { path: arrowHead?.getAttribute('d') || '', transform: getComputedStyle(arrow).transform } : null,
     color: style.color,
     iconBackground: iconStyle?.backgroundColor || '',
     iconColor: iconStyle?.color || '',
@@ -227,6 +263,7 @@ const assertPublicBackPresentation = (back, label, palette) => {
   } else {
     assert(false, `${label}: public direction was not set`, back);
   }
+  assertBackContents(back, label);
   if (palette) {
     assert(back.color === asRgb(palette.accText || palette.acc), `${label}: public return-label colour does not follow the active design`, back);
     assert(back.iconBackground === asRgb(palette.acc), `${label}: public return-icon colour does not follow the active design`, back);

@@ -19,7 +19,8 @@ type PublicBackButtonProps = {
  *
  * It remains in normal document flow. In a shared title row, the title stays at
  * the inline start while this control occupies the opposite edge: left in Persian
- * and right in English. Its colours come from the active public design palette.
+ * and right in English. The label stays nearest to the title; the round arrow is
+ * on the outer edge and points outward. Its colours use the active public palette.
  */
 export default function PublicBackButton({
   lang,
@@ -55,15 +56,17 @@ export default function PublicBackButton({
       type="button"
       className={`zk-public-back ${className}`.trim()}
       data-testid={testId}
+      data-direction={lang === 'fa' ? 'rtl' : 'ltr'}
+      dir={lang === 'fa' ? 'rtl' : 'ltr'}
       aria-label={text}
       title={text}
       style={visualTokens as CSSProperties}
       onClick={(event) => { event.stopPropagation(); goBack(); }}
     >
+      <span className="zk-public-back__label">{text}</span>
       <span className="zk-public-back__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" focusable="false"><path d="M19 12H5" /><path d="m12 5-7 7 7 7" /></svg>
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
       </span>
-      <span>{text}</span>
     </button>
   );
 }

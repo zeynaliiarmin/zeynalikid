@@ -118,13 +118,10 @@ export function mediaEmbedProvider(src: unknown): MediaEmbedProvider {
 
 export function mediaFrameSandbox(src: unknown): string {
   switch (mediaEmbedProvider(src)) {
-    // Aparat's native embed works without a same-origin identity. Keeping it opaque
-    // gives the most isolation while preserving its own play control.
+    // The verified video/player hosts need their real origin and storage for their
+    // own native play controls. They remain cross-origin from this site and receive
+    // no forms, top navigation, downloads, or popup permission.
     case 'aparat':
-      return 'allow-scripts allow-presentation';
-    // These verified player origins require storage/origin access for their native
-    // controls. They are still cross-origin from this site and receive no forms,
-    // top navigation, downloads, or popup permission.
     case 'youtube':
     case 'vimeo':
     case 'dailymotion':
@@ -178,7 +175,7 @@ export function ManualEmbed({code,type='video',minHeight,lang='fa'}:{code:string
   if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000',borderRadius:14,overflow:'hidden'}}/>;
   // پخش فقط با کنترلِ خودِ پلتفرم آغاز می‌شود. قابلیت‌های sandbox بر اساس ارائه‌دهنده
   // محدود شده‌اند؛ src همچنان از کد ورودی پاک‌سازی‌شده استخراج می‌شود و iframe از سند سایت جدا می‌ماند.
-  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox={mediaFrameSandbox(safeSrc)} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
+  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox={mediaFrameSandbox(safeSrc)} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
 // همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.

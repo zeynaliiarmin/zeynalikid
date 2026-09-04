@@ -12,7 +12,8 @@
   gap: 8px;
   min-height: 48px;
   max-width: 100%;
-  padding: 4px 11px 4px 5px;
+  /* label sits at the inner edge; the arrow circle remains at the outer edge */
+  padding: 4px 5px 4px 11px;
   border: 1px solid color-mix(in srgb, var(--zk-public-back-accent) 28%, var(--zk-public-back-border));
   border-radius: 999px;
   color: var(--zk-public-back-text);
@@ -61,13 +62,13 @@
   stroke-width: 2.3;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: transform .16s ease;
+  /* Direction changes must be immediate so the arrow never momentarily points inward. */
 }
 
-[dir='rtl'] .zk-public-back { padding: 4px 5px 4px 11px; }
-[dir='rtl'] .zk-public-back__icon svg { transform: scaleX(-1); }
-.zk-public-back:hover .zk-public-back__icon svg { transform: translateX(-2px); }
-[dir='rtl'] .zk-public-back:hover .zk-public-back__icon svg { transform: scaleX(-1) translateX(-2px); }
+.zk-public-back[data-direction='rtl'] { padding: 4px 11px 4px 5px; }
+.zk-public-back[data-direction='rtl'] .zk-public-back__icon svg { transform: scaleX(-1); }
+.zk-public-back:hover .zk-public-back__icon svg { transform: translateX(2px); }
+.zk-public-back[data-direction='rtl']:hover .zk-public-back__icon svg { transform: scaleX(-1) translateX(2px); }
 
 /* One in-flow title row: the title is at inline start and the return control at the far opposite edge.
    Thus Persian = title right / return left; English = title left / return right. */
@@ -97,10 +98,10 @@
   .zk-public-back {
     min-height: 40px;
     gap: 6px;
-    padding: 4px 9px 4px 4px;
+    padding: 4px 4px 4px 9px;
     font-size: 12px;
   }
-  [dir='rtl'] .zk-public-back { padding: 4px 4px 4px 9px; }
+  .zk-public-back[data-direction='rtl'] { padding: 4px 9px 4px 4px; }
   .zk-public-back__icon { width: 32px; height: 32px; }
   .zk-public-back__icon svg { width: 16px; height: 16px; }
   .zk-public-title-row { gap: 8px; }

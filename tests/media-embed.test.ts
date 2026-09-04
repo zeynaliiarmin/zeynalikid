@@ -30,7 +30,7 @@ assert(mediaEmbedProvider('https://www.aparat.com/video/video/embed/videohash/ex
 assert(mediaEmbedProvider('https://www.youtube.com/embed/example') === 'youtube', 'YouTube gets an explicit trusted-provider classification');
 assert(mediaEmbedProvider('https://player.vimeo.com/video/example') === 'vimeo', 'Vimeo gets an explicit trusted-provider classification');
 assert(mediaEmbedProvider('https://youtube.example.test/embed/example') === 'other', 'look-alike hosts are never treated as trusted providers');
-assert(mediaFrameSandbox('https://www.aparat.com/video/video/embed/videohash/example/vt/frame') === isolatedSandbox, 'Aparat player remains isolated while retaining its native controls');
+assert(mediaFrameSandbox('https://www.aparat.com/video/video/embed/videohash/example/vt/frame') === trustedSandbox, 'Aparat receives the verified native-control sandbox it needs to show its own play control');
 assert(mediaFrameSandbox('https://www.youtube.com/embed/example') === trustedSandbox, 'YouTube native controls get only its verified player capabilities');
 assert(mediaFrameSandbox('https://unknown.example/embed/example') === isolatedSandbox, 'unknown embeds stay isolated without same-origin or popup permissions');
 
@@ -49,6 +49,7 @@ assert(
 assert(!mediaCardSource.includes('zke-play-ov'), 'the retired custom preview play overlay is not present');
 assert(!mediaCardSource.includes('zke-playbtn'), 'the retired custom player control is not present');
 assert(!mediaCardSource.includes('allow-popups'), 'embedded players do not receive unnecessary popup permission');
+assert(mediaCardSource.includes('referrerPolicy="strict-origin-when-cross-origin"'), 'detail players preserve the secure origin referrer required by native platform controls');
 assert(
   mediaCardSource.includes('const previewBox=<div data-media-card-preview="true"'),
   'the preview branch is explicitly a cover-only box',
