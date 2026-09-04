@@ -399,7 +399,7 @@ export const defaultSettings = {
   },
   // entryMode: 'track' = صفحه پیگیری دوره (قدیمی، بدون نیاز به ورود)
   // entryMode: 'user' = پنل کاربر؛ ثبت دوره و مشاوره فقط پس از ورود/ثبت‌نام
-  entryMode: 'track' as 'track' | 'user',
+  entryMode: 'user' as 'track' | 'user',
   userPortal: {
     otpMode: 'test' as 'off' | 'test' | 'live',
     captchaEnabled: false,

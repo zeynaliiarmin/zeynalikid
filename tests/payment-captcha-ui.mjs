@@ -7,7 +7,7 @@ const draft=(destination)=>({selected,dest:destination,shippingMethod:'post',chi
 
 // Locked state: no server request and no payment destination before CAPTCHA.
 {
- const context=await browser.createBrowserContext();const page=await context.newPage();await page.setBypassServiceWorker(true);let checkoutRequests=0;page.on('request',request=>{if(request.url().includes('/checkout-session'))checkoutRequests++});await page.evaluateOnNewDocument(value=>localStorage.setItem('zkid_course_draft',JSON.stringify(value)),draft('iran'));
+ const context=await browser.createBrowserContext();const page=await context.newPage();await page.setBypassServiceWorker(true);await page.setRequestInterception(true);let checkoutRequests=0;page.on('request',request=>{const url=request.url();if(url.includes('/functions/v1/public-settings'))return request.respond({status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'content-type'},contentType:'application/json',body:JSON.stringify({settings:{entryMode:'user',userPortal:{otpMode:'test',captchaEnabled:false}}})});if(url.includes('/functions/v1/assistant-public'))return request.respond({status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'content-type'},contentType:'application/json',body:JSON.stringify({settings:{enabled:false},knowledge:[]})});if(url.includes('/checkout-session'))checkoutRequests++;return request.continue()});await page.evaluateOnNewDocument(value=>{localStorage.setItem('zkid_course_draft',JSON.stringify(value));let preloaded;Object.defineProperty(window,'__APP_SSG_SETTINGS__',{configurable:true,get:()=>preloaded,set:settings=>{preloaded=settings&&typeof settings==='object'?{...settings,entryMode:'user',userPortal:{otpMode:'test',captchaEnabled:false}}:{entryMode:'user',userPortal:{otpMode:'test',captchaEnabled:false}}}})},draft('iran'));
  await page.goto(base+'/course-payment',{waitUntil:'domcontentloaded',timeout:30000});await page.waitForFunction(()=>!!document.querySelector('[data-testid="payment-captcha-gate"]')||(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.entryMode==='user'),{timeout:15000});await new Promise(resolve=>setTimeout(resolve,700));
  const before=await page.evaluate(()=>({gate:!!document.querySelector('[data-testid="payment-captcha-gate"]'),destinations:!!document.querySelector('[data-testid="payment-destinations"]'),hasCard:/\b\d{16}\b/.test(document.body.innerText.replace(/\s/g,'')),bankOnly:document.body.innerText.includes('برای مشاهده اطلاعات بانکی، بررسی امنیتی زیر را تکمیل کنید.')}));
  const mode=await page.evaluate(()=>(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.entryMode==='user')?'user':'track');
@@ -16,14 +16,18 @@ const draft=(destination)=>({selected,dest:destination,shippingMethod:'post',chi
   if(before.gate) throw new Error(`payment CAPTCHA must not lock the payment page in user-portal mode: ${JSON.stringify(before)}`);
   if(before.destinations||before.hasCard) throw new Error(`payment details appeared before the server allowed them: ${JSON.stringify(before)}`);
   if(checkoutRequests<1) throw new Error(`user-portal mode must load payment details without a CAPTCHA token (requests=${checkoutRequests})`);
-  // مسیرِ /track در حالت «پنل کاربر» همان فرم ورود را نشان می‌دهد (صفحه ورودی سایت)
-  await page.goto(base+'/track',{waitUntil:'domcontentloaded',timeout:30000});
-  await new Promise(resolve=>setTimeout(resolve,1500));
-  const portal=await page.evaluate(()=>({authGate:!!document.querySelector('[data-testid="auth-captcha-gate"]'),captchaWanted:!!(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.userPortal&&globalThis.__APP_SSG_SETTINGS__.userPortal.captchaEnabled===true),ruleText:/حداقل\s*[۰-۹0-9]+\s*حرف/.test(document.body.innerText),selectInField:!!document.querySelector('.zp-box select'),chooserAfterInput:(()=>{const b=document.querySelector('.zp-box');if(!b)return false;const kids=Array.from(b.children).map(c=>c.tagName.toLowerCase());return kids.includes('input')&&kids.indexOf('input')<kids.length-1})()}));
+  // نشانی‌ها مستقل‌اند: /portal فرم ورود کاربر است و /track همیشه پیگیری باقی می‌ماند.
+  await page.goto(base+'/portal',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForSelector('.zp-entry-phone-input',{timeout:15000});
+  const portal=await page.evaluate(()=>({authGate:!!document.querySelector('[data-testid="auth-captcha-gate"]'),captchaWanted:!!(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.userPortal&&globalThis.__APP_SSG_SETTINGS__.userPortal.captchaEnabled===true),ruleText:/حداقل\s*[۰-۹0-9]+\s*حرف/.test(document.body.innerText),selectInField:!!document.querySelector('.zp-box select'),chooserAfterInput:(()=>{const b=document.querySelector('.zp-entry-phone-input')?.closest('.zp-box');if(!b)return false;const kids=Array.from(b.children).map(c=>c.tagName.toLowerCase());return kids.includes('input')&&kids.indexOf('input')<kids.length-1})()}));
   if(portal.captchaWanted!==portal.authGate) throw new Error(`the sign-in CAPTCHA must follow the admin switch: ${JSON.stringify(portal)}`);
   if(portal.ruleText) throw new Error(`the real-name rule must not be explained to visitors: ${JSON.stringify(portal)}`);
   if(portal.selectInField) throw new Error(`the country chooser must be the shared popup, not a native select: ${JSON.stringify(portal)}`);
   if(!portal.chooserAfterInput) throw new Error(`the country chooser must sit after the number input: ${JSON.stringify(portal)}`);
+  await page.goto(base+'/track',{waitUntil:'domcontentloaded',timeout:30000});
+  await new Promise(resolve=>setTimeout(resolve,700));
+  const tracking=await page.evaluate(()=>({portal:!!document.querySelector('[aria-label="user-portal"]'),track:!!document.querySelector('[aria-label="track-page"]')}));
+  if(!tracking.track||tracking.portal) throw new Error(`/track must remain the independent tracking page: ${JSON.stringify(tracking)}`);
   await context.close();
  } else {
   // حالت «پیگیری دوره»: همان قفل قبلی روی صفحه پرداخت، بدون هیچ درخواستی پیش از تأیید

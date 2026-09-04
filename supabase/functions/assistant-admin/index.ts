@@ -9,6 +9,7 @@ import {cleanList,parseAssistantInstruction,safeAdminTab,safePublicPath,sanitize
 import {getAssistantTelegramStatus,repairAssistantTelegram} from '../_shared/assistantTelegramApi.ts';
 import {buildAssistantKnowledgeBackup} from '../_shared/assistantKnowledgeExport.ts';
 import {buildSiteContentKnowledge} from '../_shared/assistantSiteContent.ts';
+import {archivePendingUnanswered,listAllPendingUnanswered,prepareOwnerReviewedUnansweredDraft,resolveOwnerApprovedUnanswered} from '../_shared/assistantCuration.ts';
 
 const BRAND='زینالیکید';
 const text=(value:unknown,max:number)=>String(value||'').trim().slice(0,max);
@@ -68,7 +69,7 @@ serve(async req=>{
   const general=await centralRateLimit(req,`assistant-admin-${action}`,{maxRequests:90,windowMs:60_000,blockMs:60_000},auth.session.sessionId);if(!general.ok)return jsonResponse({error:'درخواست بیش از حد مجاز است'},429,origin);const db=getSupabaseAdmin();
   try{
     if(action==='list'){
-      const [{data:knowledge,error},{data:adminKnowledge},{data:settings},{data:unanswered}]=await Promise.all([db.from('assistant_knowledge').select('*').order('priority',{ascending:false}).order('updated_at',{ascending:false}).limit(1000),db.from('assistant_admin_knowledge').select('*').order('priority',{ascending:false}).order('updated_at',{ascending:false}).limit(1000),db.from('assistant_settings').select('*').eq('key','default').maybeSingle(),db.from('assistant_unanswered').select('*').order('status').order('occurrences',{ascending:false}).order('last_seen_at',{ascending:false}).limit(300)]);if(error)throw error;return jsonResponse({knowledge:knowledge||[],adminKnowledge:adminKnowledge||[],settings:settings||{},unanswered:unanswered||[]},200,origin);
+      const [{data:knowledge,error},{data:adminKnowledge},{data:settings},unanswered]=await Promise.all([db.from('assistant_knowledge').select('*').order('priority',{ascending:false}).order('updated_at',{ascending:false}).limit(1000),db.from('assistant_admin_knowledge').select('*').order('priority',{ascending:false}).order('updated_at',{ascending:false}).limit(1000),db.from('assistant_settings').select('*').eq('key','default').maybeSingle(),listAllPendingUnanswered(db)]);if(error)throw error;return jsonResponse({knowledge:knowledge||[],adminKnowledge:adminKnowledge||[],settings:settings||{},unanswered},200,origin);
     }
     if(action==='generate_admin'||action==='generate_preview')return jsonResponse({error:'دستیار پنل مدیریت حذف شده است؛ دانش‌ها یک مجموعه مشترک برای صفحات عمومی هستند'},410,origin);
     if(action==='test_knowledge'){
@@ -110,7 +111,26 @@ serve(async req=>{
     if(action==='settings'){
       const suggestions=Array.isArray(body.settings?.suggested_questions)?body.settings.suggested_questions.slice(0,10).map((item:any)=>({question:text(item?.question,500),label:text(item?.label||item?.question,100),path:safePublicPath(item?.path)})).filter((item:any)=>item.question):[];const settings={enabled:body.settings?.enabled===true,welcome_message:text(body.settings?.welcome_message,1000),fallback_message:text(body.settings?.fallback_message,1500),disclaimer:text(body.settings?.disclaimer,1200),admin_block_message:text(body.settings?.admin_block_message,1500),suggested_questions:suggestions,frequent_question_threshold:Math.max(2,Math.min(100,Number(body.settings?.frequent_question_threshold)||3))},{data,error}=await db.from('assistant_settings').update(settings).eq('key','default').select().single();if(error)throw error;await audit(db,auth,'assistant_settings_update','assistant_settings','default',{enabled:settings.enabled,revision:Number(data?.revision||0)});return jsonResponse({settings:data},200,origin);
     }
-    if(action==='unanswered_status'){const id=Number(body.id),status=['pending','resolved','ignored'].includes(body.status)?body.status:'pending';if(!Number.isSafeInteger(id))return jsonResponse({error:'شناسه معتبر نیست'},400,origin);const {error}=await db.from('assistant_unanswered').update({status}).eq('id',id);if(error)throw error;return jsonResponse({ok:true},200,origin)}
+    if(action==='unanswered_draft'){
+      const id=Number(body.id);if(!Number.isSafeInteger(id)||id<1)return jsonResponse({error:'شماره سؤال معتبر نیست'},400,origin);
+      const {data,error}=await db.from('assistant_unanswered').select('id,question,occurrences,status').eq('id',id).eq('status','pending').maybeSingle();if(error)throw error;if(!data)return jsonResponse({error:'این سؤال دیگر در فهرست پاسخ‌نداده‌ها نیست'},404,origin);
+      const draft=await prepareOwnerReviewedUnansweredDraft(db,data);await audit(db,auth,'assistant_unanswered_draft','assistant_unanswered',String(id),{grouped_occurrences:draft.grouped_occurrences});
+      return jsonResponse({ok:true,draft},200,origin);
+    }
+    if(action==='resolve_unanswered'){
+      const result=await resolveOwnerApprovedUnanswered(db,{id:body.id,answer:body.answer,aliases:Array.isArray(body.aliases)?cleanList(body.aliases,29,500):undefined,keywords:Array.isArray(body.keywords)?cleanList(body.keywords,12,100):undefined,createdBy:'owner-unanswered-panel'});
+      await audit(db,auth,'assistant_unanswered_resolve','assistant_unanswered',String(body.id),{knowledge_id:String(result.knowledge?.id||''),grouped_occurrences:result.draft.grouped_occurrences});
+      return jsonResponse({ok:true,item:result.knowledge,draft:result.draft},200,origin);
+    }
+    if(action==='clear_unanswered'){
+      const archived=await archivePendingUnanswered(db);await audit(db,auth,'assistant_unanswered_archive_all','assistant_unanswered','',{count:archived});
+      return jsonResponse({ok:true,archived},200,origin);
+    }
+    if(action==='unanswered_status'){
+      const id=Number(body.id),status=['pending','ignored'].includes(body.status)?body.status:'pending';if(!Number.isSafeInteger(id)||id<1)return jsonResponse({error:'شناسه معتبر نیست'},400,origin);
+      const patch=status==='ignored'?{status,archived_at:new Date().toISOString()}:{status,archived_at:null};const {error}=await db.from('assistant_unanswered').update(patch).eq('id',id);if(error)throw error;
+      await audit(db,auth,status==='ignored'?'assistant_unanswered_archive':'assistant_unanswered_reopen','assistant_unanswered',String(id));return jsonResponse({ok:true},200,origin);
+    }
     if(action==='batch_import'){
       const incoming=Array.isArray(body.items)?body.items.slice(0,150):[],selection=selectionFrom(body.scope),imported:Record<KnowledgeScope,number>={public:0,admin:0};
       for(const scope of selectedScopes(selection)){
@@ -119,5 +139,5 @@ serve(async req=>{
       return jsonResponse({ok:true,scope:selection,imported:selection==='both'?imported:imported[selection],counts:imported},200,origin);
     }
     return jsonResponse({error:'Action not allowed'},400,origin);
-  }catch(error){const code=String((error as Error)?.message||error);console.error('assistant-admin:',code);const friendly=code.startsWith('MISTRAL_')?'تحلیل هوشمند موقتاً در دسترس نیست؛ دوباره تلاش کنید.':code.startsWith('TELEGRAM_')?'اتصال تلگرام کامل نیست یا موقتاً پاسخ نمی‌دهد.':'عملیات دستیار انجام نشد';return jsonResponse({error:friendly},500,origin)}
+  }catch(error){const code=String((error as Error)?.message||error);console.error('assistant-admin:',code);const friendly=code.includes('ASSISTANT_UNANSWERED_ALREADY_COVERED')?'برای این سؤال از قبل دانش ثبت شده است؛ برای حفظ متن‌های ثابت، پاسخ قبلی تغییر نکرد.':code.includes('ASSISTANT_UNANSWERED_NOT_PENDING')?'این سؤال دیگر در فهرست پاسخ‌نداده‌ها نیست.':code.startsWith('MISTRAL_')?'تحلیل هوشمند موقتاً در دسترس نیست؛ دوباره تلاش کنید.':code.startsWith('TELEGRAM_')?'اتصال تلگرام کامل نیست یا موقتاً پاسخ نمی‌دهد.':'عملیات دستیار انجام نشد';return jsonResponse({error:friendly},500,origin)}
 });

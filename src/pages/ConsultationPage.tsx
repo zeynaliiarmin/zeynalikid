@@ -175,7 +175,7 @@ export default function ConsultationPage(){
   // پس از ثبت موفق، فرم دیگر «ویرایش ذخیره‌نشده» نیست؛ بنابراین رفرش/رفتن به دوره‌ها هشدار نادرست نمی‌دهد.
   // در حالت «پنل کاربر» وقتی کاربر وارد شده باشد، نام و شماره تماس از حساب او برداشته می‌شود
   // و در فرم نمایش داده/قابل ویرایش نیست (اما در رکورد ذخیره می‌شود تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست).
-  const portalSession = String((cfg as any)?.entryMode || 'track') === 'user' ? getUserSession() : null;
+  const portalSession = String((cfg as any)?.entryMode || 'user') === 'user' ? getUserSession() : null;
   // getUserSession() هر بار شیء تازه می‌سازد؛ پس فقط یک کلید رشته‌ای به افکت داده می‌شود و مقداردهی
   // تنها وقتی انجام می‌شود که واقعاً چیزی فرق داشته باشد — وگرنه صفحه در حلقه رندر می‌افتد.
   const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';

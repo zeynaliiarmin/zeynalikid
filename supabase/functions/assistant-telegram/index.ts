@@ -5,6 +5,7 @@ import {generateGroundedAssistant,relatedKnowledge,type ScopedKnowledge} from '.
 import {parseAssistantInstruction,safeAdminTab,safePublicPath,sanitizeKnowledgeActions,sanitizeMatchMode,sanitizeResponseMode} from '../_shared/assistantTraining.ts';
 import {assistantTelegramOwner,assistantTelegramWebhookSecret,getAssistantTelegramStatus,telegramAnswerCallback,telegramEditMessage,telegramSendDocument,telegramSendMessage,type TelegramButton,type TelegramReplyMarkup} from '../_shared/assistantTelegramApi.ts';
 import {buildAssistantKnowledgeBackup} from '../_shared/assistantKnowledgeExport.ts';
+import {archivePendingUnanswered,listAllPendingUnanswered,prepareOwnerReviewedUnansweredDraft,resolveOwnerApprovedUnanswered} from '../_shared/assistantCuration.ts';
 
 const BRAND='زینالیکید';
 const SITE_URL='https://zeynalikid.vercel.app';
@@ -112,7 +113,17 @@ async function testAnswer(db:any,chatId:string,scope:Selection,question:string){
   const result=await testOne(db,scope,question);if(result.needsTraining)await setState(db,chatId,'test_result',{scope,question:clean(question,500),answer:clean(result.answer,6000),actions:[]});else await clearState(db,chatId);const advice=result.needsTraining?'🟠 دانش مستقیم و مطمئنی پیدا نشد؛ بهتر است این سؤال را آموزش دهید.':'🟢 دانش مستقیم و قابل‌اتکا پیدا شد.';await send(chatId,`🧪 نتیجه آزمایش ${selectionLabel(scope)} (${result.model})\n\n${result.answer||'پاسخی تولید نشد.'}\n\n${advice}`,keyboard([...(result.buttons.length?[result.buttons]:[]),...(result.needsTraining?[[{text:'➕ آموزش همین سؤال',callback_data:'test:teach'}] as TelegramButton[]]:[]),backHome]));
 }
 async function sendKnowledgeBackup(db:any,chatId:string,messageId?:number){if(messageId)await render(chatId,'⏳ در حال تهیه فایل بکاپ دانش دستیار…',undefined,messageId);const backup=await buildAssistantKnowledgeBackup(db,BRAND);await telegramSendDocument(chatId,backup.filename,backup.content,`بکاپ دانش دستیار سایت ${BRAND}\n${backup.counts.public} مورد`,homeKeyboard);if(messageId)await render(chatId,'✅ فایل بکاپ کامل هر دو دستیار ارسال شد.',homeKeyboard,messageId)}
-async function showUnanswered(db:any,chatId:string,messageId?:number){const {data}=await db.from('assistant_unanswered').select('id,question,occurrences').eq('status','pending').order('occurrences',{ascending:false}).limit(10);await render(chatId,(data||[]).length?`❓ سؤال‌های بی‌پاسخ:\n\n${(data||[]).map((item:any)=>`#${item.id} · ${item.occurrences} بار\n${item.question}`).join('\n\n')}`:'✅ سؤال بی‌پاسخی وجود ندارد.',keyboard([backHome]),messageId)}
+const unansweredKeyboard=keyboard([[{text:'📝 ثبت پاسخ',callback_data:'unanswered:answer'},{text:'🧹 پاک‌سازی همه سؤال‌های بی‌پاسخ',callback_data:'unanswered:clear'}],backHome]);
+const latinDigits=(value:unknown)=>String(value||'').replace(/[۰-۹]/g,(digit)=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g,(digit)=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).trim();
+const unansweredListText=(rows:any[])=>`❓ سؤال‌های بی‌پاسخ — ${rows.length} مورد\n\n${rows.map((item,index)=>`${index+1}) ${clean(item.question,500)}\n${item.occurrences} بار`).join('\n\n')}\n\nبرای ثبت پاسخ، اول «ثبت پاسخ» را بزنید و سپس فقط شماره مورد را بفرستید. تا پاسخ تأییدشده ثبت نشود، هیچ موردی حل یا حذف نمی‌شود.`;
+async function showUnanswered(db:any,chatId:string,messageId?:number){
+  const rows=await listAllPendingUnanswered(db,'id,question,occurrences');if(!rows.length){await clearState(db,chatId);await render(chatId,'✅ سؤال بی‌پاسخی وجود ندارد.',keyboard([backHome]),messageId);return}
+  await setState(db,chatId,'unanswered_menu',{unanswered_ids:rows.map((item:any)=>Number(item.id)),unanswered_count:rows.length});
+  const text=unansweredListText(rows);
+  // Telegram limits text messages to 4096 characters. A document is still one numbered Telegram message and preserves every item.
+  if(text.length>3900){await telegramSendDocument(chatId,'assistant-unanswered.txt',text,`❓ فهرست کامل ${rows.length} سؤال بی‌پاسخ`,unansweredKeyboard);if(messageId)await render(chatId,'فهرست کامل سؤال‌های بی‌پاسخ در یک فایل شماره‌دار ارسال شد؛ از دکمه‌های همان فایل استفاده کنید.',keyboard([backHome]),messageId);return}
+  await render(chatId,text,unansweredKeyboard,messageId);
+}
 async function showStatus(db:any,chatId:string,messageId?:number){const [{data:settings},status]=await Promise.all([db.from('assistant_settings').select('enabled').eq('key','default').maybeSingle(),getAssistantTelegramStatus()]);const webhook:any=status.webhook||{};await render(chatId,`وضعیت دستیار سایت: ${settings?.enabled===true?'🟢 فعال':'🔴 غیرفعال'}\nاتصال ربات تلگرام: ${status.connected?'🟢 متصل':'🔴 ناقص'}\nنام ربات: ${status.bot?.username?`@${status.bot.username}`:'نامشخص'}\nپیام‌های در انتظار: ${webhook.pending_updates||0}${webhook.last_error_message?`\nآخرین خطا: ${webhook.last_error_message}`:''}`,keyboard([backHome]),messageId)}
 
 const frequentHomeKeyboard=keyboard([
@@ -152,6 +163,20 @@ async function handleCallback(db:any,chatId:string,data:string,messageId:number)
   if(data==='menu:list'){await clearState(db,chatId);return listKnowledge(db,chatId,'public',0,messageId)}
   if(data==='menu:test'){await clearState(db,chatId);await setState(db,chatId,'test_question',{scope:'public'});await render(chatId,'سؤال آزمایشی را بنویسید؛ پاسخ از مجموعه دانش مشترک همه دستیارها می‌آید:',keyboard([[{text:'❌ لغو',callback_data:'menu:cancel'}]]),messageId);return}
   if(data==='menu:unanswered')return showUnanswered(db,chatId,messageId);
+  if(data==='unanswered:answer'){
+    const state=await getState(db,chatId);if(!state||state.step!=='unanswered_menu')return showUnanswered(db,chatId,messageId);
+    const count=(state.draft?.unanswered_ids||[]).length;if(!count)return showUnanswered(db,chatId,messageId);
+    await setState(db,chatId,'unanswered_select_number',state.draft||{});await render(chatId,`شماره سؤال را از ۱ تا ${count} بفرستید.\n\nتا شماره معتبر و پاسخ تأییدشده شما دریافت نشود، هیچ سؤال دیگری تغییر نمی‌کند.`,keyboard([[{text:'↩️ بازگشت به فهرست',callback_data:'menu:unanswered'}],backHome]),messageId);return;
+  }
+  if(data==='unanswered:clear'){
+    const state=await getState(db,chatId);if(!state||state.step!=='unanswered_menu')return showUnanswered(db,chatId,messageId);
+    const count=(state.draft?.unanswered_ids||[]).length;await render(chatId,`همه ${count} سؤالِ در انتظار پاسخ این پروژه بایگانی شوند؟\n\nهیچ داده‌ای حذف نمی‌شود و فقط از فهرست در انتظار خارج می‌شوند.`,keyboard([[{text:'بله، بایگانی همه',callback_data:'unanswered:clear_yes'},{text:'انصراف',callback_data:'unanswered:clear_no'}],backHome]),messageId);return;
+  }
+  if(data==='unanswered:clear_no')return showUnanswered(db,chatId,messageId);
+  if(data==='unanswered:clear_yes'){
+    const state=await getState(db,chatId);if(!state||state.step!=='unanswered_menu')return showUnanswered(db,chatId,messageId);
+    const archived=await archivePendingUnanswered(db);await clearState(db,chatId);await render(chatId,`✅ ${archived} سؤالِ در انتظار پاسخ بایگانی شد. هیچ ردیفی حذف نشده است.`,homeKeyboard,messageId);return;
+  }
   if(data==='menu:backup'){await clearState(db,chatId);return sendKnowledgeBackup(db,chatId,messageId)}
   if(data==='menu:status')return showStatus(db,chatId,messageId);
   if(data==='site:enable'||data==='site:disable')return setSiteEnabled(db,chatId,data==='site:enable',messageId);
@@ -197,6 +222,20 @@ async function handleText(db:any,chatId:string,incoming:string){
   const state=await getState(db,chatId);
   if(!state){if(/(اگر|وقتی|هر وقت|از این به بعد).*(کاربر|مخاطب|پرسید|گفت)/i.test(incoming)){await send(chatId,'در حال تبدیل دستور شما به پیش‌نویس…');try{const parsed=await parseAssistantInstruction({instruction:incoming,brand:BRAND,scopeHint:'public'});if(parsed.needs_clarification){await setState(db,chatId,'quick_instruction',{});await send(chatId,parsed.clarification_message,keyboard([backHome]))}else await showPreview(db,chatId,{...parsed,actions:parsed.actions||[]})}catch{await send(chatId,'تحلیل هوشمند انجام نشد. از «آموزش مرحله‌ای» استفاده کنید.',homeKeyboard)}return}await send(chatId,'برای آموزش یا آزمایش، یکی از دکمه‌های زیر را انتخاب کنید.',homeKeyboard);return}
   const draft:Draft=state.draft||{};
+  if(state.step==='unanswered_select_number'){
+    const raw=latinDigits(incoming);const ids=Array.isArray(draft.unanswered_ids)?draft.unanswered_ids.map(Number).filter(Number.isSafeInteger):[];
+    if(!/^\d+$/.test(raw)){await send(chatId,`فقط شماره‌ای از ۱ تا ${ids.length} بفرستید. هیچ موردی تغییر نکرده است.`);return}
+    const position=Number(raw);if(!Number.isSafeInteger(position)||position<1||position>ids.length){await send(chatId,`این شماره معتبر نیست. فقط عددی از ۱ تا ${ids.length} بفرستید؛ هیچ موردی تغییر نکرده است.`);return}
+    const id=ids[position-1],{data,error}=await db.from('assistant_unanswered').select('id,question,occurrences').eq('id',id).eq('status','pending').maybeSingle();if(error)throw error;
+    if(!data){await send(chatId,'این مورد دیگر در فهرست در انتظار نیست؛ هیچ سؤال دیگری تغییر نکرده است.');return}
+    const review=await prepareOwnerReviewedUnansweredDraft(db,data),proposal=review.suggested_answer?`\n\nپیش‌نویس پیشنهادی (هنوز منتشر نشده):\n${clean(review.suggested_answer,1500)}\n\n${review.suggested_answer_notice}`:`\n\n${review.suggested_answer_notice}`;
+    await setState(db,chatId,'unanswered_owner_answer',{unanswered_id:id,unanswered_position:position,unanswered_question:clean(data.question,500)});await send(chatId,`مورد ${position}:\n${clean(data.question,1000)}${proposal}\n\nحالا فقط پاسخ تأییدشده خودتان را بفرستید. هیچ متن پیشنهادی بدون پیام و تأیید صریح شما منتشر نمی‌شود.`,keyboard([[{text:'❌ لغو',callback_data:'menu:cancel'}]]));return;
+  }
+  if(state.step==='unanswered_owner_answer'){
+    if(clean(incoming,6000).length<2){await send(chatId,'پاسخ خیلی کوتاه است؛ متن پاسخ تأییدشده را بفرستید.');return}
+    try{const result=await resolveOwnerApprovedUnanswered(db,{id:draft.unanswered_id,answer:incoming,createdBy:'owner-unanswered-telegram'});await clearState(db,chatId);await send(chatId,`✅ پاسخ مورد ${draft.unanswered_position} همان لحظه منتشر شد. عبارت‌های مشابه واقعی هم برای تشخیص بهتر اضافه شدند.`,homeKeyboard);void result;return}
+    catch(error){const code=String((error as Error)?.message||error);if(code.includes('ASSISTANT_UNANSWERED_NOT_PENDING')||code.includes('ASSISTANT_UNANSWERED_ALREADY_COVERED')){await clearState(db,chatId);await send(chatId,'این سؤال دیگر در فهرست در انتظار نیست؛ هیچ سؤال دیگری تغییر نکرده است.',homeKeyboard);return}throw error}
+  }
   if(state.step==='quick_instruction'){await send(chatId,'در حال تحلیل دستور و ساخت پیش‌نویس…');try{const selected=draft.scope||'public',parsed=await parseAssistantInstruction({instruction:incoming,brand:BRAND,scopeHint:selected==='admin'?'admin':'public'});if(parsed.needs_clarification){await setState(db,chatId,'quick_instruction',{scope:selected});await send(chatId,parsed.clarification_message,keyboard([backHome]));return}await showPreview(db,chatId,{...parsed,scope:selected,actions:parsed.actions||[],target_tab:(parsed as any).target_tab||'dashboard'})}catch(error){console.error('telegram instruction parser',String((error as Error)?.message||error));await send(chatId,'تحلیل هوشمند موقتاً انجام نشد. دوباره تلاش کنید یا آموزش مرحله‌ای را بزنید.',keyboard([[{text:'آموزش مرحله‌ای',callback_data:'menu:add'}],backHome]))}return}
   if(state.step==='guided_question'||state.step==='edit_draft_question'){const phrases=incoming.split(/\n|[،,؛;]/).map(value=>clean(value,500)).filter(Boolean).slice(0,30);if(!phrases.length){await send(chatId,'حداقل یک جمله بنویسید.');return}const next={...draft,question:phrases[0],aliases:phrases.slice(1)};if(state.step==='edit_draft_question')return showPreview(db,chatId,next);await setState(db,chatId,'guided_answer',next);await send(chatId,next.response_mode==='refusal'?'متنی را که ربات باید برای عدم اطلاع بگوید بنویسید؛ مثلاً «من درباره این موضوع اطلاعاتی ندارم».':'پاسخی را که ربات باید بداند بنویسید:',keyboard([[{text:'↩️ ویرایش سؤال‌ها',callback_data:'edit:draft:question'},{text:'❌ لغو',callback_data:'menu:cancel'}]]));return}
   if(state.step==='guided_answer'||state.step==='edit_draft_answer'){if(incoming.length<2){await send(chatId,'پاسخ خیلی کوتاه است.');return}const next={...draft,answer:clean(incoming,6000)};if(state.step==='edit_draft_answer')return showPreview(db,chatId,next);if(next.scope==='admin'){await setState(db,chatId,'target_choice',next);await send(chatId,'دکمه باید مدیر را به کدام بخش پنل ببرد؟',adminTargetKeyboard)}else await showActionPicker(db,chatId,next);return}

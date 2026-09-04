@@ -33,7 +33,7 @@ export default function CoursePaymentPage(){
  const referralCode=String(referralConsultant?.referralCode||'');
  const captchaScope=`${courseId}:${referralCode.toLowerCase()}`;
  // در حالت «پنل کاربر» بررسی امنیتی روی همان صفحه ورود/ثبت‌نام انجام می‌شود، نه این‌جا
- const captchaMovedToPortal=String((cfg as any)?.entryMode||'track')==='user';
+ const captchaMovedToPortal=String((cfg as any)?.entryMode||'user')==='user';
  const [captchaProof,setCaptchaProof]=useState<{token:string;scope:string}|null>(null);
  const [captchaAttempt,setCaptchaAttempt]=useState(0);
  const [paymentDetails,setPaymentDetails]=useState<PaymentDetailsState>({banks:[],wallets:[],loading:false,unlocked:false,error:''});

@@ -32,7 +32,7 @@ const page = await browser.newPage();
 await page.setViewport({ width: 1360, height: 900, deviceScaleFactor: 1 });
 
 /* تنظیمات را همین‌جا می‌سازیم: دیزاین انتخابی، حالت روشن/تاریک و حالت ورودی «پنل کاربر»
-   تا صفحات ورود/ثبت‌نام در هر دو پروژه بررسی شوند (در فرزند من پیش‌فرض پیگیری است). */
+   تا صفحات ورود/ثبت‌نام در هر دو پروژه با پیش‌فرض تازه «پنل کاربر» بررسی شوند. */
 let mock = { design: 'wellness', mode: 'light', entryMode: 'user' };
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' };
 await page.setRequestInterception(true);
@@ -342,7 +342,7 @@ for (const design of designs) {
         if (loginFields.code && loginFields.phone) {
           assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شماره تماس با کد پیگیری برابر نیست`, loginFields);
         }
-        assertEntryFormPresentation(loginPresentation, `${label}: ورود`, true, pal);
+        assertEntryFormPresentation(loginPresentation, `${label}: ورود`, path === '/portal', pal);
         if (path === '/portal') {
           const portalCopy = await page.evaluate(() => {
             const heading = document.querySelector('.zp-entry-title-row .zp-h1');

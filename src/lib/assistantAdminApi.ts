@@ -5,7 +5,8 @@ import type {AssistantSettings} from './assistantApi';
 export type AssistantKnowledgeScope='public'|'admin';
 export type AssistantKnowledgeSelection=AssistantKnowledgeScope|'both';
 export interface AssistantAdminItem extends AssistantKnowledge {status:'draft'|'published';is_active:boolean;created_by:string;created_at?:string;updated_at?:string;target_tab?:string;target_focus?:string;action_label?:string;public_id?:string;admin_id?:string;source_scope?:AssistantKnowledgeScope;original_question?:string;scope_presence?:AssistantKnowledgeScope[];}
-export interface AssistantUnanswered {id:number;question:string;occurrences:number;status:'pending'|'resolved'|'ignored';page_path?:string;last_seen_at:string;}
+export interface AssistantUnanswered {id:number;question:string;occurrences:number;status:'pending'|'resolved'|'ignored';page_path?:string;last_seen_at:string;detection_reason?:'no_match'|'low_confidence'|'generic_answer';resolved_knowledge_id?:string|null;resolved_at?:string|null;archived_at?:string|null;}
+export interface OwnerReviewedUnansweredDraft {question:string;aliases:string[];keywords:string[];category:string;response_mode:'exact';match_mode:'smart';grouped_occurrences:number;suggested_answer:string;suggested_answer_notice:string;owner_notice:string;}
 export interface AssistantAdminData {knowledge:AssistantAdminItem[];adminKnowledge:AssistantAdminItem[];settings:AssistantSettings&{admin_block_message?:string};unanswered:AssistantUnanswered[];}
 export interface AssistantAdminSource {id:string;question:string;category:string;score:number;target_tab:string;target_focus:string;action_label:string;}
 export interface AssistantAdminAction {label:string;tab:string;focus:string;record_id?:string;}
@@ -23,7 +24,10 @@ export const assistantAdminList=():Promise<AssistantAdminData>=>call('list');
 export const assistantAdminSave=(item:Partial<AssistantAdminItem>,scope:AssistantKnowledgeSelection='public')=>call<{ok?:true;item?:AssistantAdminItem;items?:Record<AssistantKnowledgeScope,AssistantAdminItem>;scope:AssistantKnowledgeSelection}>('save',{item,scope});
 export const assistantAdminDelete=(id:string,scope:AssistantKnowledgeSelection='public',item:Partial<AssistantAdminItem>={})=>call<{ok:true;deleted?:Partial<Record<AssistantKnowledgeScope,number>>}>('delete',{id,scope,question:item.question,public_id:item.public_id,admin_id:item.admin_id,confirm:true});
 export const assistantAdminSettings=(settings:AssistantSettings&{admin_block_message?:string})=>call<{settings:AssistantSettings}>('settings',{settings});
-export const assistantAdminUnansweredStatus=(id:number,status:AssistantUnanswered['status'])=>call<{ok:true}>('unanswered_status',{id,status});
+export const assistantAdminUnansweredStatus=(id:number,status:Extract<AssistantUnanswered['status'],'pending'|'ignored'>)=>call<{ok:true}>('unanswered_status',{id,status});
+export const assistantAdminUnansweredDraft=(id:number)=>call<{ok:true;draft:OwnerReviewedUnansweredDraft}>('unanswered_draft',{id});
+export const assistantAdminResolveUnanswered=(id:number,answer:string,aliases?:string[],keywords?:string[])=>call<{ok:true;item:AssistantAdminItem;draft:OwnerReviewedUnansweredDraft}>('resolve_unanswered',{id,answer,...(aliases?{aliases}:{}),...(keywords?{keywords}:{})});
+export const assistantAdminClearUnanswered=()=>call<{ok:true;archived:number}>('clear_unanswered');
 export const assistantAdminImport=(items:Array<Partial<AssistantAdminItem>>,scope:AssistantKnowledgeSelection='public')=>call<{ok:true;imported:number|Record<AssistantKnowledgeScope,number>;counts?:Record<AssistantKnowledgeScope,number>}>('batch_import',{items,scope});
 export const assistantAdminTestKnowledge=(question:string,scope:AssistantKnowledgeSelection)=>call<AssistantKnowledgeTestResult>('test_knowledge',{question,scope});
 export const assistantAdminParseInstruction=(instruction:string,scope:AssistantKnowledgeSelection)=>call<{ok:true;draft:ParsedAssistantDraft}>('parse_instruction',{instruction,scope});

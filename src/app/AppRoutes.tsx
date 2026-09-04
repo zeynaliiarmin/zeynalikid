@@ -36,9 +36,8 @@ interface AppRoutesProps {
 }
 
 export default function AppRoutes({ app, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
-  // صفحه ورودی سایت: از تنظیمات پنل مدیریت (entryMode) — «پیگیری دوره» یا «پنل کاربر»
-  const portalMode = (app.cfg as any)?.entryMode === 'user';
-  const entryPage = portalMode ? <UserPortalPage /> : <TrackPage />;
+  // مسیرها مستقل‌اند: /portal همیشه پنل کاربر و /track همیشه پیگیری است.
+  // entryMode فقط مقصد دکمه‌های ورودی را تعیین می‌کند، نه محتوای این دو مسیر را.
   const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--zk-text-muted, #4B5563)', fontSize: 14 }}>در حال بارگذاری...</div>;
   return (
     <AppContextProvider value={app}>
@@ -53,8 +52,8 @@ export default function AppRoutes({ app, adminAuthed, referralReady, referralCon
           <Route path="/course-payment/verify" element={<PaymentVerifyPage />} />
           <Route path="/course-confirm" element={<CourseConfirmPage />} />
           <Route path="/course-done" element={<CourseDonePage />} />
-          <Route path="/track" element={entryPage} />
-          <Route path="/portal" element={entryPage} />
+          <Route path="/track" element={<TrackPage />} />
+          <Route path="/portal" element={<UserPortalPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/growth" element={<GrowthChartPage />} />
           <Route path="/settings" element={<SettingsPage />} />

@@ -12,10 +12,8 @@ type Props = {
   setLang: (l: Lang) => void;
   adminAuthed?: boolean;
   onAdminQuestions?: () => void;
-  /** فقط در حالت «پنل کاربر» — دکمه آدمک/خروج در هدر صفحات عمومی */
+  /** حالت ورودی فعال: پنل کاربر یا پیگیری؛ خودِ مسیرهای /portal و /track مستقل‌اند. */
   portalMode?: boolean;
-  /** کاربر همین حالا فرم مشاوره را موفقیت‌آمیز ثبت کرده (صفحه تأیید) */
-  consultationComplete?: boolean;
   /** جایگاه دکمه دستیار کنار آدمک در هدر */
   assistantSlot?: boolean;
 };
@@ -27,7 +25,6 @@ export default function Header({
   adminAuthed,
   onAdminQuestions,
   portalMode,
-  consultationComplete,
   assistantSlot,
 }: Props) {
   void setLang;
@@ -43,12 +40,11 @@ export default function Header({
   }, []);
   useEffect(() => { window.dispatchEvent(new Event('zk-header-slot')); });
   const path = (loc.pathname || '/').replace(/\/+$/, '') || '/';
-  const onPortal = path === '/track' || path === '/portal';
-  const inFlow = ['/form', '/consultation', '/child-info', '/course-shipping', '/course-payment', '/course-payment/verify'].includes(path);
-  const consultDoneHere = (path === '/form' || path === '/consultation') && consultationComplete === true;
-  // دکمه فقط برای کاربرِ واردشده؛ در میانه فرم ثبت دوره/مشاوره پنهان (حواس پرت نشود) — در صفحه تأییدها نمایان
-  const showUserBtn = portalMode === true && signedIn && (onPortal || !inFlow || consultDoneHere);
-  const showLogout = showUserBtn && onPortal;
+  // آدمک در هر هدرِ قابل‌نمایش ثابت است. فقط داخل پنل واقعیِ کاربر، آن را با خروج جایگزین می‌کنیم.
+  // در حالت پیگیری، حتی کاربر واردشده هم به مسیر مستقل پیگیری هدایت می‌شود.
+  const showUserBtn = true;
+  const showLogout = signedIn && path === '/portal';
+  const entryTarget = portalMode === false ? '/track' : '/portal';
 
   useEffect(() => {
     if (!adminAuthed) return;
@@ -144,12 +140,13 @@ export default function Header({
         {showUserBtn ? (
           <button
             type="button"
+            data-testid="header-user-control"
             onClick={() => {
-              if (showLogout) { try { clearUserSession(); } catch { /* ignore */ } navigate('/'); }
-              else { try { navigate('/portal'); } catch { /* ignore */ } }
+              if (showLogout) { try { clearUserSession(); } catch { /* ignore */ } navigate('/'); return; }
+              try { navigate(entryTarget); } catch { /* ignore */ }
             }}
-            aria-label={showLogout ? (lang === 'en' ? 'Log out' : 'خروج از پنل') : (lang === 'en' ? 'Parent panel' : 'پنل والد')}
-            title={showLogout ? (lang === 'en' ? 'Log out of your panel' : 'خروج از پنل کاربری') : (lang === 'en' ? 'Go to your panel' : 'پنل کاربری — دوره‌ها و برنامه‌ها')}
+            aria-label={showLogout ? (lang === 'en' ? 'Log out' : 'خروج از پنل') : (portalMode === false ? (lang === 'en' ? 'Track request' : 'پیگیری درخواست') : (lang === 'en' ? 'Parent panel' : 'پنل والد'))}
+            title={showLogout ? (lang === 'en' ? 'Log out of your panel' : 'خروج از پنل کاربری') : (portalMode === false ? (lang === 'en' ? 'Open tracking' : 'رفتن به پیگیری درخواست') : (lang === 'en' ? 'Go to your panel' : 'پنل کاربری — دوره‌ها و برنامه‌ها'))}
             style={{ width: 48, height: 48, borderRadius: T.btnRadius || 12, border: 'none', background: 'transparent', color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontFamily: 'inherit' }}
           >
             {showLogout ? (

@@ -200,7 +200,7 @@ function App(){
  useEffect(()=>{const tabs=cfg.courseTabs||[]; if(tabs.length&&!tabs.some((x:DynamicRecord)=>x.id===courseTab))setCourseTab(tabs.find((x:DynamicRecord)=>x.active)?.id||tabs[0]?.id)},[cfg.courseTabs]);
  // پس از ورود/ثبت‌نام موفق، همان دوره‌ای که پشت درِ ورود مانده بود دوباره باز می‌شود (سؤال روش ارسال)
  useEffect(()=>{
-  if(String((cfg as any)?.entryMode||'track')!=='user')return;
+  if(String((cfg as any)?.entryMode||'user')!=='user')return;
   const resume=()=>{
     try{
       if(!getUserSession())return;
@@ -400,7 +400,7 @@ function App(){
  // اصلاح ۱-۳ (مرحله ۴): برچسب‌های Tag اکنون از trVal برای ترجمه استفاده می‌کنند
  function Tag({x}:{x:string}){return <span style={{fontSize:10,padding:'3px 7px',borderRadius:T.badgeRadius||12,background:T.soft,color:T.accText,border:`1px solid ${T.brd}`}}>{trVal(x)}</span>}
  // اصلاح ۱-۵ (مرحله ۴): مقدار پیش‌فرض کشور مقصد (برای dest==='iran') اکنون بر اساس زبان انتخاب‌شده نمایش داده می‌شود (فارسی: «ایران»، انگلیسی: «Iran»)
- function chooseDest(dest:string,cr:DynamicRecord){if((cfg as any)?.entryMode==='user'&&!getUserSession()){setPortalNext('/courses');setView('track');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
+ function chooseDest(dest:string,cr:DynamicRecord){if((cfg as any)?.entryMode==='user'&&!getUserSession()){setPortalNext('/courses');setView('portal');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
  function deliveryText(){if(!course.dest)return `${trVal(cfg.delivery.iranFastText)} / ${trVal(cfg.delivery.iranOtherText)} / ${trVal(cfg.delivery.intlText)}`; if(course.dest==='intl')return trVal(cfg.delivery.intlText); if(course.shippingMethod === 'mahaks') return lang === 'en' ? '48-hour delivery' : 'تحویل ۴۸ ساعته'; const city=String(course.form.city||'').trim(); if(!city)return publicText('deliveryAddressRequired','برای تخمین زمان تحویل، ابتدا باید قسمت آدرس تکمیل شود.'); return cfg.delivery.iranFastCities.some((x:string)=>city.includes(x))?trVal(cfg.delivery.iranFastText):trVal(cfg.delivery.iranOtherText)}
  function validateOptionalDate(){const s=p2e(course.optionalSendDate).trim(); if(!s)return ''; if(course.dest==='iran'){return /^14\d{2}[\/\-\.](0?[1-9]|1[0-2])[\/\-\.](0?[1-9]|[12]\d|3[01])$/.test(s)?'':trVal('برای مقصد ایران فقط تاریخ شمسی مانند 1403/05/20 وارد کنید')} return /^20\d{2}[\/\-\.](0?[1-9]|1[0-2])[\/\-\.](0?[1-9]|[12]\d|3[01])$/.test(s)?'':trVal('برای خارج از ایران فقط تاریخ میلادی مانند 2026/08/20 وارد کنید')}
  async function finalizeCourseRegistration(paymentOverride?:DynamicRecord){const pay=paymentOverride||course.payment; const fp=fullPhone(course.form.phoneCc,course.form.phone); const data={...fd,pName:course.form.receiver||fd.pName,cc:course.form.phoneCc,pPhone:course.form.phone,fullPhone:fp}; let trackingCode=''; let existingCodes:string[]=[]; let existingList:Submission[]=[]; const portalUser=getUserSession(); try{let list:Submission[]=getLS(SK.subs,[]); existingList=list; existingCodes=list.map((x:Submission)=>String(x.trackingCode||'')).filter(Boolean); const prevSame=list.find((x:Submission)=>digits(x.fullPhone||'')===digits(fp)&&x.trackingCode); if(prevSame)trackingCode=prevSame.trackingCode}catch{} if(!trackingCode)trackingCode=generateSecureTrackingCode(existingCodes,TRACKING_PREFIX); if(portalUser)trackingCode=portalUser.code;
@@ -470,18 +470,18 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
  // صفحات ورود ادمین و پیگیری دارای طراحی گلسمورفیسم تمام‌صفحه با نوار شیشه‌ای اختصاصی هستند؛
  // هدر/منو/سوییچر زبان سراسری سایت در این دو صفحه نمایش داده نمی‌شود تا ظاهر به‌هم نریزد.
- const glassFullViews=['admin-login','track'];
+ const glassFullViews=['admin-login','track','portal'];
  const showLangSwitcher=view!=='admin'&&!glassFullViews.includes(view)&&!courseFlowViews.includes(view);
  // اصلاح ۵: نمایش منوی همبرگری اکنون از تنظیمات پنل مدیریت (cfg.menuVisibility) خوانده می‌شود؛
  // در صورت نبود مقدار برای یک view (تنظیمات قدیمی/نامعتبر)، به رفتار پیش‌فرض قبلی (noMenuViews) بازمی‌گردیم.
- const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','admin-login','admin'];
+ const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','portal','admin-login','admin'];
  const successView=view==='course-done'||(view==='form'&&consultationComplete);
  const sensitiveFlow=!successView&&['form','child-info','course-shipping','course-payment','payment-verify','course-confirm'].includes(view);
- const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy','track','admin-login'].includes(view);
+ const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy','track','portal','admin-login'].includes(view);
  // صفحات ویژه (پیگیری/پنل کاربر، ورود مدیریت) دقیقاً مثل صفحات عمومی منوی همبرگری را دارند
- const entryChromeViews=['track','admin-login'];
+ const entryChromeViews=['track','portal','admin-login'];
  const showMenu=!sensitiveFlow&&(entryChromeViews.includes(view)||(!glassFullViews.includes(view)&&(successView||view==='courses'||(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)))));
- const headerOnFullViews=['admin-login','track']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
+ const headerOnFullViews=['admin-login','track','portal']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
  const showHeader=view!=='admin'&&(!glassFullViews.includes(view)||headerOnFullViews.includes(view));
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
  // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحه عمومی را نشان نده ───
@@ -491,7 +491,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  const canonicalPath=location.pathname==='/'?'/':location.pathname.replace(/\/+$/,'');
  const canonicalOrigin=typeof window!=='undefined'?window.location.origin:PUBLIC_SITE_URL;
  const canonicalUrl=`${canonicalOrigin}${canonicalPath}`;
- return <><Helmet><link rel="canonical" href={canonicalUrl}/><meta property="og:url" content={canonicalUrl}/></Helmet>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}} portalMode={(cfg as any)?.entryMode==='user'} consultationComplete={consultationComplete} assistantSlot={!!showAssistant}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
+ return <><Helmet><link rel="canonical" href={canonicalUrl}/><meta property="og:url" content={canonicalUrl}/></Helmet>{view!=='admin'&&<MemphisBg T={T}/>}{showHeader&&<Header T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed} onAdminQuestions={()=>{setView('admin');setAdminTab('userQuestions')}} portalMode={(cfg as any)?.entryMode!=='track'} assistantSlot={!!showAssistant}/>}{!showHeader&&showLangSwitcher&&<div style={{position:'fixed',left:8,top:8,zIndex:1000}}><LanguageSwitcher lang={lang} setLang={setLang} T={T}/></div>}{showMenu&&<HamburgerMenu T={T} lang={lang} setLang={setLang} cfg={cfg} publicText={publicText} APP_A_URL={APP_B_URL} setView={setView} referralConsultant={referralConsultant} referralTarget={referralTarget} findTabByCode={findTabByCode} onCoursesClick={()=>{
   if (referralTarget?.tabCode) {
     const tab = findTabByCode(cfg.courseTabs||[], referralTarget.tabCode);
     if (tab) {

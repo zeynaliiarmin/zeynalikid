@@ -47,17 +47,17 @@ export default function EntryModeSettings({ app }: { app: any }) {
     <div>
       {row(
         en ? 'Public entry page' : 'صفحه ورودی سایت',
-        seg(String(ec.entryMode || 'track'), [
-          { id: 'track', label: en ? 'Course tracking (guest, no login)' : 'پیگیری دوره (بدون ورود — حالت فعلی)' },
-          { id: 'user', label: en ? 'User portal (login required)' : 'پنل کاربر (ثبتنام/ورود اجباری)' },
+        seg(String(ec.entryMode || 'user'), [
+          { id: 'user', label: en ? 'User portal (default)' : 'پنل کاربر (حالت پیش‌فرض)' },
+          { id: 'track', label: en ? 'Course tracking as the entry' : 'پیگیری دوره به‌عنوان ورودی' },
         ], (v) => set({ entryMode: v })),
-        en ? 'Only one mode can be active. In user-portal mode /track and /portal both show the sign-in page, and course registration and consultations require sign-in (tracking a code still works from inside the portal). Entries stay in “Forms & orders” with the new view, split into consultation and course sections. '
-          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، نشانی /track و /portal هر دو صفحه ورود را نشان میدهند و ثبت دوره و مشاوره بدون ورود ممکن نیست (جست‌وجوی کد پیگیری هم داخل همان پنل باقی میماند)؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
+        en ? 'The two addresses are always separate: /portal is the user portal and /track is course tracking. This setting only selects the destination of the public entry button. In user-portal mode, course registration and consultations require sign-in.'
+          : 'این دو نشانی همیشه جدا هستند: /portal فقط پنل کاربر است و /track فقط پیگیری دوره. این تنظیم فقط مقصد دکمه ورودی سایت را تعیین می‌کند. در حالت پنل کاربر، ثبت دوره و مشاوره بدون ورود ممکن نیست.'
       )}
 
       {(() => {
-        const savedMode = String((savedCfg as any)?.entryMode || 'track') === 'user' ? 'user' : 'track';
-        const staged = String(ec.entryMode || 'track') === 'user' ? 'user' : 'track';
+        const savedMode = String((savedCfg as any)?.entryMode || 'user') === 'track' ? 'track' : 'user';
+        const staged = String(ec.entryMode || 'user') === 'user' ? 'user' : 'track';
         const label = savedMode === 'user' ? (en ? 'User portal' : 'پنل کاربر') : (en ? 'Course tracking' : 'پیگیری دوره');
         return (
           <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 11, padding: '9px 12px', marginBottom: 10 }}>

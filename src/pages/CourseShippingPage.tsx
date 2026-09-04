@@ -32,7 +32,7 @@ export default function CourseShippingPage(){
  },[]);
  // در حالت «پنل کاربر» گیرنده می‌تواند خودِ کاربر باشد؛ آن‌گاه نام و شماره تماس از حساب پر و قفل می‌شود
  // (مقادیر در رکورد ذخیره می‌شوند تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست)
- const portalSession = String((cfg as any)?.entryMode||'track')==='user' ? getUserSession() : null;
+ const portalSession = String((cfg as any)?.entryMode||'user')==='user' ? getUserSession() : null;
  const [receiverSelf,setReceiverSelf]=useState<boolean>(()=>!!portalSession);
  // نشست تازه‌ساخته‌شده را وارد deps نمی‌کنیم (حلقه رندر)؛ فقط کلید رشته‌ای + مقداردهی بی‌آزار
  const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';

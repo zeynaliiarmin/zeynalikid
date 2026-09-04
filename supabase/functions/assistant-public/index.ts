@@ -8,6 +8,7 @@ import {safePublicPath,sanitizeKnowledgeActions} from '../_shared/assistantTrain
 import {trackAssistantQuestion} from '../_shared/assistantInsights.ts';
 import {buildSiteContentKnowledge} from '../_shared/assistantSiteContent.ts';
 import {whoGrowthAnswer} from '../_shared/whoGrowth.ts';
+import {needsOwnerReviewForAnswer,type UnansweredDetectionReason} from '../_shared/assistantCuration.ts';
 
 const BRAND='زینالیکید';
 const OWNER_LABEL='جناب زینالی';
@@ -37,9 +38,14 @@ const generalSuggestions=[{question:'میخوام ثبت دوره کنم',label:
 const fixedResponse=(answer:string,suggestions:any[],actions:any[]=[],model='internal-context-policy')=>({ok:true,answer,model,sources:[],actions,suggestions,provider_called:false,blocked_admin:false,blocked_private:false});
 const exactConsultant=(question:string,row:any)=>{const list=Array.isArray(row?.settings?.consultants)?row.settings.consultants:[];return list.find((item:any)=>item?.active!==false&&String(item?.name||'').length>2&&normalizeAssistantText(question).includes(normalizeAssistantText(item.name)))};
 const consultantAnswer=(item:any)=>[String(item?.name||''),String(item?.title||''),String(item?.desc||'')].filter(Boolean).join('؛ ').slice(0,1200);
-async function rememberUnanswered(db:any,question:string,page:string){
+async function rememberUnanswered(db:any,question:string,page:string,reason:UnansweredDetectionReason='no_match'){
   const normalized=normalizeAssistantText(question);if(normalized.length<3)return;
-  try{const {data}=await db.from('assistant_unanswered').select('id,occurrences').eq('question_normalized',normalized).maybeSingle();if(data)await db.from('assistant_unanswered').update({occurrences:Number(data.occurrences||0)+1,last_seen_at:new Date().toISOString(),status:'pending',page_path:page||null}).eq('id',data.id);else await db.from('assistant_unanswered').insert({question:question.slice(0,500),question_normalized:normalized,page_path:page||null})}catch{}
+  try{
+    const {data}=await db.from('assistant_unanswered').select('id,occurrences').eq('question_normalized',normalized).maybeSingle();
+    const update={occurrences:Number(data?.occurrences||0)+1,last_seen_at:new Date().toISOString(),status:'pending',page_path:page||null,detection_reason:reason,archived_at:null};
+    if(data)await db.from('assistant_unanswered').update(update).eq('id',data.id);
+    else await db.from('assistant_unanswered').insert({question:question.slice(0,500),question_normalized:normalized,page_path:page||null,detection_reason:reason});
+  }catch{/* Recording a review item must never block the public answer. */}
 }
 
 serve(async req=>{
@@ -54,7 +60,7 @@ serve(async req=>{
   }
   if(req.method!=='POST')return reply({error:'Method not allowed'},405,origin);const body=await req.json().catch(()=>({})),action=String(body.action||'');
   if(action==='generate'){
-    const image=(Array.isArray(body.images)?body.images:[]).map(String).find(v=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]{64,5500000}$/.test(v))||'';
+    const image=(Array.isArray(body.images)?body.images:[]).map(String).find((v:string)=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]{64,5500000}$/.test(v))||'';
     const question=image?safe(body.question,500)||'تصویر ارسالی کاربر را بررسی کن و اگر به دانش یا بخش‌های سایت مربوط است از همان مرجع پاسخ بده.':safe(body.question,500),language=responseLanguage(question,body.ui_language),clientId=String(body.client_id||'').trim();if(!image&&normalizeAssistantText(question).length<3||!/^[a-z0-9-]{16,80}$/i.test(clientId))return reply({error:'سؤال یا شناسه مرورگر معتبر نیست'},400,origin);
     const general=await centralRateLimit(req,'assistant-public-all',{maxRequests:30,windowMs:60_000,blockMs:60_000},clientId);if(!general.ok)return reply({error:'درخواست بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید.'},429,origin);
     const [{data:settings},{data:knowledge,error},{data:appConfig},{data:reviewRows}]=await Promise.all([db.from('assistant_settings').select('enabled,welcome_message,fallback_message,disclaimer,suggested_questions,admin_block_message,frequent_question_threshold').eq('key','default').maybeSingle(),db.from('assistant_knowledge').select('id,question,answer,aliases,keywords,category,link_url,link_label,actions,response_mode,match_mode,priority').eq('status','published').eq('is_active',true).order('priority',{ascending:false}).limit(500),db.from('settings').select('settings').eq('key','app_settings').maybeSingle(),db.from('reviews').select('id,reviewer_name,rating,comment,course_id,course_ids,created_at').eq('status','approved').order('created_at',{ascending:false}).limit(40)]);
@@ -69,13 +75,13 @@ serve(async req=>{
     if(fixed){const source=sourceRows([{item:fixed.item,score:fixed.score}] as any),model=fixed.item.response_mode==='refusal'?'internal-refusal-rule':'internal-exact-rule';return deliver({...fixedResponse(String(fixed.item.answer||localizedFallback),suggestionsFrom(settings,source,question),actionsFrom(source,language),model),sources:source},200)}
     const consultant=exactConsultant(question,appConfig);
     if(/(هوش مصنوعی|ربات|انسانی|آدم واقعی|چه مدلی|مدل تو|پلتفرم تو)/i.test(normalized))return deliver(fixedResponse(`بله، من یه دستیار هوش مصنوعی و دستیار ${OWNER_LABEL} هستم تا درباره رشد و تغذیه فرزندتون و بخش‌های عمومی ${BRAND} کمکتون کنم. درباره پلتفرم یا مدل فنی خودم اطلاعاتی ارائه نمیدم.`,generalSuggestions),200);
-    if(consultant&&/(کیه|میشناسی|درباره|معرفی)/i.test(normalized))return deliver(fixedResponse(consultantAnswer(consultant)||'اطلاعات عمومی بیشتری درباره ایشون ثبت نشده.',generalSuggestions,[{label:'مشاهده صفحه درباره ما',path:'/about'}]),200);
-    if(/(مشاوران|مشاورین|اعضای تیم|تیم شما).*(چه کسانی|کیا|کی ها|چند نفر|شامل)|چه کسانی.*(مشاور|تیم)/i.test(normalized))return deliver(fixedResponse('این اطلاعات در دانش عمومی دستیار ثبت نشده است. اگر درباره رشد یا تغذیه فرزندتون سؤالی دارین، در خدمتم.',generalSuggestions),200);
+    if(consultant&&/(کیه|میشناسی|درباره|معرفی)/i.test(normalized)){const consultantText=consultantAnswer(consultant),answer=consultantText||'اطلاعات عمومی بیشتری درباره ایشون ثبت نشده.';if(!consultantText)await rememberUnanswered(db,question,safe(body.page_path,200),'generic_answer');return deliver(fixedResponse(answer,generalSuggestions,[{label:'مشاهده صفحه درباره ما',path:'/about'}]),200);}
+    if(/(مشاوران|مشاورین|اعضای تیم|تیم شما).*(چه کسانی|کیا|کی ها|چند نفر|شامل)|چه کسانی.*(مشاور|تیم)/i.test(normalized)){await rememberUnanswered(db,question,safe(body.page_path,200),'generic_answer');return deliver(fixedResponse('این اطلاعات در دانش عمومی دستیار ثبت نشده است. اگر درباره رشد یا تغذیه فرزندتون سؤالی دارین، در خدمتم.',generalSuggestions),200);}
     if(/(هوا|آب و هوا|پیش بینی هوا|اخبار امروز)/i.test(normalized))return deliver(fixedResponse('من اطلاعات لحظه‌ای آب‌وهوا یا خبرها رو ندارم. لطفاً از برنامه آب‌وهوا یا خبرگزاری معتبر استفاده کنین.',growthSuggestions),200);
     if(/(نگران رشد|رشد نکرده|رشد نمیکنه|قد نمی ?کشه|کوتاه قد|وزن نمی ?گیره|رشدش کمه|از رشد.*نگران)/i.test(normalized)){const phone=String(supportPhone||'').replace(/[^+0-9۰-۹٠-٩]/g,''),actions=[...(phone?[{label:`تماس مستقیم ${supportPhone}`,path:`tel:${phone}`}]:[]),{label:'درخواست مشاوره',path:'/consultation'}];return deliver(fixedResponse(`نگرانی‌تون قابل درکه. برای بررسی دقیق‌تر از طریق دکمه‌های زیر با ما ارتباط بگیرین${supportPhone?` یا با شماره ${supportPhone} تماس بگیرین`:''}.`,growthSuggestions,actions),200)}
-    if(/(دکتر|پزشک|آقای|خانم).{1,45}(میشناسی|کیه|میشناسید)/i.test(normalized))return deliver(fixedResponse('ایشون رو نمیشناسم و اطلاعات تأییدشده‌ای درباره‌شون ندارم. اگر درباره رشد و تغذیه فرزندتون سؤالی دارین، در خدمتم.',growthSuggestions),200);
+    if(/(دکتر|پزشک|آقای|خانم).{1,45}(میشناسی|کیه|میشناسید)/i.test(normalized)){await rememberUnanswered(db,question,safe(body.page_path,200),'generic_answer');return deliver(fixedResponse('ایشون رو نمیشناسم و اطلاعات تأییدشده‌ای درباره‌شون ندارم. اگر درباره رشد و تغذیه فرزندتون سؤالی دارین، در خدمتم.',growthSuggestions),200);}
     const groundedQuestion=language==='en'?englishRetrievalQuestion(question):question,matches=relatedKnowledge(groundedQuestion,rows,6);
-    if(!matches.length&&!image){await rememberUnanswered(db,question,safe(body.page_path,200));return deliver({ok:true,answer:localizedFallback,model:'internal-no-knowledge',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:false,blocked_private:false},200)}
+    if(!matches.length&&!image){await rememberUnanswered(db,question,safe(body.page_path,200),'no_match');return deliver({ok:true,answer:localizedFallback,model:'internal-no-knowledge',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:false,blocked_private:false,needs_training:true,confidence:0},200)}
     const minute=await centralRateLimit(req,'assistant-public-mistral-minute',{maxRequests:17,windowMs:60_000,blockMs:15_000},clientId);
     if(!minute.ok)return deliver({ok:true,answer:'برای اینکه نوبت بقیه هم رعایت بشه چند لحظه صبر کن و بعد دوباره بپرس.',model:'internal-rate-limit',sources:[],actions:[],suggestions:suggestionsFrom(settings,[],question),provider_called:false,blocked_admin:false,blocked_private:false,limit_code:'minute_limit',support_phone:''},200);
     let result;
@@ -94,7 +100,10 @@ serve(async req=>{
       if(recommendsCourse||removed||healthish){const hasConsult=actions.some(item=>item.path==='/consultation');if(!hasConsult)actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
       if(image&&/(از روی عکس|نمی‌تونم|نمی توانم|اطلاعاتی ندارم)/.test(answer)){if(!/(درخواست )?مشاوره/.test(answer))answer+=consultCta;if(!actions.some(item=>item.path==='/consultation'))actions=[...actions,{label:language==='en'?'Request a consultation':'ثبت درخواست مشاوره',path:'/consultation'}]}
     }
-    return deliver({ok:true,answer,model:result.model,sources:result.sources,actions,suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false},200);
+    const confidence=Number(result.sources?.[0]?.score||matches[0]?.score||0),review=!image?needsOwnerReviewForAnswer({answer,fallback:localizedFallback,model:result.model,confidence}):{needs_review:false,reason:'low_confidence' as UnansweredDetectionReason};
+    // The review layer records only the user's wording and a reason. It never learns or rewrites an answer here.
+    if(review.needs_review)await rememberUnanswered(db,question,safe(body.page_path,200),review.reason);
+    return deliver({ok:true,answer,model:result.model,sources:result.sources,actions,suggestions:suggestionsFrom(settings,result.sources,question),provider_called:result.providerCalled,blocked_admin:false,blocked_private:false,needs_training:review.needs_review,confidence},200);
   }
   const rate=await centralRateLimit(req,`assistant-${action||'write'}`,{maxRequests:20,windowMs:60_000,blockMs:60_000});if(!rate.ok)return reply({error:'درخواست بیش از حد مجاز است'},429,origin);
   if(action==='unanswered'){const question=safe(body.question,500),normalized=normalizeAssistantText(question),page=safe(body.page_path,200);if(normalized.length<3)return reply({error:'سؤال معتبر نیست'},400,origin);await rememberUnanswered(db,question,page);return reply({ok:true},200,origin)}

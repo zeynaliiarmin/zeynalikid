@@ -1,8 +1,8 @@
 import {readFile} from 'node:fs/promises';
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 const optional=async path=>read(path).catch(()=> '');
-const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,insights,assistantMatch,knowledgeExport,siteContent,infoPages,faqPage]=await Promise.all([
- read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts'),read('supabase/functions/_shared/assistantSiteContent.ts'),read('src/pages/InfoPages.tsx'),read('src/pages/FAQPage.tsx')
+const [migration,trainingMigration,publicFn,adminFn,generator,training,telegramApi,telegramFn,widget,api,css,app,adminPanel,manager,managerCss,adminApi,backup,publicSettings,frequentMigration,ownerReviewMigration,curation,insights,assistantMatch,knowledgeExport,siteContent,infoPages,faqPage]=await Promise.all([
+ read('supabase/migrations/20260826130000_scoped_generative_assistant.sql'),read('supabase/migrations/20260827170000_assistant_training_studio.sql'),read('supabase/functions/assistant-public/index.ts'),read('supabase/functions/assistant-admin/index.ts'),read('supabase/functions/_shared/generativeAssistant.ts'),read('supabase/functions/_shared/assistantTraining.ts'),read('supabase/functions/_shared/assistantTelegramApi.ts'),optional('supabase/functions/assistant-telegram/index.ts'),read('src/components/AssistantWidget.tsx'),read('src/lib/assistantApi.ts'),read('src/components/assistant-widget.css'),read('src/App.tsx'),read('src/admin/AdminPanel.tsx'),read('src/admin/AssistantManager.tsx'),read('src/admin/assistant-manager.css'),read('src/lib/assistantAdminApi.ts'),read('scripts/external-backup.mjs'),read('supabase/functions/public-settings/index.ts'),read('supabase/migrations/20260827203000_assistant_frequent_questions.sql'),optional('supabase/migrations/20260904110000_owner_reviewed_unanswered.sql'),optional('supabase/functions/_shared/assistantCuration.ts'),read('supabase/functions/_shared/assistantInsights.ts'),read('supabase/functions/_shared/assistantMatch.ts'),read('supabase/functions/_shared/assistantKnowledgeExport.ts'),read('supabase/functions/_shared/assistantSiteContent.ts'),read('src/pages/InfoPages.tsx'),read('src/pages/FAQPage.tsx')
 ]);
 const failures=[];
 const need=(source,pattern,label)=>{const ok=pattern instanceof RegExp?pattern.test(source):source.includes(pattern);if(!ok)failures.push(label)};
@@ -24,6 +24,8 @@ need(insights,"bestScore=.925",'semantic clustering threshold is not conservativ
 need(insights,'shouldNotifyFrequentQuestion','frequent-question notification milestones missing');
 need(insights,"callback_data:`fq:edit:${row.id}`",'frequent notification cannot open direct training');
 need(assistantMatch,'compatibleAssistantIntent','different-intent compatibility guard missing');
+for(const text of ['add column if not exists detection_reason','resolved_knowledge_id','assistant_unanswered_pending_review_idx','resolve_assistant_unanswered','for update',"p_response_mode<>'exact'","'published',true",'revoke all on function public.resolve_assistant_unanswered'])need(ownerReviewMigration,text,`owner-reviewed unanswered migration omits ${text}`);
+for(const text of ['prepareOwnerReviewedUnansweredDraft','owner_notice','suggested_answer','safeSuggestedOwnerAnswer','listAllPendingUnanswered',"p_response_mode: 'exact'",'resolveOwnerApprovedUnanswered','archivePendingUnanswered','sameAssistantIntent',"reason: 'generic_answer'","reason: 'low_confidence'"])need(curation,text,`owner-review curation helper omits ${text}`);
 
 need(publicFn,"action==='generate'",'public generation action missing');
 need(publicFn,"searchParams.get('status')==='1'",'lightweight assistant status endpoint missing');
@@ -31,6 +33,10 @@ need(publicFn,'findKnowledgeRule(question,rows)','deterministic owner rules miss
 need(publicFn,"'internal-exact-rule'",'exact response mode missing');
 need(publicFn,"'internal-refusal-rule'",'refusal response mode missing');
 need(publicFn,'rememberUnanswered','automatic unanswered recording missing');
+need(publicFn,'needsOwnerReviewForAnswer','generic or low-confidence answers are not queued for owner review');
+need(publicFn,"review.needs_review)await rememberUnanswered",'dynamic generic/low-confidence result is not persisted for review');
+const genericFallbackQueues=(publicFn.match(/rememberUnanswered\(db,question,safe\(body\.page_path,200\),'generic_answer'\)/g)||[]).length;
+if(genericFallbackQueues<3)failures.push('consultant, team and unknown-person generic fallbacks are not all persisted for owner review');
 need(publicFn,'trackAssistantQuestion','successful public answers are not tracked for frequent questions');
 need(publicFn,'runtime.waitUntil(task)','frequent-question tracking blocks the public response');
 need(publicFn,"settings?.fallback_message",'configurable unknown-answer response missing');
@@ -75,6 +81,7 @@ need(adminFn,"action==='test_knowledge'",'knowledge preview action missing');
 need(adminFn,"action==='telegram_status'",'Telegram status action missing');
 need(adminFn,"action==='telegram_repair'",'Telegram repair action missing');
 need(adminFn,"action==='export_knowledge'",'complete assistant export action missing');
+for(const text of ["action==='unanswered_draft'","action==='resolve_unanswered'","action==='clear_unanswered'",'resolveOwnerApprovedUnanswered','archivePendingUnanswered'])need(adminFn,text,`admin unanswered review action missing: ${text}`);
 need(adminFn,"selectionFrom=(_value:unknown):KnowledgeSelection=>'public'",'admin endpoint does not collapse every scope to the single public pool');
 need(adminFn,"selection==='both'?['public','admin']",'both-scope changes do not target both physical tables');
 need(adminFn,"results:{public:publicResult,admin:adminResult}",'both-scope test does not return independent results');
@@ -142,18 +149,21 @@ need(manager,'frequent_question_threshold','panel frequent-question threshold se
 forbid(manager,/assistant-scope-both|switchScope/,'panel still exposes an assistant-scope choice');
 need(manager,'scope=\'public\' as AssistantKnowledgeSelection','panel does not freeze knowledge into the single pool');
 need(manager,'assistant-export-knowledge','panel complete knowledge backup control missing');
+for(const text of ['zkam-unanswered-item','assistantAdminUnansweredDraft','assistantAdminResolveUnanswered','ذخیره پاسخ و انتشار فوری','بایگانی همه سؤال‌ها','پیش‌نویس پیشنهادی','دریافت پیشنهادهای یار بررسی'])need(manager,text,`panel unanswered owner-review control missing: ${text}`);
 need(manager,"testResult.scope==='both'",'panel does not render both test results independently');
 need(managerCss,'.zkam-switch','assistant toggle styling missing');
 need(adminApi,"'parse_instruction'",'admin parser API missing');
 need(adminApi,"'telegram_repair'",'admin Telegram repair API missing');
 need(adminApi,"AssistantKnowledgeScope|'both'",'browser API lacks both-scope type');
 need(adminApi,"action:'export_knowledge'",'browser API lacks complete knowledge export');
+for(const text of ['assistantAdminUnansweredDraft','assistantAdminResolveUnanswered','assistantAdminClearUnanswered'])need(adminApi,text,`browser unanswered review API missing: ${text}`);
 need(backup,"'assistant_admin_knowledge'",'backup omits admin knowledge');
 need(backup,"'assistant_question_clusters'",'backup omits frequent-question clusters');
 
 if(telegramFn){
  need(telegramFn,'callback_query','Telegram callback handling missing');need(telegramFn,'inline_keyboard','Telegram glass buttons missing');need(telegramFn,'telegramEditMessage','Telegram menus do not edit the same message');need(telegramFn,'Promise.all([callbackAck,handleCallback','Telegram callback acknowledgement still blocks the requested action');need(telegramFn,'results=await Promise.all(entries.map','Telegram knowledge id lookup is still sequential');forbid(telegramFn,/if\(callback\?\.id\)await telegramAnswerCallback/,'Telegram callback acknowledgement remains sequential');need(telegramFn,'menu:quick','Telegram quick trainer missing');need(telegramFn,'parseAssistantInstruction','Telegram natural-language trainer missing');forbid(telegramFn,/scopeKeyboard|quickscope|addscope/,'Telegram still asks which assistant');
 need(telegramFn,"{scope:'public'}",'Telegram does not silently target the single public pool');need(telegramFn,"selection==='both'?['public','admin']",'Telegram both-scope changes do not target both tables');need(telegramFn,'نتیجه آزمایش هر دو دستیار','Telegram both-scope test results missing');need(telegramFn,"data==='menu:backup'",'Telegram complete knowledge backup button missing');need(telegramFn,'telegramSendDocument','Telegram backup is not sent as a document');need(telegramFn,'item:show:','Telegram item view buttons missing');need(telegramFn,'item:editq:','Telegram question edit button missing');need(telegramFn,'item:edita:','Telegram answer edit button missing');need(telegramFn,'deleteyes:','Telegram confirmed delete missing');need(telegramFn,'testAnswer','Telegram real answer test missing');need(telegramFn,"callback_data:'fq:list:trained:0'",'Telegram trained frequent-question branch missing');need(telegramFn,"callback_data:'fq:list:auto:0'",'Telegram automatic frequent-question branch missing');need(telegramFn,'frequent_train_answer','Telegram cannot teach an automatic frequent question');need(telegramFn,'needsTraining','Telegram test does not identify training need');need(telegramFn,'getAssistantTelegramStatus','Telegram connection status missing');need(telegramFn,"chatId!==owner",'Telegram owner restriction missing');need(telegramFn,"callback_data:'site:enable'",'Telegram site-enable button missing');need(telegramFn,"callback_data:'site:disable'",'Telegram site-disable button missing');need(telegramFn,'is_active:true','Telegram publish action does not reactivate knowledge');
+for(const text of ['unansweredListText',"callback_data:'unanswered:answer'","callback_data:'unanswered:clear'",'unanswered_select_number','unanswered_owner_answer','resolveOwnerApprovedUnanswered','prepareOwnerReviewedUnansweredDraft','listAllPendingUnanswered','پیش‌نویس پیشنهادی','latinDigits'])need(telegramFn,text,`Telegram unanswered owner-review flow missing: ${text}`);
 }
 need(telegramApi,"allowed_updates:['message','callback_query']",'Telegram webhook does not accept callback buttons');
 need(telegramApi,'setMyCommands','Telegram command menu setup missing');
