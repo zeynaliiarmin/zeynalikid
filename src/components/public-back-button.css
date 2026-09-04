@@ -1,10 +1,10 @@
-/* Shared public return control — option 2. It adapts only through public theme tokens. */
+/* Shared public return control — option 2. It adapts only through active public theme tokens. */
 .zk-public-back {
-  --zk-public-back-accent: var(--zk-action-primary, var(--zk-primary, var(--zp-acc, #0f766e)));
-  --zk-public-back-text: var(--zk-action-primary-text, var(--zk-primary-text, var(--zp-accText, #0f766e)));
-  --zk-public-back-surface: var(--zk-surface, var(--zp-card0, #ffffff));
-  --zk-public-back-border: var(--zk-border, var(--zp-cardbd, rgba(15, 118, 110, .24)));
-  --zk-public-back-on-accent: var(--zk-text-inverse, var(--zp-btnfg, #ffffff));
+  --zk-public-back-accent: var(--zp-acc, var(--zk-primary, var(--zk-action-primary, #0f766e)));
+  --zk-public-back-text: var(--zp-accText, var(--zk-primary-text, var(--zk-action-primary-text, #0f766e)));
+  --zk-public-back-surface: var(--zp-card0, var(--zk-surface, var(--zk-surface-base, #ffffff)));
+  --zk-public-back-border: var(--zp-cardbd, var(--zk-border, var(--zk-border-default, rgba(15, 118, 110, .24))));
+  --zk-public-back-on-accent: var(--zp-btnfg, var(--zk-text-inverse, #ffffff));
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -69,18 +69,28 @@
 .zk-public-back:hover .zk-public-back__icon svg { transform: translateX(-2px); }
 [dir='rtl'] .zk-public-back:hover .zk-public-back__icon svg { transform: scaleX(-1) translateX(-2px); }
 
-/* A title and its return control are always one normal-flow row. */
+/* One in-flow title row: the title is at inline start and the return control at the far opposite edge.
+   Thus Persian = title right / return left; English = title left / return right. */
 .zk-public-title-row {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.zk-public-title-row > :not(.zk-public-back) {
+  order: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.zk-public-title-row > :is(h1, h2, h3, [data-public-page-title]) {
-  flex: 1 1 auto;
-  min-width: 0;
+.zk-public-title-row > .zk-public-back {
+  order: 2;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
 }
 
 @media (max-width: 480px) {

@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { type CSSProperties, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../app/AppContext';
 import './public-back-button.css';
 
 type PublicBackButtonProps = {
@@ -16,8 +17,9 @@ type PublicBackButtonProps = {
 /**
  * Shared option-2 return control for public UI.
  *
- * It deliberately lives in normal document flow. Its parent decides the title row;
- * the inherited `dir` puts it on the right in Persian and on the left in English.
+ * It remains in normal document flow. In a shared title row, the title stays at
+ * the inline start while this control occupies the opposite edge: left in Persian
+ * and right in English. Its colours come from the active public design palette.
  */
 export default function PublicBackButton({
   lang,
@@ -28,7 +30,14 @@ export default function PublicBackButton({
   label,
 }: PublicBackButtonProps) {
   const navigate = useNavigate();
+  const { T } = useAppContext();
   const text = label || (lang === 'en' ? 'Back' : 'بازگشت');
+  const visualTokens: Record<string, string> = {};
+  if (T?.acc) visualTokens['--zk-public-back-accent'] = String(T.acc);
+  if (T?.accText) visualTokens['--zk-public-back-text'] = String(T.accText);
+  if (T?.card) visualTokens['--zk-public-back-surface'] = String(T.card);
+  if (T?.brd) visualTokens['--zk-public-back-border'] = String(T.brd);
+  if (T?.btnfg) visualTokens['--zk-public-back-on-accent'] = String(T.btnfg);
   const goBack = useCallback(() => {
     if (onBack) {
       onBack();
@@ -48,6 +57,7 @@ export default function PublicBackButton({
       data-testid={testId}
       aria-label={text}
       title={text}
+      style={visualTokens as CSSProperties}
       onClick={(event) => { event.stopPropagation(); goBack(); }}
     >
       <span className="zk-public-back__icon" aria-hidden="true">

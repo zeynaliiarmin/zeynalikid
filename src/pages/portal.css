@@ -82,7 +82,7 @@
 .zp-link:hover{color:var(--zp-ttl)}
 /* طرح ۲: بازگشت و عنوان در یک ردیف معمولیِ کارت می‌مانند، نه در سطر جدا یا روی محتوا. */
 .zp-entry-title-row{display:flex;align-items:center;gap:10px;margin:8px 0 6px;min-width:0}
-.zp-entry-title-row .zp-h1{flex:1;min-width:0;margin:0;text-align:center}
+.zp-entry-title-row .zp-h1{flex:1;min-width:0;margin:0;text-align:start}
 .zp-err{margin:0 0 15px;display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:15px;background:var(--zp-errbg);border:1px solid var(--zp-errbd);color:var(--zp-errfg);font-size:12.8px;line-height:1.8;font-weight:700}
 .zp-err svg{width:16px;height:16px;flex-shrink:0;stroke:var(--zp-errfg);fill:none;stroke-width:2.2}
 

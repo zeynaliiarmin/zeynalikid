@@ -153,11 +153,25 @@ const readEntryFormPresentation = () => page.evaluate(() => {
     labels,
     icons,
     country: country instanceof HTMLElement ? { fontSize: getComputedStyle(country).fontSize, height: country.getBoundingClientRect().height } : null,
-    back: back instanceof HTMLElement ? { direction: document.querySelector('.zp-root')?.getAttribute('dir') || '', position: getComputedStyle(back).position, height: back.getBoundingClientRect().height, rect: rect(back), row: rect(row), title: rect(title) } : null,
+    back: back instanceof HTMLElement ? (() => {
+      const style = getComputedStyle(back);
+      const icon = back.querySelector('.zk-public-back__icon');
+      const iconStyle = icon instanceof HTMLElement ? getComputedStyle(icon) : null;
+      return {
+        direction: document.querySelector('.zp-root')?.getAttribute('dir') || '',
+        position: style.position,
+        height: back.getBoundingClientRect().height,
+        color: style.color,
+        iconBackground: iconStyle?.backgroundColor || '',
+        iconColor: iconStyle?.color || '',
+        rect: rect(back), row: rect(row), title: rect(title),
+      };
+    })() : null,
   };
 });
 
-const assertEntryFormPresentation = (entry, label, hasCountry) => {
+const asRgb = hex => `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`;
+const assertEntryFormPresentation = (entry, label, hasCountry, palette) => {
   assert(entry.entryInputs.length === 2, `${label}: exactly two requested entry inputs must be shown`, entry);
   assert(entry.entryInputs.every(input => input.fontSize === '20px' && input.lineHeight === '26px'), `${label}: requested input typography is not 20px / 26px`, entry.entryInputs);
   assert(entry.entryInputs.every(input => Math.abs(input.box?.height - 58) <= 0.5 && input.marginBottom === '16px'), `${label}: field height or field spacing changed`, entry.entryInputs);
@@ -166,9 +180,58 @@ const assertEntryFormPresentation = (entry, label, hasCountry) => {
   if (hasCountry) assert(entry.country?.fontSize === '14px' && Math.abs(entry.country.height - 48) <= 0.5, `${label}: country-code trigger must retain its original 14px / 48px geometry`, entry.country);
   else assert(entry.country === null, `${label}: tracking page must not gain a country selector`, entry.country);
   assert(entry.back && entry.back.position === 'static' && entry.back.height >= 48 && entry.back.rect && entry.back.row && entry.back.title && Math.abs(entry.back.rect.top - entry.back.row.top) <= 0.5 && entry.back.title.height > 0, `${label}: back button and title must share one in-flow title row`, entry.back);
-  if (entry.back?.direction === 'rtl') assert(Math.abs(entry.back.rect.right - entry.back.row.right) <= 0.5, `${label}: Persian back button must align to the right`, entry.back);
-  else if (entry.back?.direction === 'ltr') assert(Math.abs(entry.back.rect.left - entry.back.row.left) <= 0.5, `${label}: English back button must align to the left`, entry.back);
-  else assert(false, `${label}: entry form direction was not set`, entry.back);
+  if (entry.back?.direction === 'rtl') {
+    assert(Math.abs(entry.back.rect.left - entry.back.row.left) <= 0.5 && Math.abs(entry.back.title.right - entry.back.row.right) <= 0.5 && entry.back.rect.right <= entry.back.title.left + 0.5, `${label}: Persian title must remain on the right and back button at the opposite left edge`, entry.back);
+  } else if (entry.back?.direction === 'ltr') {
+    assert(Math.abs(entry.back.rect.right - entry.back.row.right) <= 0.5 && Math.abs(entry.back.title.left - entry.back.row.left) <= 0.5 && entry.back.rect.left >= entry.back.title.right - 0.5, `${label}: English title must remain on the left and back button at the opposite right edge`, entry.back);
+  } else {
+    assert(false, `${label}: entry form direction was not set`, entry.back);
+  }
+  if (palette && entry.back) {
+    assert(entry.back.color === asRgb(palette.accText || palette.acc), `${label}: return-label colour does not follow the active design`, entry.back);
+    assert(entry.back.iconBackground === asRgb(palette.acc), `${label}: return-icon colour does not follow the active design`, entry.back);
+    assert(entry.back.iconColor === asRgb(palette.btnfg), `${label}: return-icon text colour is not the palette's accessible foreground`, entry.back);
+  }
+};
+
+const readPublicBackPresentation = () => page.evaluate(() => {
+  const rect = node => {
+    if (!(node instanceof HTMLElement)) return null;
+    const value = node.getBoundingClientRect();
+    return { left: value.left, right: value.right, top: value.top, bottom: value.bottom, width: value.width, height: value.height };
+  };
+  const back = document.querySelector('.zk-public-title-row .zk-public-back');
+  const row = back?.closest('.zk-public-title-row');
+  const title = row?.querySelector(':scope > :not(.zk-public-back) h1, :scope > h1, :scope > h2, :scope > h3') || row?.querySelector('h1,h2,h3');
+  if (!(back instanceof HTMLElement)) return null;
+  const style = getComputedStyle(back);
+  const icon = back.querySelector('.zk-public-back__icon');
+  const iconStyle = icon instanceof HTMLElement ? getComputedStyle(icon) : null;
+  return {
+    direction: document.documentElement.getAttribute('dir') || '',
+    position: style.position,
+    rect: rect(back), row: rect(row), title: rect(title),
+    color: style.color,
+    iconBackground: iconStyle?.backgroundColor || '',
+    iconColor: iconStyle?.color || '',
+  };
+});
+
+const assertPublicBackPresentation = (back, label, palette) => {
+  assert(back && back.position === 'static' && back.rect && back.row && back.title, `${label}: public return control is not an in-flow title-row control`, back);
+  if (!back?.rect || !back?.row || !back?.title) return;
+  if (back.direction === 'rtl') {
+    assert(Math.abs(back.rect.left - back.row.left) <= 0.5 && Math.abs(back.title.right - back.row.right) <= 0.5 && back.rect.right <= back.title.left + 0.5, `${label}: Persian public title/back layout is not right-title / left-return`, back);
+  } else if (back.direction === 'ltr') {
+    assert(Math.abs(back.rect.right - back.row.right) <= 0.5 && Math.abs(back.title.left - back.row.left) <= 0.5 && back.rect.left >= back.title.right - 0.5, `${label}: English public title/back layout is not left-title / right-return`, back);
+  } else {
+    assert(false, `${label}: public direction was not set`, back);
+  }
+  if (palette) {
+    assert(back.color === asRgb(palette.accText || palette.acc), `${label}: public return-label colour does not follow the active design`, back);
+    assert(back.iconBackground === asRgb(palette.acc), `${label}: public return-icon colour does not follow the active design`, back);
+    assert(back.iconColor === asRgb(palette.btnfg), `${label}: public return-icon foreground is not the palette's accessible colour`, back);
+  }
 };
 
 /* خوانایی: هر گره متنی که پس‌زمینهٔ ساده (بدون تصویر/گرادیان) دارد سنجیده می‌شود */
@@ -230,6 +293,7 @@ const auditContrast = () => page.evaluate(() => {
 for (const design of designs) {
   for (const mode of modes) {
     const pal = { ...(mode === 'dark' ? SHARED_DARK : SHARED_LIGHT), ...ACCENTS[design][mode] };
+    pal.accText = mode === 'dark' ? pal.ttl : pal.acc;
     for (const path of pages) {
       const label = `${design}/${mode}${path}`;
       await open(design, mode, path);
@@ -241,7 +305,7 @@ for (const design of designs) {
         if (loginFields.code && loginFields.phone) {
           assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شمارهٔ تماس با کد پیگیری برابر نیست`, loginFields);
         }
-        assertEntryFormPresentation(loginPresentation, `${label}: ورود`, true);
+        assertEntryFormPresentation(loginPresentation, `${label}: ورود`, true, pal);
         if (path === '/portal' && loginFields.code) {
           const openedRegister = await page.evaluate(() => {
             const tab = document.querySelectorAll('.zp-tabs .zp-tab')[1];
@@ -258,7 +322,7 @@ for (const design of designs) {
             if (registerFields.phone) {
               assert(Math.abs(registerFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع شمارهٔ تماس ثبت‌نام با کد پیگیری برابر نیست`, { login: loginFields.code, register: registerFields.phone });
             }
-            assertEntryFormPresentation(registerPresentation, `${label}: ثبت‌نام`, true);
+            assertEntryFormPresentation(registerPresentation, `${label}: ثبت‌نام`, true, pal);
           }
         }
       }
@@ -331,6 +395,7 @@ for (const design of designs) {
         assert(state.primary.toLowerCase() === pal.acc.toLowerCase(), `${label}: رنگ اصلی پالت تاریک اختصاصی به این صفحه نرسید`, state);
         assert(state.bg === asRgb(pal.bg) && state.color === asRgb(pal.ink), `${label}: بوم و متن پالت تاریک اختصاصی به این صفحه نرسیده`, { ...state, wantBg: asRgb(pal.bg), wantText: asRgb(pal.ink) });
       }
+      if (path === '/courses') assertPublicBackPresentation(await readPublicBackPresentation(), label, pal);
       const audit = await auditContrast();
       assert(audit.badCount === 0, `${label}: ${audit.badCount} متن با کنتراست ناکافی (بررسی‌شده: ${audit.checked})`, audit.bad);
     }
@@ -339,8 +404,9 @@ for (const design of designs) {
 
 // مستقل از حالت «پنل کاربر»، نسخهٔ واقعی صفحهٔ پیگیری هم همین قرارداد را نگه می‌دارد.
 await open('wellness', 'light', '/track', 'track');
+const standaloneTrackPalette = { ...SHARED_LIGHT, ...ACCENTS.wellness.light, accText: ACCENTS.wellness.light.acc };
 const standaloneTrack = await readEntryFormPresentation();
-assertEntryFormPresentation(standaloneTrack, 'standalone tracking page', false);
+assertEntryFormPresentation(standaloneTrack, 'standalone tracking page', false, standaloneTrackPalette);
 
 // انتخاب English از منوی واقعی باید جای دکمه را از راست به چپ ببرد.
 const openedLanguageMenu = await page.evaluate(() => {
@@ -363,7 +429,7 @@ if (openedLanguageMenu) {
   if (switchedToEnglish) {
     await page.waitForFunction(() => document.querySelector('.zp-root')?.getAttribute('dir') === 'ltr', { timeout: 15000 });
     await sleep(250);
-    assertEntryFormPresentation(await readEntryFormPresentation(), 'standalone tracking page in English', false);
+    assertEntryFormPresentation(await readEntryFormPresentation(), 'standalone tracking page in English', false, standaloneTrackPalette);
   }
 }
 
