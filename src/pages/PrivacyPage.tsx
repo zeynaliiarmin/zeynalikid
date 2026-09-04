@@ -1,21 +1,19 @@
 import { useAppContext } from '../app/AppContext';
 import { Helmet } from 'react-helmet-async';
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicBackButton from '../components/PublicBackButton';
+import { canGoBackWithinApp } from '../utils/scrollRestoration';
 
 export default function PrivacyPage(){
  const app=useAppContext();
  const navigate=useNavigate();
- const {cfg,T,S,css,lang,setView}=app;
+ const {cfg,T,S,css,lang}=app;
  const returnTo=(()=>{try{const value=sessionStorage.getItem('zk_privacy_return_to')||'';return ['/consultation','/form','/child-info'].includes(value)?value:''}catch{return ''}})();
- const goBack=()=>{if(returnTo){try{sessionStorage.removeItem('zk_privacy_return_to')}catch{};navigate(returnTo)}else setView('home')};
- useEffect(()=>{
-  if(!returnTo)return;
-  const onPop=()=>{try{sessionStorage.removeItem('zk_privacy_return_to')}catch{};navigate(returnTo,{replace:true})};
-  window.addEventListener('popstate',onPop);
-  return()=>window.removeEventListener('popstate',onPop);
- },[navigate,returnTo]);
+ const goBack=()=>{
+  try{sessionStorage.removeItem('zk_privacy_return_to')}catch{}
+  if(canGoBackWithinApp()){navigate(-1);return}
+  navigate(returnTo||'/');
+ };
  const en=lang==='en';
  const brand=String(cfg?.browserTitle||cfg?.siteTitle||(en?'Website':'سایت')).replace(/[“”"]/g,'').trim();
  const sections=en?[

@@ -16,6 +16,7 @@ import useMediaVpn from '../hooks/useMediaVpn';
 import { getMediaItemsForDestinations, balancedRandomMix, mediaTypeOf, type MediaDestination } from '../utils/mediaPlacement';
 import { fillReferralText } from '../utils/referral';
 import PublicBackButton from '../components/PublicBackButton';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 
 function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
   const [failed, setFailed] = useState(false);
@@ -93,7 +94,7 @@ export default function CoursesPage(){
       const found = allCourses.find((c: any) => c.id === location.state.courseId);
       if (found) {
         if (!detailPushedRef.current) {
-          try { window.history.pushState({ zkCourseDetail: true, from: '/courses' }, ''); } catch {}
+          pushInPageHistoryState({ zkCourseDetail: true, from: '/courses' });
           detailPushedRef.current = true;
         }
         setSelectedCourse(found);
@@ -164,7 +165,7 @@ export default function CoursesPage(){
   const mediaOverlayPushedRef = React.useRef(false);
   const openShowAllMedia = (kind: 'experience' | 'education') => {
     if (!mediaOverlayPushedRef.current) {
-      try { window.history.pushState({ zkCourseMedia: true }, ''); } catch {}
+      pushInPageHistoryState({ zkCourseMedia: true });
       mediaOverlayPushedRef.current = true;
     }
     try { (window as any).__zkCourseMedia = true; } catch {}
@@ -208,7 +209,7 @@ export default function CoursesPage(){
   // فهرست دوره‌ها برمی‌گردد (به‌جای پریدن به صفحه هوم).
   const openDetail = (course: any) => {
     if (!detailPushedRef.current) {
-      try { window.history.pushState({ zkCourseDetail: true, from: window.location.pathname }, ''); } catch {}
+      pushInPageHistoryState({ zkCourseDetail: true, from: window.location.pathname });
       detailPushedRef.current = true;
     }
     setSelectedCourse(course);
@@ -234,7 +235,7 @@ export default function CoursesPage(){
         if (found) {
           setSelectedCourse(found);
           if (!detailPushedRef.current) {
-            try { window.history.pushState({ zkCourseDetail: true, from: window.location.pathname }, ''); } catch {}
+            pushInPageHistoryState({ zkCourseDetail: true, from: window.location.pathname });
             detailPushedRef.current = true;
           }
         } else {
@@ -360,7 +361,7 @@ export default function CoursesPage(){
         {/* Header */}
         <div style={{ paddingTop: 18, paddingBottom: 12 }}>
           <div className="zk-public-title-row" dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ marginBottom: 4 }}>
-            <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else if (window.history.length > 1) { window.history.back(); } else { app.goHome?.(); } }} />
+            <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} fallback="/" />
             <h1 style={{ flex: 1, minWidth: 0, fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--zk-text)' }}>
               {lang === 'en' ? 'Specialized Courses' : 'دوره‌های تخصصی رشد و تغذیه'}
             </h1>

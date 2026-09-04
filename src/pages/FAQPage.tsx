@@ -6,6 +6,7 @@ import ServicesSection from '../components/ServicesSection';
 import AskQuestionForm from '../components/AskQuestionForm';
 import { submitUserQuestion } from '../lib/supabase';
 import PublicBackButton from '../components/PublicBackButton';
+import { replaceCurrentHistoryUrl } from '../utils/scrollRestoration';
 
 type FAQItem = { id: string; question: string; answer: string; answerTitle?: string };
 
@@ -15,7 +16,7 @@ export default function FAQPage(){
   const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => !Array.isArray(item.placements) || item.placements.includes('faq'));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // پل دستیار: لینک دقیق ?open=<id> همان سؤال را باز و وسط صفحه می‌آورد.
-  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const idx=items.findIndex((it:any)=>String(it.id)===o);if(idx<0)return;setOpenIndex(idx);window.setTimeout(()=>{document.querySelector(`[data-faq-id="${window.CSS.escape(o)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)},120)}catch{}},[items.length]);
+  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const idx=items.findIndex((it:any)=>String(it.id)===o);if(idx<0)return;setOpenIndex(idx);window.setTimeout(()=>{document.querySelector(`[data-faq-id="${window.CSS.escape(o)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())},120)}catch{}},[items.length]);
   const [askOpen, setAskOpen] = useState(false);
   const [query, setQuery] = useState('');
 

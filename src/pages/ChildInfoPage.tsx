@@ -6,6 +6,7 @@ import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import PublicBackButton from '../components/PublicBackButton';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -98,7 +99,7 @@ export default function ChildInfoPage(){
  return <div dir={lang==='en'?'ltr':'rtl'} style={S.page}><style>{css}</style><div style={{...S.card, paddingTop:'10px'}}><Stepper step={2}/>
   <div style={{marginBottom:12}}>
     <div className="zk-public-title-row" style={{marginBottom:3}}>
-      <PublicBackButton lang={lang} onBack={()=>setView('courses')} fallback="/courses" testId="public-child-info-back" />
+      <PublicBackButton lang={lang} fallback="/courses" testId="public-child-info-back" />
       <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
         <div style={{width:26,height:26,borderRadius:999,background:`${T.acc}12`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><MiniIcon type="user" T={T}/></div>
         <div style={{minWidth:0}}><div style={{fontSize:10.5,color:T.mut,fontWeight:600}}>{lang==='en'?'Step 2 of 5 • Child Information':'مرحله ۲ از ۵ • اطلاعات فرزند'}</div><h1 data-public-page-title style={{fontSize:16.5,fontWeight:800,color:T.ttl,margin:0}}>{publicText('childInfo','اطلاعات فرزند')}</h1></div>
@@ -153,7 +154,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
  const camPushedRef=useRef(false);
  // باز کردن دوربین هوشمند: یک entry در تاریخچه می‌گذاریم تا دکمه بک گوشی فقط دوربین را ببندد (نه رفتن به صفحه دوره)
  const openCam=()=>{
-  if(!camPushedRef.current){try{window.history.pushState({zkSmartCam:true},'')}catch{}camPushedRef.current=true;}
+  if(!camPushedRef.current){pushInPageHistoryState({zkSmartCam:true});camPushedRef.current=true;}
   openCam();
  };
  const closeCam=()=>{

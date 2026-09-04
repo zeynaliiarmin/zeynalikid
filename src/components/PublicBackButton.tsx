@@ -1,6 +1,7 @@
 import { type CSSProperties, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../app/AppContext';
+import { canGoBackWithinApp } from '../utils/scrollRestoration';
 import './public-back-button.css';
 
 type PublicBackButtonProps = {
@@ -44,7 +45,7 @@ export default function PublicBackButton({
       onBack();
       return;
     }
-    if (typeof window !== 'undefined' && window.history.length > 1) {
+    if (canGoBackWithinApp()) {
       navigate(-1);
       return;
     }

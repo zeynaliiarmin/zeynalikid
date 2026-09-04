@@ -5,7 +5,7 @@ import PublicBackButton from '../components/PublicBackButton';
 
 export default function GrowthChartPage(){
  const app=useAppContext();
-  const { T, S, css, lang, setView, course, fd } = app;
+  const { T, S, css, lang, course, fd } = app;
 
   const childAge = +(course?.childInfo?.age || fd?.age || 2);
   const childHeight = +(course?.childInfo?.height || fd?.height || 50);
@@ -23,7 +23,7 @@ export default function GrowthChartPage(){
       <style>{css}</style>
       <div style={{ ...S.card, maxWidth: 520 }}>
         <div className="zk-public-title-row" dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ marginBottom: 12 }}>
-          <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => setView('profile')} />
+          <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} fallback="/profile" />
           <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 17, fontWeight: 800, color: T.ttl }}>{lang === 'en' ? 'Growth Tracking' : 'پیگیری رشد'}</h1>
         </div>
 

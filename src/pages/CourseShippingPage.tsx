@@ -58,7 +58,7 @@ export default function CourseShippingPage(){
  return <div dir={lang==='en'?'ltr':'rtl'} style={S.page}><Helmet><title>ثبت‌نام دوره | زینالیکید</title><meta name="description" content="تکمیل ثبت‌نام دوره تخصصی رشد و تغذیه کودکان و نوجوانان" /><meta name="robots" content="noindex, follow" /></Helmet><style>{css}</style><div style={{...S.card, paddingTop:'10px'}}><Stepper step={3}/>
   <div style={{marginBottom:10}}>
     <div className="zk-public-title-row" style={{marginBottom:2}}>
-      <PublicBackButton lang={lang} onBack={()=>setView('courses')} fallback="/courses" testId="public-course-shipping-back" />
+      <PublicBackButton lang={lang} fallback="/courses" testId="public-course-shipping-back" />
       <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
         <div style={{width:26,height:26,borderRadius:999,background:`${T.acc}12`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
         <div style={{minWidth:0}}><div style={{fontSize:10.5,color:T.mut,fontWeight:600}}>{lang==='en'?'Step 3 of 5 • Shipping':'مرحله ۳ از ۵ • اطلاعات ارسال'}</div><h1 data-public-page-title style={{fontSize:16.5,fontWeight:800,color:T.ttl,margin:0}}>{publicText('shippingInfo','اطلاعات ارسال')}</h1></div>

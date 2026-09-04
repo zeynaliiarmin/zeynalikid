@@ -24,6 +24,7 @@ import type { Highlight } from '../components/StoryViewer';
 import ServicesSection from '../components/ServicesSection';
 import { getMediaItemsForDestination, prioritizeRotatingExperienceVideo, toEducationMediaItem } from '../utils/mediaPlacement';
 import { loadRealViews, recordView, totalViews } from '../utils/eduViews';
+import { pushInPageHistoryState, replaceCurrentHistoryUrl } from '../utils/scrollRestoration';
 
 const siteBrand=(cfg:any,fallback='سامانه رشد کودک')=>String(cfg?.browserTitle||cfg?.siteTitle||fallback).replace(/[“”"]/g,'').trim();
 
@@ -86,7 +87,7 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  const [mtab,setMtab]=useState(tabs[0]?.id || 'video');
  const [openItem,setOpenItem]=useState<any|null>(null);
  // پل دستیار: لینک دقیق ?open=<id> تب مربوطه را انتخاب، کارت را وسط می‌آورد و جزئیات آن را باز می‌کند.
- useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const hit=items.find((x:any)=>String(x?.id)===o);if(!hit)return;const t=String(hit.type||'video')==='audio'?'audio':['article','text','image'].includes(String(hit.type))?'article':'video';if((pools as any)[t]?.some((x:any)=>String(x?.id)===o)&&t!==mtab)setMtab(t);window.setTimeout(()=>{const el=document.querySelector(`[data-media-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const open=el.querySelector('[data-media-card-cover="true"], button') as HTMLElement|null;if(open)open.click();const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)},420)}catch{}},[items.length]);
+ useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const hit=items.find((x:any)=>String(x?.id)===o);if(!hit)return;const t=String(hit.type||'video')==='audio'?'audio':['article','text','image'].includes(String(hit.type))?'article':'video';if((pools as any)[t]?.some((x:any)=>String(x?.id)===o)&&t!==mtab)setMtab(t);window.setTimeout(()=>{const el=document.querySelector(`[data-media-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const open=el.querySelector('[data-media-card-cover="true"], button') as HTMLElement|null;if(open)open.click();const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())},420)}catch{}},[items.length]);
  const scrollRef=useRef<HTMLDivElement|null>(null);
  useEffect(()=>{if(tabs.length&&!tabs.some(t=>t.id===mtab))setMtab(tabs[0].id)},[tabs.map(t=>t.id).join(','),mtab]);
  if(!tabs.length)return <p style={{fontSize:13,color:T.mut,lineHeight:2}}>{lang==='en'?'Content will be published here soon.':'محتوا به‌زودی در این بخش منتشر می‌شود.'}</p>;
@@ -185,14 +186,14 @@ export function EducationPage(){
   window.addEventListener('popstate',onPop);
   return ()=>window.removeEventListener('popstate',onPop);
  },[]);
- const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ try{window.history.pushState({zkEduDetail:true},'')}catch{} eduDetailRef.current=true; } setOpenItem(it); setRealViews((prev)=>recordView(prev, String(it?.id))); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
+ const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ pushInPageHistoryState({zkEduDetail:true}); eduDetailRef.current=true; } setOpenItem(it); setRealViews((prev)=>recordView(prev, String(it?.id))); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
  const closeEduItem=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; try{window.history.back()}catch{} } setOpenItem(null); };
  const mediaVpnOn=useVpn(cfg);
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  const source:any[]=usingSamples?(EDU_SAMPLES as any[]):real;
  // پل دستیار: اگر لینک «مشاهده همین مورد» باز شد، همان آیتم خودکار در پنجره نمایشگرش باز می‌شود.
- useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o||openItem)return;const it=(source as any[]).find((x:any)=>!usingSamples&&String(x?.id)===o);if(it){openEduItem(it as EduItem);const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)}}catch{}},[source.length]);
+ useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o||openItem)return;const it=(source as any[]).find((x:any)=>!usingSamples&&String(x?.id)===o);if(it){openEduItem(it as EduItem);const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())}}catch{}},[source.length]);
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);
  const filtered=useMemo(()=>{const base=typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF); if(sortUI==='seen')return [...base].sort((a:any,b:any)=>viewsOf(b)-viewsOf(a)); return base;},[searched,typeF,sortUI,realViews]);
  const suggestedKeywords=useMemo(()=>{const map=new Map<string,number>();source.forEach((x:any)=>(x.keywords||[]).forEach((kw:string)=>{const k=String(kw).trim().toLowerCase();if(k)map.set(k,(map.get(k)||0)+1)}));return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,cfg.suggestedKeywordsCount||8).map(([k])=>k)},[source,cfg.suggestedKeywordsCount]);
@@ -281,7 +282,7 @@ export function LicensesPage(){
  if(!showLicensesPage) return <Navigate to="/" replace/>;
  const title = lang==='en'?'Licenses':'مجوزها';
  // پل دستیار: لینک دقیق ?open=<id> همان مجوز را وسط صفحه می‌آورد و برجسته می‌کند.
- useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;window.setTimeout(()=>{const el=document.querySelector(`[data-license-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)},350)}catch{}},[]);
+ useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;window.setTimeout(()=>{const el=document.querySelector(`[data-license-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())},350)}catch{}},[]);
  return (
    <>
      <Helmet><title>{`مجوزها | ${siteBrand(cfg)}`}</title><meta name="description" content={`مجوزها و گواهینامه‌های منتشرشده ${siteBrand(cfg,'مجموعه')}`} /></Helmet>

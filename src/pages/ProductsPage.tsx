@@ -7,6 +7,7 @@ import JsonLd from '../components/JsonLd';
 import ProductCard from '../components/ProductCard';
 import ProductDetailView from '../components/ProductDetailView';
 import PublicBackButton from '../components/PublicBackButton';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 
 export default function ProductsPage(){
  const app=useAppContext();
@@ -60,7 +61,7 @@ export default function ProductsPage(){
 
   const openDetail = (product: any) => {
     if (!detailPushedRef.current) {
-      try { window.history.pushState({ zkProductDetail: true, from: window.location.pathname }, ''); } catch {}
+      pushInPageHistoryState({ zkProductDetail: true, from: window.location.pathname });
       detailPushedRef.current = true;
     }
     setSelectedProduct(product);

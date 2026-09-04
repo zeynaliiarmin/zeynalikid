@@ -31,6 +31,7 @@ import ErrorAlertHost from './components/ErrorAlert/ErrorAlertHost';
 import CourseTimer from './components/CourseTimer';
 import AssistantWidget from './components/AssistantWidget';
 import AppRoutes from './app/AppRoutes';
+import useRouteScrollRestoration from './hooks/useRouteScrollRestoration';
 import type { AppContextValue, DynamicRecord } from './app/AppContext';
 
 import {
@@ -55,6 +56,7 @@ function App(){
   return mergeSettings(seed);
  });
  const location=useLocation(); const navigate=useNavigate();
+ useRouteScrollRestoration();
  // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
  // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
  const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return (typeof localStorage!=='undefined'&&localStorage.getItem('zk_admin_authed')==='true') && !!getAdminSessionToken(); } catch { return false; } });
@@ -72,7 +74,7 @@ function App(){
    let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/desk',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/desk',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
  const [consultationComplete,setConsultationComplete]=useState(false);useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.flow==='consultation')setConsultationComplete(detail.complete===true)};window.addEventListener('zk-flow-complete',handler);return()=>window.removeEventListener('zk-flow-complete',handler)},[]);
- const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} if(newView!=='courses'){try{window.scrollTo(0,0)}catch{}} navigate(path)},[navigate]);
+ const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
  useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/desk',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
  const [lang,setLang]=useState<Lang>(()=>getLS('zkid_lang','fa'));

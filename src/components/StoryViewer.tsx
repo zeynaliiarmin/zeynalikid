@@ -9,6 +9,7 @@ import { extractDirectMediaUrl } from '../utils/mediaInput';
 import { markStorySeen, getResumeIndex, hasSeenStoryHint, markStoryHintSeen } from '../utils/storyProgress';
 import CoverImage from './CoverImage';
 import { HighlightVectorGlyph } from './HighlightVectors';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 
 export type StorySlide = { id: string; imageCodeExternal?: string; imageCodeInternal?: string; title?: string; order?: number; active?: boolean };
 export type Highlight = { id: string; title: string; coverUrl?: string; coverVector?: string; coverPosition?: string; coverZoom?: number; stories: StorySlide[]; active?: boolean; order?: number };
@@ -462,7 +463,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
   }, []);
   const openStory = useCallback((i: number) => {
     if (!storyHistRef.current) {
-      try { window.history.pushState({ zkStory: true }, ''); } catch {}
+      pushInPageHistoryState({ zkStory: true });
       storyHistRef.current = true;
     }
     setOpenIdx(i);

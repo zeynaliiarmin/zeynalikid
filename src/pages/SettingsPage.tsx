@@ -66,7 +66,7 @@ export default function SettingsPage(){
     <div style={S.page}>
       <style>{css}</style>
       <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ ...S.card, maxWidth: 460 }}>
-        <div className="zk-public-title-row" style={{ marginBottom: 16 }}><PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => setView('home')} /><h1 style={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 800, color: T.ttl, margin: 0 }}>{lang === 'en' ? 'Settings' : 'تنظیمات'}</h1></div>
+        <div className="zk-public-title-row" style={{ marginBottom: 16 }}><PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} fallback="/" /><h1 style={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 800, color: T.ttl, margin: 0 }}>{lang === 'en' ? 'Settings' : 'تنظیمات'}</h1></div>
 
         {/* Language */}
         <div style={{ marginBottom: 18 }}>

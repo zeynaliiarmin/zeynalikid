@@ -11,6 +11,7 @@ import { submitUserQuestion } from '../lib/supabase';
 import { balancedRandomMix, mediaTypeOf } from '../utils/mediaPlacement';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 import PublicBackButton from './PublicBackButton';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 
 // ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
 // سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
@@ -220,7 +221,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   // باز/بستن صفحه «مشاهده همه پرسش‌ها» با مدیریت دکمه back گوشی
   const openShowAllFaq = () => {
     if (!faqOverlayPushedRef.current) {
-      try { window.history.pushState({ zkFaqOverlay: true }, ''); } catch {}
+      pushInPageHistoryState({ zkFaqOverlay: true });
       faqOverlayPushedRef.current = true;
     }
     try { (window as any).__zkFaqOverlayOpen = true; } catch {}
@@ -250,7 +251,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
   const eduOverlayPushedRef = React.useRef(false);
   const openShowAllEdu = () => {
     if (!eduOverlayPushedRef.current) {
-      try { window.history.pushState({ zkEduOverlay: true }, ''); } catch {}
+      pushInPageHistoryState({ zkEduOverlay: true });
       eduOverlayPushedRef.current = true;
     }
     try { (window as any).__zkEduOverlayOpen = true; } catch {}

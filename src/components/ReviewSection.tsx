@@ -4,6 +4,7 @@ import StarRatingInput from './StarRatingInput';
 import { ReviewItem, fetchReviews, submitReview } from '../lib/supabase';
 import { defaultCountries } from '../config/defaultSettings';
 import PublicBackButton from './PublicBackButton';
+import { pushInPageHistoryState } from '../utils/scrollRestoration';
 import {
   detectReviewCountryCode,
   formatPersianReviewDate,
@@ -67,7 +68,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   // باز کردن صفحه «مشاهده همه» با push یک state در history تا دکمه back/مرورگر فقط همین صفحه را ببندد
   const openShowAll = () => {
     if (!showAllPushedRef.current) {
-      try { window.history.pushState({ zkReviewsPage: true }, ''); } catch {}
+      pushInPageHistoryState({ zkReviewsPage: true });
       showAllPushedRef.current = true;
     }
     try { (window as any).__zkReviewsOverlayOpen = true; } catch {}

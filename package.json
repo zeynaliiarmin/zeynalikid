@@ -16,8 +16,9 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
     "test:a11y": "A11Y_MODES=light,dark node tests/accessibility.mjs",
-    "test:e2e:readonly": "node tests/critical-paths.mjs && node tests/admin-route-guard-ui.mjs && node tests/design-aware-404-ui.mjs && node tests/public-theme-modes-ui.mjs && node tests/home-responsive-ui.mjs && node tests/payment-captcha-ui.mjs && node tests/consent-validation-ui.mjs && node tests/assistant-widget-ui.mjs && node tests/assistant-discovery-ui.mjs && node tests/assistant-flow-ui.mjs && node tests/assistant-bridge-deeplink-ui.mjs && node tests/assistant-image-ui.mjs && node tests/design-a-warm-ui.mjs && node tests/media-preview-ui.mjs && node tests/requested-public-ui.mjs",
+    "test:e2e:readonly": "node tests/critical-paths.mjs && node tests/admin-route-guard-ui.mjs && node tests/design-aware-404-ui.mjs && node tests/public-theme-modes-ui.mjs && node tests/home-responsive-ui.mjs && node tests/payment-captcha-ui.mjs && node tests/consent-validation-ui.mjs && node tests/assistant-widget-ui.mjs && node tests/assistant-discovery-ui.mjs && node tests/assistant-flow-ui.mjs && node tests/assistant-bridge-deeplink-ui.mjs && node tests/assistant-image-ui.mjs && node tests/design-a-warm-ui.mjs && node tests/media-preview-ui.mjs && node tests/requested-public-ui.mjs && node tests/scroll-restoration-ui.mjs",
     "test:requested-ui": "node tests/requested-public-ui.mjs",
+    "test:scroll-restoration": "node tests/scroll-restoration-ui.mjs",
     "build:ssg": "vite build --ssr src/entry-server.tsx --outDir .ssr && node scripts/prerender.mjs && npm run test:ssg",
     "test:ssg": "node tests/ssg-output.mjs",
     "test:security": "node tests/security-contracts.mjs && node tests/referral-routing.test.mjs && node tests/operations-contracts.mjs && node tests/assistant-contracts.mjs && node tests/ui-polish-contracts.mjs"

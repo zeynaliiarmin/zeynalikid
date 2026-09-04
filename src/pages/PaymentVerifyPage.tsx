@@ -202,7 +202,7 @@ export default function PaymentVerifyPage(){
 
         {/* عنوان و بازگشت در یک ردیف طبیعی؛ هنگام پردازش، خروجی برای جلوگیری از قطع تأیید نمایش داده نمی‌شود. */}
         <div className="zk-public-title-row" style={{ margin: '0 0 8px', textAlign: 'start' }}>
-          {canReturnToPayment && <PublicBackButton lang={lang} onBack={() => setView('course-payment')} fallback="/courses" testId="public-payment-verify-back" />}
+          {canReturnToPayment && <PublicBackButton lang={lang} fallback="/course-payment" testId="public-payment-verify-back" />}
           <h1 style={{
             color: statusColors[status],
             fontSize: 18,
