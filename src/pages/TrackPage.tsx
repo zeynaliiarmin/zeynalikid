@@ -230,17 +230,16 @@ export default function TrackPage() {
 
       <div className="zp-content">
         <div className="zp-card" style={{ maxWidth: 400 }}>
-          <EntryBackButton lang={lang} />
           <div style={{ textAlign: 'center' }}><span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3" /><circle cx="12" cy="12" r="9" /></svg>{lang === 'en' ? 'TRACK COURSE' : 'پیگیری دوره'}</span></div>
-          <h1 className="zp-h1">{lang === 'en' ? 'Track your course' : 'پیگیری ثبتنام'}</h1>
+          <div className="zp-entry-title-row zk-public-title-row"><EntryBackButton lang={lang} /><h1 className="zp-h1">{lang === 'en' ? 'Track your course' : 'پیگیری ثبتنام'}</h1></div>
           <p className="zp-sub">{lang === 'en' ? 'Enter your tracking code and the phone number used at registration.' : <>کد پیگیری و شمارهٔ تماس هنگام ثبت را وارد کنید تا <b>وضعیت دوره</b> و <b>گام بعدی</b> را ببینید.</>}</p>
           <div className="zp-field">
             <span className="zp-lbl zp-entry-field-label">{lang === 'en' ? 'Tracking code' : 'کد پیگیری'}</span>
-            <div className="zp-box zp-bigv"><span className="zp-fic zp-entry-field-icon"><svg viewBox="0 0 24 24"><path d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></svg></span><input className="zp-entry-field-input zp-entry-code-input" dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
+            <div className="zp-box zp-bigv"><span className="zp-fic"><svg viewBox="0 0 24 24"><path d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></svg></span><input className="zp-entry-field-input zp-entry-code-input" dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
           </div>
           <div className="zp-field">
             <span className="zp-lbl zp-entry-field-label">{lang === 'en' ? 'Phone number' : 'شماره تماس'}</span>
-            <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic zp-entry-field-icon"><PhoneIcon size={19} /></span><input className="zp-entry-field-input zp-entry-phone-input" dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => { const v = e.target.value; if (p2e(v).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; } setPhone(v); }} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
+            <div className="zp-box zp-bigv zp-phonebox"><span className="zp-fic"><PhoneIcon size={19} /></span><input className="zp-entry-field-input zp-entry-phone-input" dir="ltr" inputMode="tel" placeholder="۰۹۱۲ …" value={phone} onChange={(e) => { const v = e.target.value; if (p2e(v).replace(/[^0-9]/g, '') === '639') { setPhone(''); setView('admin-login'); return; } setPhone(v); }} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></div>
           </div>
           {err && <div className="zp-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{err}</div>}
           <button className="zp-btn" onClick={search} disabled={loading}>{loading ? '…' : (lang === 'en' ? 'Track course' : 'پیگیری دوره')}</button>

@@ -4,7 +4,7 @@ import { VideoIcon, AudioIcon, PhotoIcon, TextIcon, PhoneIcon } from './Icons';
 import CollapsibleCardText from './CollapsibleCardText';
 import { Highlights } from './MediaHighlights';
 import { extractDirectMediaUrl, normalizeMediaInput } from '../utils/mediaInput';
-import { extractAparatHash } from '../utils/mediaPlacement';
+import { extractAparatHash, videoAutoThumb } from '../utils/mediaPlacement';
 
 export function mediaThumb(type:string){
   // بازگشت SVG به‌جای ایموجی — برای سازگاری قدیمی یک رشته خالی برمی‌گردانیم و در رندر آیکون SVG استفاده می‌کنیم
@@ -95,8 +95,63 @@ export function normalizeEmbedCode(code:any):string{
   return normalized;
 }
 export const isHtmlEmbedCode=(code:any)=>/^<\s*[a-zA-Z!]/.test(normalizeEmbedCode(code));
-// iframe آپارات یک سندِ شخصِ ثالث است؛ بدون allow-same-origin اجرا می‌شود تا کنترل‌های داخلیِ آن وارد درخت خواناییِ سایت نشوند.
-export const mediaFrameSandbox=(src:any)=>/(?:^|\/\/)(?:www\.)?aparat\.com(?:\/|$)/i.test(String(src||''))?'allow-scripts allow-presentation':'allow-scripts allow-same-origin allow-presentation';
+export type MediaEmbedProvider = 'aparat' | 'youtube' | 'vimeo' | 'dailymotion' | 'soundcloud' | 'twitch' | 'google-drive' | 'other';
+
+/**
+ * Only known player hosts receive the browser capabilities their own controls need.
+ * Unknown HTTPS embeds remain sandboxed more tightly: they can run their player,
+ * but cannot claim a same-origin identity, open popups, submit forms, or navigate
+ * the parent page. A provider can be added here deliberately after verification.
+ */
+export function mediaEmbedProvider(src: unknown): MediaEmbedProvider {
+  let host = '';
+  try { host = new URL(String(src || '')).hostname.toLowerCase().replace(/^www\./, ''); } catch { return 'other'; }
+  if (host === 'aparat.com' || host.endsWith('.aparat.com')) return 'aparat';
+  if (host === 'youtube.com' || host.endsWith('.youtube.com') || host === 'youtu.be') return 'youtube';
+  if (host === 'vimeo.com' || host.endsWith('.vimeo.com')) return 'vimeo';
+  if (host === 'dailymotion.com' || host.endsWith('.dailymotion.com')) return 'dailymotion';
+  if (host === 'soundcloud.com' || host.endsWith('.soundcloud.com')) return 'soundcloud';
+  if (host === 'twitch.tv' || host.endsWith('.twitch.tv')) return 'twitch';
+  if (host === 'drive.google.com' || host.endsWith('.drive.google.com')) return 'google-drive';
+  return 'other';
+}
+
+export function mediaFrameSandbox(src: unknown): string {
+  switch (mediaEmbedProvider(src)) {
+    // Aparat's native embed works without a same-origin identity. Keeping it opaque
+    // gives the most isolation while preserving its own play control.
+    case 'aparat':
+      return 'allow-scripts allow-presentation';
+    // These verified player origins require storage/origin access for their native
+    // controls. They are still cross-origin from this site and receive no forms,
+    // top navigation, downloads, or popup permission.
+    case 'youtube':
+    case 'vimeo':
+    case 'dailymotion':
+    case 'soundcloud':
+    case 'twitch':
+    case 'google-drive':
+      return 'allow-scripts allow-same-origin allow-presentation';
+    default:
+      return 'allow-scripts allow-presentation';
+  }
+}
+
+/**
+ * A pasted platform page/link is not necessarily embeddable. Convert known video
+ * pages to their official player URL while keeping copied iframe URLs unchanged.
+ */
+export function normalizeVideoEmbedUrl(code:any):string{
+  const safeSrc=extractDirectMediaUrl(normalizeEmbedCode(code),'video');
+  if(!safeSrc)return '';
+  const aparatHash=extractAparatHash(safeSrc);
+  if(aparatHash&&!/\/video\/video\/embed\/videohash\//i.test(safeSrc)){
+    return `https://www.aparat.com/video/video/embed/videohash/${aparatHash}/vt/frame`;
+  }
+  const youtube=safeSrc.match(/(?:youtube\.com\/(?:watch\?(?:[^#"'\s]*&)?v=|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
+  if(youtube?.[1])return `https://www.youtube.com/embed/${youtube[1]}`;
+  return safeSrc;
+}
 
 // هیچ HTML یا اسکریپت ورودی مستقیماً اجرا نمی‌شود. از کدهای iframe/video فقط src امن
 // http(s) استخراج و در عنصر محدود خودمان رندر می‌شود؛ بنابراین کد آپارات/یوتیوب قدیمی
@@ -117,12 +172,13 @@ export function ManualEmbed({code,type='video',minHeight,lang='fa'}:{code:string
     const safeSrc=extractDirectMediaUrl(normalized,'audio');
     return safeSrc?<audio data-manual-embed="audio" controls preload="none" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/>:null;
   }
-  const safeSrc=extractDirectMediaUrl(normalized,'video');
+  const safeSrc=normalizeVideoEmbedUrl(normalized);
   if(!safeSrc)return null;
   const isDirectVideo=/<\s*(?:video|source)\b/i.test(normalized)||/\.(?:mp4|webm|ogv|mov)(?:[?#].*)?$/i.test(safeSrc);
   if(isDirectVideo)return <video data-manual-embed="video" controls preload="metadata" src={safeSrc} controlsList="nodownload noplaybackrate" style={{width:'100%',minHeight:minHeight||210,aspectRatio:'16 / 9',objectFit:'contain',display:'block',background:'#000',borderRadius:14,overflow:'hidden'}}/>;
-  /* R19: حذف مرحلهٔ «پخش ویدیو» — فریم آپارات/یوتیوب مستقیم بارگذاری می‌شود؛ کاربر با یک ضربه روی playِ خودِ پلتفرم پخش را آغاز می‌کند (فریم اول = کاور آپارات). */
-  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox={mediaFrameSandbox(safeSrc)} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
+  // پخش فقط با کنترلِ خودِ پلتفرم آغاز می‌شود. قابلیت‌های sandbox بر اساس ارائه‌دهنده
+  // محدود شده‌اند؛ src همچنان از کد ورودی پاک‌سازی‌شده استخراج می‌شود و iframe از سند سایت جدا می‌ماند.
+  return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox={mediaFrameSandbox(safeSrc)} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
 // همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
@@ -152,9 +208,7 @@ function MediaCardInfo({item,type,masked,T,secure=true,lang,expanded=false,onMor
  </div>
 }
 
-export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=false,onMore}:{item:any,T:any,lang:string,vpnOn?:boolean,secure?:boolean,expanded?:boolean,onMore?:()=>void}){
- const [playing,setPlaying]=useState(false);
- // «مقاله» (محتوای ادغام‌شدهٔ متن+عکس) مثل «متن» رندر می‌شود
+export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=false,onMore,onOpen}:{item:any,T:any,lang:string,vpnOn?:boolean,secure?:boolean,expanded?:boolean,onMore?:()=>void,onOpen?:()=>void}){
  const type=(item.type==='article')?'text':(item.type||'video');
  const ytCode = item?.youtubeUrl || item?.youtubeCode || item?.platforms?.youtube || '';
  const apCode = item?.aparatUrl || item?.aparatCode || item?.platforms?.aparat || '';
@@ -171,37 +225,48 @@ export default function MediaCard({item,T,lang,vpnOn=false,secure=true,expanded=
  const normalizedManual = normalizeEmbedCode(item?.manualCode || '');
  const normalizedSelected = normalizeEmbedCode(selectedCode);
  let hasManual = !!normalizedManual;
- let manualCode = normalizedManual;
+ let mediaCode = normalizedManual || normalizedSelected;
 
- // کد HTML باید حتی وقتی فقط «آپارات» یا فقط یک پلتفرم پر شده است مستقیماً رندر شود.
- // قبلاً شرطِ اشتباهِ «هر دو پلتفرم پر باشند» باعث می‌شد کل <style>…<iframe> به src تبدیل و ویدیو خراب شود.
+ // کد HTML باید حتی وقتی فقط «آپارات» یا فقط یک پلتفرم پر شده است قابل‌استفاده باشد.
  const hasDualPlatform = (type === 'video' && !!ytCode && !!apCode)
    || (type === 'image' && !!extImg && !!intImg)
    || (type === 'audio' && !!extAud && !!intAud);
  if(!hasManual && (isHtmlEmbedCode(normalizedSelected) || hasDualPlatform)){
    hasManual=true;
-   manualCode=normalizedSelected;
+   mediaCode=normalizedSelected;
  }
 
- const url = normalizedSelected;
- const apHash = type==='video' ? extractAparatHash(manualCode || url) : '';
+ const apHash = type==='video' ? extractAparatHash(mediaCode) : '';
  let thumbFn = '';
  if (apHash) { try { const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/+$/, ''); if (base) thumbFn = `${base}/functions/v1/aparat-thumb?uid=${encodeURIComponent(apHash)}`; } catch { thumbFn = ''; } }
+ const suppliedCover=extractDirectMediaUrl(item?.thumbnail || item?.cover,'image');
+ const autoCover=type==='video'?(thumbFn||videoAutoThumb(mediaCode)):'';
  const [coverStage, setCoverStage] = useState(0);
- const coverSrc = coverStage===0 ? (item.thumbnail || thumbFn) : coverStage===1 ? thumbFn : '';
-
+ const coverSrc = coverStage===0 ? (suppliedCover || autoCover) : coverStage===1 ? autoCover : '';
  const masked=maskPhone(item.phone);
- const imgRestrict = secure ? { draggable: false, onContextMenu: (e: React.MouseEvent) => e.preventDefault() } : {};
- return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column',height:'100%',minWidth:0}}>
-  {type==='video'&&(hasManual
-   ?<ManualEmbed code={manualCode} type="video" lang={lang}/>
-   :(playing
-    ?<div style={{position:'relative',width:'100%',paddingTop:'56.25%',background:'#000'}}><iframe src={url} frameBorder="0" sandbox={mediaFrameSandbox(url)} allowFullScreen allow="autoplay; fullscreen; encrypted-media" referrerPolicy="no-referrer" title={item.title||'video'} style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>
-    :<button onClick={()=>setPlaying(true)} style={{position:'relative',width:'100%',paddingTop:'56.25%',background:T.soft,border:0,cursor:'pointer'}}>{coverSrc?<img src={coverSrc} alt="" loading="lazy" decoding="async" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} draggable={false} onError={()=>setCoverStage((s)=>s===0&&item.thumbnail&&thumbFn?1:2)}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc} /></span>}<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{width:52,height:52,borderRadius:'50%',background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:20,paddingInlineStart:4}}><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg></span></span></button>))}
-  {type==='audio'&&<div style={{aspectRatio:'16 / 9',padding:'14px 12px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:8,background:T.soft}}>{hasManual?<ManualEmbed code={manualCode} type="audio" minHeight={64}/>:<>{item.thumbnail?<img src={item.thumbnail} alt="" loading="lazy" decoding="async" style={{width:64,height:64,borderRadius:'50%',objectFit:'cover'}} draggable={false}/>:<AudioIcon size={36} color={T.acc} />}<audio controls preload="none" src={url} controlsList="nodownload noplaybackrate" style={{width:'100%'}}/></>}</div>}
-  {type==='image'&&(hasManual?<ManualEmbed code={manualCode} type="image"/>:<img src={extractDirectMediaUrl(url,'image')||url} alt={item.title||''} loading="lazy" decoding="async" referrerPolicy="no-referrer" style={{width:'100%',height:'auto',maxHeight:600,objectFit:'contain',display:'block',background:'#000',pointerEvents:'none'}} {...imgRestrict} />)}
-  {type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.accText}}><TextIcon size={44} color={T.acc}/></div>}
+ const openDetails=onOpen||onMore;
+ const label=`${lang==='en'?'Open details':'مشاهده جزئیات'}${item?.title?`: ${item.title}`:''}`;
+ const useFallbackCover=()=>setCoverStage((stage)=>stage===0&&suppliedCover&&autoCover?1:2);
+ const imagePreview=type==='image'?(coverSrc||extractDirectMediaUrl(mediaCode,'image')):coverSrc;
+ const preview=<>{imagePreview?<img src={imagePreview} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:type==='image'?'contain':'cover',display:'block',background:'#000'}} draggable={false} onError={useFallbackCover}/>:<span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><ThumbIcon type={type} size={44} color={T.acc}/></span>}</>;
+ const previewBox=<div data-media-card-preview="true" style={{position:'relative',width:'100%',aspectRatio:'16 / 9',background:T.soft,overflow:'hidden'}}>{preview}</div>;
+ const handleCardClick=(event:React.MouseEvent<HTMLDivElement>)=>{
+   if(expanded||!openDetails)return;
+   const target=event.target as HTMLElement;
+   if(target.closest('button,a,input,select,textarea,label'))return;
+   openDetails();
+ };
+ const handleCardKey=(event:React.KeyboardEvent<HTMLDivElement>)=>{
+   if(expanded||!openDetails||(event.key!=='Enter'&&event.key!==' '))return;
+   event.preventDefault();
+   openDetails();
+ };
+ return <div data-media-card="true" data-media-id={String(item?.id||'')} data-media-type={type} onClick={handleCardClick} onKeyDown={handleCardKey} tabIndex={!expanded&&openDetails?0:undefined} style={{background:T.badge,border:`1px solid ${T.brd}`,borderRadius:14,overflow:'hidden',display:'flex',flexDirection:'column',height:'100%',minWidth:0,cursor:!expanded&&openDetails?'pointer':undefined}}>
+  {!expanded && (openDetails?<button type="button" data-media-card-cover="true" aria-label={label} onClick={openDetails} style={{display:'block',position:'relative',width:'100%',padding:0,border:0,background:'transparent',cursor:'pointer'}}>{previewBox}</button>:previewBox)}
+  {expanded&&type==='video'&&(mediaCode?<ManualEmbed code={mediaCode} type="video" lang={lang}/>:previewBox)}
+  {expanded&&type==='audio'&&(mediaCode?<div style={{padding:'14px 12px',background:T.soft}}><ManualEmbed code={mediaCode} type="audio" minHeight={64} lang={lang}/></div>:previewBox)}
+  {expanded&&type==='image'&&(mediaCode?<ManualEmbed code={mediaCode} type="image" lang={lang}/>:previewBox)}
+  {expanded&&type==='text'&&<div aria-hidden="true" style={{aspectRatio:'16 / 9',display:'flex',alignItems:'center',justifyContent:'center',background:T.soft,color:T.accText}}><TextIcon size={44} color={T.acc}/></div>}
   <MediaCardInfo item={item} type={type} masked={masked} T={T} secure={secure} lang={lang} expanded={expanded} onMore={onMore} />
  </div>
 }
-

@@ -5,6 +5,7 @@ import PrivacyConsent from '../components/PrivacyConsent';
 import useExitGuard from '../hooks/useExitGuard';
 import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
+import PublicBackButton from '../components/PublicBackButton';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -94,11 +95,14 @@ export default function ChildInfoPage(){
   setView('course-shipping');
  };
 
- return <div style={S.page}><style>{css}</style><div style={{...S.card, paddingTop:'10px'}}><Stepper step={2}/>
+ return <div dir={lang==='en'?'ltr':'rtl'} style={S.page}><style>{css}</style><div style={{...S.card, paddingTop:'10px'}}><Stepper step={2}/>
   <div style={{marginBottom:12}}>
-    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
-      <div style={{width:26,height:26,borderRadius:999,background:`${T.acc}12`,display:'flex',alignItems:'center',justifyContent:'center'}}><MiniIcon type="user" T={T}/></div>
-      <div><div style={{fontSize:10.5,color:T.mut,fontWeight:600}}>{lang==='en'?'Step 2 of 5 • Child Information':'مرحله ۲ از ۵ • اطلاعات فرزند'}</div><div style={{fontSize:16.5,fontWeight:800,color:T.ttl}}>{publicText('childInfo','اطلاعات فرزند')}</div></div>
+    <div className="zk-public-title-row" style={{marginBottom:3}}>
+      <PublicBackButton lang={lang} onBack={()=>setView('courses')} fallback="/courses" testId="public-child-info-back" />
+      <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
+        <div style={{width:26,height:26,borderRadius:999,background:`${T.acc}12`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><MiniIcon type="user" T={T}/></div>
+        <div style={{minWidth:0}}><div style={{fontSize:10.5,color:T.mut,fontWeight:600}}>{lang==='en'?'Step 2 of 5 • Child Information':'مرحله ۲ از ۵ • اطلاعات فرزند'}</div><h1 data-public-page-title style={{fontSize:16.5,fontWeight:800,color:T.ttl,margin:0}}>{publicText('childInfo','اطلاعات فرزند')}</h1></div>
+      </div>
     </div>
     <div style={{background:`${T.acc}08`,borderRadius:14,padding:'7px 11px',fontSize:13,boxShadow:T.neuIn}}><span style={{color:T.mut}}>{lang==='en'?'Selected course':'دوره انتخاب‌شده'}: </span><b style={{color:T.accText}}>{selectedTitle||'—'}</b></div>
   </div>
@@ -129,12 +133,11 @@ export default function ChildInfoPage(){
   {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={onNotesChange} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
  </>}
 
- {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — قبل از دکمه‌های بازگشت/ادامه */}
+ {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — پیش از ادامهٔ فرایند */}
  <TonguePhotoUploader app={app} tonguePhotos={tonguePhotos} onChange={(list:string[])=>setCourse((c:any)=>({...c,tonguePhotos:list}))} tongueErr={errs.tonguePhoto}/>
 
  <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="با استفاده از این اطلاعات برای ارائه و پیگیری دوره درخواستی موافقم." textEn="I consent to using this information to provide and follow up the requested course." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>{try{sessionStorage.setItem('zk_privacy_return_to',location.pathname||'/child-info')}catch{};setView('privacy')}}/>
- {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={`err-${i}`}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
-  <button type="button" style={S.btnGhost} onClick={()=>setView('courses')}>{publicText('backBtn','بازگشت')}</button>
+ {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={`err-${i}`}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
   <button type="button" style={{...S.btn,minHeight:52,opacity:1,cursor:'pointer'}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
 </div></div>
  {editChild&&<EditChildOnInfoModal app={app}/>}

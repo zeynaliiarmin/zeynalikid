@@ -5,12 +5,13 @@ import JsonLd from '../components/JsonLd';
 import ServicesSection from '../components/ServicesSection';
 import AskQuestionForm from '../components/AskQuestionForm';
 import { submitUserQuestion } from '../lib/supabase';
+import PublicBackButton from '../components/PublicBackButton';
 
 type FAQItem = { id: string; question: string; answer: string; answerTitle?: string };
 
 export default function FAQPage(){
  const app=useAppContext();
-  const { cfg, T, S, css, lang, setView, showContactOn, ContactPanel } = app;
+  const { cfg, T, S, css, lang, showContactOn, ContactPanel } = app;
   const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => !Array.isArray(item.placements) || item.placements.includes('faq'));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // پل دستیار: لینک دقیق ?open=<id> همان سؤال را باز و وسط صفحه می‌آورد.
@@ -68,36 +69,11 @@ export default function FAQPage(){
         }
       `}</style>
       <div className="zk-faq-container" style={{ ...S.card, maxWidth: 760 }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        <header className="zk-public-title-row" style={{ marginBottom: 18 }}>
+          <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} />
           <h1 style={{ color: T.ttl, fontSize: 'clamp(20px,5vw,28px)', lineHeight: 1.45, margin: 0, fontWeight: 800 }}>
             {lang === 'fa' ? 'سوالات متداول' : 'Frequently asked questions'}
           </h1>
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                if (window.history.length > 1) {
-                  window.history.back();
-                  return;
-                }
-              } catch {}
-              setView('home');
-            }}
-            style={{
-              minHeight: 44,
-              padding: '8px 12px',
-              borderRadius: 12,
-              border: `1px solid ${T.brd}`,
-              background: T.soft,
-              color:T.accText,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {lang === 'en' ? 'Back' : 'بازگشت'}
-          </button>
         </header>
 
         {/* ─── Stage 11: نوار جستجوی سؤالات بالای صفحه ─── */}

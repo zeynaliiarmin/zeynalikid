@@ -1,0 +1,101 @@
+/* Shared public return control — option 2. It adapts only through public theme tokens. */
+.zk-public-back {
+  --zk-public-back-accent: var(--zk-action-primary, var(--zk-primary, var(--zp-acc, #0f766e)));
+  --zk-public-back-text: var(--zk-action-primary-text, var(--zk-primary-text, var(--zp-accText, #0f766e)));
+  --zk-public-back-surface: var(--zk-surface, var(--zp-card0, #ffffff));
+  --zk-public-back-border: var(--zk-border, var(--zp-cardbd, rgba(15, 118, 110, .24)));
+  --zk-public-back-on-accent: var(--zk-text-inverse, var(--zp-btnfg, #ffffff));
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  max-width: 100%;
+  padding: 4px 11px 4px 5px;
+  border: 1px solid color-mix(in srgb, var(--zk-public-back-accent) 28%, var(--zk-public-back-border));
+  border-radius: 999px;
+  color: var(--zk-public-back-text);
+  background: color-mix(in srgb, var(--zk-public-back-surface) 90%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--zk-text, var(--zp-ink, #0f172a)) 9%, transparent), inset 0 1px 0 var(--zk-public-back-border);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.zk-public-back:hover {
+  border-color: color-mix(in srgb, var(--zk-public-back-accent) 54%, var(--zk-public-back-border));
+  background: color-mix(in srgb, var(--zk-public-back-accent) 8%, var(--zk-public-back-surface));
+  transform: translateY(-1px);
+}
+
+.zk-public-back:active { transform: scale(.97); }
+
+.zk-public-back:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--zk-public-back-accent) 42%, transparent);
+  outline-offset: 3px;
+}
+
+.zk-public-back__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--zk-public-back-on-accent);
+  background: var(--zk-public-back-accent);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--zk-public-back-accent) 25%, transparent);
+}
+
+.zk-public-back__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .16s ease;
+}
+
+[dir='rtl'] .zk-public-back { padding: 4px 5px 4px 11px; }
+[dir='rtl'] .zk-public-back__icon svg { transform: scaleX(-1); }
+.zk-public-back:hover .zk-public-back__icon svg { transform: translateX(-2px); }
+[dir='rtl'] .zk-public-back:hover .zk-public-back__icon svg { transform: scaleX(-1) translateX(-2px); }
+
+/* A title and its return control are always one normal-flow row. */
+.zk-public-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.zk-public-title-row > :is(h1, h2, h3, [data-public-page-title]) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .zk-public-back {
+    min-height: 40px;
+    gap: 6px;
+    padding: 4px 9px 4px 4px;
+    font-size: 12px;
+  }
+  [dir='rtl'] .zk-public-back { padding: 4px 4px 4px 9px; }
+  .zk-public-back__icon { width: 32px; height: 32px; }
+  .zk-public-back__icon svg { width: 16px; height: 16px; }
+  .zk-public-title-row { gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zk-public-back, .zk-public-back__icon svg { transition: none; }
+}

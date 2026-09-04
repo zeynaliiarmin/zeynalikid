@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import StarRatingInput from './StarRatingInput';
 import { ReviewItem, fetchReviews, submitReview } from '../lib/supabase';
 import { defaultCountries } from '../config/defaultSettings';
+import PublicBackButton from './PublicBackButton';
 import {
   detectReviewCountryCode,
   formatPersianReviewDate,
@@ -304,9 +305,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: T.card || '#fff', display: 'flex', flexDirection: 'column' }}>
           {/* هدر صفحهٔ نظرات */}
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: T.card || '#fff', borderBottom: `1px solid ${T.brd}` }}>
-            <button type="button" onClick={closeShowAll} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${T.brd}`, background: T.soft, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
+            <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAll} testId="public-reviews-back" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <b style={{ display: 'block', fontSize: 16, fontWeight: 900, color: T.ttl }}>{isFa ? 'نظرات' : 'Reviews'}</b>
               <span style={{ fontSize: 12, color:T.accText, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>

@@ -139,33 +139,33 @@ const readEntryFormPresentation = () => page.evaluate(() => {
     const style = getComputedStyle(label);
     return { fontSize: style.fontSize, lineHeight: style.lineHeight };
   });
-  const icons = [...document.querySelectorAll('.zp-entry-field-icon svg')].map(icon => {
+  const icons = [...document.querySelectorAll('.zp-box.zp-bigv .zp-fic svg')].map(icon => {
     const value = icon.getBoundingClientRect();
     return { width: value.width, height: value.height };
   });
-  const country = document.querySelector('.zp-entry-country-picker');
+  const phoneBox = document.querySelector('.zp-entry-phone-input')?.closest('.zp-box');
+  const country = phoneBox?.querySelector('button');
   const back = document.querySelector('[data-testid="public-entry-back"]');
-  const row = back?.closest('.zp-entry-backrow');
-  const card = back?.closest('.zp-card');
-  const chip = card?.querySelector('.zp-chip');
+  const row = back?.closest('.zp-entry-title-row');
+  const title = row?.querySelector('.zp-h1');
   return {
     entryInputs,
     labels,
     icons,
     country: country instanceof HTMLElement ? { fontSize: getComputedStyle(country).fontSize, height: country.getBoundingClientRect().height } : null,
-    back: back instanceof HTMLElement ? { direction: document.querySelector('.zp-root')?.getAttribute('dir') || '', position: getComputedStyle(back).position, height: back.getBoundingClientRect().height, rect: rect(back), row: rect(row), card: rect(card), chip: rect(chip) } : null,
+    back: back instanceof HTMLElement ? { direction: document.querySelector('.zp-root')?.getAttribute('dir') || '', position: getComputedStyle(back).position, height: back.getBoundingClientRect().height, rect: rect(back), row: rect(row), title: rect(title) } : null,
   };
 });
 
 const assertEntryFormPresentation = (entry, label, hasCountry) => {
   assert(entry.entryInputs.length === 2, `${label}: exactly two requested entry inputs must be shown`, entry);
-  assert(entry.entryInputs.every(input => input.fontSize === '23px' && input.lineHeight === '26px'), `${label}: requested input typography is not 23px / 26px`, entry.entryInputs);
+  assert(entry.entryInputs.every(input => input.fontSize === '20px' && input.lineHeight === '26px'), `${label}: requested input typography is not 20px / 26px`, entry.entryInputs);
   assert(entry.entryInputs.every(input => Math.abs(input.box?.height - 58) <= 0.5 && input.marginBottom === '16px'), `${label}: field height or field spacing changed`, entry.entryInputs);
-  assert(entry.labels.length === 2 && entry.labels.every(item => item.fontSize === '16px' && item.lineHeight === '21.6px'), `${label}: requested field titles are not exactly 4px larger`, entry.labels);
-  assert(entry.icons.length === 2 && entry.icons.every(item => Math.abs(item.width - 22) <= 0.5 && Math.abs(item.height - 22) <= 0.5), `${label}: field vectors are not the coordinated 22px size`, entry.icons);
-  if (hasCountry) assert(entry.country?.fontSize === '17px' && entry.country.height >= 44, `${label}: country-code control or flag is not scaled safely`, entry.country);
+  assert(entry.labels.length === 2 && entry.labels.every(item => item.fontSize === '14px' && item.lineHeight === '21.6px'), `${label}: requested field titles are not 14px while retaining their line box`, entry.labels);
+  assert(entry.icons.length === 2 && entry.icons.every(item => Math.abs(item.width - 19) <= 0.5 && Math.abs(item.height - 19) <= 0.5), `${label}: field icons must retain their original 19px size`, entry.icons);
+  if (hasCountry) assert(entry.country?.fontSize === '14px' && Math.abs(entry.country.height - 48) <= 0.5, `${label}: country-code trigger must retain its original 14px / 48px geometry`, entry.country);
   else assert(entry.country === null, `${label}: tracking page must not gain a country selector`, entry.country);
-  assert(entry.back && entry.back.position === 'static' && entry.back.height >= 48 && entry.back.rect && entry.back.row && entry.back.chip && entry.back.row.top < entry.back.chip.top, `${label}: back button must stay in-flow at the start of the card`, entry.back);
+  assert(entry.back && entry.back.position === 'static' && entry.back.height >= 48 && entry.back.rect && entry.back.row && entry.back.title && Math.abs(entry.back.rect.top - entry.back.row.top) <= 0.5 && entry.back.title.height > 0, `${label}: back button and title must share one in-flow title row`, entry.back);
   if (entry.back?.direction === 'rtl') assert(Math.abs(entry.back.rect.right - entry.back.row.right) <= 0.5, `${label}: Persian back button must align to the right`, entry.back);
   else if (entry.back?.direction === 'ltr') assert(Math.abs(entry.back.rect.left - entry.back.row.left) <= 0.5, `${label}: English back button must align to the left`, entry.back);
   else assert(false, `${label}: entry form direction was not set`, entry.back);

@@ -53,10 +53,8 @@
 .zp-box.zp-bigv input{font-size:16px}
 /* فقط فیلدهای ورود/ثبت‌نام کاربر و پیگیری: فونتِ مقدار و عنوان بزرگ‌تر است؛
    قاب، ارتفاع ۵۸px و فاصلهٔ فیلدها بدون تغییر می‌مانند. */
-.zp-entry-field-label{font-size:16px;line-height:21.6px}
-.zp-entry-field-input{font-size:23px!important;line-height:26px}
-.zp-entry-field-icon svg{width:22px!important;height:22px!important}
-.zp-entry-country-picker{font-size:17px!important}
+.zp-entry-field-label{font-size:14px;line-height:21.6px}
+.zp-entry-field-input{font-size:20px!important;line-height:26px}
 .zp-box input::placeholder{color:var(--zp-ph);font-weight:600}
 .zp-tag{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:900;color:var(--zp-accText);background:transparent;border:0;box-shadow:none;border-radius:0;padding:0;letter-spacing:.6px}
 .zp-eye{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;padding:0;border:0;border-radius:11px;background:transparent;color:var(--zp-ttl);font-family:inherit;cursor:pointer;display:grid;place-items:center;transition:.16s}
@@ -82,17 +80,9 @@
 .zp-ghost svg{width:16px;height:16px;vertical-align:-3px;stroke:currentColor;fill:none;stroke-width:2.2;margin-inline-end:6px}
 .zp-link{display:block;margin:15px auto 0;background:transparent;border:0;color:var(--zp-sub);cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;text-align:center;width:100%}
 .zp-link:hover{color:var(--zp-ttl)}
-/* گزینهٔ ۲ «دایرهٔ راهنما»: در جریان عادیِ ابتدای کارت است، نه شناور یا روی محتوا. */
-.zp-entry-backrow{display:flex;justify-content:flex-start;min-height:48px;margin-bottom:12px}
-.zp-entry-back{display:inline-flex;align-items:center;gap:8px;min-height:48px;max-width:100%;padding:0 11px 0 5px;border:1px solid color-mix(in srgb,var(--zp-acc) 28%,var(--zp-cardbd));border-radius:999px;color:var(--zp-accText);background:color-mix(in srgb,var(--zp-card0) 90%,transparent);box-shadow:0 8px 20px color-mix(in srgb,var(--zp-ink) 9%,transparent),inset 0 1px 0 var(--zp-cardbd);font-family:inherit;font-size:13px;font-weight:900;line-height:1;cursor:pointer;white-space:nowrap;transition:.16s}
-.zp-entry-back:hover{border-color:color-mix(in srgb,var(--zp-acc) 54%,var(--zp-cardbd));background:color-mix(in srgb,var(--zp-acc) 8%,var(--zp-card0));transform:translateY(-1px)}
-.zp-entry-back:active{transform:scale(.97)}
-.zp-entry-back-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 auto;border-radius:50%;color:var(--zp-btnfg);background:var(--zp-acc);box-shadow:0 3px 8px color-mix(in srgb,var(--zp-acc) 25%,transparent)}
-.zp-entry-back-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;transition:transform .16s}
-[dir='rtl'] .zp-entry-back{padding:0 5px 0 11px}
-[dir='rtl'] .zp-entry-back-icon svg{transform:scaleX(-1)}
-.zp-entry-back:hover .zp-entry-back-icon svg{transform:translateX(-2px)}
-[dir='rtl'] .zp-entry-back:hover .zp-entry-back-icon svg{transform:scaleX(-1) translateX(-2px)}
+/* طرح ۲: بازگشت و عنوان در یک ردیف معمولیِ کارت می‌مانند، نه در سطر جدا یا روی محتوا. */
+.zp-entry-title-row{display:flex;align-items:center;gap:10px;margin:8px 0 6px;min-width:0}
+.zp-entry-title-row .zp-h1{flex:1;min-width:0;margin:0;text-align:center}
 .zp-err{margin:0 0 15px;display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:15px;background:var(--zp-errbg);border:1px solid var(--zp-errbd);color:var(--zp-errfg);font-size:12.8px;line-height:1.8;font-weight:700}
 .zp-err svg{width:16px;height:16px;flex-shrink:0;stroke:var(--zp-errfg);fill:none;stroke-width:2.2}
 

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { PaymentService } from '../services/payment/PaymentService';
 import { readJson } from '../utils/storage';
+import PublicBackButton from '../components/PublicBackButton';
 
 const SK = { settings: 'zkid_settings_v2' };
 
@@ -166,8 +167,10 @@ export default function PaymentVerifyPage(){
     canceled: lang === 'en' ? 'Payment Canceled' : 'پرداخت لغو شد',
   };
 
+  const canReturnToPayment = status === 'failed' || status === 'canceled';
+
   return (
-    <div style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+    <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <Helmet>
         <title>{lang === 'en' ? 'Payment Verification' : 'تأیید پرداخت'} | زینالیکید</title>
         <meta name="robots" content="noindex, follow" />
@@ -197,15 +200,18 @@ export default function PaymentVerifyPage(){
           <StatusGlyph kind={status} />
         </div>
 
-        {/* عنوان */}
-        <h2 style={{
-          color: statusColors[status],
-          fontSize: 18,
-          fontWeight: 800,
-          margin: '0 0 8px',
-        }}>
-          {statusTitles[status]}
-        </h2>
+        {/* عنوان و بازگشت در یک ردیف طبیعی؛ هنگام پردازش، خروجی برای جلوگیری از قطع تأیید نمایش داده نمی‌شود. */}
+        <div className="zk-public-title-row" style={{ margin: '0 0 8px', textAlign: 'start' }}>
+          {canReturnToPayment && <PublicBackButton lang={lang} onBack={() => setView('course-payment')} fallback="/courses" testId="public-payment-verify-back" />}
+          <h1 style={{
+            color: statusColors[status],
+            fontSize: 18,
+            fontWeight: 800,
+            margin: 0,
+          }}>
+            {statusTitles[status]}
+          </h1>
+        </div>
 
         {/* پیام */}
         <p style={{
@@ -255,23 +261,13 @@ export default function PaymentVerifyPage(){
           </button>
         )}
 
-        {(status === 'failed' || status === 'canceled') && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button
-              onClick={() => setView('course-payment')}
-              style={{
-                ...S.btnGhost,
-                flex: 1,
-                padding: '12px',
-              }}
-            >
-              {lang === 'en' ? 'Back to payment' : 'بازگشت به صفحه پرداخت'}
-            </button>
+        {canReturnToPayment && (
+          <div style={{ marginTop: 8 }}>
             <button
               onClick={() => setView('home')}
               style={{
                 ...S.btnGhost,
-                flex: 1,
+                width: '100%',
                 padding: '12px',
               }}
             >

@@ -5,9 +5,6 @@ import CollapsibleCardText from '../CollapsibleCardText';
 import useMediaDuration from '../../hooks/useMediaDuration';
 import { computeDurationSeconds, formatDuration } from '../../utils/eduDuration';
 
-const PlayGlyph = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" /></svg>
-);
 const Wave = () => (
   <span className="zke-wave" aria-hidden="true">
     {[8, 14, 20, 12, 24, 16, 9, 18, 25, 13, 21, 10, 17, 23, 11, 19, 8, 15, 22, 12].map((h, i) => <i key={i} style={{ height: `${h}px` }} />)}
@@ -19,7 +16,8 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const isArticle = item.type === 'article' || item.type === 'text' || item.type === 'image';
   const badgeCls = isArticle ? 't-text' : item.type === 'video' ? 't-video' : 't-audio';
   const Icon = isArticle ? TextIcon : item.type === 'video' ? VideoIcon : AudioIcon;
-  const cta = isArticle ? (en ? 'Read' : 'مشاهده') : item.type === 'video' ? (en ? 'Watch' : 'پخش') : (en ? 'Listen' : 'شنیدن');
+  // کارت فقط جزئیات را باز می‌کند؛ پخش، در صفحهٔ جزئیات با کنترل خودِ پلتفرم انجام می‌شود.
+  const cta = en ? 'View details' : 'مشاهده جزئیات';
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
@@ -45,7 +43,6 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
       <button type="button" className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
         {coverSrc && !coverFailed ? <img src={coverSrc} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setCoverStage((s) => (s === 0 && item.cover && thumbFn ? 1 : 2))} style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
         <span className={`zke-badge ${badgeCls}`}><Icon size={12} /> {typeLabel(item.type, lang)}</span>
-        {item.type === 'video' && <span className="zke-play-ov"><PlayGlyph /></span>}
         {item.type === 'audio' && <Wave />}
       </button>
       <div className="zke-body">

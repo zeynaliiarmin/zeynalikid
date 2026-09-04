@@ -1,6 +1,7 @@
 import React from 'react';
 import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
+import PublicBackButton from './PublicBackButton';
 
 interface Product {
   id: string;
@@ -77,38 +78,6 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
           onError={(e: any) => { e.currentTarget.src = '/images/products/product-personalized-plan.webp'; }}
         />
 
-        {/* Top actions — correct RTL: back in top-right (RTL), top-left (LTR) */}
-        <div style={{ position: 'absolute', top: 12, ...(isFa ? { right: 12 } : { left: 12 }), zIndex: 10 }}>
-          {/* Back button */}
-          <button 
-            onClick={onClose} 
-            style={{ 
-              background: 'transparent', 
-              border: 0, 
-              borderRadius: 999, 
-              width: 36, 
-              height: 36, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer'
-            }}
-          >
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="#111" 
-              strokeWidth="3"
-              style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-
-          
-        </div>
       </div>
 
       {/* Info */}
@@ -118,7 +87,10 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
           {product.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{product.duration}</span>}
         </div>
 
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: '2px 0 8px' }}>{name}</h1>
+        <div className="zk-public-title-row" dir={isFa ? 'rtl' : 'ltr'} style={{ margin: '2px 0 8px' }}>
+          <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={onClose} fallback="/products" testId="public-product-detail-back" />
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{name}</h1>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           {hasDiscount ? (

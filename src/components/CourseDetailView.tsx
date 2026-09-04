@@ -10,6 +10,7 @@ import SwapCta from './SwapCta';
 import { submitUserQuestion } from '../lib/supabase';
 import { balancedRandomMix, mediaTypeOf } from '../utils/mediaPlacement';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
+import PublicBackButton from './PublicBackButton';
 
 // ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
 // سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
@@ -311,7 +312,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>
       )}
       {/* تصویر قهرمان فقط برای دوره‌ای که عکس اختصاصی دارد. */}
-      {showCourseImage ? (
+      {showCourseImage && (
         <div style={{ position: 'relative', aspectRatio: course.aspectRatio || '16 / 9', background: 'var(--zk-surface-muted)' }}>
           <img
             src={course.image}
@@ -320,52 +321,6 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: course.objectPosition || 'center', display: 'block' }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(15,23,42,0.35))' }} />
-          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
-            <button
-              onClick={onClose}
-              aria-label={isFa ? 'بازگشت' : 'Back'}
-              style={{
-                background: 'rgba(255,255,255,0.95)',
-                border: 0,
-                borderRadius: 999,
-                width: 38,
-                height: 38,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}>
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div style={{ padding: '12px 12px 0', display: 'flex', justifyContent: 'flex-start' }}>
-          <button
-            onClick={onClose}
-            aria-label={isFa ? 'بازگشت' : 'Back'}
-            style={{
-              background: 'var(--zk-surface)',
-              color: 'var(--zk-text)',
-              border: '1px solid var(--zk-border)',
-              borderRadius: 999,
-              width: 38,
-              height: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: 'var(--zk-shadow-light)',
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}>
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
         </div>
       )}
 
@@ -376,7 +331,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           {course.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{course.duration}</span>}
         </div>
 
-        <h1 style={{ fontSize: 21, fontWeight: 800, margin: '6px 0 4px', lineHeight: 1.25 }}>{title}</h1>
+        <div className="zk-public-title-row" style={{ margin: '6px 0 4px' }}>
+          <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={onClose} testId="public-course-detail-back" />
+          <h1 style={{ flex: 1, minWidth: 0, fontSize: 21, fontWeight: 800, margin: 0, lineHeight: 1.25 }}>{title}</h1>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -657,9 +615,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button type="button" onClick={closeShowAllEdu} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
-                </button>
+                <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAllEdu} testId="public-course-education-back" />
                 <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
               </div>
               <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
@@ -762,9 +718,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
       {showAllFaq && createPortal(
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
-            <button type="button" onClick={closeShowAllFaq} aria-label={isFa ? 'بازگشت' : 'Back'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isFa ? 'scaleX(-1)' : 'none' }}><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
+            <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAllFaq} testId="public-course-faq-back" />
             <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</b>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px calc(24px + env(safe-area-inset-bottom,0px))' }}>

@@ -1,6 +1,7 @@
 import { useAppContext } from '../app/AppContext';
 import React, { useState, useEffect } from 'react';
 import { normalizeDesignId } from '../utils/colorMode';
+import PublicBackButton from '../components/PublicBackButton';
 
 export default function SettingsPage(){
  const app=useAppContext();
@@ -64,8 +65,8 @@ export default function SettingsPage(){
   return (
     <div style={S.page}>
       <style>{css}</style>
-      <div style={{ ...S.card, maxWidth: 460 }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: T.ttl, marginBottom: 16 }}>{lang === 'en' ? 'Settings' : 'تنظیمات'}</div>
+      <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ ...S.card, maxWidth: 460 }}>
+        <div className="zk-public-title-row" style={{ marginBottom: 16 }}><PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => setView('home')} /><h1 style={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 800, color: T.ttl, margin: 0 }}>{lang === 'en' ? 'Settings' : 'تنظیمات'}</h1></div>
 
         {/* Language */}
         <div style={{ marginBottom: 18 }}>
@@ -207,9 +208,6 @@ export default function SettingsPage(){
           ))}
         </div>
 
-        <button onClick={() => setView('home')} style={{ ...S.btnGhost, width: '100%' }}>
-          {lang === 'en' ? 'Back to Home' : 'بازگشت به خانه'}
-        </button>
       </div>
     </div>
   );

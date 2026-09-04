@@ -22,7 +22,9 @@ let currentSettings = {
     }, {
       id: 'edu-audio-test', title: 'آیتم تست ویس فوری', type: 'audio', externalCode: 'https://old.test/audio.mp3', active: true, order: 2,
     }, {
-      id: 'edu-image-test', title: 'آیتم تست عکس فوری', type: 'image', externalCode: 'https://old.test/image.jpg', active: true, order: 3,
+      // The current education model presents images as article images, not a separate
+      // inline-player type. This exercises the real image editor and public article view.
+      id: 'edu-image-test', title: 'آیتم تست عکس فوری', type: 'article', body: 'متن مقالهٔ تصویری', images: [{ id: 'image-browser-test', url: 'https://old.test/image.jpg', position: 0 }], active: true, order: 3,
     }, {
       id: 'edu-text-test', title: 'آیتم تست متن فوری', type: 'text', body: 'متن قدیمی', active: true, order: 4,
     }],
@@ -55,12 +57,12 @@ page.on('request', async (request) => {
     body: JSON.stringify(body),
   });
   try {
-    if (url.includes('mock.supabase.co/functions/v1/admin-session')) {
+    if (url.includes('/functions/v1/admin-session')) {
       const body = JSON.parse(request.postData() || '{}');
       if (body.action === 'validate_session') return json(200, { valid: true, ownerPhone: '***' });
       return json(200, { ok: true, devices: [] });
     }
-    if (url.includes('mock.supabase.co/functions/v1/admin-api')) {
+    if (url.includes('/functions/v1/admin-api')) {
       const body = JSON.parse(request.postData() || '{}');
       if (body.action === 'list_settings') {
         listSettingsCount++;
@@ -74,15 +76,19 @@ page.on('request', async (request) => {
       }
       return json(200, {});
     }
-    if (url.includes('mock.supabase.co/functions/v1/public-settings')) return json(200, { settings: currentSettings });
-    if (url.includes('mock.supabase.co/rest/v1/')) return json(200, []);
-    if (url.startsWith('https://cdn.test/')) {
+    if (url.includes('/functions/v1/public-settings')) return json(200, { settings: currentSettings });
+    if (url.includes('/functions/v1/assistant-public')) return json(200, { knowledge: [], settings: { enabled: false } });
+    if (url.includes('/rest/v1/')) return json(200, []);
+    if (url.startsWith('https://cdn.test/') || url.startsWith('https://old.test/')) {
       if (/\.(jpg|jpeg|png|webp)$/i.test(url)) {
         return request.respond({ status: 200, contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64') });
       }
       return request.respond({ status: 204, body: '' });
     }
-    if (url.startsWith('https://www.youtube.com/')) return request.abort();
+    if (url.includes('/functions/v1/aparat-thumb') || url.startsWith('https://img.youtube.com/')) {
+      return request.respond({ status: 200, contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', 'base64') });
+    }
+    if (url.startsWith('https://www.youtube.com/')) return request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>mock youtube player</title>' });
     if (url.includes('www.aparat.com/video/video/embed/')) return request.respond({ status: 200, contentType: 'text/html', body: '<!doctype html><title>mock aparat player</title>' });
     return request.continue();
   } catch (error) {
@@ -93,9 +99,11 @@ page.on('request', async (request) => {
 
 await page.evaluateOnNewDocument(() => {
   if (localStorage.getItem('browser_test_public_mode') !== 'true') {
-    sessionStorage.setItem('zk_admin_session_token', 'browser-test-token');
-    sessionStorage.setItem('zk_admin_authed', 'true');
-    sessionStorage.setItem('zk_admin_device_id', 'browser-test-device');
+    // The production admin session intentionally persists in localStorage so a
+    // browser restart does not discard a valid secure session.
+    localStorage.setItem('zk_admin_session_token', 'browser-test-token');
+    localStorage.setItem('zk_admin_authed', 'true');
+    localStorage.setItem('zk_admin_device_id', 'browser-test-device');
   }
 });
 
@@ -111,11 +119,26 @@ async function waitForSaveCount(expected) {
   assert(saves.length >= expected, `timed out waiting for mocked save ${expected}`);
 }
 
+async function publicEducationCardState(itemTitle) {
+  return page.evaluate((title) => {
+    const card = [...document.querySelectorAll('.zke-card')].find((element) => element.textContent?.includes(title));
+    if (!(card instanceof HTMLElement)) throw new Error(`public education card not found: ${title}`);
+    return {
+      cover: card.querySelector('.zke-cover') instanceof HTMLButtonElement,
+      iframeCount: card.querySelectorAll('iframe').length,
+      videoCount: card.querySelectorAll('video').length,
+      audioCount: card.querySelectorAll('audio').length,
+      manualPlayerCount: card.querySelectorAll('[data-manual-embed]').length,
+      customPlay: !!card.querySelector('.zke-play-ov,.zke-playbtn,[data-custom-play]'),
+    };
+  }, itemTitle);
+}
+
 async function openPublicEducationItem(itemTitle) {
   await page.evaluate((title) => {
     const card = [...document.querySelectorAll('.zke-card')].find((element) => element.textContent?.includes(title));
-    const button = card?.querySelector('button');
-    if (!(button instanceof HTMLButtonElement)) throw new Error(`public card not found: ${title}`);
+    const button = card?.querySelector('.zke-cover');
+    if (!(button instanceof HTMLButtonElement)) throw new Error(`public education cover not found: ${title}`);
     button.click();
   }, itemTitle);
   await page.waitForSelector('[role="dialog"]', { timeout: 15_000 });
@@ -123,11 +146,45 @@ async function openPublicEducationItem(itemTitle) {
 
 async function closePublicEducationItem() {
   await page.evaluate(() => {
-    const close = document.querySelector('[role="dialog"] .zke-back');
-    if (!(close instanceof HTMLButtonElement)) throw new Error('public item close button not found');
+    const close = document.querySelector('[data-testid="public-education-detail-back"]');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('public education detail back button not found');
     close.click();
   });
   await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 15_000 });
+}
+
+async function closedMediaCardState(id) {
+  return page.$eval(`[data-media-id="${id}"]`, (card) => ({
+    cover: card.querySelector('[data-media-card-cover="true"]') instanceof HTMLButtonElement,
+    iframeCount: card.querySelectorAll('iframe').length,
+    videoCount: card.querySelectorAll('video').length,
+    audioCount: card.querySelectorAll('audio').length,
+    manualPlayerCount: card.querySelectorAll('[data-manual-embed]').length,
+    customPlay: !!card.querySelector('.zke-play-ov,.zke-playbtn,[data-custom-play]'),
+  }));
+}
+
+async function openPublicMediaItem(id) {
+  const selector = `[data-media-id="${id}"] [data-media-card-cover="true"]`;
+  await page.$eval(selector, (button) => {
+    button.scrollIntoView({ block: 'center', inline: 'center' });
+    button.click();
+  });
+  await page.waitForSelector('[role="dialog"]', { timeout: 15_000 });
+}
+
+async function closePublicMediaItem() {
+  await page.$eval('[data-testid="public-media-detail-back"]', (button) => {
+    if (!(button instanceof HTMLButtonElement)) throw new Error('public media detail back button not found');
+    button.click();
+  });
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 15_000 });
+}
+
+function assertClosedMediaCard(state, name) {
+  assert(state.cover, `${name} closed card has a detail cover`);
+  assert(state.iframeCount === 0 && state.videoCount === 0 && state.audioCount === 0 && state.manualPlayerCount === 0, `${name} closed card mounted a player instead of only its cover`);
+  assert(!state.customPlay, `${name} closed card rendered an application play control`);
 }
 
 async function typeAndImmediatelySave(itemTitle, fieldLabel, value) {
@@ -139,7 +196,10 @@ async function typeAndImmediatelySave(itemTitle, fieldLabel, value) {
     details.open = true;
     const label = [...details.querySelectorAll('label')].find((element) => element.textContent?.includes(fieldLabel));
     const field = label?.nextElementSibling;
-    if (!(field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement)) throw new Error(`field not found: ${fieldLabel}`);
+    if (!(field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement)) {
+      const labels = [...details.querySelectorAll('label')].map((entry) => entry.textContent?.trim()).filter(Boolean).join(' | ');
+      throw new Error(`field not found: ${fieldLabel}; available labels: ${labels}`);
+    }
     field.focus();
     field.value = value;
     const save = document.querySelector('[data-testid="content-save"]');
@@ -205,11 +265,11 @@ try {
   assert(JSON.stringify(savedItem?.mediaCategories) === JSON.stringify(['education', 'experience', 'height']), 'multi-page destinations were not saved');
 
   await typeAndImmediatelySave('آیتم تست ویس فوری', 'کد دستی صوتی خارجی', freshAudio);
-  await typeAndImmediatelySave('آیتم تست عکس فوری', 'کد دستی تصویر خارجی', freshImage);
+  await typeAndImmediatelySave('آیتم تست عکس فوری', 'لینک تصویر', freshImage);
   await typeAndImmediatelySave('آیتم تست متن فوری', 'متن کامل', freshText);
   const latestItems = saves.at(-1)?.education?.items || [];
   assert(latestItems.find((item) => item.id === 'edu-audio-test')?.externalCode === freshAudio, 'immediately typed audio value was lost before save');
-  assert(latestItems.find((item) => item.id === 'edu-image-test')?.externalCode === freshImage, 'immediately typed image value was lost before save');
+  assert(latestItems.find((item) => item.id === 'edu-image-test')?.images?.[0]?.url === freshImage, 'immediately typed article-image value was lost before save');
   assert(latestItems.find((item) => item.id === 'edu-text-test')?.body === freshText, 'immediately typed text value was lost before save');
 
   await page.reload({ waitUntil: 'networkidle0', timeout: 30_000 });
@@ -232,14 +292,24 @@ try {
   });
   assert(persisted === freshCode, 'saved video value did not survive mocked server reload');
 
-  // Public page uses the sanitized public-settings path (session cleared) and must feed every
-  // saved content type into the real education card/modal player rather than preview samples.
+  // Public page uses the sanitized public-settings path (session cleared). Cards remain
+  // cover-only; every saved media source is mounted solely after opening its detail view.
   await page.evaluate(() => {
     localStorage.setItem('browser_test_public_mode', 'true');
+    localStorage.removeItem('zk_admin_session_token');
+    localStorage.removeItem('zk_admin_authed');
+    localStorage.removeItem('zk_admin_device_id');
+    localStorage.removeItem('zk_admin_login_at');
     sessionStorage.clear();
   });
   await page.goto(`${baseUrl}/education`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('آیتم تست ذخیره فوری'), { timeout: 20_000 });
+
+  for (const [title, name] of [
+    ['آیتم تست ذخیره فوری', 'education video'],
+    ['آیتم تست ویس فوری', 'education audio'],
+    ['آیتم تست عکس فوری', 'education image'],
+  ]) assertClosedMediaCard(await publicEducationCardState(title), name);
 
   await openPublicEducationItem('آیتم تست ذخیره فوری');
   const publicVideo = await page.$eval('[role="dialog"] iframe', (element) => element.getAttribute('src') || '');
@@ -263,28 +333,39 @@ try {
 
   await page.goto(`${baseUrl}/experience`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('آیتم تست ذخیره فوری'), { timeout: 20_000 });
-  const firstExperienceVisit = await page.evaluate(() => {
-    const cards = [...document.querySelectorAll('[data-media-card="true"][data-media-type="video"]')];
-    const inspect = (id) => {
-      const card = document.querySelector(`[data-media-id="${id}"]`);
-      return { html: !!card?.querySelector('[data-manual-embed="html"]'), src: card?.querySelector('iframe')?.getAttribute('src') || '' };
-    };
-    return { firstId: cards[0]?.getAttribute('data-media-id') || '', generic: inspect('generic-aparat-test'), direct: inspect('experience-aparat-test') };
-  });
-  assert(firstExperienceVisit.generic.html && firstExperienceVisit.direct.html, 'single-platform Aparat HTML was not recognized as an embed on Experience page');
-  assert(firstExperienceVisit.generic.src.includes('/videohash/browsertest/') && !firstExperienceVisit.generic.src.startsWith('<'), 'Aparat HTML was incorrectly assigned to iframe src');
-  assert(firstExperienceVisit.direct.src.includes('/videohash/browsertest/') && !firstExperienceVisit.direct.src.startsWith('<'), 'direct Experience Aparat code was incorrectly assigned to iframe src');
+  await page.waitForSelector('[data-media-id="generic-aparat-test"]', { timeout: 20_000 });
+  await page.waitForSelector('[data-media-id="experience-aparat-test"]', { timeout: 20_000 });
+  const firstExperienceVisit = await page.$eval('[data-media-card="true"][data-media-type="video"]', (element) => ({ firstId: element.getAttribute('data-media-id') || '' }));
+  assertClosedMediaCard(await closedMediaCardState('generic-aparat-test'), 'generic Aparat Experience');
+  assertClosedMediaCard(await closedMediaCardState('experience-aparat-test'), 'direct Aparat Experience');
+
+  await openPublicMediaItem('generic-aparat-test');
+  const genericAparatDetail = await page.$eval('[role="dialog"] iframe', (element) => element.getAttribute('src') || '');
+  assert(genericAparatDetail.includes('/videohash/browsertest/') && !genericAparatDetail.startsWith('<'), 'generic Aparat HTML was not sanitized into the detail iframe source');
+  await closePublicMediaItem();
+
+  await openPublicMediaItem('experience-aparat-test');
+  const directAparatDetail = await page.$eval('[role="dialog"] iframe', (element) => element.getAttribute('src') || '');
+  assert(directAparatDetail.includes('/videohash/browsertest/') && !directAparatDetail.startsWith('<'), 'direct Experience Aparat code was not connected to its detail iframe');
+  await closePublicMediaItem();
 
   await page.goto(`${baseUrl}/education?between=1`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await page.goto(`${baseUrl}/experience?visit=2`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await page.waitForSelector('[data-media-card="true"][data-media-type="video"]', { timeout: 20_000 });
+  // Wait for the mocked settings rather than the SSG shell's initial cards before
+  // inspecting the rotation order on this fresh visit.
+  await page.waitForSelector('[data-media-id="generic-aparat-test"]', { timeout: 20_000 });
   const secondFirstId = await page.$eval('[data-media-card="true"][data-media-type="video"]', (element) => element.getAttribute('data-media-id') || '');
   assert(firstExperienceVisit.firstId && secondFirstId && firstExperienceVisit.firstId !== secondFirstId, 'first Experience video repeated on consecutive visits');
 
   await page.goto(`${baseUrl}/courses`, { waitUntil: 'networkidle0', timeout: 30_000 });
   await page.waitForFunction(() => document.body.innerText.includes('محتوای آموزشی مرتبط') && document.body.innerText.includes('آیتم تست ذخیره فوری'), { timeout: 20_000 });
-  const courseAparat = await page.$eval('[data-media-id="generic-aparat-test"] iframe', (element) => element.getAttribute('src') || '');
-  assert(courseAparat.includes('/videohash/browsertest/') && !courseAparat.startsWith('<'), 'Aparat embed did not connect on the course-introduction section');
+  await page.waitForSelector('[data-media-id="generic-aparat-test"]', { timeout: 20_000 });
+  assertClosedMediaCard(await closedMediaCardState('generic-aparat-test'), 'course-introduction Aparat');
+  await openPublicMediaItem('generic-aparat-test');
+  const courseAparat = await page.$eval('[role="dialog"] iframe', (element) => element.getAttribute('src') || '');
+  assert(courseAparat.includes('/videohash/browsertest/') && !courseAparat.startsWith('<'), 'Aparat embed did not connect in the course detail view');
+  await closePublicMediaItem();
 
   assert(runtimeErrors.length === 0, `runtime errors: ${runtimeErrors.join(' | ')}`);
 

@@ -8,6 +8,7 @@ import EduPlayer from './EduPlayer';
 import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import { Highlights, RichText } from '../MediaHighlights';
 import { extractDirectMediaUrl } from '../../utils/mediaInput';
+import PublicBackButton from '../PublicBackButton';
 
 /**
  * مدال جزئیات محتوا — Stage 8
@@ -44,10 +45,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
     <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
       <div className="zke-modal-win">
         <div className="zke-modal-head">
-          <button type="button" className="zke-back" onClick={onClose}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: en ? 'none' : 'scaleX(-1)' }}><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
-            {en ? 'Back' : 'بازگشت'}
-          </button>
+          <PublicBackButton lang={en ? 'en' : 'fa'} onBack={onClose} testId="public-education-detail-back" />
           <h2>{en ? item.titleEn : item.title}</h2>
           <span style={{ color: 'var(--zk-primary, #0F766E)', display: 'inline-flex' }} title={typeLabel(item.type, lang)}><Icon size={17} /></span>
         </div>

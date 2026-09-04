@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import JsonLd from '../components/JsonLd';
 import ProductCard from '../components/ProductCard';
 import ProductDetailView from '../components/ProductDetailView';
+import PublicBackButton from '../components/PublicBackButton';
 
 export default function ProductsPage(){
  const app=useAppContext();
@@ -79,7 +80,7 @@ export default function ProductsPage(){
   }
 
   return (
-    <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
+    <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
       <JsonLd id="ld-products" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?'Zeynalikid products':'محصولات زینالیکید',itemListElement:((cfg.products?.list)||[]).filter((p:any)=>p.isVisible!==false).map((p:any)=>({'@type':'Product',name:lang==='en'?(p.titleEn||p.title):p.title,description:p.description||'',brand:{'@type':'Brand',name:'زینالیکید'}}))})} />
       <Helmet>
         
@@ -95,13 +96,12 @@ export default function ProductsPage(){
             borderRadius: '999px', opacity: 0.35, pointerEvents: 'none'
           }} />
 
-          <button onClick={() => window.history.back()} style={{ minHeight: 44, background: 'transparent', border: 0, color:'var(--zk-primary-text)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-            {lang === 'en' ? 'Back' : 'بازگشت'}
-          </button>
-
-          <h1 style={{ fontSize: 23, fontWeight: 800, margin: '10px 0 6px', color: 'var(--zk-text)' }}>
-            {lang === 'en' ? 'Programs & Products for You' : 'برنامه‌ها و محصولات همراه شما'}
-          </h1>
+          <div className="zk-public-title-row" style={{ margin: '0 0 6px' }}>
+            <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} />
+            <h1 style={{ flex: 1, minWidth: 0, fontSize: 23, fontWeight: 800, margin: 0, color: 'var(--zk-text)' }}>
+              {lang === 'en' ? 'Programs & Products for You' : 'برنامه‌ها و محصولات همراه شما'}
+            </h1>
+          </div>
 
           <p style={{ color: 'var(--zk-text-muted)', fontSize: 13.5, lineHeight: 1.65, maxWidth: 520 }}>
             {lang === 'en'

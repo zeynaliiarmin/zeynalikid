@@ -6,6 +6,8 @@ import { Helmet } from 'react-helmet-async';
 import { isValidMediaUrl } from '../utils/detectCountry';
 import useMediaVpn from '../hooks/useMediaVpn';
 import MediaCard, { mediaThumb } from '../components/MediaCard';
+import MediaDetailSheet from '../components/MediaDetailSheet';
+import PublicBackButton from '../components/PublicBackButton';
 import { VideoIcon, AudioIcon, TextIcon, SearchIcon } from '../components/Icons';
 import EduCard from '../components/edu/EduCard';
 import ArticleModal from '../components/edu/ArticleModal';
@@ -25,41 +27,42 @@ import { loadRealViews, recordView, totalViews } from '../utils/eduViews';
 
 const siteBrand=(cfg:any,fallback='سامانه رشد کودک')=>String(cfg?.browserTitle||cfg?.siteTitle||fallback).replace(/[“”"]/g,'').trim();
 
-// اصلاح ۲۹ (مرحله ۷): پارامتر اختیاری topSlot برای نمایش هایلایت استوری در بالای صفحه (قبل از عنوان اصلی)
+// پارامتر اختیاری topSlot برای نمایش هایلایت استوری، پس از ردیف عنوان و بازگشت.
 function PageShell({app,title,children,topSlot,variant='default'}:{app:any,title:string,children:any,topSlot?:any,variant?:'default'|'trust'|'education'}){
- const {cfg,T,S,css,lang,setView}=app;
- return <div className={`zk-info-page zk-info-page--${variant}`} style={{...S.page,overflowX:'hidden'}}><style>{css}{`.zk-info-page--trust .zk-info-card{border-radius:20px;box-shadow:var(--zk-shadow-soft,0 4px 15px rgba(15,38,60,.06));border-color:${T.brd}}.zk-info-page--trust .zk-info-heading{font-size:clamp(20px,5vw,28px);line-height:1.45}.zk-info-page--trust .zk-info-back{min-height:44px;border-radius:12px}.zk-info-page--trust .zk-info-body{font-size:14px;line-height:2;color:${T.mut}}.zk-info-page--education .zk-info-card{border-radius:20px;box-shadow:var(--zk-shadow-soft,0 4px 15px rgba(15,38,60,.06));border-color:${T.brd}}.zk-info-page--education .zk-info-heading{font-size:clamp(20px,5vw,28px);line-height:1.45}.zk-info-page--education .zk-info-back{min-height:44px;border-radius:12px}.zk-info-page--education .zk-info-body{font-size:14px;line-height:2;color:${T.mut}}@media(max-width:480px){.zk-info-page--trust .zk-info-card,.zk-info-page--education .zk-info-card{padding:18px 14px!important}.zk-info-page--trust .zk-info-header,.zk-info-page--education .zk-info-header{align-items:flex-start!important}.zk-info-page--trust .zk-info-back,.zk-info-page--education .zk-info-back{font-size:12px!important;padding-inline:10px!important;white-space:nowrap}}`}</style><div className="zk-info-card" style={{...S.card,maxWidth:760}}>{topSlot}<div className="zk-info-header" style={{display:'flex',alignItems:'center',gap:10,marginBottom:18}}><h1 className="zk-info-heading" style={{color:T.ttl,margin:0,fontSize:18,flex:1,fontWeight:800}}>{title}</h1><button type="button" className="zk-info-back" onClick={()=>{try{if(window.history.length>1){window.history.back();return}}catch{} setView('home')}} style={{padding:'8px 12px',border:`1px solid ${T.brd}`,background:T.soft,color:T.accText,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>{lang==='en'?'Back':'بازگشت'}</button></div><div className="zk-info-body"><DailyTipBar cfg={cfg} T={T} lang={lang} />{children}</div></div></div>
+ const {cfg,T,S,css,lang}=app;
+ const en=lang==='en';
+ return <div className={`zk-info-page zk-info-page--${variant}`} dir={en?'ltr':'rtl'} style={{...S.page,overflowX:'hidden'}}><style>{css}{`.zk-info-page--trust .zk-info-card{border-radius:20px;box-shadow:var(--zk-shadow-soft,0 4px 15px rgba(15,38,60,.06));border-color:${T.brd}}.zk-info-page--trust .zk-info-heading{font-size:clamp(20px,5vw,28px);line-height:1.45}.zk-info-page--trust .zk-info-body{font-size:14px;line-height:2;color:${T.mut}}.zk-info-page--education .zk-info-card{border-radius:20px;box-shadow:var(--zk-shadow-soft,0 4px 15px rgba(15,38,60,.06));border-color:${T.brd}}.zk-info-page--education .zk-info-heading{font-size:clamp(20px,5vw,28px);line-height:1.45}.zk-info-page--education .zk-info-body{font-size:14px;line-height:2;color:${T.mut}}@media(max-width:480px){.zk-info-page--trust .zk-info-card,.zk-info-page--education .zk-info-card{padding:18px 14px!important}.zk-info-page--trust .zk-info-header,.zk-info-page--education .zk-info-header{align-items:flex-start!important}}`}</style><div className="zk-info-card" style={{...S.card,maxWidth:760}}><div className="zk-info-header zk-public-title-row" style={{alignItems:'center',marginBottom:18}}><PublicBackButton lang={en?'en':'fa'}/><h1 className="zk-info-heading" style={{color:T.ttl,margin:0,fontSize:18,flex:1,fontWeight:800}}>{title}</h1></div>{/* عنوان و بازگشت باید پیش از هایلایت‌های تجربه باشند. */}{topSlot}<div className="zk-info-body"><DailyTipBar cfg={cfg} T={T} lang={lang} />{children}</div></div></div>
 }
 
 // اصلاح ۷: تشخیص خودکار وضعیت VPN برای انتخاب پلتفرم محتوا (یوتیوب اگر VPN روشن، آپارات اگر خاموش)
 const useVpn = useMediaVpn;
 
-function pickByPlatform(list: any[], type: string, vpnOn: boolean) {  
+function pickByPlatform(list: any[], type: string, vpnOn: boolean) {
   const typeMatches = (xt: string, t: string) => {
     if (t === 'article') return xt === 'article' || xt === 'text' || xt === 'image';
     return xt === t;
   };
-  const valid = (list || []).filter((x: any) => {  
-    if (x.active === false) return false;  
-    if (!typeMatches((x.type || 'video'), type)) return false;  
-    if (type === 'text' || type === 'article') return true;  
-  
-    const hasManual = !!String(x.manualCode || '').trim();  
-    const hasYt = !!(x.youtubeUrl || x.youtubeCode || x.platforms?.youtube);  
-    const hasAp = !!(x.aparatUrl || x.aparatCode || x.platforms?.aparat || x.url);  
-    const hasExtImg = !!(x.externalCode || x.platforms?.externalImage);  
-    const hasIntImg = !!(x.internalCode || x.platforms?.internalImage);  
-    const hasExtAud = !!(x.externalCode || x.platforms?.externalAudio);  
-    const hasIntAud = !!(x.internalCode || x.platforms?.internalAudio);  
-  
-    return hasManual || hasYt || hasAp || hasExtImg || hasIntImg || hasExtAud || hasIntAud;  
+  const valid = (list || []).filter((x: any) => {
+    if (x.active === false) return false;
+    if (!typeMatches((x.type || 'video'), type)) return false;
+    if (type === 'text' || type === 'article') return true;
+
+    const hasManual = !!String(x.manualCode || '').trim();
+    const hasYt = !!(x.youtubeUrl || x.youtubeCode || x.platforms?.youtube);
+    const hasAp = !!(x.aparatUrl || x.aparatCode || x.platforms?.aparat || x.url);
+    const hasExtImg = !!(x.externalCode || x.platforms?.externalImage);
+    const hasIntImg = !!(x.internalCode || x.platforms?.internalImage);
+    const hasExtAud = !!(x.externalCode || x.platforms?.externalAudio);
+    const hasIntAud = !!(x.internalCode || x.platforms?.internalAudio);
+
+    return hasManual || hasYt || hasAp || hasExtImg || hasIntImg || hasExtAud || hasIntAud;
   }).sort((a: any, b: any) => {
     const ar=Number(a?._experienceRandomRank); const br=Number(b?._experienceRandomRank);
     if(Number.isFinite(ar)||Number.isFinite(br))return (Number.isFinite(ar)?ar:Number.MAX_SAFE_INTEGER)-(Number.isFinite(br)?br:Number.MAX_SAFE_INTEGER);
     return (a.order || 0) - (b.order || 0);
   });
-  
-  return valid;  
+
+  return valid;
 }
 
 function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=true,horizontal=false}: {items:any[],cfg:any,T:any,lang:string,withText?:boolean,tabVisibility?:any,secure?:boolean,horizontal?:boolean}){
@@ -81,8 +84,9 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  const pools=useMemo(()=>Object.fromEntries(types.map((t)=>[t.id,pickByPlatform(items,t.id,vpnOn)])),[items,vpnOn,types.map(t=>t.id).join(',')]);
  const tabs=types.filter((t)=>(pools as any)[t.id].length>0);
  const [mtab,setMtab]=useState(tabs[0]?.id || 'video');
- // پل دستیار: لینک دقیق ?open=<id> تب مربوطه را انتخاب، کارت را وسط می‌آورد و اگر پخش‌کننده داشت، همان لحظه روشنش می‌کند.
- useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const hit=items.find((x:any)=>String(x?.id)===o);if(!hit)return;const t=String(hit.type||'video')==='audio'?'audio':['article','text','image'].includes(String(hit.type))?'article':'video';if((pools as any)[t]?.some((x:any)=>String(x?.id)===o)&&t!==mtab)setMtab(t);window.setTimeout(()=>{const el=document.querySelector(`[data-media-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const play=el.querySelector('button') as HTMLElement|null;if(play)play.click();const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)},420)}catch{}},[items.length]);
+ const [openItem,setOpenItem]=useState<any|null>(null);
+ // پل دستیار: لینک دقیق ?open=<id> تب مربوطه را انتخاب، کارت را وسط می‌آورد و جزئیات آن را باز می‌کند.
+ useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const hit=items.find((x:any)=>String(x?.id)===o);if(!hit)return;const t=String(hit.type||'video')==='audio'?'audio':['article','text','image'].includes(String(hit.type))?'article':'video';if((pools as any)[t]?.some((x:any)=>String(x?.id)===o)&&t!==mtab)setMtab(t);window.setTimeout(()=>{const el=document.querySelector(`[data-media-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const open=el.querySelector('[data-media-card-cover="true"], button') as HTMLElement|null;if(open)open.click();const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)},420)}catch{}},[items.length]);
  const scrollRef=useRef<HTMLDivElement|null>(null);
  useEffect(()=>{if(tabs.length&&!tabs.some(t=>t.id===mtab))setMtab(tabs[0].id)},[tabs.map(t=>t.id).join(','),mtab]);
  if(!tabs.length)return <p style={{fontSize:13,color:T.mut,lineHeight:2}}>{lang==='en'?'Content will be published here soon.':'محتوا به‌زودی در این بخش منتشر می‌شود.'}</p>;
@@ -94,7 +98,8 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  return <>
   {tabs.length>1&&<div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>{tabs.map((tab)=><button key={tab.id} onClick={()=>setMtab(tab.id)} style={{padding:'7px 13px',borderRadius:18,border:`1px solid ${mtab===tab.id?T.acc:T.brd}`,background:mtab===tab.id?T.soft:'transparent',color:mtab===tab.id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,transition:'all .65s',display:'flex',alignItems:'center',gap:5}}><span style={{display:'flex',alignItems:'center'}}>{tab.icon}</span><span>{tab.label}</span></button>)}</div>}
   {horizontal&&<div data-media-carousel-controls style={{display:'flex',direction:'ltr',justifyContent:'space-between',alignItems:'center',width:'100%',gap:12,marginBottom:8}}><ArrowBtn dir={-1}/><ArrowBtn dir={1}/></div>}
-  <div ref={scrollRef} style={{...gridStyle,animation:'fadeSlide .65s ease both'}}>{shown.map((it:any)=><div key={it.id} style={cardStyle as any}><MediaCard item={it} T={T} lang={lang} vpnOn={vpnOn} secure={secure}/></div>)}</div>
+  <div ref={scrollRef} style={{...gridStyle,animation:'fadeSlide .65s ease both'}}>{shown.map((it:any)=><div key={it.id} style={cardStyle as any}><MediaCard item={it} T={T} lang={lang} vpnOn={vpnOn} secure={secure} onOpen={()=>setOpenItem(it)}/></div>)}</div>
+  {openItem&&<MediaDetailSheet item={openItem} T={T} lang={lang} vpnOn={vpnOn} onClose={()=>setOpenItem(null)}/>}
  </>
 }
 
@@ -119,10 +124,24 @@ export function ExperiencePage(){
  const ContactBlock=showContactOn('experience')?<ContactPanel cfg={cfg} T={T} lang={lang}/>:null;
  const experienceItems=getMediaItemsForDestination(cfg,'experience');
  const experienceRotationSignature=JSON.stringify(experienceItems);
- const randomizedExperienceItems=useMemo(
-  ()=>prioritizeRotatingExperienceVideo(experienceItems,typeof window!=='undefined'?window.localStorage:null),
-  [experienceRotationSignature],
- );
+ // Settings may refresh once while this same page is mounting (SSR shell → current
+ // public settings). Keep the already-selected first video when it is still present:
+ // one user visit must consume one position from the persisted shuffle bag, not two.
+ const experienceRotationRef=useRef<{selectedId:string}|null>(null);
+ const randomizedExperienceItems=useMemo(()=>{
+   const keyOf=(item:any,index:number)=>`${String(item?._mediaSource||'media')}:${String(item?.id||index)}`;
+   const previous=experienceRotationRef.current;
+   if(previous&&experienceItems.some((item:any,index:number)=>(item?.type||'video')==='video'&&keyOf(item,index)===previous.selectedId)){
+     return experienceItems.map((item:any,index:number)=>keyOf(item,index)===previous.selectedId?{...item,_experienceRandomRank:0}:item);
+   }
+   const ranked=prioritizeRotatingExperienceVideo(experienceItems,typeof window!=='undefined'?window.localStorage:null);
+   const first=ranked.find((item:any)=>(item?.type||'video')==='video'&&Number(item?._experienceRandomRank)===0);
+   if(first){
+     const sourceIndex=experienceItems.findIndex((item:any)=>String(item?._mediaSource||'')===String(first?._mediaSource||'')&&String(item?.id||'')===String(first?.id||''));
+     experienceRotationRef.current={selectedId:keyOf(first,sourceIndex>=0?sourceIndex:0)};
+   }
+   return ranked;
+ },[experienceRotationSignature]);
  return (
    <>
    <Helmet><title>{`${title} | ${siteBrand(cfg)}`}</title><meta name="description" content={`تجربه‌های منتشرشده والدین از خدمات ${siteBrand(cfg,'مجموعه')}`} /></Helmet>
@@ -149,7 +168,7 @@ export function ExperiencePage(){
 // ===== آموزش‌ها (با جستجوی شناور) =====
 export function EducationPage(){
  const app=useAppContext();
- const {cfg,T,lang,setView,showContactOn,ContactPanel,goToAppA}=app;
+ const {cfg,T,lang,showContactOn,ContactPanel,goToAppA}=app;
  const en=lang==='en';
  const [q,setQ]=useState(''); const [askOpen,setAskOpen]=useState(false);
  // Stage 8: فیلتر «نوع محتوا» (نه دسته‌بندی موضوعی — طبق تصمیم پروژه لغو شده)
@@ -181,7 +200,6 @@ export function EducationPage(){
  const faqItems=faqReal.length?faqReal.map((x:any)=>({id:String(x.id),question:x.question,answer:x.answer})):FAQ_SAMPLES.map(x=>({id:x.id,question:(en&&x.qEn)?x.qEn:x.q,answer:(en&&x.aEn)?x.aEn:x.a}));
  const related=useMemo(()=>openItem?source.filter((x:any)=>x.id!==openItem.id&&x.type===openItem.type).slice(0,3):[],[openItem,source]);
  const consult=()=>{try{goToAppA?.()}catch{}};
- const goBack=()=>{try{if(window.history.length>1){window.history.back();return}}catch{} setView('home')};
  const title=en?'Learning & parent companionship':'آموزش و همراهی والدین';
  const introText=en?(cfg.educationIntroTextEn||''):(cfg.educationIntroText||'');
  const showIntro=cfg.pageContentOrder?.education?.showIntro!==false&&!!introText;
@@ -202,9 +220,8 @@ export function EducationPage(){
    <main className="zke-root" dir={en?'ltr':'rtl'}>
     <div className="zke-container">
      <header className="zke-hero"><div className="zke-hero-inner">
-      <button type="button" className="zke-back" onClick={goBack}><svg className="zk-ic-dir" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>{en?'Back':'بازگشت'}</button>
+      <div className="zk-public-title-row"><PublicBackButton lang={en?'en':'fa'}/><h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1></div>
       {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}
-      <h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1>
       <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':`این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ${siteBrand(cfg,'مجموعه')} برای همراهی والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری است.`}</p>
       <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاورهٔ تخصصی نمی‌شود.'}</span></div>
      </div></header>

@@ -1,6 +1,7 @@
 import { useAppContext } from '../app/AppContext';
 import React from 'react';
 import GrowthChart from '../components/GrowthChart';
+import PublicBackButton from '../components/PublicBackButton';
 
 export default function GrowthChartPage(){
  const app=useAppContext();
@@ -21,9 +22,9 @@ export default function GrowthChartPage(){
     <div style={S.page}>
       <style>{css}</style>
       <div style={{ ...S.card, maxWidth: 520 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <button onClick={() => setView('profile')} style={{ ...S.btnGhost, padding: '8px 14px', minHeight: 40 }}>{lang === 'en' ? 'Back' : 'بازگشت'}</button>
-          <div style={{ fontSize: 17, fontWeight: 800, color: T.ttl }}>{lang === 'en' ? 'Growth Tracking' : 'پیگیری رشد'}</div>
+        <div className="zk-public-title-row" dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ marginBottom: 12 }}>
+          <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => setView('profile')} />
+          <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 17, fontWeight: 800, color: T.ttl }}>{lang === 'en' ? 'Growth Tracking' : 'پیگیری رشد'}</h1>
         </div>
 
         <GrowthChart T={T} lang={lang} data={userGrowthData} childName={childName} />

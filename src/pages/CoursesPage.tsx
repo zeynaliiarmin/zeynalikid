@@ -15,6 +15,7 @@ import MediaDetailSheet from '../components/MediaDetailSheet';
 import useMediaVpn from '../hooks/useMediaVpn';
 import { getMediaItemsForDestinations, balancedRandomMix, mediaTypeOf, type MediaDestination } from '../utils/mediaPlacement';
 import { fillReferralText } from '../utils/referral';
+import PublicBackButton from '../components/PublicBackButton';
 
 function CourseTabBanner({ tab, lang }: { tab: any; lang: 'fa' | 'en' }) {
   const [failed, setFailed] = useState(false);
@@ -293,7 +294,7 @@ export default function CoursesPage(){
   // ════════════════════════════════════════════════════════════════════════
   if (selectedCourse) {
     return (
-      <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
+      <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
         <Helmet>
           <title>{`${lang==='en'?(selectedCourse.titleEn||selectedCourse.title):selectedCourse.title} | ${brand}`}</title>
         </Helmet>
@@ -346,7 +347,7 @@ export default function CoursesPage(){
   }
 
   return (
-    <div style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
+    <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
       <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?`${brand} growth & nutrition courses`:`دوره‌های رشد و تغذیه ${brand}`,itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:brand,url:PUBLIC_SITE_URL+'/'}})))})} />
       <Helmet>
         <title>{lang==='en'?`Courses | ${brand}`:`دوره‌های تخصصی | ${brand}`}</title>
@@ -355,14 +356,12 @@ export default function CoursesPage(){
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px 80px' }}>
         {/* Header */}
         <div style={{ paddingTop: 18, paddingBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: lang === 'fa' ? 'flex-end' : 'flex-start', marginBottom: 4 }}>
-            <button onClick={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else { window.history.back(); } }} style={{ minHeight: 44, background: 'transparent', border: 0, color:'var(--zk-primary-text)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              {lang === 'en' ? 'Back' : 'بازگشت'}
-            </button>
+          <div className="zk-public-title-row" style={{ marginBottom: 4 }}>
+            <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else if (window.history.length > 1) { window.history.back(); } else { app.goHome?.(); } }} />
+            <h1 style={{ flex: 1, minWidth: 0, fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--zk-text)' }}>
+              {lang === 'en' ? 'Specialized Courses' : 'دوره‌های تخصصی رشد و تغذیه'}
+            </h1>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: '8px 0 4px', color: 'var(--zk-text)' }}>
-            {lang === 'en' ? 'Specialized Courses' : 'دوره‌های تخصصی رشد و تغذیه'}
-          </h1>
           <p style={{ color: 'var(--zk-text-muted)', fontSize: 13.5, lineHeight: 1.6 }}>
             {lang === 'en' ? 'Evidence-based programs for your child’s growth, appetite and focus — with full parental support.' : 'برنامه‌های مبتنی بر شواهد برای رشد، اشتها و تمرکز فرزند شما — با پشتیبانی کامل والدین.'}
           </p>
@@ -620,9 +619,7 @@ export default function CoursesPage(){
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-bg, #FDF8F3)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button type="button" onClick={closeShowAllMedia} aria-label={lang === 'en' ? 'Back' : 'بازگشت'} style={{ width: 38, height: 38, borderRadius: 999, border: '1px solid var(--zk-border)', background: 'var(--zk-surface-muted)', color: 'var(--zk-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: lang === 'en' ? 'none' : 'scaleX(-1)' }}><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
+              <PublicBackButton lang={lang} onBack={closeShowAllMedia} testId="public-course-media-back" />
               <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>
                 {showAllMedia === 'experience' ? (lang === 'en' ? 'Parent experiences' : 'تجربه و رضایت والدین') : (lang === 'en' ? 'Educational content' : 'محتوای آموزشی')}
               </b>
