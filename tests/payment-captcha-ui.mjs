@@ -12,11 +12,11 @@ const draft=(destination)=>({selected,dest:destination,shippingMethod:'post',chi
  const before=await page.evaluate(()=>({gate:!!document.querySelector('[data-testid="payment-captcha-gate"]'),destinations:!!document.querySelector('[data-testid="payment-destinations"]'),hasCard:/\b\d{16}\b/.test(document.body.innerText.replace(/\s/g,'')),bankOnly:document.body.innerText.includes('برای مشاهده اطلاعات بانکی، بررسی امنیتی زیر را تکمیل کنید.')}));
  const mode=await page.evaluate(()=>(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.entryMode==='user')?'user':'track');
  if(mode==='user'){
-  // حالت «پنل کاربر»: بررسی امنیتی روی فرم ورود/ثبت‌نام نشسته است، پس صفحهٔ پرداخت قفلِ کپچا ندارد
+  // حالت «پنل کاربر»: بررسی امنیتی روی فرم ورود/ثبت‌نام نشسته است، پس صفحه پرداخت قفلِ کپچا ندارد
   if(before.gate) throw new Error(`payment CAPTCHA must not lock the payment page in user-portal mode: ${JSON.stringify(before)}`);
   if(before.destinations||before.hasCard) throw new Error(`payment details appeared before the server allowed them: ${JSON.stringify(before)}`);
   if(checkoutRequests<1) throw new Error(`user-portal mode must load payment details without a CAPTCHA token (requests=${checkoutRequests})`);
-  // مسیرِ /track در حالت «پنل کاربر» همان فرم ورود را نشان می‌دهد (صفحهٔ ورودی سایت)
+  // مسیرِ /track در حالت «پنل کاربر» همان فرم ورود را نشان می‌دهد (صفحه ورودی سایت)
   await page.goto(base+'/track',{waitUntil:'domcontentloaded',timeout:30000});
   await new Promise(resolve=>setTimeout(resolve,1500));
   const portal=await page.evaluate(()=>({authGate:!!document.querySelector('[data-testid="auth-captcha-gate"]'),captchaWanted:!!(globalThis.__APP_SSG_SETTINGS__&&globalThis.__APP_SSG_SETTINGS__.userPortal&&globalThis.__APP_SSG_SETTINGS__.userPortal.captchaEnabled===true),ruleText:/حداقل\s*[۰-۹0-9]+\s*حرف/.test(document.body.innerText),selectInField:!!document.querySelector('.zp-box select'),chooserAfterInput:(()=>{const b=document.querySelector('.zp-box');if(!b)return false;const kids=Array.from(b.children).map(c=>c.tagName.toLowerCase());return kids.includes('input')&&kids.indexOf('input')<kids.length-1})()}));
@@ -26,7 +26,7 @@ const draft=(destination)=>({selected,dest:destination,shippingMethod:'post',chi
   if(!portal.chooserAfterInput) throw new Error(`the country chooser must sit after the number input: ${JSON.stringify(portal)}`);
   await context.close();
  } else {
-  // حالت «پیگیری دوره»: همان قفل قبلی روی صفحهٔ پرداخت، بدون هیچ درخواستی پیش از تأیید
+  // حالت «پیگیری دوره»: همان قفل قبلی روی صفحه پرداخت، بدون هیچ درخواستی پیش از تأیید
   if(!before.gate||before.destinations||before.hasCard||!before.bankOnly||checkoutRequests!==0)throw new Error(`CAPTCHA gate failed: ${JSON.stringify({before,checkoutRequests})}`);
  for(const button of await page.$$('button')){if((await button.evaluate(node=>node.textContent||'')).includes('ثبت‌نام اولیه')){await button.click();break}}
  await page.waitForFunction(()=>document.body.innerText.includes('ابتدا بررسی امنیتی را تکمیل کنید.'),{timeout:5000});if(checkoutRequests!==0)throw new Error('Checkout session was requested before CAPTCHA verification.');await context.close();

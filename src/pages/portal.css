@@ -1,5 +1,5 @@
-/* portal.css — پوستهٔ طراحی A (نئومورفیک گرم) برای ورود/ثبت‌نام کاربر، پیگیری دوره و ورود مدیریت
-   منبع: فایل design-A-warm.html. خودِ این فایل رنگی ندارد؛ همهٔ رنگ‌ها از
+/* portal.css — پوسته طراحی A (نئومورفیک گرم) برای ورود/ثبت‌نام کاربر، پیگیری دوره و ورود مدیریت
+   منبع: فایل design-A-warm.html. خودِ این فایل رنگی ندارد؛ همه رنگ‌ها از
    «پالت اختصاصی همان دیزاین» (src/theme/warmPalettes.ts → متغیرهای --zp-*) روی .zp-root
    ست می‌شوند، پس هر دیزاین در روشن و تاریک پالت خودش را دارد. */
 
@@ -30,6 +30,7 @@
 .zp-chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .zp-h1{font-size:21px;font-weight:900;color:var(--zp-ink);text-align:center;margin:0 0 6px;letter-spacing:-.2px}
 .zp-sub{font-size:12.6px;line-height:2;color:var(--zp-sub);text-align:center;margin:0 0 20px}
+.zp-sub-line{display:block}
 .zp-sub b{color:var(--zp-ink)}
 
 /* ── فیلد نئومورفیک ── */
@@ -39,7 +40,7 @@
 .zp-box{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--zp-fbg);border:1px solid rgba(0,0,0,.03);
   border-radius:17px;padding:14px 16px;min-height:52px;
   box-shadow:inset 3px 3px 7px var(--zp-fsh1),inset -3px -3px 7px var(--zp-fsh2),0 1px 0 var(--zp-cardbd);transition:.16s}
-/* همهٔ پاسخ‌های کوتاهِ ورود، ثبت‌نام و پیگیری یک ارتفاع بیرونی ثابت دارند. کنترل کشورِ شماره
+/* همه پاسخ‌های کوتاهِ ورود، ثبت‌نام و پیگیری یک ارتفاع بیرونی ثابت دارند. کنترل کشورِ شماره
    همچنان هدف لمسی ۴۸px خود را نگه می‌دارد؛ فقط پدینگ عمودیِ همان کادر فشرده شده است. */
 .zp-box.zp-bigv{height:58px;min-height:58px;flex-wrap:nowrap}
 .zp-box.zp-phonebox{padding-block:4px}
@@ -52,7 +53,7 @@
 /* R22: فقط مقادیرِ تایپ‌شده در فیلدهای مشخص‌شده (ورود/ثبت‌نام والد، پیگیری) — یک سایز بزرگ‌تر */
 .zp-box.zp-bigv input{font-size:16px}
 /* فقط فیلدهای ورود/ثبت‌نام کاربر و پیگیری: فونتِ مقدار و عنوان بزرگ‌تر است؛
-   قاب، ارتفاع ۵۸px و فاصلهٔ فیلدها بدون تغییر می‌مانند. */
+   قاب، ارتفاع ۵۸px و فاصله فیلدها بدون تغییر می‌مانند. */
 .zp-entry-field-label{font-size:14px;line-height:21.6px}
 .zp-entry-field-input{font-size:20px!important;line-height:26px}
 .zp-box input::placeholder{color:var(--zp-ph);font-weight:600}
@@ -62,7 +63,7 @@
 .zp-eye:active{transform:translateY(-50%) scale(.94)}
 .zp-eye svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .zp-pwd{padding-inline-start:44px}
-/* حذف کادر آبی پیش‌فرض مرورگر داخل فیلدهای نئومورفیک — هالهٔ خودِ کادر به‌عنوان نشانهٔ فوکس می‌ماند */
+/* حذف کادر آبی پیش‌فرض مرورگر داخل فیلدهای نئومورفیک — هاله خودِ کادر به‌عنوان نشانه فوکس می‌ماند */
 .zp-box :is(input,textarea,select):is(:focus,:focus-visible){outline:none!important;box-shadow:none!important}
 
 

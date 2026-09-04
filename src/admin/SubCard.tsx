@@ -290,7 +290,7 @@ function SubCardBase({
   const activeConsultRecord = consultRecords[selectedConsultIdx] || consultRecords[0] || sub;
 
   // Phase 6: فایل‌های خصوصی (فیش/عکس زبان/ویس/PDF) با Signed URL کوتاه‌مدت نمایش داده می‌شوند.
-  // وقتی کارت باز می‌شود، همهٔ URL های ذخیره‌شده در این رکورد به Signed URL تبدیل می‌شوند.
+  // وقتی کارت باز می‌شود، همه URL های ذخیره‌شده در این رکورد به Signed URL تبدیل می‌شوند.
   const [signedMap, setSignedMap] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!open) return;
@@ -377,7 +377,7 @@ function SubCardBase({
   return (
     <article className={`zkad-sub ${sub.unread || sub.isNew ? 'is-unread' : ''} ${sub.priority === 'high' ? 'is-priority' : ''} ${open ? 'is-open' : ''}`}>
       {/* ================= HEADER ================= */}
-      {/* Header کاملاً از Content جدا است: فقط دکمهٔ عنوان باز/بسته می‌کند،
+      {/* Header کاملاً از Content جدا است: فقط دکمه عنوان باز/بسته می‌کند،
           عملیات سریع (چک‌باکس، کد رهگیری، حذف) کلیک را stopPropagation می‌کنند. */}
       <header className="zkad-sub-head">
         <label className="zkad-sub-check" onClick={e => e.stopPropagation()}>
@@ -1032,7 +1032,7 @@ function SubCardBase({
               <details className="zkad-details" style={{ margin: '2px 0' }}>
                 <summary><ZkStethoscopeIcon size={13} /> نکات و اطلاعات اصلاحی — قابل مشاهده کاربر {(sub.userNotes || sub.corrective) ? '· ● ثبت‌شده' : '· ○ خالی'}</summary>
                 <div style={{ fontSize: 11, color: '#8b8b96', lineHeight: 1.9, padding: '2px 2px 8px' }}>
-                  همهٔ نکاتی که کاربر باید ببیند یک‌جا: یادداشت شما و اطلاعات اصلاحی. همین متن‌ها در «صفحه پیگیری» و «پنل کاربری» نمایش داده می‌شوند؛ والدین هم می‌توانند قد/وزن و توضیح اصلاحی را از همان‌جا به‌روز کنند.
+                  همه نکاتی که کاربر باید ببیند یک‌جا: یادداشت شما و اطلاعات اصلاحی. همین متن‌ها در «صفحه پیگیری» و «پنل کاربری» نمایش داده می‌شوند؛ والدین هم می‌توانند قد/وزن و توضیح اصلاحی را از همان‌جا به‌روز کنند.
                 </div>
                 <label className="zkad-switch-row" style={{ margin: '2px 0 8px' }}>
                   <input className="zkad-display-check" type="checkbox" checked={!!sub.showCorrectiveTab}

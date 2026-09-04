@@ -209,7 +209,7 @@ function sanitizeFaqList(value: any): any[] {
       answerTitle: String(item?.answerTitle || ""),
       category: String(item?.category || ""),
     };
-    // placements فقط وقتی آرایه است برگردانده می‌شود؛ مقدار نداشتن placements یعنی «نمایش در همهٔ بخش‌ها»
+    // placements فقط وقتی آرایه است برگردانده می‌شود؛ مقدار نداشتن placements یعنی «نمایش در همه بخش‌ها»
     // و نباید به [] تبدیل شود (چون سایت سؤال را پنهان می‌کرد).
     if (Array.isArray(item?.categories)) out.categories = item.categories.map(String);
     if (Array.isArray(item?.placements)) out.placements = item.placements.map(String);

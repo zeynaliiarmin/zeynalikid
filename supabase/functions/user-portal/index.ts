@@ -1,11 +1,11 @@
 // supabase/functions/user-portal/index.ts
-// پنل کاربر (ثبت‌نام / ورود / تاریخچه) — نسخهٔ امن:
+// پنل کاربر (ثبت‌نام / ورود / تاریخچه) — نسخه امن:
 //
 // Security:
 //   - CORS فقط برای farzandman.vercel.app و previewهای *.vercel.app
 //   - rate limit مرکزی برای هر اکشن (ضد ربات و سوزاندن پیامک)
 //   - service_role فقط داخل Function
-//   - شمارهٔ کامل به کلاینت برنمی‌گردد (فقط ماسک‌شده)
+//   - شماره کامل به کلاینت برنمی‌گردد (فقط ماسک‌شده)
 //   - کد OTP فقط به‌صورت هش (SHA-256 + salt) ذخیره می‌شود؛ حداکثر ۵ تلاش، انقضای ۵ دقیقه
 //   - کپچا (Cloudflare Turnstile) در صورت فعال بودن از تنظیمات بررسی می‌شود
 //   - ارسال واقعی پیامک فقط با otpMode='live' و کلید پنل؛ در حالت 'test' کد به‌عنوان پیش‌نمایش برمی‌گردد
@@ -36,7 +36,7 @@ const faDigits = (v: string) =>
 const digitsOnly = (v: string) => faDigits(v).replace(/\D/g, "");
 
 /** نرمال‌سازی: ۰۹۱۲… / ۹۱۲… / +98912… / 0098912… → +98912… (برای بقیه +CC…) */
-// ─── برچسب‌های نمایشی برای پنل کاربر: خلاصهٔ فرم، طریقهٔ مصرف، گزارش‌ها ───
+// ─── برچسب‌های نمایشی برای پنل کاربر: خلاصه فرم، طریقه مصرف، گزارش‌ها ───
 // وضعیت آموزشیِ دوره فقط برای پنل کاربر: پس از ثبت فیش/اس‌ام‌اس، «در انتظار پرداخت» نه، بلکه «ثبت شد – در انتظار تأیید»
 const coursePortalStatus = (p: any): string => {
   const os = String(p?.orderStatus || "").trim();
@@ -199,7 +199,7 @@ const verifyCaptcha = async (token: string | undefined): Promise<{ ok: boolean; 
   }
 };
 
-// بدنهٔ کد پیگیری بدون پیشوند (ZK/FM) — تا کدهایی که با پیشوند دیگر ساخته شده‌اند هم پیدا شوند
+// بدنه کد پیگیری بدون پیشوند (ZK/FM) — تا کدهایی که با پیشوند دیگر ساخته شده‌اند هم پیدا شوند
 const codeBody = (v: unknown) => {
   const s = String(v || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const m = s.match(/[0-9][A-Z0-9]*$/);
@@ -219,7 +219,7 @@ const getUserRecord = async (supabase: any, phone: string, code?: string) => {
   if (!code) return rows[0] || null;
   const wanted = String(code).trim().toUpperCase();
   const wantedBody = codeBody(wanted);
-  // ۱) تطبیق کامل کد ۲) تطبیق بدنهٔ کد (پیشوند فرق کرده باشد) ۳) کد بایگانی‌شدهٔ قدیمی
+  // ۱) تطبیق کامل کد ۲) تطبیق بدنه کد (پیشوند فرق کرده باشد) ۳) کد بایگانی‌شده قدیمی
   return (
     rows.find((r: any) => String(r.payload?.code || "").toUpperCase() === wanted) ||
     (wantedBody ? rows.find((r: any) =>
@@ -238,7 +238,7 @@ const phoneLooseMatch = (a: string, b: string): boolean => {
   return tail(ka) === tail(kb);
 };
 
-/** جست‌وجوی رکورد فقط با بدنهٔ کد (هر پیشوندی: ZK-/FM/F/M/هیچی) در هر دو ستون code و trackingCode */
+/** جست‌وجوی رکورد فقط با بدنه کد (هر پیشوندی: ZK-/FM/F/M/هیچی) در هر دو ستون code و trackingCode */
 const findRecordByCode = async (supabase: any, codeRaw: string) => {
   const bodyC = codeBody(codeRaw);
   if (bodyC.length < 4) return null; // کدهای قدیمی ۵رقمی (مثل FM85905) هم مجاز
@@ -259,7 +259,7 @@ const findRecordByCode = async (supabase: any, codeRaw: string) => {
   return null;
 };
 
-/** ماسک پیش‌نمایش — دقیقاً همان قاعدهٔ صفحهٔ پیگیری */
+/** ماسک پیش‌نمایش — دقیقاً همان قاعده صفحه پیگیری */
 const maskPhonePreview = (stored: string): string => {
   const d = digitsOnly(String(stored || ""));
   if (!d || d.length < 7) return "";
@@ -317,7 +317,7 @@ serve(async (req) => {
     portalCfg.referralNames = _nm;
   } catch { /* پیشفرضها */ }
 
-  // ─────────────── اکشن: preview-phone (پیش‌نمایش ماسک‌شدهٔ شماره با کد پیگیری) ───────────────
+  // ─────────────── اکشن: preview-phone (پیش‌نمایش ماسک‌شده شماره با کد پیگیری) ───────────────
   if (action === "preview-phone") {
     const rl = await centralRateLimit(req, "user-portal-preview", { maxRequests: 20, windowMs: 10 * 60_000, blockMs: 10 * 60_000 });
     if (!rl.ok) return jsonResponse({ ok: true, found: false }, 200, origin);
@@ -435,7 +435,7 @@ serve(async (req) => {
     if (!code) return jsonResponse({ error: "کد پیگیری الزامی است" }, 400, origin);
     const supabase = getSupabaseAdmin();
     let user = await getUserRecord(supabase, phone, code);
-    // ثبت‌نام خودکارِ بی‌صدا: والدی که فقط «درخواست مشاوره» ثبت کرده و کد درست + شمارهٔ همان رکورد را
+    // ثبت‌نام خودکارِ بی‌صدا: والدی که فقط «درخواست مشاوره» ثبت کرده و کد درست + شماره همان رکورد را
     // وارد می‌کند، با همان کد حسابش ساخته می‌شود (دقیقاً مثل ثبت‌نام عادی؛ سوابق هم پیوند می‌خورند).
     if ((!user || user.payload?.status !== "active") && user?.payload?.status !== "blocked") {
       const found = await findRecordByCode(supabase, code);
@@ -542,7 +542,7 @@ serve(async (req) => {
       return jsonResponse({ error: "نشست شما معتبر نیست؛ دوباره وارد شوید." }, 404, origin);
     }
     const idRaw = String(body?.id || "").trim();
-    if (!idRaw) return jsonResponse({ error: "شناسهٔ رکورد لازم است" }, 400, origin);
+    if (!idRaw) return jsonResponse({ error: "شناسه رکورد لازم است" }, 400, origin);
     const LIMITS: Record<string, number> = { childName: 80, age: 40, gender: 10, height: 20, weight: 20, appetite: 300, sleep: 300, activity: 300, disease: 1200, digest: 300, allergies: 300, medications: 600, notes: 2000 };
     const clean: Record<string, string> = {};
     for (const [k, max] of Object.entries(LIMITS)) {
@@ -573,14 +573,14 @@ serve(async (req) => {
     const historyEntry = { date: faDate(), time: faTime(), actor: `کاربر (پنل) — ${maskPhone(phone)}`, fields: changed, data: prevData };
     const newPayload = { ...p, ...Object.fromEntries(changed.map((k) => [k, clean[k]])), editHistory: [...(Array.isArray(p.editHistory) ? p.editHistory : []), historyEntry] };
     const { error: upErr } = await supabase.from("submissions").update({ payload: newPayload, updated_at: new Date().toISOString() }).eq("id", (rec as any).id);
-    if (upErr) return jsonResponse({ error: "ذخیرهٔ تغییرات انجام نشد." }, 500, origin);
+    if (upErr) return jsonResponse({ error: "ذخیره تغییرات انجام نشد." }, 500, origin);
     return jsonResponse({ ok: true, updated: true, fields: changed }, 200, origin);
   }
 
   return jsonResponse({ error: "اکشن نامعتبر است" }, 400, origin);
 });
 
-/** کد یکپارچه: اگر شماره قبلاً کد پیگیری داشته، همان؛ وگرنه کد تازهٔ یکتا */
+/** کد یکپارچه: اگر شماره قبلاً کد پیگیری داشته، همان؛ وگرنه کد تازه یکتا */
 async function adoptOrCreateCode(supabase: any, phone: string): Promise<string> {
   // ۱) کد موجود همین شماره را به ارث ببر (تککد برای هر کاربر/شماره)
   try {
@@ -597,7 +597,7 @@ async function adoptOrCreateCode(supabase: any, phone: string): Promise<string> 
     const adopted = data?.payload?.trackingCode ? String(data.payload.trackingCode) : "";
     if (adopted) return adopted;
   } catch { /* ادامه */ }
-  // ۲) کد تازهٔ یکتا — بدون برخورد با کدهای موجود
+  // ۲) کد تازه یکتا — بدون برخورد با کدهای موجود
   const seen = new Set<string>();
   try {
     const { data } = await supabase.from("submissions").select("payload->>trackingCode").not("payload->>trackingCode", "is", null).limit(4000);
@@ -632,7 +632,7 @@ async function upsertUser(supabase: any, phone: string, fields: Record<string, u
     const { error } = await supabase.from("submissions").update({ payload }).eq("id", existing.id);
     return { error };
   }
-  // حسابِ حذف‌شدهٔ نرم‌افزاریِ همین شماره؟ به‌جای ساخت حساب دوم، همان بازیابی می‌شود
+  // حسابِ حذف‌شده نرم‌افزاریِ همین شماره؟ به‌جای ساخت حساب دوم، همان بازیابی می‌شود
   try {
     const { data: del } = await supabase.from("submissions").select("id")
       .eq("full_phone", phone).eq("payload->>type", "user").not("deleted_at", "is", null)

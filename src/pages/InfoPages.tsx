@@ -191,7 +191,7 @@ export function EducationPage(){
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  const source:any[]=usingSamples?(EDU_SAMPLES as any[]):real;
- // پل دستیار: اگر لینک «مشاهدهٔ همین مورد» باز شد، همان آیتم خودکار در پنجرهٔ نمایشگرش باز می‌شود.
+ // پل دستیار: اگر لینک «مشاهده همین مورد» باز شد، همان آیتم خودکار در پنجره نمایشگرش باز می‌شود.
  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o||openItem)return;const it=(source as any[]).find((x:any)=>!usingSamples&&String(x?.id)===o);if(it){openEduItem(it as EduItem);const url=new URL(window.location.href);url.searchParams.delete('open');window.history.replaceState({},'',url)}}catch{}},[source.length]);
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);
  const filtered=useMemo(()=>{const base=typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF); if(sortUI==='seen')return [...base].sort((a:any,b:any)=>viewsOf(b)-viewsOf(a)); return base;},[searched,typeF,sortUI,realViews]);
@@ -223,7 +223,7 @@ export function EducationPage(){
       <div className="zk-public-title-row"><PublicBackButton lang={en?'en':'fa'}/><h1 className="zke-title">{en?title:<>آموزش و <em>همراهی</em> والدین</>}</h1></div>
       {cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}
       <p className="zke-sub">{en?'A calm, specialized archive of articles, videos and podcasts to help parents on the path of growth, appetite, nutrition, focus and everyday parenting — gathered from our consultation experience.':`این بخش آرشیو مقاله‌ها، ویدیوها و پادکست‌های تخصصی ${siteBrand(cfg,'مجموعه')} برای همراهی والدین در مسیر رشد، اشتها، تغذیه، تمرکز و فرزندپروری است.`}</p>
-      <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاورهٔ تخصصی نمی‌شود.'}</span></div>
+      <div className="zke-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>{en?'Content in this section is for general awareness and does not replace specialized consultation.':'محتوای این بخش برای اطلاع‌رسانی عمومی است و جایگزین مشاوره تخصصی نمی‌شود.'}</span></div>
      </div></header>
 
      <div className="zke-bar">
@@ -276,7 +276,7 @@ export function LicensesPage(){
  const app=useAppContext();
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
  // زوم، انتخاب متن و ناوبری صفحه عمداً برای دسترسی‌پذیری آزاد است.
- // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک مستقیم به صفحهٔ اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
+ // Phase 8: اگر صفحه مجوزها غیرفعال باشد، لینک مستقیم به صفحه اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
  if(!showLicensesPage) return <Navigate to="/" replace/>;
  const title = lang==='en'?'Licenses':'مجوزها';

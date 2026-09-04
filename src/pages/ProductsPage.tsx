@@ -75,7 +75,7 @@ export default function ProductsPage(){
     setSelectedProduct(null);
   };
   if (!showSection) {
-    // Phase 8: به‌جای نمایش پیام «غیرفعال است»، مستقیماً به صفحهٔ اصلی هدایت می‌شود
+    // Phase 8: به‌جای نمایش پیام «غیرفعال است»، مستقیماً به صفحه اصلی هدایت می‌شود
     return <Navigate to="/" replace />;
   }
 

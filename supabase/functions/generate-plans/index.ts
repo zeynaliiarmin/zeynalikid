@@ -1,5 +1,5 @@
 // supabase/functions/generate-plans/index.ts
-// «برنامه‌ها» — مسیر ادمین: احراز نشست + محدودیت نرخ، سپس هستهٔ مشترک (plansCore) تولید/ذخیرهٔ برنامه‌ها.
+// «برنامه‌ها» — مسیر ادمین: احراز نشست + محدودیت نرخ، سپس هسته مشترک (plansCore) تولید/ذخیره برنامه‌ها.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, getOrigin } from "../_shared/cors.ts";
@@ -19,7 +19,7 @@ serve(async (req) => {
   if (!rl.ok) return err("تعداد تولید برنامه بیش از حد مجاز است؛ کمی بعد تلاش کنید", origin, 429);
 
   let body: any;
-  try { body = await req.json(); } catch { return err("بدنهٔ نامعتبر", origin, 400); }
+  try { body = await req.json(); } catch { return err("بدنه نامعتبر", origin, 400); }
 
   const sessionToken = String(body?.sessionToken || "").trim() || extractSessionToken(req, body);
   if (!sessionToken) return err("نشست وارد نشده است.", origin, 401);
@@ -27,7 +27,7 @@ serve(async (req) => {
   if (!sessionResult.ok) return err("نشست نامعتبر یا منقضی است.", origin, 401);
 
   const submissionId = String(body?.submissionId ?? "").trim();
-  if (!submissionId) return err("شناسهٔ رکورد الزامی است", origin, 400);
+  if (!submissionId) return err("شناسه رکورد الزامی است", origin, 400);
   const force = body?.force === true;
 
   try {

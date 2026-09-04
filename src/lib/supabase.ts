@@ -547,10 +547,10 @@ export interface ReviewItem {
   comment?: string;
   status: 'pending' | 'approved' | 'rejected';
   placements?: string[]; // تنها مقادیر مجاز در UI/API: course_detail و product_detail
-  course_ids?: string[]; // شناسهٔ دوره‌ها یا محصولاتی که نظر در جزئیات آن‌ها نمایش داده می‌شود
-  phone?: string; // پنل: مقدار کامل کاربر؛ عمومی: فقط خروجی ماسک‌شدهٔ امن public_phone
-  phone_country?: string; // پیش‌شمارهٔ کشور، مانند +98
-  public_phone?: string; // ستون تولیدشدهٔ دیتابیس؛ هرگز شامل شمارهٔ کامل نیست
+  course_ids?: string[]; // شناسه دوره‌ها یا محصولاتی که نظر در جزئیات آن‌ها نمایش داده می‌شود
+  phone?: string; // پنل: مقدار کامل کاربر؛ عمومی: فقط خروجی ماسک‌شده امن public_phone
+  phone_country?: string; // پیش‌شماره کشور، مانند +98
+  public_phone?: string; // ستون تولیدشده دیتابیس؛ هرگز شامل شماره کامل نیست
   created_at: string;
 }
 

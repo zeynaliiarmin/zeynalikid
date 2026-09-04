@@ -81,8 +81,8 @@ function HomeIcon(){
 export default function NotFoundPage(){
  const {T}=useAppContext();
  const themeId=String(T.id||'wellness');
- // حالت تاریک عمومی از «پالت تاریک مشترک» می‌آید؛ شناسهٔ تم به شکل `<design>-dark` است، پس
- // صرفاً بررسی `themeId==='dark'` باعث می‌شد صفحهٔ ۴۰۴ همیشه روشن بماند.
+ // حالت تاریک عمومی از «پالت تاریک مشترک» می‌آید؛ شناسه تم به شکل `<design>-dark` است، پس
+ // صرفاً بررسی `themeId==='dark'` باعث می‌شد صفحه ۴۰۴ همیشه روشن بماند.
  const dark=/(-|^)dark$/.test(themeId);
  const surface=String(T.pop||T.card||(dark?'#111827':'#ffffff'));
  const text=String(T.txt||(dark?'#f1f5f9':'#312E55'));
@@ -111,7 +111,7 @@ export default function NotFoundPage(){
   '--nf-four-stroke':String(T.brd||(dark?'#475569':'#CBD5E1')),
   '--nf-donut-inner':dark?'rgba(255,255,255,.24)':'rgba(0,0,0,.18)',
   '--nf-donut-outer':dark?'rgba(255,255,255,.28)':'rgba(255,255,255,.45)',
-  // رنگ متن دکمهٔ اصلی — در حالت تاریک تیره می‌شود تا روی گرادیان روشن خوانا بماند
+  // رنگ متن دکمه اصلی — در حالت تاریک تیره می‌شود تا روی گرادیان روشن خوانا بماند
   '--nf-on-accent':String((T as any).btnfg||(dark?'#12101C':'#ffffff')),
  };
  return <div className="zk-nf-page" dir="rtl" style={vars} data-nf-theme={themeId} data-nf-mode={dark?'dark':'light'}>

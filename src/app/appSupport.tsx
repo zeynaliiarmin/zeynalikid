@@ -401,7 +401,7 @@ const defaultSettings:Any={
  // اصلاح ۲: سوالات متداول مرتبط با هر تب دوره (قابل مدیریت از پنل)
  courseTabFaqs:[
   {id:'cg1',tab:'growth',question:'چه سنینی برای افزایش رشد قد مناسب است؟',answer:'صفحات رشد معمولاً تا سنین بلوغ باز هستند. با روش TC و برنامه اختصاصی مکمل/تغذیه، حتی نزدیک به بسته شدن صفحات رشد نیز می‌توان پتانسیل باقیمانده را فعال کرد. بهترین نتیجه با شروع زودتر حاصل می‌شود.'},
-  {id:'cg2',tab:'growth',question:'آیا مصرف مکمل برای رشد قد کافی است؟',answer:'خیر؛ مکمل فقط بخشی از مسیر است. خواب کافی، تغذیه متعادل، فعالیت بدنی مناسب و پشتیبانی مرحله‌ای همراه با برنامه اختصاصی، مسیر نتیجهٔ پایدار را هموار می‌کند.'},
+  {id:'cg2',tab:'growth',question:'آیا مصرف مکمل برای رشد قد کافی است؟',answer:'خیر؛ مکمل فقط بخشی از مسیر است. خواب کافی، تغذیه متعادل، فعالیت بدنی مناسب و پشتیبانی مرحله‌ای همراه با برنامه اختصاصی، مسیر نتیجه پایدار را هموار می‌کند.'},
   {id:'ca1',tab:'appetite',question:'چرا فرزندم بدغذا شده است؟',answer:'بدغذایی اغلب ریشه در طبع و مزاج، کمبود ریزمغذی‌ها یا الگوهای نادرست غذایی دارد. با تحلیل عکس زبان و شرح وضعیت، ریشه اصلی شناسایی و برنامه اصلاحی تنظیم می‌شود.'},
   {id:'ca2',tab:'appetite',question:'آیا شربت اشتها راه‌حل است؟',answer:'شربت‌های اشتها اغلب فقط به‌صورت موقت اشتها را تحریک می‌کنند. در روش TC با اصلاح طبع و مزاج، سیگنال گرسنگی به‌صورت طبیعی بازمی‌گردد.'},
   {id:'ci1',tab:'intelligence',question:'چه مواد مغذی برای تمرکز کودک مهم است؟',answer:'آهن، زینک، امگا ۳ و ویتامین‌های گروه B از مهم‌ترین مواد مغذی برای عملکرد مغز، حافظه و تمرکز هستند. برنامه TC بر اساس شرایط کودک، ترکیب دقیق این مواد را مشخص می‌کند.'},
@@ -498,7 +498,7 @@ const defaultSettings:Any={
    {id:'ht9',title:'صفحه رشد یه درِ کشویی‌ست که یه روز برای همیشه بسته میشه.',description:'قبل از بسته شدنش، سوخت لازم رو بهش برسون.',order:9},
    {id:'ht10',title:'مکمل رشد قد، وقتی با طبع فرزندت هماهنگ باشه، بهتر جواب می‌ده.',description:'ما با تحلیل تخصصی عکس زبان، مسیر جذب و رشد رو بهتر می‌شناسیم.',order:10},
    {id:'ht11',title:'عکس زبون بچهات، نقشه گنج سلامتی و قد بلندشه.',description:'ما به جای حدس زدن، نقشه می‌خونیم. ریشه کندرشدی رو دقیقاً همونجا پیدا می‌کنیم.',order:11},
-   {id:'ht12',title:'نسخهٔ منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.',description:'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.',order:12},
+   {id:'ht12',title:'نسخه منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.',description:'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.',order:12},
    {id:'ht13',title:'تجربه‌های والدین می‌تواند به انتخاب آگاهانه‌تر مسیر رشد کمک کند.',description:'بازخوردها را ببینید و سپس متناسب با شرایط فرزندتان تصمیم بگیرید.',order:13},
    {id:'ht14',title:'هر هفته که بگذره و اقدام نکنی، یه قدم از هم‌سن و سالاش عقب‌تر میفته.',description:'کمبود وزن موندگار میشه و قد از دست میره. تصمیم سخت امروز، حسرت آسون فردا رو حذف می‌کنه.',order:14},
    {id:'ht15',title:'بچت قهرمان قدی میشه چون بدنش از درون ترمیم میشه.',description:'تفاوت بین یه کودک خسته و کم‌قد، با یه کودک پرانرژی و بلندقامت، ریشه‌اش تو ترمیم سلولیه.',order:15},
@@ -543,7 +543,7 @@ const defaultSettings:Any={
    {id:'m15',title:'فرزندت قرار نیست نابغه به دنیا بیاد؛ می‌تونه نابغه تغذیه بشه.',description:'پتانسیل واقعی مغز، با تغذیه بیدار میشه.',order:15},
    {id:'m16',title:'ذهن آروم، حافظه قوی و یادگیری سریع، محصول یه صبحانه مهندسی‌شده‌ست.',description:'ما مهندس تغذیه مغزیم.',order:16},
    {id:'m17',title:'همراهی ریشه‌ای، نه مسکن موقت.',description:'ما با تحلیل زبان‌شناسی و اصلاح طبع، تمرکز رو ریشه‌ای دنبال می‌کنیم؛ به‌جای راه‌حل‌های موقت.',order:17},
-   {id:'m18',title:'نسخهٔ منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.',description:'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. حتی برای تقویت هوش.',order:18}
+   {id:'m18',title:'نسخه منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.',description:'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. حتی برای تقویت هوش.',order:18}
   ]
  },
  // اصلاح ۴۴-۴۵: جملات اعتمادساز صفحات موفقیت (قابل مدیریت از پنل)
@@ -592,7 +592,7 @@ const defaultSettings:Any={
  courseSuccessSentences:[
   "ثبت‌نامت یعنی یک قدم جلوتر از هزاران مادری که هنوز مردد هستن. امروز تصمیم درست رو گرفتی. ",
   "از این لحظه، پشتیبانی ما ۲۴ ساعته کنار تو و فرزندته. دیگه تنها نیستی.",
-  "این پکیج دقیقاً با طبع و ذائقهٔ بچهٔ تو ساخته میشه. چیزی که می‌رسه، مختص خودشه.",
+  "این پکیج دقیقاً با طبع و ذائقه بچه تو ساخته میشه. چیزی که می‌رسه، مختص خودشه.",
   "بهمون اعتماد کردی؟ حالا نوبت ماست که جبران کنیم. نتیجه رو به چشم خودت می‌بینی.",
   "فردا صبح که بیدار شی، کارشناس‌های ما برای شروع همراهی با تو تماس می‌گیرن.",
   "عکس زبانش رو فرستادی؟ یعنی همراهی ریشه‌ای از همین امروز شروع می‌شه و مسیر اشتها روشن‌تر می‌شه.",
@@ -604,7 +604,7 @@ const defaultSettings:Any={
   "توی این دوره، بهت یاد می‌دیم چطور برای همیشه بی‌اشتهایی رو شکست بدی. ما ماهی نمی‌دیم، ماهیگیری یادت می‌دیم.",
   "همراهی دقیق ما با پایبندی به برنامه، بهترین شرایط نتیجه‌گیری رو می‌سازه. ما متعهدیم.",
   "از امروز، دیگه مجبور نیستی با گریه و التماس به بچه‌ات غذا بدی. روش ما متفاوته.",
-  "روی دکمهٔ ثبت کلیک کردی و امروز یه مادر نگران بودی؛ از فردا یه مادر آگاه و مطمئن. به مسیر TC خوش اومدی. "
+  "روی دکمه ثبت کلیک کردی و امروز یه مادر نگران بودی؛ از فردا یه مادر آگاه و مطمئن. به مسیر TC خوش اومدی. "
  ],
  courseSuccessSentencesEn: [
   "Your registration means one step ahead of thousands of still-hesitant mothers. You made the right decision today.",
@@ -856,7 +856,7 @@ export function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onS
   const [openAcc, setOpenAcc] = useState<string | null>(null);
   const toggleAcc = (key: string) => setOpenAcc(openAcc === key ? null : key);
 
-  // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، لینک فوتر هم نمایش داده نشود
+  // Phase 8: اگر صفحه مجوزها غیرفعال باشد، لینک فوتر هم نمایش داده نشود
   const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
   const navLinks = [
     { key: 'about', label: lang==='en'?'About Us':'درباره ما', view: 'about' },
@@ -943,7 +943,7 @@ const knownKeys=['phone','whatsapp','telegram','instagram','rubika','bale'];
 return <div style={glass?{marginTop:12,padding:14,background:'rgba(15,23,42,.45)',border:'1px solid rgba(255,255,255,.16)',borderRadius:16,backdropFilter:'blur(14px) saturate(140%)',WebkitBackdropFilter:'blur(14px) saturate(140%)'}:{marginTop:12,padding:14,background:T.soft,border:`1px solid ${T.brd}`,borderRadius:16}}><div style={{fontWeight:700,color:glass?'#fff':T.ttl,marginBottom:10,fontSize:13,display:'flex',gap:7,alignItems:'center'}}><PlatformIcon type="phone" color={glass?'#fff':T.acc} size={16}/>{t(cfg,lang,'contactUs','ارتباط با ما')}</div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:8}}>{items.map((it:any,i:number)=>{
   const color=it.color||icons[it.key]?.color||T.acc;
   const isDark=/(?:^|-)dark$/.test(String(T.id||''));
-  // رنگ رسمی واتساپ در زمینهٔ روشن کنتراست کافی ندارد؛ سبزِ تیرهٔ هم‌خانواده را برای متن نگه می‌داریم.
+  // رنگ رسمی واتساپ در زمینه روشن کنتراست کافی ندارد؛ سبزِ تیره هم‌خانواده را برای متن نگه می‌داریم.
   const displayColor=it.key==='whatsapp'?(isDark?'#6EE7B7':'#006B35'):isDark?`color-mix(in srgb, ${color} 55%, white)`:`color-mix(in srgb, ${color} 58%, #0F172A)`;
   const isKnown=knownKeys.includes(it.key);
   return <a key={i} href={it.url} target={it.url?.startsWith('http')?'_blank':undefined} rel="noreferrer" style={glass?{textDecoration:'none',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(255,255,255,.16)',background:'rgba(255,255,255,.07)',color:'#fff',fontWeight:700,fontSize:12.5,display:'flex',alignItems:'center',gap:8,overflow:'hidden',minHeight:44,transition:'all .15s ease'}:{textDecoration:'none',padding:'10px 12px',borderRadius:12,border:`1px solid ${displayColor}66`,background:`color-mix(in srgb, ${color} 12%, transparent)`,color:displayColor,fontWeight:700,fontSize:12.5,display:'flex',alignItems:'center',gap:8,overflow:'hidden',minHeight:44,transition:'all .15s ease'}}>

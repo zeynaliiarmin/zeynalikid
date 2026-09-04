@@ -133,7 +133,7 @@ export default function ChildInfoPage(){
   {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={onNotesChange} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
  </>}
 
- {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — پیش از ادامهٔ فرایند */}
+ {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — پیش از ادامه فرایند */}
  <TonguePhotoUploader app={app} tonguePhotos={tonguePhotos} onChange={(list:string[])=>setCourse((c:any)=>({...c,tonguePhotos:list}))} tongueErr={errs.tonguePhoto}/>
 
  <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="با استفاده از این اطلاعات برای ارائه و پیگیری دوره درخواستی موافقم." textEn="I consent to using this information to provide and follow up the requested course." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>{try{sessionStorage.setItem('zk_privacy_return_to',location.pathname||'/child-info')}catch{};setView('privacy')}}/>
@@ -151,7 +151,7 @@ function TonguePhotoUploader({app,tonguePhotos,onChange,tongueErr}:{app:any,tong
  const [err,setErr]=useState('');
  const [cameraModalOpen,setCameraModalOpen]=useState(false);
  const camPushedRef=useRef(false);
- // باز کردن دوربین هوشمند: یک entry در تاریخچه می‌گذاریم تا دکمهٔ بک گوشی فقط دوربین را ببندد (نه رفتن به صفحهٔ دوره)
+ // باز کردن دوربین هوشمند: یک entry در تاریخچه می‌گذاریم تا دکمه بک گوشی فقط دوربین را ببندد (نه رفتن به صفحه دوره)
  const openCam=()=>{
   if(!camPushedRef.current){try{window.history.pushState({zkSmartCam:true},'')}catch{}camPushedRef.current=true;}
   openCam();

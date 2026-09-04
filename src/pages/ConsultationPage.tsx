@@ -173,11 +173,11 @@ export default function ConsultationPage(){
 
   // Exit guard
   // پس از ثبت موفق، فرم دیگر «ویرایش ذخیره‌نشده» نیست؛ بنابراین رفرش/رفتن به دوره‌ها هشدار نادرست نمی‌دهد.
-  // در حالت «پنل کاربر» وقتی کاربر وارد شده باشد، نام و شمارهٔ تماس از حساب او برداشته می‌شود
+  // در حالت «پنل کاربر» وقتی کاربر وارد شده باشد، نام و شماره تماس از حساب او برداشته می‌شود
   // و در فرم نمایش داده/قابل ویرایش نیست (اما در رکورد ذخیره می‌شود تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست).
   const portalSession = String((cfg as any)?.entryMode || 'track') === 'user' ? getUserSession() : null;
   // getUserSession() هر بار شیء تازه می‌سازد؛ پس فقط یک کلید رشته‌ای به افکت داده می‌شود و مقداردهی
-  // تنها وقتی انجام می‌شود که واقعاً چیزی فرق داشته باشد — وگرنه صفحه در حلقهٔ رندر می‌افتد.
+  // تنها وقتی انجام می‌شود که واقعاً چیزی فرق داشته باشد — وگرنه صفحه در حلقه رندر می‌افتد.
   const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';
   useEffect(() => {
     if (!portalSessionKey) return;
@@ -407,7 +407,7 @@ export default function ConsultationPage(){
         try {
           const rReason = sessionStorage.getItem('zk_referral_reconsult_reason');
           if (rReason && rReason.trim()) {
-            consultNotes = consultNotes ? `${consultNotes}\n[دلیل درخواست مشاورهٔ مجدد] ${rReason.trim()}` : `[دلیل درخواست مشاورهٔ مجدد] ${rReason.trim()}`;
+            consultNotes = consultNotes ? `${consultNotes}\n[دلیل درخواست مشاوره مجدد] ${rReason.trim()}` : `[دلیل درخواست مشاوره مجدد] ${rReason.trim()}`;
             try { sessionStorage.removeItem('zk_referral_reconsult_reason'); } catch {}
           }
         } catch {}
@@ -424,7 +424,7 @@ export default function ConsultationPage(){
           advisor: referralConsultant ? { id: referralConsultant.id, name: referralConsultant.name, nameEn: referralConsultant.nameEn, referralCode: referralConsultant.referralCode } : null
         };
 
-        // نسخهٔ محلیِ کامل را پیش از ارسال شبکه ذخیره می‌کنیم؛ هیچ فرم تکمیل‌شده‌ای با خطای اتصال از دست نمی‌رود.
+        // نسخه محلیِ کامل را پیش از ارسال شبکه ذخیره می‌کنیم؛ هیچ فرم تکمیل‌شده‌ای با خطای اتصال از دست نمی‌رود.
         const clientId=entry.id;
         const localSubs = getLS(SK.subs, []);
         if (!localSubs.some((x: any) => String(x.id) === String(entry.id))) setLS(SK.subs, [...localSubs, entry]);
@@ -599,7 +599,7 @@ export default function ConsultationPage(){
 
         {/* Parent info */}
         <div style={S.sec}><MiniIcon type="user" T={T} />{publicText('parentInfo', 'اطلاعات والد / سرپرست')}</div>
-        {portalSession && <div style={{ marginBottom: 13, fontSize: 12.5, color: T.mut, fontWeight: 700, lineHeight: 1.9 }}>{lang === 'en' ? `Name and contact number are taken from your account (${portalSession.fullName}).` : `نام و شمارهٔ تماس از حساب کاربری شما (${portalSession.fullName}) استفاده می‌شود.`}</div>}
+        {portalSession && <div style={{ marginBottom: 13, fontSize: 12.5, color: T.mut, fontWeight: 700, lineHeight: 1.9 }}>{lang === 'en' ? `Name and contact number are taken from your account (${portalSession.fullName}).` : `نام و شماره تماس از حساب کاربری شما (${portalSession.fullName}) استفاده می‌شود.`}</div>}
         {!portalSession && cfg.formFields?.parentName?.show !== false && <Field label={cfg.formFields.parentName.label} value={fd.pName} onChange={(v: string) => setFd({ ...fd, pName: v })} ph={cfg.formFields.parentName.placeholder} />}
         {!portalSession && cfg.formFields?.parentPhone?.show !== false && <div style={{ marginBottom: 13 }}>
           <label style={S.lbl}>{trVal(cfg.formFields.parentPhone.label)} <span style={{ color: T.err }}>*</span></label>

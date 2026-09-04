@@ -22,7 +22,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   views?: number; viewsOf?: (item: EduItem) => number;
 }) {
   const en = lang === 'en';
-  // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
+  // مدت‌زمان خودکار: مقاله = مطالعه متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعه توضیحات
   const mediaSeconds = useMediaDuration(item as any);
   const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
@@ -44,10 +44,12 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   return createPortal(
     <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
       <div className="zke-modal-win">
-        <div className="zke-modal-head">
+        <div className="zke-modal-head zk-public-title-row" dir={en ? 'ltr' : 'rtl'}>
           <PublicBackButton lang={en ? 'en' : 'fa'} onBack={onClose} testId="public-education-detail-back" />
-          <h2>{en ? item.titleEn : item.title}</h2>
-          <span style={{ color: 'var(--zk-primary, #0F766E)', display: 'inline-flex' }} title={typeLabel(item.type, lang)}><Icon size={17} /></span>
+          <div className="zke-modal-heading">
+            <h2>{en ? item.titleEn : item.title}</h2>
+            <span className="zke-modal-type-icon" style={{ color: 'var(--zk-primary, #0F766E)' }} title={typeLabel(item.type, lang)}><Icon size={17} /></span>
+          </div>
         </div>
 
         <div className="zke-article">
@@ -86,7 +88,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
 
           <div className="zke-cta">
             <b>{en ? 'Need a personalized path for your child?' : 'برای فرزندتان مسیر شخصی‌سازی‌شده لازم است؟'}</b>
-            <p>{en ? 'Public content is for awareness only. A private consultation reviews your child’s condition first.' : 'محتوای عمومی فقط برای آگاهی است؛ در مشاورهٔ خصوصی ابتدا شرایط فرزند شما بررسی می‌شود و سپس برنامهٔ مخصوص همان کودک پیشنهاد می‌شود.'}</p>
+            <p>{en ? 'Public content is for awareness only. A private consultation reviews your child’s condition first.' : 'محتوای عمومی فقط برای آگاهی است؛ در مشاوره خصوصی ابتدا شرایط فرزند شما بررسی می‌شود و سپس برنامه مخصوص همان کودک پیشنهاد می‌شود.'}</p>
             <button type="button" className="zke-pillbtn" onClick={onConsult}>{en ? 'Free consultation request' : 'درخواست مشاوره'}</button>
           </div>
 

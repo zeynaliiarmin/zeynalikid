@@ -1361,7 +1361,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
                       🎲 رندوم
                     </button>
                   </div>
-                  <small style={{ display: 'block', color: T.mut, fontSize: 10.5, marginTop: 4 }}>برای ساخت شمارهٔ رندوم همان کشور، دکمهٔ «رندوم» را بزنید؛ هر بار متفاوت ساخته می‌شود.</small>
+                  <small style={{ display: 'block', color: T.mut, fontSize: 10.5, marginTop: 4 }}>برای ساخت شماره رندوم همان کشور، دکمه «رندوم» را بزنید؛ هر بار متفاوت ساخته می‌شود.</small>
                 </div>
               </div>
 

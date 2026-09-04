@@ -97,7 +97,7 @@ export default function ProductCard({
         (e.currentTarget as HTMLElement).style.boxShadow = 'var(--zk-shadow-light)';
       }}
     >
-      {/* عکس صفحهٔ محصولات و عکس مستقل بخش منتخب خانه، هرکدام با کادر جداگانه */}
+      {/* عکس صفحه محصولات و عکس مستقل بخش منتخب خانه، هرکدام با کادر جداگانه */}
       <div
         data-product-image-frame
         style={{

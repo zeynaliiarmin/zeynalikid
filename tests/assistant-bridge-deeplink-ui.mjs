@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import puppeteer from 'puppeteer';
-// پل زندهٔ دستیار: لینک دقیق ?open=<id> باید همان آیتم را باز/برجسته کند و پارامتر را پاک کند.
+// پل زنده دستیار: لینک دقیق ?open=<id> باید همان آیتم را باز/برجسته کند و پارامتر را پاک کند.
 const base=process.env.TEST_BASE_URL||'http://127.0.0.1:4173';
 const settings={settings:{version:2,faqItems:[{id:'faq9',question:'سؤال پل آزمایشی؟',answer:'پاسخ پل آزمایشی برای باز شدن خودکار.'},{id:'faq8',question:'سؤال دوم؟',answer:'پاسخ دوم.'}],faqItemsEn:[],licenses:[{id:'licZ',title:'مجوز آزمایشی',description:'آزمایش فوکوس'}]}};
 const browser=await puppeteer.launch({headless:true,executablePath:process.env.PUPPETEER_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});

@@ -69,7 +69,7 @@ const en: Record<string, string> = {
   "ما با تحلیل تخصصی عکس زبان، مسیر جذب و رشد رو بهتر می‌شناسیم.": "With a tongue photo, we unlock absorption for your child's stature.",
   "عکس زبون بچهات، نقشه گنج سلامتی و قد بلندشه.": "Your child's tongue photo is the treasure map of their health and tall stature.",
   "ما به جای حدس زدن، نقشه می‌خونیم. ریشه کندرشدی رو دقیقاً همونجا پیدا می‌کنیم.": "Instead of guessing, we read the map. We find the root of slow growth exactly there.",
-  "نسخهٔ منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.": "A unique prescription for your child's unique growth.",
+  "نسخه منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.": "A unique prescription for your child's unique growth.",
   "هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.": "No two prescriptions at Zeynalikid are alike, because no two children are alike.",
   "تجربه‌های والدین می‌تواند به انتخاب آگاهانه‌تر مسیر رشد کمک کند.": "Published parent experiences can support an informed choice.",
   "بازخوردها را ببینید و سپس متناسب با شرایط فرزندتان تصمیم بگیرید.": "See the satisfaction stats, hear the voice messages, see the height changes - then decide.",
@@ -150,7 +150,7 @@ const en: Record<string, string> = {
   "ذهن آروم، حافظه قوی و یادگیری سریع، محصول یه صبحانه مهندسی‌شده‌ست.": "A calm mind, strong memory and fast learning are the product of an engineered breakfast.",
   "ما مهندس تغذیه مغزیم.": "We are brain-nutrition engineers.",
   "ما با تحلیل زبان‌شناسی و اصلاح طبع، تمرکز رو ریشه‌ای دنبال می‌کنیم؛ به‌جای راه‌حل‌های موقت.": "With tongue-diagnosis science and constitution correction, we solve focus problems from the root - not with chemical drugs.",
-  "نسخهٔ منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.": "A unique prescription for your child's unique mind.",
+  "نسخه منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.": "A unique prescription for your child's unique mind.",
   "هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. حتی برای تقویت هوش.": "No two prescriptions at Zeynalikid are alike - even for boosting intelligence.",
   // اصلاح ۸: Our Services section on the home page
   ourServicesTitle: "Our Services",

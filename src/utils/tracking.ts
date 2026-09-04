@@ -8,7 +8,7 @@
  * @returns کد پیگیری با فرمت ZK[عدد]
  */
 // یادداشت: «۶۳۹» دیگر در فیلد کد پیگیری معنایی ندارد؛ درِ مخفی پنل مدیریت
-// به فیلد شمارهٔ تماس منتقل شده است، پس کدها می‌توانند با هر رقمی شروع شوند.
+// به فیلد شماره تماس منتقل شده است، پس کدها می‌توانند با هر رقمی شروع شوند.
 import { TRACKING_PREFIX } from '../config/project';
 
 export const generateTrackingCode = (digitCount: number = 5, prefix: string = TRACKING_PREFIX): string => {

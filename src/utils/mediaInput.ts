@@ -112,7 +112,7 @@ export function extractImageLinkList(value: unknown): string[] {
   let m;
   while ((m = imgRe.exec(normalized))) push(m[1]);
   // ۲) لینک‌های مستقیم http(s) — روی پرانتز/براکت/کاما/ویرگول هم قطع می‌شود تا
-  //    متن‌های بهم‌ریختهٔ کپی‌شده (مثل `](https://…)` یا `…jpeg)،(`) درست جدا شوند.
+  //    متن‌های بهم‌ریخته کپی‌شده (مثل `](https://…)` یا `…jpeg)،(`) درست جدا شوند.
   const urlRe = /https?:\/\/[^\s"'<>()\[\],،؛]+/gi;
   while ((m = urlRe.exec(normalized))) push(m[0]);
   return out;

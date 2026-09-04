@@ -65,7 +65,7 @@ function usageHtml(u: PdfUsage | undefined): string {
   if (!rows.length && !instr) return '';
   const inner = rows.map((r) => `<div style="margin-bottom:7px"><div style="font-weight:900;font-size:13.5px">${esc(r.name)}</div>${(r.lines || []).map((ln) => `<div style="font-size:13px;padding-inline-start:10px">${esc(ln)}</div>`).join('')}</div>`).join('')
     + (instr ? `<div style="font-size:13px;white-space:pre-wrap;background:#f8f7ff;border:1px solid #ede9fe;border-radius:10px;padding:8px 10px;margin-top:4px">${esc(instr)}</div>` : '');
-  return SEC_OPEN('💊', 'طریقهٔ مصرف محصولات') + `<div style="padding-top:8px">${inner}</div></div>`;
+  return SEC_OPEN('💊', 'طریقه مصرف محصولات') + `<div style="padding-top:8px">${inner}</div></div>`;
 }
 
 function reportsHtml(r: PdfReports | undefined): string {
@@ -73,7 +73,7 @@ function reportsHtml(r: PdfReports | undefined): string {
   const fu = (r.followUps || []).filter(Boolean);
   const co = (r.corrective || []).filter((x) => x && String(x.value || '').trim());
   if (!fu.length && !co.length) return '';
-  const inner = (fu.length ? fu.map((f) => `<div style="font-size:13px;margin-bottom:3px">• مرحلهٔ ${f.step}: <b>${esc(f.state)}</b></div>`).join('') : '')
+  const inner = (fu.length ? fu.map((f) => `<div style="font-size:13px;margin-bottom:3px">• مرحله ${f.step}: <b>${esc(f.state)}</b></div>`).join('') : '')
     + (co.length ? `<div style="margin-top:6px">${tableHtml(co)}</div>` : '');
   return SEC_OPEN('📊', 'گزارش‌ها و پیگیری‌ها') + `<div style="padding-top:8px">${inner}</div></div>`;
 }

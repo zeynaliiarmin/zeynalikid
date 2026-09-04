@@ -160,7 +160,7 @@ export default function StickyAnchorNav({ items, topOffset = 0, maxWidth = 960, 
         >
           {items.map((item) => {
             const active = activeId === item.id;
-            // تب‌های زیاد (مثل ۵ تب صفحهٔ دوره) فشرده‌تر می‌شوند تا بدون اسکرول افقی دیده شوند
+            // تب‌های زیاد (مثل ۵ تب صفحه دوره) فشرده‌تر می‌شوند تا بدون اسکرول افقی دیده شوند
             const compact = items.length >= 5;
             return (
               <button

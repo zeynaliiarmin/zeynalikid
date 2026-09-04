@@ -9,7 +9,7 @@
 //   - state محلی draft (کپی از editCfg) — تغییرات فقط همین کامپوننت را
 //     re-render می‌کند، نه کل AdminPanel
 //   - ذخیره با دکمه (setSave(draft))
-//   - همهٔ قابلیت‌ها و ویژگی‌های قبلی ۱:۱ حفظ شده‌اند
+//   - همه قابلیت‌ها و ویژگی‌های قبلی ۱:۱ حفظ شده‌اند
 // ============================================================================
 import React, { useState, useCallback } from 'react';
 import { getCountryFlag } from '../utils/phone';
@@ -39,7 +39,7 @@ const TextField = React.memo(function TextField({ label, defaultValue, onCommit,
 export default function SettingsManager(props: Props) {
   const { T, S, AdminBtn, Box, StableAdminInput, StableAdminTextarea, editCfg, setSave, fileToData, deleteStoredImage, PROFILE_PHOTO, TH, p2e, uid } = props;
 
-  // ── draft محلی: کپی عمیق از editCfg — فقط با دکمهٔ ذخیره به settings واقعی می‌رود ──
+  // ── draft محلی: کپی عمیق از editCfg — فقط با دکمه ذخیره به settings واقعی می‌رود ──
   const [draft, setDraft] = useState<any>(() => {
     try { return JSON.parse(JSON.stringify(editCfg || {})); } catch { return { ...(editCfg || {}) }; }
   });
@@ -148,7 +148,7 @@ export default function SettingsManager(props: Props) {
   );
 
   // ── تب ۲: پروژه اصلی (دوره‌ها + پنل) ──
-  // تمام تنظیمات محصولات و بخش «محصولات منتخب» فقط در صفحهٔ مستقل «محصولات» مدیریت می‌شوند.
+  // تمام تنظیمات محصولات و بخش «محصولات منتخب» فقط در صفحه مستقل «محصولات» مدیریت می‌شوند.
   const cleanupReceipts = async () => {
     if (!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.')) return;
     try {
@@ -217,7 +217,7 @@ export default function SettingsManager(props: Props) {
         <StableAdminTextarea style={{ ...S.ta, minHeight: 60 }} defaultValue={draft.courseInstructor?.desc || 'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onCommit={(v: string) => upNested(['courseInstructor', 'desc'], v)} placeholder="متن سمت و تخصص کارشناس..." rows={3} />
       </Box>
 
-      {/* تنظیمات محصولات به‌طور کامل به صفحهٔ «محصولات» پنل منتقل شده است. */}
+      {/* تنظیمات محصولات به‌طور کامل به صفحه «محصولات» پنل منتقل شده است. */}
 
       <Box title="مدیریت کدهای کشور">
         {(draft.countryCodes || []).map((c: any, i: number) => (
@@ -373,7 +373,7 @@ export default function SettingsManager(props: Props) {
   );
 }
 
-// ── تب «درباره ما» — همهٔ محتوای صفحه درباره ما + لیست مشاورین (کارت‌های باز/بسته) ──
+// ── تب «درباره ما» — همه محتوای صفحه درباره ما + لیست مشاورین (کارت‌های باز/بسته) ──
 function AboutSettings(props: any) {
   const { T, S, AdminBtn, Box, StableAdminInput, StableAdminTextarea, draft, up, upNested, fileToData, deleteStoredImage } = props;
   const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (

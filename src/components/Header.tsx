@@ -12,11 +12,11 @@ type Props = {
   setLang: (l: Lang) => void;
   adminAuthed?: boolean;
   onAdminQuestions?: () => void;
-  /** فقط در حالت «پنل کاربر» — دکمهٔ آدمک/خروج در هدر صفحات عمومی */
+  /** فقط در حالت «پنل کاربر» — دکمه آدمک/خروج در هدر صفحات عمومی */
   portalMode?: boolean;
-  /** کاربر همین حالا فرم مشاوره را موفقیت‌آمیز ثبت کرده (صفحهٔ تأیید) */
+  /** کاربر همین حالا فرم مشاوره را موفقیت‌آمیز ثبت کرده (صفحه تأیید) */
   consultationComplete?: boolean;
-  /** جایگاه دکمهٔ دستیار کنار آدمک در هدر */
+  /** جایگاه دکمه دستیار کنار آدمک در هدر */
   assistantSlot?: boolean;
 };
 
@@ -46,7 +46,7 @@ export default function Header({
   const onPortal = path === '/track' || path === '/portal';
   const inFlow = ['/form', '/consultation', '/child-info', '/course-shipping', '/course-payment', '/course-payment/verify'].includes(path);
   const consultDoneHere = (path === '/form' || path === '/consultation') && consultationComplete === true;
-  // دکمه فقط برای کاربرِ واردشده؛ در میانهٔ فرم ثبت دوره/مشاوره پنهان (حواس پرت نشود) — در صفحهٔ تأییدها نمایان
+  // دکمه فقط برای کاربرِ واردشده؛ در میانه فرم ثبت دوره/مشاوره پنهان (حواس پرت نشود) — در صفحه تأییدها نمایان
   const showUserBtn = portalMode === true && signedIn && (onPortal || !inFlow || consultDoneHere);
   const showLogout = showUserBtn && onPortal;
 
@@ -164,8 +164,8 @@ export default function Header({
 
       <a
         href="/"
-        aria-label={lang === 'fa' ? 'زینالیکید — صفحهٔ اصلی' : 'zeynalikid — home'}
-        title={lang === 'fa' ? 'رفتن به صفحهٔ اصلی' : 'Go to the home page'}
+        aria-label={lang === 'fa' ? 'زینالیکید — صفحه اصلی' : 'zeynalikid — home'}
+        title={lang === 'fa' ? 'رفتن به صفحه اصلی' : 'Go to the home page'}
         onClick={(e: React.MouseEvent) => { e.preventDefault(); try { navigate('/'); } catch { /* ignore */ } }}
         style={{
           position: 'absolute',

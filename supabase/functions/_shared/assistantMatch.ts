@@ -20,7 +20,7 @@ export interface KnowledgeLike {
 
 export function normalizeAssistantText(value:unknown):string{
   return String(value||'').toLowerCase()
-    .replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[ۀة]/g,'ه')
+    .replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u06C0ة]/g,'ه')
     .replace(/ؤ/g,'و').replace(/[إأ]/g,'ا').replace(/[َُِّْٰ]/g,'')
     .replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
     .replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))

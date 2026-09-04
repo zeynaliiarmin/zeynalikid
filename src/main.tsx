@@ -14,13 +14,13 @@ import AppLaunchSplash from './components/AppLaunchSplash';
 import ErrorBoundary from './components/ErrorBoundary';
 import { initErrorLogging } from './utils/errorLog';
 import './index.css';
-// keyframes/استایل دکمه‌های CTA و آکاردئون مشاوره — به‌صورت سراسری در همهٔ صفحات در دسترس
+// keyframes/استایل دکمه‌های CTA و آکاردئون مشاوره — به‌صورت سراسری در همه صفحات در دسترس
 import './components/zkCta.css';
-// گلسمورفیسم (کارت شیشه‌ای + لیبل شناور) برای ورود ادمین و صفحهٔ پیگیری
+// گلسمورفیسم (کارت شیشه‌ای + لیبل شناور) برای ورود ادمین و صفحه پیگیری
 import './components/zkGlass.css';
 import './public-color-modes.css';
 
-// ثبت سراسری خطاهای فرانت‌اند (بی‌صدا — تجربهٔ کاربر را مختل نمی‌کند)
+// ثبت سراسری خطاهای فرانت‌اند (بی‌صدا — تجربه کاربر را مختل نمی‌کند)
 initErrorLogging();
 
 // ─── PWA: dynamic manifest & service worker based on route ──────────────

@@ -2,7 +2,7 @@ import {writeFile} from 'node:fs/promises';
 import {renderNotFoundPage} from '../api/referral/notFoundPage.js';
 import {brand,supabaseUrl} from './ssg-config.mjs';
 
-// پالت تاریک اختصاصی هر دیزاین (همان مقادیر src/theme/warmPalettes.ts) — برای صفحهٔ ۴۰۴ ایستا.
+// پالت تاریک اختصاصی هر دیزاین (همان مقادیر src/theme/warmPalettes.ts) — برای صفحه ۴۰۴ ایستا.
 const DARK_DESIGN_PALETTES={
  wellness:{bg:'#0F1A19',bg2:'#122020',surface:'#121C1A',raised:'#182422',text:'#ECE9F2',muted:'#A6B8B2',accent:'#A855F7',onAccent:'#12101C',border:'rgba(255,255,255,.14)'},
  kidlearn:{bg:'#0F1A19',bg2:'#122020',surface:'#121C1A',raised:'#182422',text:'#F0EAE2',muted:'#A6B8B2',accent:'#F87171',onAccent:'#12101C',border:'rgba(255,255,255,.14)'},

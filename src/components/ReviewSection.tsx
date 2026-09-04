@@ -64,7 +64,7 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const scrollToForm = () => { formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
-  // باز کردن صفحهٔ «مشاهده همه» با push یک state در history تا دکمهٔ back/مرورگر فقط همین صفحه را ببندد
+  // باز کردن صفحه «مشاهده همه» با push یک state در history تا دکمه back/مرورگر فقط همین صفحه را ببندد
   const openShowAll = () => {
     if (!showAllPushedRef.current) {
       try { window.history.pushState({ zkReviewsPage: true }, ''); } catch {}
@@ -74,19 +74,19 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
     setShowAll(true);
   };
 
-  // بستن صفحهٔ «مشاهده همه» و برگشت به بخش نظراتِ همان دوره (نه فهرست دوره‌ها)
+  // بستن صفحه «مشاهده همه» و برگشت به بخش نظراتِ همان دوره (نه فهرست دوره‌ها)
   const closeShowAll = () => {
     showAllPushedRef.current = false;
     try { (window as any).__zkReviewsOverlayOpen = false; } catch {}
     setShowAll(false);
-    // برگشت به بخش نظراتِ دورهٔ انتخاب‌شده
+    // برگشت به بخش نظراتِ دوره انتخاب‌شده
     window.setTimeout(() => {
       const sec = document.getElementById('course-detail-reviews') || document.getElementById('product-detail-reviews');
       if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 60);
   };
 
-  // وقتی کاربر دکمهٔ back گوشی/مرورگر را روی صفحهٔ «مشاهده همه» بزند، فقط آن صفحه بسته شود
+  // وقتی کاربر دکمه back گوشی/مرورگر را روی صفحه «مشاهده همه» بزند، فقط آن صفحه بسته شود
   React.useEffect(() => {
     const onPop = () => {
       if (showAllPushedRef.current) {
@@ -300,17 +300,19 @@ export default function ReviewSection({ T, lang, courseId, placement = 'course_d
         </div>
       )}
 
-      {/* صفحهٔ جداگانهٔ «مشاهده همه نظرات» — تمام‌صفحه، با هدر و دکمه برگشت، نظرات به‌صورت عمودی */}
+      {/* صفحه جداگانه «مشاهده همه نظرات» — تمام‌صفحه، با هدر و دکمه برگشت، نظرات به‌صورت عمودی */}
       {showAll && createPortal(
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: T.card || '#fff', display: 'flex', flexDirection: 'column' }}>
-          {/* هدر صفحهٔ نظرات */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: T.card || '#fff', borderBottom: `1px solid ${T.brd}` }}>
-            <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAll} testId="public-reviews-back" />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <b style={{ display: 'block', fontSize: 16, fontWeight: 900, color: T.ttl }}>{isFa ? 'نظرات' : 'Reviews'}</b>
-              <span style={{ fontSize: 12, color:T.accText, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>
+          {/* هدر صفحه نظرات */}
+          <div dir={isFa ? 'rtl' : 'ltr'} style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 8, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: T.card || '#fff', borderBottom: `1px solid ${T.brd}` }}>
+            <div className="zk-public-title-row">
+              <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAll} testId="public-reviews-back" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b style={{ display: 'block', fontSize: 16, fontWeight: 900, color: T.ttl }}>{isFa ? 'نظرات' : 'Reviews'}</b>
+                <span style={{ fontSize: 12, color:T.accText, fontWeight: 800 }}>{reviews.length > 0 ? `★ ${avgRating} ${isFa ? 'از ۵' : '/ 5'}` : ''} • ({reviews.length} {isFa ? 'نظر' : 'reviews'})</span>
+              </div>
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.mut }}>
+            <label style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.mut }}>
               <span>{isFa ? 'مرتب‌سازی:' : 'Sort:'}</span>
               <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as 'newest' | 'oldest')} style={{ minHeight: 36, borderRadius: 9, border: `1px solid ${T.brd}`, background: T.inp || T.card, color: T.txt, padding: '0 9px', fontFamily: 'inherit' }}>
                 <option value="newest">{isFa ? 'جدیدترین' : 'Newest'}</option>

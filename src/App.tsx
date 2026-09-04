@@ -80,7 +80,7 @@ function App(){
  const designSystem = cfg.designSystem || configDefaultSettings.designSystem;
 
  // دیزاین انتخابی مالک برای صفحات عمومی (با اولویت انتخابِ خود کاربر در localStorage).
- // صفحهٔ /admin* عمداً به کلاسیک قفل می‌شود، اما پوستهٔ «ورود مدیریت» باید همان دیزاین
+ // صفحه /admin* عمداً به کلاسیک قفل می‌شود، اما پوسته «ورود مدیریت» باید همان دیزاین
  // انتخابی سایت را بگیرد — پس این تابع جدا از getDesignForPath نگه داشته شده است.
  const resolvePublicDesign = (): string => {
   const configured = normalizeDesignId(designSystem?.sections?.public?.design, 'wellness');
@@ -127,14 +127,14 @@ function App(){
  const publicDark=effectivePublicMode==='dark';
  const adminDark=personalColorMode==='dark';
  // حالت تاریک عمومی: هر دیزاین پالت تاریکِ اختصاصی خودش را دارد (wellness / kidlearn / blend / classic).
- // هندسه (شعاع، فاصله، سایه‌های ساختاری) از همان دیزاین می‌آید و رنگ‌ها از پالت تیرهٔ خودش؛
+ // هندسه (شعاع، فاصله، سایه‌های ساختاری) از همان دیزاین می‌آید و رنگ‌ها از پالت تیره خودش؛
  // منبع رنگ‌ها: src/theme/warmPalettes.ts (برگرفته از design-A-warm).
  const publicLightTheme = TH[activeDesign];
  const publicDarkTheme = TH[`${activeDesign}-dark`] || {...publicLightTheme,...PUBLIC_DARK_COLORS};
  const T_base = (isAdminRoute && !isAdminLoginView)
   ? (adminDark ? TH['admin-dark'] : TH['admin-light'])
   : (publicDark ? publicDarkTheme : publicLightTheme);
- // accText = رنگ متن‌های رنگی (لینک، برچسب، دکمهٔ نرم). در پالت تاریک یک درجه روشن‌تر از
+ // accText = رنگ متن‌های رنگی (لینک، برچسب، دکمه نرم). در پالت تاریک یک درجه روشن‌تر از
  // acc انتخاب می‌شود تا روی کارت‌های تیره هم-AA بماند؛ در حالت روشن همان acc است.
  const T = {...T_base, accText: T_base.accText || T_base.acc};
 
@@ -182,11 +182,11 @@ function App(){
  useEffect(()=>{if(view==='courses')setExpandedCourse(null)},[view]);
  // اصلاح ۷: همگام‌سازی زبان بین دو پروژه — گوش‌دادن به رویداد storage
  useEffect(()=>{const onStorage=(e:StorageEvent)=>{if(e.key==='zkid_lang'&&e.newValue){try{const v=JSON.parse(e.newValue);if(v==='fa'||v==='en')setLang(v)}catch{if(e.newValue==='fa'||e.newValue==='en')setLang(e.newValue as Lang)}}};window.addEventListener('storage',onStorage);return()=>window.removeEventListener('storage',onStorage)},[]);
- // اصلاح ۳۱: ثبت بازدید صفحه — بسیار سبک و بی‌صدا؛ در صورت خطا هیچ تأثیری روی تجربه کاربری ندارد و صفحهٔ پنل مدیریت (admin/admin-login) ثبت نمی‌شود.
+ // اصلاح ۳۱: ثبت بازدید صفحه — بسیار سبک و بی‌صدا؛ در صورت خطا هیچ تأثیری روی تجربه کاربری ندارد و صفحه پنل مدیریت (admin/admin-login) ثبت نمی‌شود.
  useEffect(()=>{ if(view==='admin'||view==='admin-login')return; try{trackPageView(location.pathname)}catch{} },[location.pathname]);
  useEffect(()=>{let alive=true; if(isSupabaseConfigured){fetchSettings().then(s=>{if(alive&&s)setCfg((current:DynamicRecord)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(e=>console.warn('Could not load settings from Supabase',e))} return()=>{alive=false}},[]);
  // اصلاح: تازه‌سازی دوره‌ای تنظیمات عمومی در صفحات عمومی تا تغییرات (سوالات متداول، محتوا و…)
- // بدون نیاز به رفرش/ذخیرهٔ دستی هر چند ساعت در سایت نمایان شود.
+ // بدون نیاز به رفرش/ذخیره دستی هر چند ساعت در سایت نمایان شود.
  useEffect(()=>{if(!isSupabaseConfigured||view==='admin'||view==='admin-login')return;let alive=true;const refresh=()=>{fetchSettings().then(s=>{if(alive&&s)setCfg((current:DynamicRecord)=>mergeSettings({...current,...s,products:s.products??current.products,showProductsSection:s.showProductsSection??current.showProductsSection,showProductsPage:s.showProductsPage??current.showProductsPage}))}).catch(()=>{})};const iv=setInterval(refresh,300000);return()=>{alive=false;clearInterval(iv)}},[view,isSupabaseConfigured]);
  // پس از ورود مدیر، تنظیمات کامل و احرازهویت‌شده دوباره بارگذاری می‌شود. تا پایان این مرحله
  // پنل قابل ویرایش نیست تا پاسخ عمومیِ فیلترشده هرگز محصولات یا تصاویر را با پیش‌فرض بازنویسی نکند.
@@ -218,7 +218,7 @@ function App(){
  const [referralConsultant,setReferralConsultant]=useState<DynamicRecord|null>(null);
  const [referralTarget,setReferralTarget]=useState<ParsedReferral|null>(null);
  const referralHandledRef = useRef<string|null>(null);
- // ─── جلوگیری از فلش صفحهٔ اصلی قبل از resolve شدن لینک ارجاع ───
+ // ─── جلوگیری از فلش صفحه اصلی قبل از resolve شدن لینک ارجاع ───
  const [referralReady,setReferralReady]=useState<boolean>(()=>{
    try {
      const path=(window.location.pathname||'').replace(/\/+$/,'').replace(/^\//,'').split('?')[0];
@@ -254,8 +254,8 @@ function App(){
    }
    setView('home');
    setConsultPulse(0);
-   // اسکرول نرم به دکمهٔ «ثبت درخواست مشاوره» ابتدای صفحهٔ هوم + تپش موقت آن
-   // (اگر از صفحهٔ دیگری آمده باشد، صبر می‌کنیم تا هوم رندر شود و دکمه پیدا شود)
+   // اسکرول نرم به دکمه «ثبت درخواست مشاوره» ابتدای صفحه هوم + تپش موقت آن
+   // (اگر از صفحه دیگری آمده باشد، صبر می‌کنیم تا هوم رندر شود و دکمه پیدا شود)
    const tryScroll=(attempt:number)=>{
      try {
        const el=document.getElementById('zk-home-consult-cta');
@@ -281,7 +281,7 @@ function App(){
      } catch {}
    }
  }, []);
- // ذخیرهٔ زودهنگام رشتهٔ خام ارجاع از URL (مستقل از لود شدن consultants)
+ // ذخیره زودهنگام رشته خام ارجاع از URL (مستقل از لود شدن consultants)
  // تا اگر کاربر قبل از لود کامل settings رفرش کند هم کد ارجاع قابل بازیابی باشد.
  useEffect(()=>{
    try {
@@ -314,7 +314,7 @@ function App(){
        if (storedRaw && referralHandledRef.current !== storedRaw) {
          let restored = parseReferralRaw(storedRaw, consultants, tabs);
          let restoredConsultant = restored ? findConsultantByCode(consultants, restored.code) : null;
-         // fallback: اگر پسوند تب/دوره قدیمی/ناشناخته بود، حداقل کد پایهٔ مشاور بازیابی شود
+         // fallback: اگر پسوند تب/دوره قدیمی/ناشناخته بود، حداقل کد پایه مشاور بازیابی شود
          if (!restoredConsultant && consultants.length > 0) {
            const rawLower = storedRaw.toLowerCase();
            restoredConsultant = consultants
@@ -482,7 +482,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  const headerOnFullViews=['admin-login','track']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
  const showHeader=view!=='admin'&&(!glassFullViews.includes(view)||headerOnFullViews.includes(view));
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
- // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحهٔ عمومی را نشان نده ───
+ // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحه عمومی را نشان نده ───
  if(!referralReady && view!=='admin' && view!=='admin-login'){
    return <div style={{minHeight:'100dvh',background:'var(--zk-bg, #FDF8F3)'}}/>;
  }
@@ -532,7 +532,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
             ? fillReferralText(cfg.referral.texts.popupTitle, { consultant: lang==='en' ? (referralConsultant.nameEn||referralConsultant.name) : referralConsultant.name })
             : (lang==='en'
             ? `You have already been advised by ${referralConsultant.nameEn||referralConsultant.name}. No need for a new consultation request.`
-            : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاورهٔ جدید نیست.`))}
+            : `شما قبلاً توسط ${referralConsultant.name} مشاوره شده‌اید؛ نیازی به درخواست مشاوره جدید نیست.`))}
         </h3>
         <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:16}}>
           <button type="button" onClick={primary} style={{minHeight:52,padding:'12px 16px',borderRadius:14,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:14.5,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>{mainLabel}</button>

@@ -2,7 +2,7 @@
 // ContentManager — بازطراحی کامل «محتوا و صفحات» (رفع پرش صفحه / fg)
 //
 // مشکلات قبلی که این بازطراحی حل می‌کند:
-//   1) هر keystroke کل settings را بازسازی می‌کرد → کل صفحهٔ محتوا (چند صد
+//   1) هر keystroke کل settings را بازسازی می‌کرد → کل صفحه محتوا (چند صد
 //      عنصر) هر بار re-render می‌شد → lag / fg
 //   2) فیلدهای defaultValue بدون state محلی هنگام re-render مقدارشان
 //      بازنویسی می‌شد → از دست رفتن متن / پرش فوکوس
@@ -29,7 +29,7 @@ interface Props {
 }
 
 // تبدیل محتوای قدیمی آموزش‌ها (متن/عکس) به «مقاله» — بدون از دست دادن هیچ داده‌ای:
-// متن → مقاله با همان body؛ عکس → مقاله که لینک تصویرش به آرایهٔ images منتقل می‌شود.
+// متن → مقاله با همان body؛ عکس → مقاله که لینک تصویرش به آرایه images منتقل می‌شود.
 function normalizeEduItem(item: any): any {
   const it = { ...item };
   if (it.type === 'text') {
@@ -62,7 +62,7 @@ const faToEn = (s: string) => String(s || '')
 export default function ContentManager(props: Props) {
   const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, cfg, setSave, fileToData, p2e, uid } = props;
 
-  // ── state محلی: کپی از cfg — فقط با دکمهٔ ذخیره به settings واقعی می‌رود ──
+  // ── state محلی: کپی از cfg — فقط با دکمه ذخیره به settings واقعی می‌رود ──
   const [customPlatforms, setCustomPlatforms] = useState<any[]>(() =>
     Array.isArray(cfg.customPlatforms) ? cfg.customPlatforms :
     (cfg.customPlatforms && typeof cfg.customPlatforms === 'object' ? Object.values(cfg.customPlatforms) : [])
@@ -82,7 +82,7 @@ export default function ContentManager(props: Props) {
   const latestDraftRef = useRef<any>(null);
   latestDraftRef.current = { cfg, customPlatforms, mediaItems, expItems, eduItems, expTabs, mediaCountryMode };
 
-  // ── ذخیرهٔ همهٔ بخش‌ها با یک دکمه ──
+  // ── ذخیره همه بخش‌ها با یک دکمه ──
   // StableAdminInput/StableAdminTextarea intentionally keep drafts in the DOM until commit.
   // Before taking the snapshot, synchronously flush every mounted draft field and the active
   // native field. The ref then guarantees that save uses the newest render, not a stale closure.
@@ -190,7 +190,7 @@ export default function ContentManager(props: Props) {
             {' '}{label}
           </label>
         ))}
-        <p style={{ fontSize: 11, color: T.mut, marginTop: 6 }}>تب «مقاله» شامل مقاله‌ها، متن‌ها و عکس‌های این بخش است (هماهنگ با صفحهٔ آموزش‌ها).</p>
+        <p style={{ fontSize: 11, color: T.mut, marginTop: 6 }}>تب «مقاله» شامل مقاله‌ها، متن‌ها و عکس‌های این بخش است (هماهنگ با صفحه آموزش‌ها).</p>
       </Box>
 
       {/* ═══════════ تشخیص VPN / کشور کاربر ═══════════ */}
@@ -206,7 +206,7 @@ export default function ContentManager(props: Props) {
         </p>
       </Box>
 
-      {/* ═══════════ ذخیرهٔ همه ═══════════ */}
+      {/* ═══════════ ذخیره همه ═══════════ */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           type="button"
@@ -225,7 +225,7 @@ export default function ContentManager(props: Props) {
 }
 
 // ============================================================================
-// MediaManager — محتوای چندرسانه‌ای (mediaItems) — state محلی، ذخیره با دکمهٔ سراسری
+// MediaManager — محتوای چندرسانه‌ای (mediaItems) — state محلی، ذخیره با دکمه سراسری
 // ============================================================================
 function MediaManager(props: any) {
   const { T, S, AdminBtn, Box, Field, StableAdminInput, StableAdminTextarea, items, setItems, uid, customPlatforms } = props;

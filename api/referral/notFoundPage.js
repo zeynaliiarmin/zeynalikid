@@ -137,7 +137,7 @@ function renderThemeBootstrap({supabaseUrl='',initialMode='auto'}={}){
 }
 
 /**
- * پالت تاریک اختصاصی دیزاین — صفحهٔ ۴۰۴ ایستا (اورژانسی) هم باید همان رنگ‌ها را بگیرد.
+ * پالت تاریک اختصاصی دیزاین — صفحه ۴۰۴ ایستا (اورژانسی) هم باید همان رنگ‌ها را بگیرد.
  * shape: { bg, bg2, surface, raised, text, muted, accent, onAccent, border }
  */
 function renderDarkDesignCss(darkDesign){

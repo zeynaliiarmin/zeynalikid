@@ -135,7 +135,9 @@ html[data-theme="dark"] .zke-pillbtn { color: #5EEAD4; }
 .zke-modal { position: fixed; inset: 0; z-index: 9000; background: rgba(15, 23, 42, .5); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 18px; animation: zkeFade .2s ease both; }
 .zke-modal-win { width: 100%; max-width: 760px; max-height: 90vh; overflow: auto; background: var(--zk-bg); border: 1px solid var(--zk-border); border-radius: 20px; box-shadow: 0 24px 60px rgba(15, 23, 42, .3); animation: zkeUp .22s var(--zk-ease, ease) both; }
 .zke-modal-head { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; background: color-mix(in srgb, var(--zk-bg) 90%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--zk-border); }
-.zke-modal-head h2 { margin: 0; flex: 1; font-size: 14.5px; font-weight: 800; color: var(--zk-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zke-modal-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.zke-modal-head h2 { margin: 0; flex: 1; min-width: 0; font-size: 14.5px; font-weight: 800; color: var(--zk-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zke-modal-type-icon { display: inline-flex; flex: 0 0 auto; }
 .zke-article { max-width: 680px; margin-inline: auto; padding: 20px 18px 30px; }
 .zke-article-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--zk-text-muted); margin-bottom: 14px; }
 .zke-article-meta span { display: inline-flex; align-items: center; gap: 5px; }

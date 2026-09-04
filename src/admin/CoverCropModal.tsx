@@ -1,13 +1,13 @@
 // تنظیم کادر کاور هایلایت (شبیه کراپ کاور اینستاگرام) — در یک مودال تمام‌صفحه
 //
-// مدل رندر: تصویر با ابعاد صریح (cover × zoom) + جابه‌جایی به‌اندازهٔ «سرریز».
-// این مدل کادر را همیشه پُر نگه می‌دارد و هرگز ناحیهٔ سیاه ایجاد نمی‌کند
+// مدل رندر: تصویر با ابعاد صریح (cover × zoom) + جابه‌جایی به‌اندازه «سرریز».
+// این مدل کادر را همیشه پُر نگه می‌دارد و هرگز ناحیه سیاه ایجاد نمی‌کند
 // (برخلاف object-fit:cover + scale که تصویر را پیش از transform کراپ می‌کرد).
 //
 // مقدار ذخیره‌شده: coverPosition = "cx% cy%" (0..100) + coverZoom = z (1..3).
 // دقیقاً همان چیزی که CoverImage (سایت + پیش‌نمایش پنل) رندر می‌کند.
 //
-// ⚠️ این کامپوننت باید در ماژول مستقل (خارج از بدنهٔ AdminPanel) بماند تا remount نشود.
+// ⚠️ این کامپوننت باید در ماژول مستقل (خارج از بدنه AdminPanel) بماند تا remount نشود.
 import { useEffect, useRef, useState } from 'react';
 import { coverGeometry } from '../components/CoverImage';
 
@@ -38,7 +38,7 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
   const H = img?.naturalHeight || 1;
   const coverScale = Math.max(COVER_FRAME / W, COVER_FRAME / H);
 
-  // بازهٔ مجاز مرکز تصویر: اگر در آن محور سرریز وجود دارد، 0..100 آزاد است؛
+  // بازه مجاز مرکز تصویر: اگر در آن محور سرریز وجود دارد، 0..100 آزاد است؛
   // در غیر این صورت (تصویر دقیقاً منطبق) فقط ۵۰.
   const rangeFor = (size: number, zv: number): { lo: number; hi: number } => {
     const scaled = size * coverScale * zv;
@@ -88,7 +88,7 @@ export default function CoverCropModal({ T, src, position, zoom, onClose, onAppl
    commit(cxRef.current, cyRef.current, zv);
   };
 
-  // درگ مطلق: از نقطهٔ شروع با جابه‌جایی کل — حساسیت بر اساس سرریز (۱ پیکسل انگشت = ۱ پیکسل تصویر)
+  // درگ مطلق: از نقطه شروع با جابه‌جایی کل — حساسیت بر اساس سرریز (۱ پیکسل انگشت = ۱ پیکسل تصویر)
   const applyDrag = (startCx: number, startCy: number, dx: number, dy: number) => {
    const g = coverGeometry(W, H, 50, 50, zRef.current, COVER_FRAME);
    const nx = g.overflowX > 0 ? startCx - (dx * 100) / g.overflowX : startCx;

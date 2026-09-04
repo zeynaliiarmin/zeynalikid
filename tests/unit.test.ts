@@ -99,7 +99,7 @@ assert(isAnyValidTrackingCode('ZK-AB12CD') === true, 'isAnyValidTrackingCode ه�
 assert(isAnyValidTrackingCode('XYZ123') === false, 'isAnyValidTrackingCode نامعتبر');
 assert(normalizeTrackingCode('zk 12345') === 'ZK12345', 'normalizeTrackingCode استاندارد');
 assert(normalizeTrackingCode('ZK-AB12CD') === 'ZK-AB12CD', 'normalizeTrackingCode هگز');
-// ── «۶۳۹» دیگر در فیلد کد پیگیری معنایی ندارد (درِ مخفی به فیلد شمارهٔ تماس منتقل شده)
+// ── «۶۳۹» دیگر در فیلد کد پیگیری معنایی ندارد (درِ مخفی به فیلد شماره تماس منتقل شده)
 // پس محدودیتی روی رقم‌های شروع کد گذاشته نمی‌شود؛ فقط فرمتِ کد باید درست بماند.
 for (let i = 0; i < 2000; i++) {
   const c = generateTrackingCode(5);

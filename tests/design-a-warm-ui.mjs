@@ -74,7 +74,7 @@ async function open(design, mode, path, entryMode = 'user') {
     try { sessionStorage.clear(); } catch { }
     localStorage.setItem('zk_design_system', d);
     localStorage.setItem('zk_public_theme_mode', m);
-    // پوستهٔ مدیریتی (صفحهٔ ورود مدیریت) با سلیقهٔ شخصی خودش روشن/تاریک می‌شود
+    // پوسته مدیریتی (صفحه ورود مدیریت) با سلیقه شخصی خودش روشن/تاریک می‌شود
     localStorage.setItem('zk_personal_color_mode', m);
     localStorage.setItem('zkid_lang', 'fa');
   }, design, mode);
@@ -106,7 +106,7 @@ const readTokens = () => page.evaluate(() => {
   };
 });
 
-// قرارداد بصری: کادر شمارهٔ تماس باید دقیقاً هم‌قدِ کادر کد پیگیری بماند.
+// قرارداد بصری: کادر شماره تماس باید دقیقاً هم‌قدِ کادر کد پیگیری بماند.
 // در ثبت‌نام، مرجعِ کد از نمای ورود همان صفحه گرفته می‌شود چون کد در آن مرحله نمایش ندارد.
 const readAnswerFieldHeights = () => page.evaluate(() => {
   const read = label => {
@@ -271,7 +271,7 @@ const assertPublicBackPresentation = (back, label, palette) => {
   }
 };
 
-/* خوانایی: هر گره متنی که پس‌زمینهٔ ساده (بدون تصویر/گرادیان) دارد سنجیده می‌شود */
+/* خوانایی: هر گره متنی که پس‌زمینه ساده (بدون تصویر/گرادیان) دارد سنجیده می‌شود */
 const auditContrast = () => page.evaluate(() => {
   const chan = v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   const lum = (r, g, b) => 0.2126 * chan(r / 255) + 0.7152 * chan(g / 255) + 0.0722 * chan(b / 255);
@@ -317,7 +317,7 @@ const auditContrast = () => page.evaluate(() => {
       if (c && c.a > 0.85) { bg = c; break; }
       node = node.parentElement;
     }
-    if (!bg || painted) continue; // پس‌زمینهٔ گرادیانی/تصویری — در این تست قابل داوری نیست
+    if (!bg || painted) continue; // پس‌زمینه گرادیانی/تصویری — در این تست قابل داوری نیست
     const size = parseFloat(cs.fontSize), weight = Number(cs.fontWeight) || 400;
     const large = size >= 24 || (size >= 18.66 && weight >= 700);
     const r = ratio(fg, bg);
@@ -338,11 +338,28 @@ for (const design of designs) {
       if (path === '/portal' || path === '/track') {
         const loginFields = await readAnswerFieldHeights();
         const loginPresentation = await readEntryFormPresentation();
-        assert(loginFields.code && loginFields.phone, `${label}: کادر کد پیگیری یا شمارهٔ تماس پیدا نشد`, loginFields);
+        assert(loginFields.code && loginFields.phone, `${label}: کادر کد پیگیری یا شماره تماس پیدا نشد`, loginFields);
         if (loginFields.code && loginFields.phone) {
-          assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شمارهٔ تماس با کد پیگیری برابر نیست`, loginFields);
+          assert(Math.abs(loginFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع کادر شماره تماس با کد پیگیری برابر نیست`, loginFields);
         }
         assertEntryFormPresentation(loginPresentation, `${label}: ورود`, true, pal);
+        if (path === '/portal') {
+          const portalCopy = await page.evaluate(() => {
+            const heading = document.querySelector('.zp-entry-title-row .zp-h1');
+            const lines = [...document.querySelectorAll('.zp-sub .zp-sub-line')];
+            return {
+              heading: heading?.textContent?.trim() || '',
+              lines: lines.map(line => ({ text: line.textContent?.trim() || '', display: getComputedStyle(line).display })),
+              userChip: !!document.querySelector('.zp-content > .zp-card .zp-chip'),
+            };
+          });
+          assert(!portalCopy.userChip, `${label}: portal user chip remains`, portalCopy);
+          assert(portalCopy.heading === 'خوش آمدید!', `${label}: portal Persian welcome title is not exact`, portalCopy);
+          assert(JSON.stringify(portalCopy.lines) === JSON.stringify([
+            { text: 'با شماره تماس و کد پیگیری وارد شوید؛', display: 'block' },
+            { text: 'اگر کد پیگیری دارید نیازی به ثبت‌نام دوباره نیست', display: 'block' },
+          ]), `${label}: portal Persian subtitle lines are not exact independent rows`, portalCopy);
+        }
         if (path === '/portal' && loginFields.code) {
           const openedRegister = await page.evaluate(() => {
             const tab = document.querySelectorAll('.zp-tabs .zp-tab')[1];
@@ -355,16 +372,16 @@ for (const design of designs) {
             await page.waitForFunction(() => ![...document.querySelectorAll('.zp-lbl')].some(item => (item.textContent || '').trim().includes('کد پیگیری')), { timeout: 10000 });
             const registerFields = await readAnswerFieldHeights();
             const registerPresentation = await readEntryFormPresentation();
-            assert(registerFields.phone, `${label}: کادر شمارهٔ تماس ثبت‌نام پیدا نشد`, registerFields);
+            assert(registerFields.phone, `${label}: کادر شماره تماس ثبت‌نام پیدا نشد`, registerFields);
             if (registerFields.phone) {
-              assert(Math.abs(registerFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع شمارهٔ تماس ثبت‌نام با کد پیگیری برابر نیست`, { login: loginFields.code, register: registerFields.phone });
+              assert(Math.abs(registerFields.phone.height - loginFields.code.height) <= 0.5, `${label}: ارتفاع شماره تماس ثبت‌نام با کد پیگیری برابر نیست`, { login: loginFields.code, register: registerFields.phone });
             }
             assertEntryFormPresentation(registerPresentation, `${label}: ثبت‌نام`, true, pal);
           }
         }
       }
-      if (path.startsWith('/desk')) assert(/^admin-(light|dark)$/.test(t.theme), `${label}: پوستهٔ مدیریتی عوض شده`, t.theme);
-      else assert(t.theme === (mode === 'dark' ? `${design}-dark` : design), `${label}: پوستهٔ اختصاصی دیزاین انتخاب نشد`, t.theme);
+      if (path.startsWith('/desk')) assert(/^admin-(light|dark)$/.test(t.theme), `${label}: پوسته مدیریتی عوض شده`, t.theme);
+      else assert(t.theme === (mode === 'dark' ? `${design}-dark` : design), `${label}: پوسته اختصاصی دیزاین انتخاب نشد`, t.theme);
       const expect = { '--zp-acc': pal.acc, '--zp-g2': pal.g2, '--zp-deep': pal.deep, '--zp-soft': pal.soft, '--zp-bg': pal.bg, '--zp-ink': pal.ink, '--zp-ttl': pal.ttl, '--zp-card0': pal.card0, '--zp-card1': pal.card1, '--zp-fbg': pal.fbg, '--zp-btnfg': pal.btnfg };
       for (const [name, value] of Object.entries(expect)) assert(t.vars[name].toLowerCase() === value.toLowerCase(), `${label}: متغیر ${name} با فایل فرق دارد`, { got: t.vars[name], want: value });
       if (t.btn) {
@@ -373,7 +390,7 @@ for (const design of designs) {
         assert(t.btn.bgImage.replace(/\s+/g, ' ') === wantImage.replace(/\s+/g, ' '), `${label}: گرادیان دکمه دقیقاً مثل فایل نیست`, { got: t.btn.bgImage, want: wantImage });
         assert(t.btn.color === toRgb(pal.btnfg), `${label}: رنگ متن دکمه برای خوانایی تنظیم نشده`, t.btn);
         assert(t.btn.radius === '999px' || t.btn.radius.endsWith('px'), `${label}: شعاع دکمه خوانده نشد`, t.btn);
-      } else fail.push(`${label}: دکمهٔ اصلی صفحه پیدا نشد`);
+      } else fail.push(`${label}: دکمه اصلی صفحه پیدا نشد`);
       assert(t.box && /17px/.test(t.box.radius), `${label}: فیلد نئومورفیک فایل اجرا نشده`, t.box);
       assert(t.card && /26px/.test(t.card.radius), `${label}: کارت ۲۶px فایل اجرا نشده`, t.card);
       // هدر واقعی سایت باید دست‌نخورده بماند؛ انتخاب زبان عمداً درون منو است، نه بالای صفحه.
@@ -389,7 +406,7 @@ for (const design of designs) {
       });
       assert(header.headerEl, `${label}: هدر عمومی از این صفحات حذف شده`);
       assert(!header.languageInHeader, `${label}: انتخاب زبان نباید به هدر برگردد`);
-      assert(header.assistant, `${label}: دکمهٔ دستیار هدر حذف شده`);
+      assert(header.assistant, `${label}: دکمه دستیار هدر حذف شده`);
       if (path === '/track' || path === '/desk') assert(header.burger, `${label}: منوی همبرگری هدر حذف شده`);
       const openedMenu = await page.evaluate(() => {
         const button = document.querySelector('[aria-label="باز کردن منو"], [aria-label="Open menu"]');
@@ -439,7 +456,7 @@ for (const design of designs) {
   }
 }
 
-// مستقل از حالت «پنل کاربر»، نسخهٔ واقعی صفحهٔ پیگیری هم همین قرارداد را نگه می‌دارد.
+// مستقل از حالت «پنل کاربر»، نسخه واقعی صفحه پیگیری هم همین قرارداد را نگه می‌دارد.
 await open('wellness', 'light', '/track', 'track');
 const standaloneTrackPalette = { ...SHARED_LIGHT, ...ACCENTS.wellness.light, accText: ACCENTS.wellness.light.acc };
 const standaloneTrack = await readEntryFormPresentation();
@@ -470,9 +487,9 @@ if (openedLanguageMenu) {
   }
 }
 
-// دکمهٔ بازگشت باید به صفحهٔ واقعی قبل برگردد، نه اینکه صفحه را بپوشاند یا شناور بماند.
+// دکمه بازگشت باید به صفحه واقعی قبل برگردد، نه اینکه صفحه را بپوشاند یا شناور بماند.
 await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 45000 });
-// اجازه بده React مسیر صفحهٔ قبل را کامل در history ثبت کند؛ سپس رفتار واقعی دکمه را می‌سنجیم.
+// اجازه بده React مسیر صفحه قبل را کامل در history ثبت کند؛ سپس رفتار واقعی دکمه را می‌سنجیم.
 await sleep(1000);
 await page.goto(`${base}/track`, { waitUntil: 'domcontentloaded', timeout: 45000 });
 await page.waitForSelector('[data-testid="public-entry-back"]', { timeout: 25000 });

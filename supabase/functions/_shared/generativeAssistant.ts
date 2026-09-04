@@ -3,20 +3,20 @@ import {matchKnowledge,normalizeAssistantText,type KnowledgeLike} from './assist
 const MISTRAL_API_URL='https://api.mistral.ai/v1/chat/completions';
 export const MISTRAL_ASSISTANT_MODEL='mistral-small-latest';
 
-// ── کلید پشتیبانِ صفحات عمومی: وقتی سقف روزانهٔ کلید اصلی تمام شد، تا پایان آن روز (UTC)
+// ── کلید پشتیبانِ صفحات عمومی: وقتی سقف روزانه کلید اصلی تمام شد، تا پایان آن روز (UTC)
 // پاسخ‌ها با کلید دوم داده می‌شود؛ روز بعد کلید اصلی خودش به‌طور خودکار به چرخه برمی‌گردد.
 // ── استخر دستیارها (فقط صفحات عمومی): هر کلید × مدل‌های رایگان از بهترین به بعد ──
 // هر لایه (کلید) از بهترین مدل موجود شروع می‌کند؛ اگر آن مدل محدود شد (۴۲۹)، برای یک دقیقه کنار گذاشته و مدل بعدی همان کلید امتحان می‌شود.
-// اگر کلید خطای دسترسی/اتمام اعتبار داد، کلِ آن کلید تا پایان روز UTC مسدود و لایهٔ بعدی (کلید بعد) به کار می‌افتد.
-// حالت مشترک در جدول settings (کلید assistant_rotation) نگهداری می‌شود تا همهٔ نمونه‌های سرویس یک‌دید باشند.
-// هیچ‌وقت چیزی از مدل‌ها، لایه‌ها، اعتبار یا جابه‌جایی به کاربر نشان داده نمی‌شود؛ قوانین و دانش در همهٔ لایه‌ها یکسان است.
+// اگر کلید خطای دسترسی/اتمام اعتبار داد، کلِ آن کلید تا پایان روز UTC مسدود و لایه بعدی (کلید بعد) به کار می‌افتد.
+// حالت مشترک در جدول settings (کلید assistant_rotation) نگهداری می‌شود تا همه نمونه‌های سرویس یک‌دید باشند.
+// هیچ‌وقت چیزی از مدل‌ها، لایه‌ها، اعتبار یا جابه‌جایی به کاربر نشان داده نمی‌شود؛ قوانین و دانش در همه لایه‌ها یکسان است.
 export const ASSISTANT_ROTATION_SETTINGS_KEY='assistant_rotation';
 interface AssistantRotationState{day:string;blocked:Record<string,number>;cool:Record<string,number>}
 const assistantRotationUtcDay=()=>new Date().toISOString().slice(0,10);
 function freshAssistantRotationState():AssistantRotationState{return {day:assistantRotationUtcDay(),blocked:{},cool:{}}}
 function normalizeAssistantRotationState(raw:any):AssistantRotationState{const fresh=freshAssistantRotationState();if(!raw||typeof raw!=='object'||raw.day!==fresh.day)return fresh;const now=Date.now();const cool:Record<string,number>={};if(raw.cool&&typeof raw.cool==='object')for(const[k,v]of Object.entries(raw.cool))if(Number(v)>now)cool[k]=Number(v);return {day:fresh.day,blocked:raw.blocked&&typeof raw.blocked==='object'?raw.blocked:{},cool}}
 async function loadRotationState(db:any):Promise<AssistantRotationState>{if(!db)return freshAssistantRotationState();try{const {data}=await db.from('settings').select('settings').eq('key',ASSISTANT_ROTATION_SETTINGS_KEY).maybeSingle();return normalizeAssistantRotationState(data?.settings)}catch{return freshAssistantRotationState()}}
-async function persistRotationState(db:any,state:AssistantRotationState){if(!db)return;try{await db.from('settings').upsert({key:ASSISTANT_ROTATION_SETTINGS_KEY,settings:state},{onConflict:'key'})}catch{/* اختلال در ذخیرهٔ حالت نباید پاسخ‌دهی را متوقف کند */}}
+async function persistRotationState(db:any,state:AssistantRotationState){if(!db)return;try{await db.from('settings').upsert({key:ASSISTANT_ROTATION_SETTINGS_KEY,settings:state},{onConflict:'key'})}catch{/* اختلال در ذخیره حالت نباید پاسخ‌دهی را متوقف کند */}}
 
 export interface ScopedKnowledge extends KnowledgeLike {
   id?:string;
@@ -163,8 +163,8 @@ export async function generateGroundedAssistant(options:{question:unknown;knowle
     options.language==='en'?'Answer in clear, natural English and keep the response under 180 words.':'پاسخ را با فارسی گفتاری مودبانه و طبیعی و حداکثر ۱۸۰ کلمه بنویس؛ «می» و «نمی» را به فعل بچسبون، از شکل های رایج مثل میتونم، میخواین، میدونم، اینجوری، کدوم و یه استفاده کن، اعراب ننویس و از واژه های کوچه بازاری بی ادبانه استفاده نکن. تا جای ممکن معادل فارسی واژه های انگلیسی را به کار ببر، مگر اینکه واژه تخصصی یا نام رسمی باشه.',
     'نام یا شماره مرجع را در پاسخ ذکر نکنید.',
     'هیچ‌وقت جمله‌های خودمحدودکننده یا بلاتکلیف‌ساز مثل «به‌تنهایی کافی نیست»، «برای نتیجه‌گیری کافی نیست» یا «روند چند اندازه‌گیری اهمیت بیشتری دارد» نساز؛ هر جا اطلاعات کامل نبود، کاربر را به ثبت درخواست مشاوره دعوت کن.',
-    'در موضوعاتی که در دوره‌ها، مقالات آموزشی یا موضوع‌های مشاورهٔ سایت پوشش دارند، هرگز نگویید «با پزشک مشورت کنید»، «از پزشک بپرسید» یا «به پزشک اطلاع دهید»؛ در عوض آخر پاسخ بگویید «برای اطلاعات بیشتر می‌تونید درخواست مشاوره بدید».',
-    'وقتی دوره‌ای را پیشنهاد می‌دهی دقیقاً از جزئیات تأییدشدهٔ همان دوره بگو و این‌طور بیان کن که «این دوره مناسب فرزند شماست و می‌تونه کمک کنه این موضوع بهتر پیش بره»؛ هرگز ادعای «صددرصد»، «تضمینی» یا «حتماً خوب می‌شود» نکن و در پایان همین پاسخ، دعوت به ثبت درخواست مشاوره را هم اضافه کن.',
+    'در موضوعاتی که در دوره‌ها، مقالات آموزشی یا موضوع‌های مشاوره سایت پوشش دارند، هرگز نگویید «با پزشک مشورت کنید»، «از پزشک بپرسید» یا «به پزشک اطلاع دهید»؛ در عوض آخر پاسخ بگویید «برای اطلاعات بیشتر می‌تونید درخواست مشاوره بدید».',
+    'وقتی دوره‌ای را پیشنهاد می‌دهی دقیقاً از جزئیات تأییدشده همان دوره بگو و این‌طور بیان کن که «این دوره مناسب فرزند شماست و می‌تونه کمک کنه این موضوع بهتر پیش بره»؛ هرگز ادعای «صددرصد»، «تضمینی» یا «حتماً خوب می‌شود» نکن و در پایان همین پاسخ، دعوت به ثبت درخواست مشاوره را هم اضافه کن.',
   ];
   const userContent:string|Array<Record<string,unknown>>=image?[{type:'text',text:`سؤال:\n${question}\n\nدانش تأییدشده:\n${buildReference(matches)}`},{type:'image_url',image_url:{url:image}}]:`سؤال:\n${question}\n\nدانش تأییدشده:\n${buildReference(matches)}`;
   async function callProvider(key:string,model:string):Promise<Response>{

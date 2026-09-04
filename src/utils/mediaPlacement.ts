@@ -164,7 +164,7 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
   // پیش‌نمایش کارت باید هم برای لینک مستقیم ImgURL و هم برای <img src="…"> ساخته شود.
   const rawType = item?.type || 'video';
   const isArticle = rawType === 'article' || rawType === 'text' || rawType === 'image';
-  // محتوای قدیمی «عکس» → یک تصویر در ابتدای مقاله؛ محتوای قدیمی «متن» → مقالهٔ بدون تصویر.
+  // محتوای قدیمی «عکس» → یک تصویر در ابتدای مقاله؛ محتوای قدیمی «متن» → مقاله بدون تصویر.
   const legacyImageUrl = rawType === 'image' ? (extractDirectMediaUrl(code, 'image') || extractDirectMediaUrl(item?.imageUrl || item?.url, 'image') || '') : '';
   const images = Array.isArray(item?.images)
     ? item.images.map((im: any) => ({ id: String(im?.id || 'img'), url: String(im?.url || ''), ...(im?.position != null ? { position: Number(im.position) || 0 } : {}) }))
@@ -226,7 +226,7 @@ export function shuffleArray<T>(arr: T[]): T[] {
 
 /**
  * انتخاب متوازن رندوم: تا جای ممکن از هر نوع موجود (مقاله/ویدیو/پادکست) حداقل یکی
- * برمی‌دارد، سپس بقیهٔ ظرفیت را از کل مجموعهٔ باقی‌مانده به‌صورت رندوم پر می‌کند.
+ * برمی‌دارد، سپس بقیه ظرفیت را از کل مجموعه باقی‌مانده به‌صورت رندوم پر می‌کند.
  */
 export function balancedRandomMix(items: any[], count: number): any[] {
   const arr = (items || []).slice();

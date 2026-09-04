@@ -8,7 +8,7 @@ import AdminLayout, { type AdminNavGroup } from './AdminLayout';
 import AdminPopover from './AdminPopover';
 import { flagToEmoji, getCountryFlag } from '../utils/phone';
 import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdminBiometric } from '../utils/adminBiometric';
-// Phase 7: خروج واقعی از همهٔ نشست‌ها از طریق admin-session (revoke_all)
+// Phase 7: خروج واقعی از همه نشست‌ها از طریق admin-session (revoke_all)
 import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials, isAdminPasswordUpgradeRequired } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
 import AdminSpeedDialFAB from './AdminSpeedDialFAB';
@@ -177,7 +177,7 @@ export default function AdminPanel(){
  const [productHomeCrop,setProductHomeCrop]=useState<any>(null);
  const [productHomeCropBusy,setProductHomeCropBusy]=useState(false);
  // state کادر کاور هایلایت — باید اینجا (سطح AdminPanel) تعریف شود، نه داخل HighlightsTabEditor،
- // چون HighlightsTabEditor به‌صورت تابعی و شرطی صدا زده می‌شود و hook داخل آن باعث خطای Rules-of-Hooks (صفحهٔ سفید) می‌شد.
+ // چون HighlightsTabEditor به‌صورت تابعی و شرطی صدا زده می‌شود و hook داخل آن باعث خطای Rules-of-Hooks (صفحه سفید) می‌شد.
  const [hlCoverCropFor,setHlCoverCropFor]=useState<number|null>(null);
  // متن‌های bulk «افزودن دسته‌جمعی» هر هایلایت (key = id هایلایت) — باید اینجا نگه داشته شود تا
  // موقع «ذخیره هایلایت‌ها» قابل خواندن و تبدیل به اسلایدهای تکی باشد (بدون نقض Rules-of-Hooks).
@@ -204,7 +204,7 @@ export default function AdminPanel(){
      .catch(()=>{ if(alive){ setDevicesList([]); setDevicesErr('دریافت لیست دستگاه‌ها ممکن نشد.'); } });
    return ()=>{ alive=false; };
  },[aTab]);
- // بارگذاری شمارهٔ فعلی (ماسک‌شده) برای نمایش در بخش تغییر اطلاعات ورود
+ // بارگذاری شماره فعلی (ماسک‌شده) برای نمایش در بخش تغییر اطلاعات ورود
  useEffect(()=>{
    if(aTab!=='security')return;
    let alive=true;
@@ -379,7 +379,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const activity=useMemo(()=>[...subs].sort((a:any,b:any)=>subTime(b)-subTime(a)).slice(0,6).map((x:any)=>({id:x.id,t:subTime(x),tone:x.course?'t-info':'t-ok',txt:`${x.course?'ثبت‌نام دوره':'فرم مشاوره'} — ${x.pName||x.fullPhone||'بدون نام'}`})),[subs]);
   // اصلاح ۱۷+۳۵: تب‌های ناوبری با آیکون‌ها و دسته‌بندی
   const navIcon=(id:string)=>{const p={size:18,color:T.accText};if(id==='courses'||id==='featured'||id==='tagged')return <CoursesIcon {...p}/>;if(id==='content'||id==='highlights'||id==='images')return <EducationIcon {...p}/>;if(id==='contacts')return <ContactIcon {...p}/>;if(id==='licenses')return <LicensesIcon {...p}/>;if(id==='data'||id==='analytics')return <SearchIcon {...p}/>;if(id==='userQuestions'||id==='assistant'||id==='trust'||id==='trustbox')return <ChatIcon {...p}/>;if(id==='products')return <ProductsIcon {...p}/>;if(id==='settings'||id==='security'||id==='shipping'||id==='trash')return <BoxIcon {...p}/>;return <AdminIcon {...p}/>};
-  const navTabs:[string,React.ReactNode,string][]=[['dashboard',navIcon('dashboard'),'داشبورد'],['data',navIcon('data'),'فرم‌ها و دوره‌ها'],['userQuestions',navIcon('userQuestions'),'سوالات مخاطبین'],['assistant',navIcon('assistant'),'دستیار'],['settings',navIcon('settings'),'تنظیمات'],['entry',navIcon('settings'),'صفحهٔ ورودی سایت'],['content',navIcon('content'),'مدیریت محتوا'],['contacts',navIcon('contacts'),'ارتباط'],['courses',navIcon('courses'),'دوره‌ها'],['featured',navIcon('featured'),'دوره‌های ویژه'],['tagged',navIcon('tagged'),'دوره‌های تگ‌دار'],['trust',navIcon('trust'),'جملات موفقیت'],['trustbox',navIcon('trustbox'),'جملات اعتمادساز'],['shipping',navIcon('shipping'),'ارسال و بانک'],['analytics',navIcon('analytics'),'آمار بازدید'],['security',navIcon('security'),'امنیت'],['trash',navIcon('trash'),'سطل آشغال'],['products',navIcon('products'),'محصولات'],['highlights',navIcon('highlights'),'هایلایت'],['licenses',navIcon('licenses'),'مجوزها'],['services',navIcon('services'),'خدمات'],['images',navIcon('images'),'تصاویر'],['design',navIcon('settings'),'مدیریت دیزاین']];
+  const navTabs:[string,React.ReactNode,string][]=[['dashboard',navIcon('dashboard'),'داشبورد'],['data',navIcon('data'),'فرم‌ها و دوره‌ها'],['userQuestions',navIcon('userQuestions'),'سوالات مخاطبین'],['assistant',navIcon('assistant'),'دستیار'],['settings',navIcon('settings'),'تنظیمات'],['entry',navIcon('settings'),'صفحه ورودی سایت'],['content',navIcon('content'),'مدیریت محتوا'],['contacts',navIcon('contacts'),'ارتباط'],['courses',navIcon('courses'),'دوره‌ها'],['featured',navIcon('featured'),'دوره‌های ویژه'],['tagged',navIcon('tagged'),'دوره‌های تگ‌دار'],['trust',navIcon('trust'),'جملات موفقیت'],['trustbox',navIcon('trustbox'),'جملات اعتمادساز'],['shipping',navIcon('shipping'),'ارسال و بانک'],['analytics',navIcon('analytics'),'آمار بازدید'],['security',navIcon('security'),'امنیت'],['trash',navIcon('trash'),'سطل آشغال'],['products',navIcon('products'),'محصولات'],['highlights',navIcon('highlights'),'هایلایت'],['licenses',navIcon('licenses'),'مجوزها'],['services',navIcon('services'),'خدمات'],['images',navIcon('images'),'تصاویر'],['design',navIcon('settings'),'مدیریت دیزاین']];
   const activeNavLabel=navTabs.find(x=>x[0]===aTab)?.[2]||'داشبورد';
  // Stage 7A: گروه‌بندی منوی سایدبار — همه تب‌های موجود حفظ شده‌اند و هیچ route جدیدی ساخته نشده است.
  const navGroups:AdminNavGroup[]=[
@@ -394,7 +394,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   {id:'trustbox',label:'جملات اعتمادساز',icon:<ZkReviewsIcon size={17}/>,items:[{id:'trust',label:'جملات صفحه موفقیت'}]},
   {id:'shipping',label:'ارسال و پرداخت',icon:<ZkTruckIcon size={17}/>},
   {id:'content',label:'محتوا و صفحات',icon:<ZkContentIcon size={17}/>,items:[{id:'images',label:'تصاویر'},{id:'highlights',label:'هایلایت'},{id:'licenses',label:'مجوزها'},{id:'contacts',label:'راه‌های ارتباطی'}]},
-  {id:'settings',label:'تنظیمات',icon:<ZkSettingsIcon size={17}/>,items:[{id:'design',label:'مدیریت دیزاین'},{id:'security',label:'امنیت'},{id:'analytics',label:'آمار بازدید'},{id:'entry',label:'صفحهٔ ورودی سایت'},{id:'errors',label:'خطاهای سیستم'}]},
+  {id:'settings',label:'تنظیمات',icon:<ZkSettingsIcon size={17}/>,items:[{id:'design',label:'مدیریت دیزاین'},{id:'security',label:'امنیت'},{id:'analytics',label:'آمار بازدید'},{id:'entry',label:'صفحه ورودی سایت'},{id:'errors',label:'خطاهای سیستم'}]},
   {id:'trash',label:'سطل بازیافت',icon:<ZkTrashIcon size={17}/>},
  ];
   // FIX: Stabilize StatCard and ChipGroup identity to prevent dashboard remount
@@ -742,7 +742,7 @@ function FAQEditor(){
  // اصلاح ۷: تب مستقل «مدیریت محتوا» شامل محتوای چندرسانه‌ای، تجربه والدین، مجوزها و آموزش‌ها
  function ContentEditor(){
   // بازطراحی کامل «محتوا و صفحات» — ContentManager مستقل با state محلی
-  // و ذخیره با دکمه (رفع پرش صفحه / fg). همهٔ قابلیت‌ها حفظ شده‌اند.
+  // و ذخیره با دکمه (رفع پرش صفحه / fg). همه قابلیت‌ها حفظ شده‌اند.
   return <ContentManager
     T={T} S={S} AdminBtn={AdminBtn} Box={Box} Field={Field}
     StableAdminInput={StableAdminInput} StableAdminTextarea={StableAdminTextarea}
@@ -754,7 +754,7 @@ function FAQEditor(){
 
 
  function ContactsEditor(){
-  // بازطراحی: state محلی در سطح AdminPanel (cc) + ذخیرهٔ مستقیم
+  // بازطراحی: state محلی در سطح AdminPanel (cc) + ذخیره مستقیم
   // (رفع race condition و رعایت قوانین hooks — این تابع با () فراخوانی می‌شود)
   const custom:any[] = Array.isArray(cc.custom) ? cc.custom : [];
   const updCustom=(i:number,k:string,v:any)=>{const a=[...custom];a[i]={...a[i],[k]:v};setCc({...cc,custom:a})};
@@ -1176,8 +1176,8 @@ function DesignManagerEditor(){
   const [prompt,setPrompt]=useState<any>(null); const [done,setDone]=useState(false); const [installing,setInstalling]=useState(false); const [showIosGuide,setShowIosGuide]=useState(false);
   useEffect(()=>{const h=(e:any)=>{e.preventDefault();setPrompt(e)};const installed=()=>setDone(true);window.addEventListener('beforeinstallprompt',h);window.addEventListener('appinstalled',installed);return()=>{window.removeEventListener('beforeinstallprompt',h);window.removeEventListener('appinstalled',installed)}},[]);
   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
-  // در iOS، قبل از افزودن به صفحهٔ اصلی باید مستقیم روی صفحهٔ ورود پنل باشیم تا بعد از نصب
-  // همان صفحهٔ ورود باز شود (نه صفحهٔ هوم). دکمهٔ نصب این کار را خودکار انجام می‌دهد.
+  // در iOS، قبل از افزودن به صفحه اصلی باید مستقیم روی صفحه ورود پنل باشیم تا بعد از نصب
+  // همان صفحه ورود باز شود (نه صفحه هوم). دکمه نصب این کار را خودکار انجام می‌دهد.
   const onInstallClick=async()=>{
    if(done)return;
    if(ios){ setShowIosGuide(true); try{ window.location.href='/desk'; }catch(e){} return; }
@@ -1194,8 +1194,8 @@ function DesignManagerEditor(){
    </button>
    {showIosGuide&&(
     <div style={{marginTop:12,padding:'11px 12px',borderRadius:12,border:`1px solid ${T.brd}`,background:T.card,fontSize:12,color:T.mut,lineHeight:1.9}}>
-     برای نصب روی گوشی: در مرورگر <b>Safari</b> دکمهٔ <b>Share / اشتراک‌گذاری</b> را بزنید ← <b>Add to Home Screen / افزودن به صفحهٔ اصلی</b> را انتخاب کنید.
-     <span style={{display:'block',marginTop:6}}>⚠️ <b>برای اینکه بعد از نصب مستقیم به صفحهٔ ورود پنل بروید</b>، ابتدا به صفحهٔ ورود پنل رفته‌اید (خودکار انجام شد)؛ <b>همین‌جا</b> گزینهٔ «Add to Home Screen» را بزنید.</span>
+     برای نصب روی گوشی: در مرورگر <b>Safari</b> دکمه <b>Share / اشتراک‌گذاری</b> را بزنید ← <b>Add to Home Screen / افزودن به صفحه اصلی</b> را انتخاب کنید.
+     <span style={{display:'block',marginTop:6}}>⚠️ <b>برای اینکه بعد از نصب مستقیم به صفحه ورود پنل بروید</b>، ابتدا به صفحه ورود پنل رفته‌اید (خودکار انجام شد)؛ <b>همین‌جا</b> گزینه «Add to Home Screen» را بزنید.</span>
     </div>
    )}
   </div>
@@ -1204,19 +1204,19 @@ function DesignManagerEditor(){
  function SecurityEditor(){
   // Phase 7+8: تغییر رمز/شماره از داخل پنل — این بار واقعی و امن از طریق تابع
   // admin-credentials (چک نشست + رمز فعلی + اعتبارسنجی + به‌روزرسانی Secret ها).
-  // نکته: همهٔ state/ref ها در سطح AdminPanel تعریف شده‌اند (قانون hooks — این تابع
+  // نکته: همه state/ref ها در سطح AdminPanel تعریف شده‌اند (قانون hooks — این تابع
   // با SecurityEditor() فراخوانی می‌شود نه JSX).
   const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');alert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{alert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
   const disableBio=()=>{removeAdminBiometric();alert('ورود بیومتریک این دستگاه غیرفعال شد.');};
   const logoutEverywhere=async()=>{
-   if(!confirm('همهٔ نشست‌های پنل مدیریت (این دستگاه و همهٔ دستگاه‌های دیگر) بسته شوند؟'))return;
+   if(!confirm('همه نشست‌های پنل مدیریت (این دستگاه و همه دستگاه‌های دیگر) بسته شوند؟'))return;
    setRevokeBusy(true);
    try{
     await revokeAllAdminSessions();
     try{clearAdminSession()}catch{}
-    alert('همهٔ نشست‌های پنل بسته شد. برای ورود دوباره باید با شماره و رمز وارد شوید.');
+    alert('همه نشست‌های پنل بسته شد. برای ورود دوباره باید با شماره و رمز وارد شوید.');
    }catch(e:any){
-    alert(e?.message||'خروج از همهٔ نشست‌ها انجام نشد. اتصال را بررسی کنید.');
+    alert(e?.message||'خروج از همه نشست‌ها انجام نشد. اتصال را بررسی کنید.');
    }finally{setRevokeBusy(false)}
   };
   const doChangeCreds=async()=>{
@@ -1259,14 +1259,14 @@ function DesignManagerEditor(){
    <Box title="امنیت">
    <div style={{marginBottom:14,padding:14,borderRadius:14,background:T.soft,border:`1px solid ${T.brd}`}}>
     <b style={{display:'block',color:T.ttl,marginBottom:4}}>تغییر رمز عبور و شماره تماس ورود</b>
-    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 12px'}}>شمارهٔ فعلی: <b style={{direction:'ltr',display:'inline-block'}}>{credPhoneMasked||'—'}</b>. برای تغییر، رمز فعلی را وارد کنید و حداقل یکی از موارد جدید را کامل کنید. بعد از تغییر، همهٔ نشست‌ها بسته می‌شود و با اطلاعات جدید وارد می‌شوید.</p>
+    <p style={{fontSize:12,color:T.mut,lineHeight:1.8,margin:'0 0 12px'}}>شماره فعلی: <b style={{direction:'ltr',display:'inline-block'}}>{credPhoneMasked||'—'}</b>. برای تغییر، رمز فعلی را وارد کنید و حداقل یکی از موارد جدید را کامل کنید. بعد از تغییر، همه نشست‌ها بسته می‌شود و با اطلاعات جدید وارد می‌شوید.</p>
     {credMsg&&<div style={{fontSize:12,fontWeight:800,color:T.ok||'#047857',background:`${T.ok}12`,border:`1px solid ${T.ok}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>✓ {credMsg}</div>}
     {credErr&&<div style={{fontSize:12,fontWeight:800,color:T.err||'#DC2626',background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>{credErr}</div>}
     <div style={{display:'flex',flexDirection:'column',gap:10}}>
      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور فعلی *</span><input ref={credCurPwdRef} type="password" style={S.inp} placeholder="رمز فعلی"/></label>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>شمارهٔ جدید</span><input ref={credNewPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="09123456789"/></label>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شمارهٔ جدید</span><input ref={credRepPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="تکرار شماره"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>شماره جدید</span><input ref={credNewPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="09123456789"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شماره جدید</span><input ref={credRepPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="تکرار شماره"/></label>
      </div>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
       <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۱۲ کاراکتر"/></label>
@@ -1302,13 +1302,13 @@ function DesignManagerEditor(){
        </div>;
       })}
      </div>}
-    <button type="button" style={{...AdminBtn(),color:T.err}} onClick={logoutEverywhere} disabled={revokeBusy}>{revokeBusy?'در حال بستن نشست‌ها…':'بستن همهٔ نشست‌ها'}</button>
+    <button type="button" style={{...AdminBtn(),color:T.err}} onClick={logoutEverywhere} disabled={revokeBusy}>{revokeBusy?'در حال بستن نشست‌ها…':'بستن همه نشست‌ها'}</button>
    </div>
    <AdminInstallControl/>
   </Box></>}
 
  function ProductsTabEditor(){
-  // منبع واحد مدیریت محصولات و بخش «محصولات منتخب» صفحهٔ خانه.
+  // منبع واحد مدیریت محصولات و بخش «محصولات منتخب» صفحه خانه.
   const productsCfg=editCfg.products&&typeof editCfg.products==='object'&&!Array.isArray(editCfg.products)
    ?editCfg.products:{showSection:true,list:Array.isArray(editCfg.products)?editCfg.products:[]};
   let items:any[]=Array.isArray(productsCfg.list)?productsCfg.list:[];
@@ -1349,7 +1349,7 @@ function DesignManagerEditor(){
   };
   return <>
    <Box title="نمایش صفحه محصولات در سایت">
-    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>این گزینه فقط صفحهٔ کامل محصولات، لینک منو و دکمهٔ «مشاهده همه» را کنترل می‌کند. تنظیم بخش منتخب صفحهٔ خانه در کارت بعدی مستقل است.</p>
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>این گزینه فقط صفحه کامل محصولات، لینک منو و دکمه «مشاهده همه» را کنترل می‌کند. تنظیم بخش منتخب صفحه خانه در کارت بعدی مستقل است.</p>
     <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',background:showProductsPage?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showProductsPage?T.ok:T.err}`,borderRadius:12}}>
      <input data-product-setting="products-page-enabled" type="checkbox" checked={showProductsPage} onChange={e=>{const v=e.target.checked;setEditCfg({...editCfg,products:{...productsCfg,showSection:v,list:items,items:[]},showProductsSection:v,showProductsPage:v})}} style={{width:18,height:18}}/>
      <span>{showProductsPage?<span style={{color:T.ok,display:'inline-flex',alignItems:'center',gap:6}}><ZkCheckCircleIcon size={15}/>صفحه محصولات فعال است</span>:<span style={{color:T.err,display:'inline-flex',alignItems:'center',gap:6}}><ZkXCircleIcon size={15}/>صفحه محصولات غیرفعال است</span>}</span>
@@ -1357,7 +1357,7 @@ function DesignManagerEditor(){
    </Box>
 
    <Box title="محصولات منتخب در صفحه خانه">
-    <p style={{fontSize:11,color:T.mut,lineHeight:1.9,margin:'0 0 10px'}}>نمایش یا لغو نمایش کل این بخش را مستقل از صفحهٔ محصولات تعیین کنید و سپس محصولاتی را که باید داخل آن دیده شوند انتخاب کنید. ترتیب نمایش همان ترتیب لیست محصولات است.</p>
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.9,margin:'0 0 10px'}}>نمایش یا لغو نمایش کل این بخش را مستقل از صفحه محصولات تعیین کنید و سپس محصولاتی را که باید داخل آن دیده شوند انتخاب کنید. ترتیب نمایش همان ترتیب لیست محصولات است.</p>
     <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',padding:'10px 12px',marginBottom:12,background:showHomeFeatured?`${T.ok}12`:`${T.err}12`,border:`1px solid ${showHomeFeatured?T.ok:T.err}`,borderRadius:12}}>
      <input data-product-setting="home-featured-enabled" type="checkbox" checked={showHomeFeatured} onChange={e=>setEditCfg({...editCfg,products:{...productsCfg,list:items,items:[],homeFeatured:{...homeFeatured,enabled:e.target.checked}}})} style={{width:18,height:18}}/>
      <span style={{color:showHomeFeatured?T.ok:T.err}}>{showHomeFeatured?'نمایش بخش در صفحه خانه':'عدم نمایش بخش در صفحه خانه'}</span>
@@ -1398,7 +1398,7 @@ function DesignManagerEditor(){
 
       <div style={{padding:'11px',border:`1px solid ${T.brd}`,borderRadius:12,background:T.card,marginTop:10}}>
        <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس اصلی محصول</b>
-       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.7,margin:'0 0 8px'}}>این عکس در صفحهٔ کامل محصولات استفاده می‌شود.</p>
+       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.7,margin:'0 0 8px'}}>این عکس در صفحه کامل محصولات استفاده می‌شود.</p>
        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
         {(it.image||it.imageUrl)&&<img src={it.image||it.imageUrl} alt="" style={{width:74,height:74,objectFit:'cover',objectPosition:it.objectPosition||'center',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
         <input type="file" aria-label={`بارگذاری عکس اصلی ${it.name||it.title||''}`} accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(f){try{const url=await fileToData(f,it.image||it.imageUrl,'products');patchItem(i,{image:url,imageUrl:url})}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
@@ -1410,7 +1410,7 @@ function DesignManagerEditor(){
 
       <div data-home-image-editor={it.id||i} style={{padding:'11px',border:`2px solid ${T.acc}`,borderRadius:12,background:T.soft,marginTop:10}}>
        <b style={{display:'block',fontSize:12.5,color:T.ttl,marginBottom:5}}>عکس جداگانه برای بخش «محصولات منتخب» صفحه خانه</b>
-       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.8,margin:'0 0 9px'}}>برای این محصول می‌توانید عکسی متفاوت از صفحهٔ محصولات بارگذاری کنید و کادر آن را با لمس، زوم و جابه‌جایی تنظیم کنید. اگر خالی باشد، عکس اصلی محصول استفاده می‌شود.</p>
+       <p style={{fontSize:10.5,color:T.mut,lineHeight:1.8,margin:'0 0 9px'}}>برای این محصول می‌توانید عکسی متفاوت از صفحه محصولات بارگذاری کنید و کادر آن را با لمس، زوم و جابه‌جایی تنظیم کنید. اگر خالی باشد، عکس اصلی محصول استفاده می‌شود.</p>
        <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:9}}>
         {(it.homeImage||it.homeImageUrl||it.image||it.imageUrl)&&<img data-home-image-preview src={it.homeImage||it.homeImageUrl||it.image||it.imageUrl} alt={it.name||it.title||''} style={{width:138,aspectRatio:it.homeImageAspectRatio||'4 / 3',objectFit:'cover',objectPosition:it.homeImageObjectPosition||'center',borderRadius:10,border:`1px solid ${T.brd}`}}/>}
         <span style={{fontSize:10.5,color:(it.homeImage||it.homeImageUrl)?T.ok:T.mut,fontWeight:800}}>{(it.homeImage||it.homeImageUrl)?'عکس اختصاصی خانه فعال است':'فعلاً عکس اصلی محصول استفاده می‌شود'}</span>
@@ -1523,7 +1523,7 @@ function DesignManagerEditor(){
  function LicensesTabEditor(){
   const rawLic=editCfg.licenses;
   const items:any[]=Array.isArray(rawLic)?rawLic:(rawLic&&typeof rawLic==='object'?Object.values(rawLic):[]);
-  // Phase 8: نمایش/عدم‌نمایش کل صفحهٔ مجوزها در سایت (بدون حذف داده‌های ذخیره‌شده)
+  // Phase 8: نمایش/عدم‌نمایش کل صفحه مجوزها در سایت (بدون حذف داده‌های ذخیره‌شده)
   const showLicensesPage=(editCfg.showLicensesPage ?? editCfg.menuVisibility?.licenses ?? true)!==false;
   const upd=(newItems:any[])=>setEditCfg({...editCfg,licenses:newItems});
   const chg=(i:number,k:string,v:any)=>{const a=[...items];a[i]={...a[i],[k]:v};upd(a)};
@@ -1532,7 +1532,7 @@ function DesignManagerEditor(){
   const moveLicense=(i:number,dir:-1|1)=>{const a=[...items];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd(a)};
   return <>
    <Box title="نمایش صفحه مجوزها در سایت">
-    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>با خاموش‌کردن این گزینه، صفحهٔ مجوزها در منوی سایت، صفحهٔ اصلی و لینک مستقیم نمایش داده نمی‌شود و بازدیدکننده به صفحهٔ اصلی هدایت می‌شود. <b>هیچ‌کدام از مجوزهای ذخیره‌شده حذف نمی‌شوند.</b></p>
+    <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>با خاموش‌کردن این گزینه، صفحه مجوزها در منوی سایت، صفحه اصلی و لینک مستقیم نمایش داده نمی‌شود و بازدیدکننده به صفحه اصلی هدایت می‌شود. <b>هیچ‌کدام از مجوزهای ذخیره‌شده حذف نمی‌شوند.</b></p>
     <label style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,cursor:'pointer',marginBottom:4}}>
      <input className="zkad-display-check" type="checkbox" checked={showLicensesPage} onChange={e=>{
       const val=e.target.checked;

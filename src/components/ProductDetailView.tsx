@@ -113,7 +113,7 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
         ariaLabel={isFa ? 'بخش‌های صفحه جزئیات محصول' : 'Product detail sections'}
       />
 
-      {/* همهٔ محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
+      {/* همه محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
       <div style={{ padding: '0 16px 24px' }}>
         <section id="product-detail-intro" data-detail-section style={{ ...detailSectionStyle(navTopOffset), borderTop: 0 }}>
           <h2 style={detailSectionTitleStyle}>{isFa ? 'معرفی محصول' : 'Product introduction'}</h2>

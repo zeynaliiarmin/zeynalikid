@@ -112,7 +112,7 @@ serve(async (req) => {
     const storedPhone = String(data.full_phone ?? data.payload?.fullPhone ?? "");
     const storedDigits = digitsOnly(storedPhone);
 
-    // ماسک شمارهٔ تماس: ۰۹۱۹xxxx۵۴۶ (ایران) یا +CC123xxxx456 (بین‌المللی)
+    // ماسک شماره تماس: ۰۹۱۹xxxx۵۴۶ (ایران) یا +CC123xxxx456 (بین‌المللی)
     const maskPhonePreview = (stored: string): string => {
       const d = digitsOnly(stored);
       if (!d || d.length < 7) return "";
@@ -160,7 +160,7 @@ serve(async (req) => {
       p.orderStatus ||
       (p.payment?.receipt ? "پرداخت‌شده" : p.course ? "در انتظار پرداخت" : "جدید");
 
-    // Phase 6: فایل‌های PDF در باکت خصوصی «files» هستند — برای نمایش در صفحهٔ عمومی Track
+    // Phase 6: فایل‌های PDF در باکت خصوصی «files» هستند — برای نمایش در صفحه عمومی Track
     // باید Signed URL کوتاه‌مدت تولید شود (service_role فقط داخل Function).
     const signPrivateUrl = async (url: string): Promise<string> => {
       if (!url) return "";

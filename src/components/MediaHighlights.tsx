@@ -1,13 +1,13 @@
 // کامپوننت مشترک برای:
 //  ۱) رندر «هایلایت‌های رنگی» (جملات جلب‌توجه) که در پنل مدیریت برای هر محتوا تعریف می‌شود.
 //  ۲) رندر «متن‌فرمت‌شده» (بولد/ایتالیک/زیرخط/لینک) از توضیحات/متن کامل.
-// بدون استفاده از dangerouslySetInnerHTML برای امنیت؛ فقط با پارس سادهٔ متن و ساخت عناصر React.
+// بدون استفاده از dangerouslySetInnerHTML برای امنیت؛ فقط با پارس ساده متن و ساخت عناصر React.
 
 import React from 'react';
 
 export type HighlightItem = { id?: string; text?: string; color?: string };
 
-// رنگ‌های پاستیلی به‌همراه رنگِ تیرهٔ مناسب برای خوانایی داخل هایلایت
+// رنگ‌های پاستیلی به‌همراه رنگِ تیره مناسب برای خوانایی داخل هایلایت
 const HIGHLIGHT_TEXT_COLORS: Record<string, string> = {
   '#DCFCE7': '#14532D', // سبز ملایم
   '#FEF9C3': '#713F12', // زرد ملایم
@@ -23,7 +23,7 @@ export function highlightTextColor(color?: string): string {
   return (color && HIGHLIGHT_TEXT_COLORS[color]) || '#14532D';
 }
 
-// رندر هایلایت‌های یک آیتم (آرایهٔ highlights)
+// رندر هایلایت‌های یک آیتم (آرایه highlights)
 export function Highlights({ highlights, style }: { highlights?: HighlightItem[] | null; style?: React.CSSProperties }) {
   const list = (highlights || []).filter((h) => String(h?.text || '').trim());
   if (!list.length) return null;

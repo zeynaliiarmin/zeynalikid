@@ -1,6 +1,6 @@
 // بازطراحی کامل استوری — چندین هایلایت، هر کدام چند استوری (فقط عکس)
 // دو کد دستی (خارجی/داخلی) با قانون VPN + توقف تایمر + جابجایی بین هایلایت‌ها + swipe روان
-// جدید: نوار پیشرفت اینستاگرامی + حلقهٔ رنگی/خاکستری + ادامه از جای دیده‌شده + راهنمای اولین ورود +
+// جدید: نوار پیشرفت اینستاگرامی + حلقه رنگی/خاکستری + ادامه از جای دیده‌شده + راهنمای اولین ورود +
 //       نگه‌داشتن انگشت = توقف تایمر (بدون منوی دانلود/کپی) + ضد دانلود تصویر
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -64,7 +64,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   const [hlStage, setHlStage] = useState<'out' | 'in' | null>(null);
   const [hlInStart, setHlInStart] = useState(false);
   const hlDirRef = useRef<'next' | 'prev' | null>(null);
-  const [endAnim, setEndAnim] = useState(false); // پایان زنجیرهٔ هایلایت‌ها → مکعب محو به صفحه
+  const [endAnim, setEndAnim] = useState(false); // پایان زنجیره هایلایت‌ها → مکعب محو به صفحه
   const endRef = useRef(false);
   const [dragY, setDragY] = useState(0); // جابه‌جایی عمودی هنگام کشیدن برای خروج
   const [snapping, setSnapping] = useState(false); // بازگشت نرم بعد از کشیدن کوتاه به پایین
@@ -134,7 +134,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
     window.setTimeout(() => onCloseRef.current(), 360);
   }, []);
 
-  // پایان زنجیرهٔ هایلایت‌ها: انیمیشن مکعبِ محو‌شونده و برگشت به صفحهٔ آموزش/تجربه والدین
+  // پایان زنجیره هایلایت‌ها: انیمیشن مکعبِ محو‌شونده و برگشت به صفحه آموزش/تجربه والدین
   // تا مخاطب متوجه شود که آخرین استوریِ آخرین هایلایت بوده است.
   const finishLast = useCallback(() => {
     if (endRef.current) return;
@@ -433,7 +433,7 @@ export default function StoryViewer({ highlights, startHighlight = 0, T, onClose
   );
 }
 
-// ─── نوار هایلایت‌ها (دایره‌ها) با حلقهٔ رنگی/خاکستری ───
+// ─── نوار هایلایت‌ها (دایره‌ها) با حلقه رنگی/خاکستری ───
 export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { highlights: Highlight[]; T: any; lang: 'fa' | 'en'; mediaCountryMode?: string }) {
   const active = (highlights || []).filter(h => h.active !== false && h.stories?.some(s => s.active !== false)).sort((a, b) => (a.order || 0) - (b.order || 0));
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -443,7 +443,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
   });
   const storyHistRef = useRef(false);
 
-  // پیروی از تنظیم «تشخیص VPN / کشور کاربر» (mediaCountryMode) مثل بقیهٔ محتواها
+  // پیروی از تنظیم «تشخیص VPN / کشور کاربر» (mediaCountryMode) مثل بقیه محتواها
   useEffect(() => {
     let alive = true;
     const mode = mediaCountryMode || 'auto';
@@ -454,7 +454,7 @@ export function StoryHighlightsBar({ highlights, T, lang, mediaCountryMode }: { 
   }, [mediaCountryMode]);
   useEffect(() => { if (openIdx === null) { try { setProgress(JSON.parse(localStorage.getItem('zk_story_progress_v1') || '{}')); } catch { setProgress({}); } } }, [openIdx]);
 
-  // دکمهٔ Back گوشی/مرورگر باید فقط استوری را ببندد، نه اینکه به صفحهٔ قبل (هوم) برگردد.
+  // دکمه Back گوشی/مرورگر باید فقط استوری را ببندد، نه اینکه به صفحه قبل (هوم) برگردد.
   useEffect(() => {
     const onPop = () => { storyHistRef.current = false; setOpenIdx(null); };
     window.addEventListener('popstate', onPop);

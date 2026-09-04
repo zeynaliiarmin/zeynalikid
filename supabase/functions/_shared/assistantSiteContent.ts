@@ -1,8 +1,8 @@
-// ── پل زندهٔ دستیار با صفحات سایت (کپی‌شدنی در دانش نیست) ──
-// در لحظهٔ پرسش، محتوای منتشرشدهٔ «آموزش‌ها» (مقاله/ویدیو/پادکست)، «مجوزها»، «تجربهٔ والدین»،
+// ── پل زنده دستیار با صفحات سایت (کپی‌شدنی در دانش نیست) ──
+// در لحظه پرسش، محتوای منتشرشده «آموزش‌ها» (مقاله/ویدیو/پادکست)، «مجوزها»، «تجربه والدین»،
 // «نظرات تأییدشده» و «سؤالات متداول» به‌عنوان منابع تأییدشده به مخزن جست‌وجوی دستیار اضافه می‌شود؛
-// پس هر محتوای تازه‌ای که مالک در پنل بگذارد، همان لحظه قابل پاسخ‌دادن است و دکمهٔ «مشاهدهٔ همین مورد»
-// با لینک دقیق به همان آیتم (?open=id) ساخته می‌شود. هیچ عدد، اعتبار یا دادهٔ کاربریِ غیرعمومی اینجا نمی‌آید.
+// پس هر محتوای تازه‌ای که مالک در پنل بگذارد، همان لحظه قابل پاسخ‌دادن است و دکمه «مشاهده همین مورد»
+// با لینک دقیق به همان آیتم (?open=id) ساخته می‌شود. هیچ عدد، اعتبار یا داده کاربریِ غیرعمومی اینجا نمی‌آید.
 
 type MediaDestination='education'|'experience';
 const LEGACY_MAP:Record<string,MediaDestination>={education:'education',experience:'experience','parent-experience':'experience'};
@@ -62,11 +62,11 @@ export function buildSiteContentKnowledge(cfg:any,reviews:any[]):SiteKnowledgeRo
       const title=clean(item?.title||item?.name||'',160);if(!title)continue;
       const id=clean(String(item?.id??''),64),type=TYPE_WORDS[String(item?.type||'video')]||'محتوا';
       const flat=clean(title.replace(/\u200c/g,''),160);
-      add({id:`site-${page}-${id||rows.length}`,question:`${type} ${title}`,answer:mediaBody(item),aliases:[title,flat,`${title} ${page==='education'?'آموزش':'تجربه والدین'}`,`${flat} ${page==='education'?'آموزش':'تجربه والدین'}`],keywords:[type,title.split(' ').filter(word=>word.length>2).slice(0,6),page==='education'?'آموزش‌ها':'تجربه والدین'].flat(),category,link_url:id?`/${page}?open=${id}`:`/${page}`,link_label:`مشاهدهٔ همین ${type}`});
+      add({id:`site-${page}-${id||rows.length}`,question:`${type} ${title}`,answer:mediaBody(item),aliases:[title,flat,`${title} ${page==='education'?'آموزش':'تجربه والدین'}`,`${flat} ${page==='education'?'آموزش':'تجربه والدین'}`],keywords:[type,title.split(' ').filter(word=>word.length>2).slice(0,6),page==='education'?'آموزش‌ها':'تجربه والدین'].flat(),category,link_url:id?`/${page}?open=${id}`:`/${page}`,link_label:`مشاهده همین ${type}`});
     }
   };
   mediaRows(mediaItemsForDestination(cfg,'education'),'education','آموزش‌ها');
-  mediaRows(mediaItemsForDestination(cfg,'experience'),'experience','تجربهٔ والدین');
+  mediaRows(mediaItemsForDestination(cfg,'experience'),'experience','تجربه والدین');
   for(const item of (Array.isArray(cfg?.faqItems)?cfg.faqItems:[]).slice(0,60)){
     const question=clean(item?.question,300),answer=clean(item?.answer,2000);if(!question||!answer)continue;
     const id=clean(String(item?.id??''),40);
@@ -82,10 +82,10 @@ export function buildSiteContentKnowledge(cfg:any,reviews:any[]):SiteKnowledgeRo
     const title=clean(item?.title,160);if(!title)continue;
     const id=clean(String(item?.id??''),40),description=clean(item?.description,600);
     const flatTitle=clean(title.replace(/\u200c/g,''),160);
-    add({id:`site-license-${id||rows.length}`,question:title.startsWith('مجوز')?title:`مجوز ${title}`,answer:`«${title}»${description?` — ${description}`:''} در صفحهٔ مجوزها منتشر شده است.`,aliases:[title,flatTitle,`گواهینامه ${flatTitle}`,`مدرک ${flatTitle}`],keywords:['مجوز','گواهینامه',title.split(' ').filter(word=>word.length>2).slice(0,5)].flat(),category:'مجوزها',link_url:id?`/licenses?open=${id}`:'/licenses',link_label:'دیدن همین مجوز'});
+    add({id:`site-license-${id||rows.length}`,question:title.startsWith('مجوز')?title:`مجوز ${title}`,answer:`«${title}»${description?` — ${description}`:''} در صفحه مجوزها منتشر شده است.`,aliases:[title,flatTitle,`گواهینامه ${flatTitle}`,`مدرک ${flatTitle}`],keywords:['مجوز','گواهینامه',title.split(' ').filter(word=>word.length>2).slice(0,5)].flat(),category:'مجوزها',link_url:id?`/licenses?open=${id}`:'/licenses',link_label:'دیدن همین مجوز'});
   }
   const licensesText=clean(cfg?.licensesText,2000);
-  if(licensesText)add({id:'site-licenses-text',question:'مجوزهای سایت چیست؟',answer:licensesText,aliases:['گواهینامه‌ها را بفرست','مجوز دارید؟','اعتبار مجوزها'],keywords:['مجوز','گواهینامه'],category:'مجوزها',link_url:'/licenses',link_label:'دیدن صفحهٔ مجوزها'});
+  if(licensesText)add({id:'site-licenses-text',question:'مجوزهای سایت چیست؟',answer:licensesText,aliases:['گواهینامه‌ها را بفرست','مجوز دارید؟','اعتبار مجوزها'],keywords:['مجوز','گواهینامه'],category:'مجوزها',link_url:'/licenses',link_label:'دیدن صفحه مجوزها'});
   const titles=courseTitleMap(cfg);
   for(const review of (Array.isArray(reviews)?reviews:[]).slice(0,40)){
     const comment=clean(review?.comment,900);if(comment.length<8)continue;
@@ -94,7 +94,7 @@ export function buildSiteContentKnowledge(cfg:any,reviews:any[]):SiteKnowledgeRo
     const scope=courses.length?courses.slice(0,2).join(' و '):'دوره‌ها و محصولات';
     const rating=Math.max(1,Math.min(5,Number(review?.rating)||5));
     const name=clean(review?.reviewer_name,60)||'یکی از والدین';
-    add({id:`site-review-${clean(String(review?.id??rows.length),20)}`,question:`نظر والدین دربارهٔ ${scope}`,answer:`${name} دربارهٔ ${scope} با امتیاز ${rating} از ۵ نوشته: «${comment}»`,aliases:[`تجربهٔ ${scope}`,`نظر ${scope}`],keywords:['نظر','تجربه',...courses].filter(Boolean),category:'نظرات والدین',link_url:ids.length?'/courses':'/products',link_label:ids.length?'دیدن دوره‌ها':'دیدن محصولات'});
+    add({id:`site-review-${clean(String(review?.id??rows.length),20)}`,question:`نظر والدین درباره ${scope}`,answer:`${name} درباره ${scope} با امتیاز ${rating} از ۵ نوشته: «${comment}»`,aliases:[`تجربه ${scope}`,`نظر ${scope}`],keywords:['نظر','تجربه',...courses].filter(Boolean),category:'نظرات والدین',link_url:ids.length?'/courses':'/products',link_label:ids.length?'دیدن دوره‌ها':'دیدن محصولات'});
   }
   return rows;
 }

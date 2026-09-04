@@ -2,7 +2,7 @@
    پالت‌های اختصاصی هر دیزاین (روشن و تاریک)
    منبع: فایل design-A-warm.html (تokens دقیقاً از همان فایل برداشته شده‌اند)
    این تنها جایِ تعریف رنگ‌هاست: هم صفحات ورود/ثبت‌نام/پیگیری/ورود مدیریت
-   و هم پوستهٔ تاریک کل سایت از همین جدول خوانده می‌شوند.
+   و هم پوسته تاریک کل سایت از همین جدول خوانده می‌شوند.
    ═══════════════════════════════════════════════════════════════════════ */
 
 export type WarmDesignId = 'wellness' | 'kidlearn' | 'blend' | 'classic';
@@ -38,7 +38,7 @@ const SHARED_LIGHT = {
 };
 
 const SHARED_DARK = {
-  card0: '#182422', card1: '#121C1A', cardbd: 'rgba(255,255,255,.08)',
+  card0: '#182422', card1: '#121C1A', cardbd: '#ffffff14',
   fbg: '#101A18', fsh1: 'rgba(0,0,0,.5)', fsh2: 'rgba(255,255,255,.055)',
   sub: '#A6B8B2', ph: '#7E938D', track: '#1E2C29',
   warnbg: '#33280F', warnbd: '#66501B', warnfg: '#F2C968',
@@ -73,7 +73,7 @@ export const normalizeWarmDesign = (value: unknown): WarmDesignId => {
   return (WARM_DESIGNS as string[]).includes(raw) ? (raw as WarmDesignId) : 'classic';
 };
 
-/** از شناسهٔ تم (مثل wellness-dark یا admin-light) دیزاین + حالت روشن/تاریک را می‌گیرد */
+/** از شناسه تم (مثل wellness-dark یا admin-light) دیزاین + حالت روشن/تاریک را می‌گیرد */
 export function designModeFromThemeId(themeId: unknown): { design: WarmDesignId; dark: boolean } {
   const raw = String(themeId || '');
   const dark = raw.endsWith('-dark') || raw === 'dark';
@@ -84,11 +84,11 @@ export function designModeFromThemeId(themeId: unknown): { design: WarmDesignId;
 export function warmPalette(design: unknown, dark: boolean): WarmPalette {
   const accent = ACCENTS[normalizeWarmDesign(design)][dark ? 'dark' : 'light'];
   const shared = dark ? SHARED_DARK : SHARED_LIGHT;
-  // در حالت روشن خودِ acc خواناست؛ در تاریک نسخهٔ روشن‌تر (ttl) برای متن‌های رنگی استفاده می‌شود.
+  // در حالت روشن خودِ acc خواناست؛ در تاریک نسخه روشن‌تر (ttl) برای متن‌های رنگی استفاده می‌شود.
   return { ...accent, ...shared, accText: dark ? accent.ttl : accent.acc } as unknown as WarmPalette;
 }
 
-/** متغیرهای --zp-* برای پوستهٔ صفحات ورود/ثبت‌نام/پیگیری/ورود مدیریت */
+/** متغیرهای --zp-* برای پوسته صفحات ورود/ثبت‌نام/پیگیری/ورود مدیریت */
 export function warmZpVars(design: unknown, dark: boolean): Record<string, string> {
   const p = warmPalette(design, dark);
   return {

@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Zeynalikid — CTA با تعویض نرم متن (هاور/لمسی) + آکاردئون مشاورهٔ رایگان
+   Zeynalikid — CTA با تعویض نرم متن (هاور/لمسی) + آکاردئون مشاوره رایگان
    • طرح «مشاوره»: بنفشِ هماهنگ با برند (مادرانه و دعوت‌گر) — مستقل از رنگ اصلی تم
    • طرح «ثبت‌نام دوره»: گرادیان primary/accent تم → با هر تم/حالت تیره هماهنگ
-   • این فایل در main.tsx هم import می‌شود تا keyframes در همهٔ صفحات (از جمله /courses)
-     در دسترس باشد — رفع باگ «تپش دکمهٔ مقصد»
+   • این فایل در main.tsx هم import می‌شود تا keyframes در همه صفحات (از جمله /courses)
+     در دسترس باشد — رفع باگ «تپش دکمه مقصد»
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ─── پالت بنفش مشاوره (برند) ─── */
@@ -53,7 +53,7 @@
   }
 }
 
-/* تپش بنفش برای دکمهٔ مشاوره */
+/* تپش بنفش برای دکمه مشاوره */
 @keyframes zk-consult-pulse {
   0%, 100% {
     transform: scale(1);
@@ -75,7 +75,7 @@
   }
 }
 
-/* ─── پایهٔ دکمه ─── */
+/* ─── پایه دکمه ─── */
 .zk-swap-cta {
   position: relative;
   display: inline-flex;
@@ -95,7 +95,7 @@
     color 0.3s var(--zk-ease, cubic-bezier(0.2, 0, 0, 1));
 }
 
-/* viewport فقط به‌اندازهٔ «یک خط» ارتفاع دارد → همیشه فقط یک متن دیده می‌شود */
+/* viewport فقط به‌اندازه «یک خط» ارتفاع دارد → همیشه فقط یک متن دیده می‌شود */
 .zk-swap-viewport {
   display: inline-block;
   height: 1.5em;
@@ -156,7 +156,7 @@
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.28), var(--zk-shadow-light);
 }
 
-/* بارقهٔ نرم عبوری (شبیه لمسِ گرم) */
+/* بارقه نرم عبوری (شبیه لمسِ گرم) */
 .zk-swap-consult::after {
   content: '';
   position: absolute;
@@ -193,7 +193,7 @@
   box-shadow: 0 6px 16px color-mix(in srgb, var(--zk-primary) 26%, transparent), var(--zk-shadow-light);
 }
 
-/* لایهٔ محو (muted) که با باز شدن تب مشاوره، روی گرادیان اصلی می‌نشیند */
+/* لایه محو (muted) که با باز شدن تب مشاوره، روی گرادیان اصلی می‌نشیند */
 .zk-swap-enroll::after {
   content: '';
   position: absolute;
@@ -225,7 +225,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   آکاردئون مشاورهٔ رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات)
+   آکاردئون مشاوره رایگان (نازک، بدون کادر، چسبیده به پایین کادر اطلاعات)
    ═══════════════════════════════════════════════════════════════════ */
 .zk-consult-accordion {
   border-top: 1px solid var(--zk-border);
@@ -296,7 +296,7 @@
   }
 }
 
-/* باکس بازشدهٔ مشاوره — انیمیشن باز/بستهٔ نرم (grid-rows) */
+/* باکس بازشده مشاوره — انیمیشن باز/بسته نرم (grid-rows) */
 .zk-consult-panel-wrap {
   display: grid;
   grid-template-rows: 0fr;
@@ -308,19 +308,52 @@
   min-height: 0;
 }
 .zk-consult-panel {
-  padding: 2px 16px 16px;
-  background: var(--zk-surface-muted, #F8F4EF);
-  border-top: 1px solid var(--zk-border);
+  position: relative;
+  isolation: isolate;
+  padding: 14px 16px 16px;
+  background:
+    radial-gradient(110% 130% at 100% 0%, color-mix(in srgb, var(--zk-consult-b) 16%, transparent), transparent 64%),
+    linear-gradient(145deg, color-mix(in srgb, var(--zk-surface) 82%, var(--zk-consult-a) 5%), var(--zk-surface-muted, #F8F4EF));
+  border-top: 1px solid color-mix(in srgb, var(--zk-consult-a) 22%, var(--zk-border));
   opacity: 0;
   transition: opacity 0.25s ease;
 }
 .zk-consult-panel-wrap.zk-open .zk-consult-panel { opacity: 1; }
 
+/* Only the revealed panel receives this visual treatment; the closed trigger stays exactly as-is. */
+.zk-consult-panel-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--zk-consult-a) 18%, var(--zk-border));
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--zk-surface) 88%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 62%, transparent), 0 7px 18px color-mix(in srgb, var(--zk-consult-a) 8%, transparent);
+}
+.zk-consult-panel-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  color: var(--zk-consult-deep);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--zk-consult-a) 17%, transparent), color-mix(in srgb, var(--zk-consult-b) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--zk-consult-a) 23%, transparent);
+}
 .zk-consult-panel .zk-consult-note {
-  margin: 10px 2px 0;
-  font-size: 11.5px;
-  line-height: 1.8;
+  margin: 0;
+  min-width: 0;
+  font-size: 11.75px;
+  line-height: 1.9;
   color: var(--zk-text-muted);
+}
+.zk-consult-panel > .zk-swap-cta {
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+  border-radius: 15px;
 }
 
 /* ─── keyframes ─── */

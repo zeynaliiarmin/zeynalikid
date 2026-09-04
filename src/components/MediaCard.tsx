@@ -178,7 +178,7 @@ export function ManualEmbed({code,type='video',minHeight,lang='fa'}:{code:string
   return <div data-manual-embed="iframe" style={{position:'relative',width:'100%',paddingTop:'56.25%',minHeight:minHeight||undefined,background:'#000',borderRadius:14,overflow:'hidden'}}><iframe src={safeSrc} title="Embedded media" frameBorder="0" sandbox={mediaFrameSandbox(safeSrc)} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" style={{position:'absolute',inset:0,width:'100%',height:'100%',border:0,display:'block'}}/></div>;
 }
 
-// همهٔ کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
+// همه کارت‌ها در حالت بسته عنوان یک‌خطی و دقیقاً دو خط توضیح دارند؛ متن بلند با «بیشتر…» باز می‌شود.
 function MediaCardInfo({item,type,masked,T,secure=true,lang,expanded=false,onMore}:{item:any,type:string,masked:string,T:any,secure?:boolean,lang:string,expanded?:boolean,onMore?:()=>void}){
  const desc=String(type==='text'?(item.body||item.description||''):(item.description||''));
  return <div style={{padding:'10px 12px 12px',userSelect:secure?'none':undefined,display:'flex',flexDirection:'column',flex:1}}>

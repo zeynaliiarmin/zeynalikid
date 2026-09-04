@@ -1,5 +1,5 @@
 // میانگین‌های قد و وزن WHO برای کودکان ۲ تا ۱۸ سال (مقادیر مرجع، گرد شده).
-// کاربرد: پاسخ رشد دستیار عمومی + پشتوانهٔ عددی تولید برنامه با هوش مصنوعی.
+// کاربرد: پاسخ رشد دستیار عمومی + پشتوانه عددی تولید برنامه با هوش مصنوعی.
 export type WhoRow = { h: number; w: number };
 
 export const WHO_HEIGHT_TOLERANCE_CM = 2;
@@ -72,9 +72,9 @@ export function whoGrowthAnswer(text: unknown, lang: "fa" | "en" = "fa"): string
     out += " For an exact assessment of the growth curve and the recent trend, request a specialist consultation.";
     return out;
   }
-  let out = `بر اساس میانگین‌های رشد سازمان بهداشت جهانی (WHO)، یک ${sexFa} ${faDigits(ref.age)} ساله به‌طور میانگین حدود ${faDigits(ref.h)} سانتی‌متر قد و ${faDigits(ref.w)} کیلوگرم وزن دارد. محدودهٔ معمول: قد ${faDigits(hLow)} تا ${faDigits(hHigh)} سانتی‌متر (±${faDigits(WHO_HEIGHT_TOLERANCE_CM)} سانتی‌متر) و وزن ${faDigits(wLow)} تا ${faDigits(wHigh)} کیلوگرم (±${faDigits(WHO_WEIGHT_TOLERANCE_KG)} کیلوگرم) حول همین میانگین. توجه کنید که این اعداد تقریبی و بر پایهٔ میانگین WHO هستند و جایگزین قضاوت پزشکی نیستند.`;
-  if (Number.isFinite(userH)) out += ` قد اعلامی شما (${faDigits(userH)} سانتی‌متر) ${userH >= hLow && userH <= hHigh ? "داخل بازهٔ معمول" : userH < hLow ? "کمی پایین‌تر از بازهٔ معمول" : "کمی بالاتر از بازهٔ معمول"} است.`;
-  if (Number.isFinite(userW)) out += ` وزن اعلامی شما (${faDigits(userW)} کیلوگرم) ${userW >= wLow && userW <= wHigh ? "داخل بازهٔ معمول" : userW < wLow ? "کمی پایین‌تر از بازهٔ معمول" : "کمی بالاتر از بازهٔ معمول"} است.`;
+  let out = `بر اساس میانگین‌های رشد سازمان بهداشت جهانی (WHO)، یک ${sexFa} ${faDigits(ref.age)} ساله به‌طور میانگین حدود ${faDigits(ref.h)} سانتی‌متر قد و ${faDigits(ref.w)} کیلوگرم وزن دارد. محدوده معمول: قد ${faDigits(hLow)} تا ${faDigits(hHigh)} سانتی‌متر (±${faDigits(WHO_HEIGHT_TOLERANCE_CM)} سانتی‌متر) و وزن ${faDigits(wLow)} تا ${faDigits(wHigh)} کیلوگرم (±${faDigits(WHO_WEIGHT_TOLERANCE_KG)} کیلوگرم) حول همین میانگین. توجه کنید که این اعداد تقریبی و بر پایه میانگین WHO هستند و جایگزین قضاوت پزشکی نیستند.`;
+  if (Number.isFinite(userH)) out += ` قد اعلامی شما (${faDigits(userH)} سانتی‌متر) ${userH >= hLow && userH <= hHigh ? "داخل بازه معمول" : userH < hLow ? "کمی پایین‌تر از بازه معمول" : "کمی بالاتر از بازه معمول"} است.`;
+  if (Number.isFinite(userW)) out += ` وزن اعلامی شما (${faDigits(userW)} کیلوگرم) ${userW >= wLow && userW <= wHigh ? "داخل بازه معمول" : userW < wLow ? "کمی پایین‌تر از بازه معمول" : "کمی بالاتر از بازه معمول"} است.`;
   out += " برای ارزیابی دقیق منحنی رشد و روند چند ماه اخیر، پیشنهاد می‌کنم درخواست مشاوره بفرستید تا کارشناس فرزندمن عدد فرزند شما را روی نمودار رشد بررسی کند.";
   return out;
 }

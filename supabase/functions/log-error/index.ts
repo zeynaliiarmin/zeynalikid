@@ -1,11 +1,11 @@
 // supabase/functions/log-error/index.ts
 // ثبت خطاهای فرانت‌اند — عمومی (no-verify-jwt) اما با محافظت کامل:
 //   • Rate limit: حداکثر ۱۰ درخواست در دقیقه برای هر IP
-//   • فیلتر دادهٔ حساس (شماره موبایل/کارت/شبا/ایمیل/توکن) قبل از ذخیره
+//   • فیلتر داده حساس (شماره موبایل/کارت/شبا/ایمیل/توکن) قبل از ذخیره
 //   • محدودیت طول هر فیلد
 //   • فقط سرویس‌رول می‌تواند جدول error_logs را بخواند (RLS)
 //   • پاکسازی خودکار خطاهای قدیمی‌تر از ۱۵ روز
-// هرگز خطا را به کلاینت برنمی‌گرداند (همیشه ok:true) تا تجربهٔ کاربر مختل نشود.
+// هرگز خطا را به کلاینت برنمی‌گرداند (همیشه ok:true) تا تجربه کاربر مختل نشود.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
@@ -46,7 +46,7 @@ serve(async (req) => {
   cleanupExpiredBuckets();
   const rl = rateLimit(rateLimitKey(req, "errlog"), { maxRequests: 10, windowMs: 60_000 });
   if (!rl.ok) {
-    // بی‌صدا رد شود تا مهاجم متوجه نشود و تجربهٔ کاربر هم مختل نشود
+    // بی‌صدا رد شود تا مهاجم متوجه نشود و تجربه کاربر هم مختل نشود
     return jsonResponse({ ok: true }, 200, origin);
   }
 

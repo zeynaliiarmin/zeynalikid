@@ -36,7 +36,7 @@ interface AppRoutesProps {
 }
 
 export default function AppRoutes({ app, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
-  // صفحهٔ ورودی سایت: از تنظیمات پنل مدیریت (entryMode) — «پیگیری دوره» یا «پنل کاربر»
+  // صفحه ورودی سایت: از تنظیمات پنل مدیریت (entryMode) — «پیگیری دوره» یا «پنل کاربر»
   const portalMode = (app.cfg as any)?.entryMode === 'user';
   const entryPage = portalMode ? <UserPortalPage /> : <TrackPage />;
   const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--zk-text-muted, #4B5563)', fontSize: 14 }}>در حال بارگذاری...</div>;

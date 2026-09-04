@@ -149,7 +149,7 @@ export default function CoursesPage(){
 
   // ─── ۵ مورد رندومِ متوازن (ترکیبی از مقاله/ویدیو/پادکست) ───
   // مبنای رندوم یک «امضای پایدار» از شناسه‌هاست؛ بنابراین فقط هنگام ورود به صفحه، رفرش،
-  // یا تغییر واقعی مجموعهٔ محتواها عوض می‌شود — نه با هر بار باز/بستن یک محتوا (بدون «پرش»).
+  // یا تغییر واقعی مجموعه محتواها عوض می‌شود — نه با هر بار باز/بستن یک محتوا (بدون «پرش»).
   const expSignature = React.useMemo(() => parentExperienceMedia.map((x: any) => `${x._mediaSource || 'experience'}:${x.id}`).join('|'), [parentExperienceMedia]);
   const eduSignature = React.useMemo(() => educationalMedia.map((x: any) => `${x._mediaSource || 'education'}:${x.id}`).join('|'), [educationalMedia]);
   const expRef = React.useRef(parentExperienceMedia); expRef.current = parentExperienceMedia;
@@ -158,7 +158,7 @@ export default function CoursesPage(){
   const previewEducation = React.useMemo(() => balancedRandomMix(eduRef.current, 5), [eduSignature]);
   // bottom sheet «بیشتر» برای نمایش کامل یک محتوا
   const [sheetItem, setSheetItem] = useState<any>(null);
-  // صفحهٔ جداگانهٔ «مشاهده همه» برای تجربه والدین / محتوای آموزشی
+  // صفحه جداگانه «مشاهده همه» برای تجربه والدین / محتوای آموزشی
   const [showAllMedia, setShowAllMedia] = useState<'experience' | 'education' | null>(null);
   const [overlayTab, setOverlayTab] = useState<string>('all');
   const mediaOverlayPushedRef = React.useRef(false);
@@ -194,8 +194,8 @@ export default function CoursesPage(){
     window.location.href = APP_A_URL;
   };
 
-  // ─── دکمهٔ «شروع مشاوره رایگان» فوتر: به‌جای رفتن به هوم، به ابتدای صفحه اسکرول می‌شود؛
-  // اگر جزئیات دوره باز باشد، تب مشاورهٔ بنفش به‌صورت خودکار باز و دکمهٔ آن تپش می‌زند. ───
+  // ─── دکمه «شروع مشاوره رایگان» فوتر: به‌جای رفتن به هوم، به ابتدای صفحه اسکرول می‌شود؛
+  // اگر جزئیات دوره باز باشد، تب مشاوره بنفش به‌صورت خودکار باز و دکمه آن تپش می‌زند. ───
   const [consultFocusSignal, setConsultFocusSignal] = useState(0);
   const handleStartConsult = () => {
     if (referralConsultant) { startConsult?.(); return; } // حالت لینک ارجاع → پاپ‌آپ
@@ -225,7 +225,7 @@ export default function CoursesPage(){
     setSelectedCourse(null);
   };
 
-  // ─── بازیابی دورهٔ باز بعد از رفرش (بدون پریدن به فهرست دوره‌ها) ───
+  // ─── بازیابی دوره باز بعد از رفرش (بدون پریدن به فهرست دوره‌ها) ───
   React.useEffect(() => {
     try {
       const id = sessionStorage.getItem('zk_course_detail');
@@ -267,10 +267,13 @@ export default function CoursesPage(){
   }, [referralTargetCourse?.id, didScroll]);
 
   // وقتی کاربر دکمه back گوشی/مرورگر را می‌زند، history.pop باعث می‌شود جزئیات بسته شود.
-  // اگر صفحهٔ «مشاهده همه نظرات/پرسش‌ها/محتوای آموزشی/تجربه والدین» باز باشد، آن را به عهدهٔ
+  // اگر صفحه «مشاهده همه نظرات/پرسش‌ها/محتوای آموزشی/تجربه والدین» باز باشد، آن را به عهده
   // همان کامپوننت می‌گذاریم تا فقط همان لایه بسته شود و جزئیات دوره باز بماند.
   React.useEffect(() => {
-    const onPop = () => {
+    const onPop = (event: PopStateEvent) => {
+      // An inner detail overlay returns to the course-detail history entry. Its
+      // popstate must close only that overlay, never the detail page below it.
+      if ((event.state as any)?.zkCourseDetail) return;
       let overlayOpen = false;
       try {
         overlayOpen = !!(window as any).__zkReviewsOverlayOpen
@@ -320,7 +323,7 @@ export default function CoursesPage(){
             onOpenCourse={(cr: any) => { setSelectedCourse(cr); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
             onRegister={() => {
               // حالت «پنل کاربر»: اگر کاربر وارد نشده باشد، نخست ورود/ثبت‌نام خواسته می‌شود
-              // و بعد از آن سؤال روش ارسال می‌آید (برای همهٔ دوره‌ها، از جمله دوره‌های تازه‌افزوده)
+              // و بعد از آن سؤال روش ارسال می‌آید (برای همه دوره‌ها، از جمله دوره‌های تازه‌افزوده)
               if (String((cfg as any)?.entryMode || 'track') === 'user' && !getUserSession()) {
                 rememberPendingRegistration(String(selectedCourse?.id || ''));
                 setPortalNext('/courses'); app.setView('track'); return;
@@ -356,7 +359,7 @@ export default function CoursesPage(){
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px 80px' }}>
         {/* Header */}
         <div style={{ paddingTop: 18, paddingBottom: 12 }}>
-          <div className="zk-public-title-row" style={{ marginBottom: 4 }}>
+          <div className="zk-public-title-row" dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ marginBottom: 4 }}>
             <PublicBackButton lang={lang === 'en' ? 'en' : 'fa'} onBack={() => { if (referralConsultant || referralTarget?.raw) { app.goHome?.(); } else if (window.history.length > 1) { window.history.back(); } else { app.goHome?.(); } }} />
             <h1 style={{ flex: 1, minWidth: 0, fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--zk-text)' }}>
               {lang === 'en' ? 'Specialized Courses' : 'دوره‌های تخصصی رشد و تغذیه'}
@@ -393,7 +396,7 @@ export default function CoursesPage(){
               {isDir
                 ? (cfg.referral?.texts?.coursesCourse || (lang==='en'
                     ? `Tap “View details & enroll” on the highlighted course to register this course.`
-                    : `با زدن دکمهٔ «مشاهده جزئیات و ثبت» روی دورهٔ مشخص‌شده می‌توانید همان دوره را ثبت کنید.`))
+                    : `با زدن دکمه «مشاهده جزئیات و ثبت» روی دوره مشخص‌شده می‌توانید همان دوره را ثبت کنید.`))
                 : (cfg.referral?.texts?.coursesTab
                     ? fillReferralText(cfg.referral.texts.coursesTab, { tab: tabName })
                     : (lang==='en'
@@ -487,7 +490,7 @@ export default function CoursesPage(){
                     <div style={{ marginBottom: 12, padding: '12px 14px', background: 'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))', border: '1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))', borderRadius: 14, fontSize: 12.5, lineHeight: 1.9, color: 'var(--zk-warning)', fontWeight: 700 }}>
                       {lang === 'en'
                         ? 'Tap the highlighted button to view details and enroll in this course.'
-                        : `با زدن دکمهٔ «مشاهده جزئیات و ثبت ${cr.title}» می‌توانید جزئیات و ثبت‌نام این دوره را ببینید.`}
+                        : `با زدن دکمه «مشاهده جزئیات و ثبت ${cr.title}» می‌توانید جزئیات و ثبت‌نام این دوره را ببینید.`}
                     </div>
                   )}
                   <CourseCard
@@ -516,7 +519,7 @@ export default function CoursesPage(){
         </div>
         )}
 
-        {/* ─── تب «همه»: برای هر دستهٔ دوره (هماهنگ با پنل مدیریت) یک بخش مجزا با اسکرول افقی ─── */}
+        {/* ─── تب «همه»: برای هر دسته دوره (هماهنگ با پنل مدیریت) یک بخش مجزا با اسکرول افقی ─── */}
         {filter === 'all' && (
           <div>
             {(cfg.courseTabs || []).filter((t: any) => t.active !== false).map((tab: any) => {
@@ -614,11 +617,11 @@ export default function CoursesPage(){
         )}
       </div>
 
-      {/* صفحهٔ جداگانهٔ «مشاهده همه» تجربه والدین / محتوای آموزشی — تمام‌صفحه با دکمه برگشت + فیلتر نوع */}
+      {/* صفحه جداگانه «مشاهده همه» تجربه والدین / محتوای آموزشی — تمام‌صفحه با دکمه برگشت + فیلتر نوع */}
       {showAllMedia && createPortal(
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-bg, #FDF8F3)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="zk-public-title-row" dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ alignItems: 'center' }}>
               <PublicBackButton lang={lang} onBack={closeShowAllMedia} testId="public-course-media-back" />
               <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>
                 {showAllMedia === 'experience' ? (lang === 'en' ? 'Parent experiences' : 'تجربه و رضایت والدین') : (lang === 'en' ? 'Educational content' : 'محتوای آموزشی')}

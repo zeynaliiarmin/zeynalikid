@@ -41,7 +41,7 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
   tongue: {
     fa: {
       title: 'خطا در بارگذاری عکس',
-      message: `بدون عکس زبان، ارزیابی فرزندتان شروع نمی‌شود و برنامهٔ اختصاصی او به تأخیر می‌افتد. ${PREVENT}`,
+      message: `بدون عکس زبان، ارزیابی فرزندتان شروع نمی‌شود و برنامه اختصاصی او به تأخیر می‌افتد. ${PREVENT}`,
     },
     en: {
       title: 'Photo upload error',
@@ -83,7 +83,7 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
   track: {
     fa: {
       title: 'مشکل در صفحه پیگیری',
-      message: `وضعیت ثبت‌نام یا دورهٔ فرزندتان در چند ثانیه قابل بررسی است. ${PREVENT}`,
+      message: `وضعیت ثبت‌نام یا دوره فرزندتان در چند ثانیه قابل بررسی است. ${PREVENT}`,
     },
     en: {
       title: 'Tracking error',
@@ -93,7 +93,7 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
   pdf: {
     fa: {
       title: 'خطا در دانلود فایل',
-      message: `این فایل برنامهٔ اختصاصی فرزند شماست و نباید از دست برود. ${PREVENT}`,
+      message: `این فایل برنامه اختصاصی فرزند شماست و نباید از دست برود. ${PREVENT}`,
     },
     en: {
       title: 'Download error',
@@ -112,7 +112,7 @@ const listeners = new Set<Listener>();
 
 let seq = 0;
 
-/** نمایش هشدار خطا برای کاربر (فقط نمایشی — منطق ذخیرهٔ localStorage دست‌نخورده می‌ماند) */
+/** نمایش هشدار خطا برای کاربر (فقط نمایشی — منطق ذخیره localStorage دست‌نخورده می‌ماند) */
 export function triggerErrorAlert(context: ErrorAlertContext): void {
   try {
     const payload: ErrorAlertPayload = { context, id: ++seq };

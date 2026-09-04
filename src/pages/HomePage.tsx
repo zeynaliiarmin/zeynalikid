@@ -55,7 +55,7 @@ export default function HomePage(){
   contact:{icon:<ContactIcon size={24} color={T.acc}/>,title:publicText('menuContact','ارتباط با ما'),desc:lang==='en'?'Contact the support team':'ارتباط با تیم پشتیبانی',to:'/contact'},
  };
  const homeLayout=(cfg.homeLayout&&cfg.homeLayout.length?cfg.homeLayout:[{id:'consult',show:true},{id:'courses',show:true},{id:'experience',show:true},{id:'licenses',show:true},{id:'contact',show:true}]);
- // Phase 8: اگر صفحهٔ مجوزها غیرفعال باشد، میانبر آن در صفحهٔ اصلی هم نمایش داده نشود (داده‌ها حذف نمی‌شوند)
+ // Phase 8: اگر صفحه مجوزها غیرفعال باشد، میانبر آن در صفحه اصلی هم نمایش داده نشود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
  const shortcuts=homeLayout.filter((x:any)=>x.show!==false&&shortcutsBase[x.id]&&(x.id!=='licenses'||showLicensesPage)).map((x:any)=>shortcutsBase[x.id]);
  const heroImage=cfg.images?.hero||{}; const trustBoxImage=cfg.images?.trustBox||{};
@@ -120,7 +120,7 @@ export default function HomePage(){
            ? fillReferralText(cfg.referral.texts.homeTab, { tab: lang === 'en' ? (referralTab.titleEn || referralTab.title) : referralTab.title })
            : (lang==='en'
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
-           : `با زدن دکمهٔ زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
+           : `با زدن دکمه زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
        <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
          {coursesCtaLabel}
@@ -140,7 +140,7 @@ export default function HomePage(){
              ? fillReferralText(cfg.referral.texts.homeCourse, { course: cname })
              : (lang==='en'
              ? `Tap the button below to see the details and register "${cname}".`
-             : `با زدن دکمهٔ زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
+             : `با زدن دکمه زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>
          <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 1.6s ease-in-out infinite',WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite'}}>
            {coursesCtaLabel}

@@ -1,12 +1,12 @@
 /* Public light/dark colour contract.
  * Geometry, spacing and component behaviour stay in their owning styles.
  * هر دیزاین پالت تاریکِ اختصاصی خودش را دارد (design-A-warm → src/theme/warmPalettes.ts).
- * مقادیر --zk-d-* در بلوک همان دیزاین ست می‌شوند؛ بقیهٔ قواعد فقط از همان متغیرها خوانده
+ * مقادیر --zk-d-* در بلوک همان دیزاین ست می‌شوند؛ بقیه قواعد فقط از همان متغیرها خوانده
  * می‌شوند، پس هیچ رنگ تاریکی در این فایل هاردکد نیست.
  */
 html[data-public-theme='light'] body.public-root { color-scheme: light; }
 
-/* ── پایهٔ حالت تاریک (پیش‌فرض = پالت کلاسیک تیره) ── */
+/* ── پایه حالت تاریک (پیش‌فرض = پالت کلاسیک تیره) ── */
 html[data-public-theme='dark'] body.public-root {
   color-scheme: dark;
 
@@ -22,7 +22,7 @@ html[data-public-theme='dark'] body.public-root {
   --zk-d-sub: #A6B8B2;
   --zk-d-ph: #7E938D;
   --zk-d-inverse: #12101C;
-  --zk-d-bd: rgba(255, 255, 255, .08);
+  --zk-d-bd: #ffffff14;
   --zk-d-bd-strong: rgba(255, 255, 255, .22);
   --zk-d-mem0: #16232A;
   --zk-d-mem1: #152426;

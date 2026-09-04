@@ -5,7 +5,7 @@ const DEVICE_KEY = 'zk_admin_device_id';
 const AUTHED_KEY = 'zk_admin_authed';
 const PASSWORD_UPGRADE_KEY='zk_admin_password_upgrade_required';
 // نشست ادمین در localStorage ذخیره می‌شود (نه sessionStorage) تا هنگام ورود با
-// Face ID / اثر انگشت یا پس از رفرش، نشست معتبر حفظ شود و به صفحهٔ لاگین برنگردد.
+// Face ID / اثر انگشت یا پس از رفرش، نشست معتبر حفظ شود و به صفحه لاگین برنگردد.
 const STORE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = typeof localStorage !== 'undefined' ? localStorage : (typeof sessionStorage !== 'undefined' ? sessionStorage : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as any));
 const deviceInfo = () => ({
   device_name: `${navigator.platform || 'Device'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`,
@@ -44,7 +44,7 @@ export async function revokeAllAdminSessions(): Promise<void> {
   if (!token) return;
   const data = await adminSessionAction('revoke_all', { sessionToken: token });
   if (data?.revoked !== true) {
-    throw new Error(data?.message || data?.error || 'خروج از همهٔ نشست‌ها انجام نشد');
+    throw new Error(data?.message || data?.error || 'خروج از همه نشست‌ها انجام نشد');
   }
   clearAdminSession();
 }
@@ -89,7 +89,7 @@ async function credAction(action: string, payload: Record<string, unknown> = {})
   return data;
 }
 
-/** شمارهٔ فعلی (ماسک‌شده) برای نمایش در پنل */
+/** شماره فعلی (ماسک‌شده) برای نمایش در پنل */
 export async function getAdminCredsInfo(): Promise<{ phoneMasked: string }> {
   const data = await credAction('get_info');
   return { phoneMasked: data?.phoneMasked || '' };
@@ -97,7 +97,7 @@ export async function getAdminCredsInfo(): Promise<{ phoneMasked: string }> {
 
 /**
  * تغییر رمز عبور و/یا شماره تماس ورود — با چک رمز فعلی + نشست معتبر.
- * بعد از موفقیت، همهٔ نشست‌ها بسته می‌شوند (سرور) و باید دوباره وارد شوید.
+ * بعد از موفقیت، همه نشست‌ها بسته می‌شوند (سرور) و باید دوباره وارد شوید.
  */
 export async function changeAdminCredentials(opts: {
   currentPassword: string;

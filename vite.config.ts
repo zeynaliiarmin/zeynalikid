@@ -7,6 +7,8 @@ export default defineConfig({
   base: '/',
   plugins: [react()],
   ssr: { noExternal: ['react-helmet-async'] },
+  // The local Arena preview is served through a generated public host.
+  server: { allowedHosts: true },
   preview: { allowedHosts: true },
   build: {
     minify: 'esbuild',

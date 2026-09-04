@@ -1,7 +1,7 @@
 /**
  * ErrorAlert — کادر هشدار قرمز با وکتور SVG (بدون ایموجی)
  * طراحی موبایل‌فرست، RTL/LTR، با انیمیشن ورود ملایم و شماره پشتیبانی قابل کلیک (tel:).
- * فقط نمایشی است — هیچ تغییری در منطق یا ذخیرهٔ localStorage ایجاد نمی‌کند.
+ * فقط نمایشی است — هیچ تغییری در منطق یا ذخیره localStorage ایجاد نمی‌کند.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { ERROR_ALERT_CONTENT, type ErrorAlertContext } from '../../utils/errorAlertBus';

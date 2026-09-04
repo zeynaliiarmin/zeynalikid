@@ -1,5 +1,5 @@
-// EntryModeSettings — تنظیمات «صفحهٔ ورودی سایت»: پیگیری دوره یا پنل کاربر
-// فایل مستقل src/admin/* — ویرایش روی editCfg انجام و با دکمهٔ ذخیرهٔ پنل اعمال میشود
+// EntryModeSettings — تنظیمات «صفحه ورودی سایت»: پیگیری دوره یا پنل کاربر
+// فایل مستقل src/admin/* — ویرایش روی editCfg انجام و با دکمه ذخیره پنل اعمال میشود
 import { useState } from 'react';
 
 const OTP_MODES = [
@@ -46,13 +46,13 @@ export default function EntryModeSettings({ app }: { app: any }) {
   return (
     <div>
       {row(
-        en ? 'Public entry page' : 'صفحهٔ ورودی سایت',
+        en ? 'Public entry page' : 'صفحه ورودی سایت',
         seg(String(ec.entryMode || 'track'), [
           { id: 'track', label: en ? 'Course tracking (guest, no login)' : 'پیگیری دوره (بدون ورود — حالت فعلی)' },
           { id: 'user', label: en ? 'User portal (login required)' : 'پنل کاربر (ثبتنام/ورود اجباری)' },
         ], (v) => set({ entryMode: v })),
         en ? 'Only one mode can be active. In user-portal mode /track and /portal both show the sign-in page, and course registration and consultations require sign-in (tracking a code still works from inside the portal). Entries stay in “Forms & orders” with the new view, split into consultation and course sections. '
-          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، نشانی /track و /portal هر دو صفحهٔ ورود را نشان میدهند و ثبت دوره و مشاوره بدون ورود ممکن نیست (جست‌وجوی کد پیگیری هم داخل همان پنل باقی میماند)؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
+          : 'فقط یکی از دو حالت میتواند فعال باشد. در حالت «پنل کاربر»، نشانی /track و /portal هر دو صفحه ورود را نشان میدهند و ثبت دوره و مشاوره بدون ورود ممکن نیست (جست‌وجوی کد پیگیری هم داخل همان پنل باقی میماند)؛ ثبتها در همان بخش «فرم‌ها و سفارشات» با نمای جدید (دو بخش جدا از مشاوره و دوره) دیده میشوند.'
       )}
 
       {(() => {
@@ -62,7 +62,7 @@ export default function EntryModeSettings({ app }: { app: any }) {
         return (
           <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 11, padding: '9px 12px', marginBottom: 10 }}>
             {en ? 'Currently live on the site: ' : 'وضعیت فعلی سایت: '}<span style={{ color:T.accText }}>{label}</span>
-            {staged !== savedMode && <span style={{ color: T.warn, fontWeight: 800 }}>{en ? ' — you have an unsaved change; press Save below.' : ' — یک تغییر ذخیرهنشده دارید؛ دکمهٔ پایین را بزنید.'}</span>}
+            {staged !== savedMode && <span style={{ color: T.warn, fontWeight: 800 }}>{en ? ' — you have an unsaved change; press Save below.' : ' — یک تغییر ذخیرهنشده دارید؛ دکمه پایین را بزنید.'}</span>}
           </div>
         );
       })()}
@@ -79,7 +79,7 @@ export default function EntryModeSettings({ app }: { app: any }) {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 11.5, color: T.mut, fontWeight: 700, display: 'block', marginBottom: 4 }}>{en ? 'Sender / line number' : 'شمارهٔ خط ارسال'}</label>
+              <label style={{ fontSize: 11.5, color: T.mut, fontWeight: 700, display: 'block', marginBottom: 4 }}>{en ? 'Sender / line number' : 'شماره خط ارسال'}</label>
               <input dir="ltr" style={inp} value={smsSender} onChange={(e) => { setSmsSender(e.target.value); setUp({ smsSender: e.target.value }); }} placeholder="10004346" />
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function EntryModeSettings({ app }: { app: any }) {
           {en ? 'Enable Cloudflare Turnstile on registration' : 'فعالسازی Cloudflare Turnstile در فرم ثبتنام'}
         </label>,
         en ? 'Recommended to turn ON when live SMS is enabled (bots would burn SMS credits). Requires TURNSTILE_SECRET_KEY on the Edge Function. Where it appears: on the sign-in/register forms in user-portal mode, and on the payment page in course-tracking mode.'
-          : 'پیشنهاد: همزمان با فعالسازی پیامک واقعی روشن شود (رباتها اعتبار پیامک را میسوزانند). نیازمند TURNSTILE_SECRET_KEY در Edge Function است. جای نمایش: در حالت «پنل کاربر» روی فرم ورود و ثبتنام، و در حالت «پیگیری دوره» روی صفحهٔ پرداخت.'
+          : 'پیشنهاد: همزمان با فعالسازی پیامک واقعی روشن شود (رباتها اعتبار پیامک را میسوزانند). نیازمند TURNSTILE_SECRET_KEY در Edge Function است. جای نمایش: در حالت «پنل کاربر» روی فرم ورود و ثبتنام، و در حالت «پیگیری دوره» روی صفحه پرداخت.'
       )}
 
       {row(

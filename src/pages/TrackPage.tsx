@@ -1,6 +1,6 @@
-// TrackPage — پیگیری دوره (نسخهٔ A: نئومورفیک گرم + هدر کامل سایت + بازگشت داخل همبرگر)
-// همهٔ منطق قبلی حفظ شده: جستجوی Supabase/localStorage، ورود مهمان، تب‌ها (ویرایش/غذا/مصرف/اصلاحی)،
-// PDFها، نکات کارشناس، پنل تماس — فقط لایهٔ نمایشی به زبان طراحی جدید ترجمه شد.
+// TrackPage — پیگیری دوره (نسخه A: نئومورفیک گرم + هدر کامل سایت + بازگشت داخل همبرگر)
+// همه منطق قبلی حفظ شده: جستجوی Supabase/localStorage، ورود مهمان، تب‌ها (ویرایش/غذا/مصرف/اصلاحی)،
+// PDFها، نکات کارشناس، پنل تماس — فقط لایه نمایشی به زبان طراحی جدید ترجمه شد.
 import { useAppContext } from '../app/AppContext';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -210,14 +210,14 @@ export default function TrackPage() {
     [lang === 'en' ? 'Tracking code' : 'کد پیگیری', String(result?.trackingCode || '')],
     [lang === 'en' ? 'Status' : 'وضعیت دوره', String(result?.status || '')],
     [lang === 'en' ? 'Registration date' : 'تاریخ ثبت', String(result?.date || '—')],
-    ...(result?.course ? ([[lang === 'en' ? 'Course' : 'دورهٔ ثبتشده', lang === 'en' ? (result.course.titleEn || result.course.title) : result.course.title]] as [string, string][]) : []),
-    ...(resultPhonePreview(result) ? ([[lang === 'en' ? 'Registered phone' : 'شمارهٔ ثبتشده', resultPhonePreview(result)]] as [string, string][]) : []),
+    ...(result?.course ? ([[lang === 'en' ? 'Course' : 'دوره ثبتشده', lang === 'en' ? (result.course.titleEn || result.course.title) : result.course.title]] as [string, string][]) : []),
+    ...(resultPhonePreview(result) ? ([[lang === 'en' ? 'Registered phone' : 'شماره ثبتشده', resultPhonePreview(result)]] as [string, string][]) : []),
   ];
   const progressWidth = String(result?.status || '').includes('پرداخت') || String(result?.status || '').includes('done') ? '100%' : String(result?.status || '').includes('جدید') ? '25%' : '65%';
 
   return (
     <div className="zp-root" dir={lang === 'fa' ? 'rtl' : 'ltr'} style={{ ...rootVars, ['--zkgl-acc' as any]: acc }} aria-label="track-page">
-      <Helmet><title>{lang === 'en' ? `Track your course | ${brand}` : `پیگیری دوره | ${brand}`}</title><meta name="description" content={lang === 'en' ? 'Track your course registration with your tracking code and phone number.' : `وارد کردن کد پیگیری و مشاهدهٔ وضعیت دورهٔ ${brand}`} /><meta name="robots" content="noindex, follow" /></Helmet>
+      <Helmet><title>{lang === 'en' ? `Track your course | ${brand}` : `پیگیری دوره | ${brand}`}</title><meta name="description" content={lang === 'en' ? 'Track your course registration with your tracking code and phone number.' : `وارد کردن کد پیگیری و مشاهده وضعیت دوره ${brand}`} /><meta name="robots" content="noindex, follow" /></Helmet>
       <style>{css}</style>
       <div className="zp-bg"><div className="zp-fam" /><svg viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <circle cx="8%" cy="12%" r="62" fill={mem[0] || '#F1E4FC'} opacity=".6" />
@@ -232,7 +232,7 @@ export default function TrackPage() {
         <div className="zp-card" style={{ maxWidth: 400 }}>
           <div style={{ textAlign: 'center' }}><span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3" /><circle cx="12" cy="12" r="9" /></svg>{lang === 'en' ? 'TRACK COURSE' : 'پیگیری دوره'}</span></div>
           <div className="zp-entry-title-row zk-public-title-row"><EntryBackButton lang={lang} /><h1 className="zp-h1">{lang === 'en' ? 'Track your course' : 'پیگیری ثبتنام'}</h1></div>
-          <p className="zp-sub">{lang === 'en' ? 'Enter your tracking code and the phone number used at registration.' : <>کد پیگیری و شمارهٔ تماس هنگام ثبت را وارد کنید تا <b>وضعیت دوره</b> و <b>گام بعدی</b> را ببینید.</>}</p>
+          <p className="zp-sub">{lang === 'en' ? 'Enter your tracking code and the phone number used at registration.' : <>کد پیگیری و شماره تماس هنگام ثبت را وارد کنید تا <b>وضعیت دوره</b> و <b>گام بعدی</b> را ببینید.</>}</p>
           <div className="zp-field">
             <span className="zp-lbl zp-entry-field-label">{lang === 'en' ? 'Tracking code' : 'کد پیگیری'}</span>
             <div className="zp-box zp-bigv"><span className="zp-fic"><svg viewBox="0 0 24 24"><path d="M4.5 7v10M8 7v10M10.5 7v6M13 7v10M15.5 7v6M19.5 7v10" /></svg></span><input className="zp-entry-field-input zp-entry-code-input" dir="ltr" placeholder="مثلاً ۱۲۷۳۹" value={num} onChange={(e) => onNumChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(); }} maxLength={20} style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', letterSpacing: '3px' }} /><span className="zp-tag">{TRACKING_PREFIX}</span></div>
@@ -313,7 +313,7 @@ export default function TrackPage() {
         </div>)}
 
         {showContactOn('track') && <div style={{ width: '100%', marginTop: 16 }}><ContactPanel cfg={cfg} T={T} lang={lang} glass={darkGlass} /></div>}
-        <div className="zp-secure" style={{ marginTop: 14 }}><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{lang === 'en' ? 'Your information is only visible with your code and phone number.' : 'اطلاعات شما فقط با کد و شمارهٔ شما قابل مشاهده است'}</div>
+        <div className="zp-secure" style={{ marginTop: 14 }}><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{lang === 'en' ? 'Your information is only visible with your code and phone number.' : 'اطلاعات شما فقط با کد و شماره شما قابل مشاهده است'}</div>
       </div>
     </div>
   );

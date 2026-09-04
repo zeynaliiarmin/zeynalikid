@@ -1,4 +1,4 @@
-// AdminLoginPage — ورود مدیریت (نسخهٔ A: نئومورفیک گرم + هدر کامل + بازگشت داخل همبرگر)
+// AdminLoginPage — ورود مدیریت (نسخه A: نئومورفیک گرم + هدر کامل + بازگشت داخل همبرگر)
 import { useAppContext } from '../app/AppContext';
 import { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -39,8 +39,8 @@ export default function AdminLoginPage() {
   };
 
   // پالت اختصاصی همین دیزاین در همین حالت (روشن/تاریک) — دقیقاً از فایل design-A-warm
-  // پوستهٔ این صفحه با دیزاین انتخابی سایت رنگ می‌شود، اما روشن/تاریک بودنش را
-  // همان حالتِ پوستهٔ مدیریتی (T) تعیین می‌کند تا کارت و هدر با هم بمانند.
+  // پوسته این صفحه با دیزاین انتخابی سایت رنگ می‌شود، اما روشن/تاریک بودنش را
+  // همان حالتِ پوسته مدیریتی (T) تعیین می‌کند تا کارت و هدر با هم بمانند.
   const zpTheme = designModeFromThemeId(T.id);
   const zpDesign = String((app as any).publicDesign || zpTheme.design);
   const zpDark = zpTheme.dark;
@@ -77,7 +77,7 @@ export default function AdminLoginPage() {
           {aErr && <div className="zp-err" role="alert"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{aErr}</div>}
           <button className="zp-btn" onClick={ok}>{en ? 'Sign in' : 'ورود به پنل'}</button>
           {hasAdminBiometric() && <button type="button" className="zp-ghost" onClick={bio} disabled={bioBusy}><svg viewBox="0 0 24 24"><path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /><path d="M5 21a7 7 0 0 1 14 0" /></svg>{bioBusy ? (en ? 'Verifying…' : 'در حال تأیید…') : (en ? 'Fingerprint / Face ID' : 'ورود با اثر انگشت / Face ID')}</button>}
-          <button type="button" className="zp-link" onClick={goHome}>{en ? 'Back to home' : 'بازگشت به صفحهٔ اصلی'}</button>
+          <button type="button" className="zp-link" onClick={goHome}>{en ? 'Back to home' : 'بازگشت به صفحه اصلی'}</button>
           <div className="zp-secure"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{en ? 'Your session is encrypted · failed sign-ins are logged' : 'نشست شما رمزنگاری میشود · ورود ناموفق ثبت میشود'}</div>
         </div>
       </div>

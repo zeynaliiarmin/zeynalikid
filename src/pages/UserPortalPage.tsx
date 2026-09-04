@@ -1,5 +1,5 @@
 // UserPortalPage — پنل کاربر: ثبت‌نام (شماره + نام واقعی + کد تأیید) / ورود با کد پیگیری / داشبورد
-// زبان طراحی: نسخهٔ A (نئومورفیک گرم + بنفش + ممفیس) — اما چیدمان کاملاً متمایز از صفحهٔ پیگیری
+// زبان طراحی: نسخه A (نئومورفیک گرم + بنفش + ممفیس) — اما چیدمان کاملاً متمایز از صفحه پیگیری
 import { useAppContext } from '../app/AppContext';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -77,14 +77,14 @@ export default function UserPortalPage() {
   const [nextPath, setNextPath] = useState(() => takePortalNext());
   const [phonePreview, setPhonePreview] = useState('');
   // پذیرای همه شکل‌ها: FM-1x2tsvy / F1x2tsvy / M-1x2tsvy / 1x2tsvy / هر خطای فاصله و خط تیره
-  // همان قاعدهٔ سرور: حذف نویز + گرفتن بدنهٔ کد از اولین رقم به بعد («FM-1x2»، «F 1x2»، «1x2» یکی می‌شوند)
+  // همان قاعده سرور: حذف نویز + گرفتن بدنه کد از اولین رقم به بعد («FM-1x2»، «F 1x2»، «1x2» یکی می‌شوند)
   const codeCore = normalizeLoginCode;
   const faMinLetters = Math.max(2, Math.min(8, Number((cfg as any)?.userPortal?.minNameWords) || 3));
   const captchaOn = (cfg as any)?.userPortal?.captchaEnabled === true;
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaAttempt, setCaptchaAttempt] = useState(0);
   // هندلرها باید پایدار بمانند: اگر هر رندر تابع تازه‌ای بسازد، افکتِ گیت کپچا دوباره اجرا و
-  // دوباره state را عوض می‌کند ⇒ حلقهٔ بی‌پایان رندر ⇒ کندی/قفل شدن کل گوشی.
+  // دوباره state را عوض می‌کند ⇒ حلقه بی‌پایان رندر ⇒ کندی/قفل شدن کل گوشی.
   const onCaptchaVerify = useCallback((t: string) => setCaptchaToken(t), []);
   const onCaptchaReset = useCallback(() => setCaptchaToken(''), []);
   // فقط وقتی واقعاً ارسالی شکست می‌خورد کپچا از نو ساخته می‌شود
@@ -159,9 +159,9 @@ export default function UserPortalPage() {
     setErr(''); setBusy(true);
     try {
       const localNum = digitsOnly(phone);
-      if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شمارهٔ تماس برای کشور انتخاب‌شده معتبر نیست.');
+      if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شماره تماس برای کشور انتخاب‌شده معتبر نیست.');
       const ph = normalizePhoneForServer(fullPhone(cc, localNum));
-      if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
+      if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شماره تماس معتبر وارد کنید.');
       if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
       const core = codeCore(code);
       if (core.length < 4 || core.length > 20) throw new Error(en ? 'Enter the tracking code exactly as shown.' : 'کد پیگیری را دقیقاً وارد کنید.');
@@ -175,9 +175,9 @@ export default function UserPortalPage() {
     setErr(''); setBusy(true);
     try {
       const localNum = digitsOnly(phone);
-      if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شمارهٔ تماس برای کشور انتخاب‌شده معتبر نیست.');
+      if (!validPhone(localNum, ctryNow())) throw new Error(en ? 'Enter a valid phone number for the selected country.' : 'شماره تماس برای کشور انتخاب‌شده معتبر نیست.');
       const ph = normalizePhoneForServer(fullPhone(cc, localNum));
-      if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شمارهٔ تماس معتبر وارد کنید.');
+      if (!ph) throw new Error(en ? 'Enter a valid phone number.' : 'شماره تماس معتبر وارد کنید.');
       if (captchaOn && !captchaToken) throw new Error(en ? 'Complete the security check first.' : 'ابتدا بررسی امنیتی را تکمیل کنید.');
       const chk = validateFullName(fullName, lang, faMinLetters);
       if (!chk.ok) throw new Error(chk.error as string);
@@ -252,11 +252,8 @@ export default function UserPortalPage() {
       <div className="zp-content">
         {!session && (
           <div className="zp-card" style={{ maxWidth: 400 }}>
-            <div style={{ textAlign: 'center' }}>
-              <span className="zp-chip"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.4A7 7 0 0 1 12.5 3z" /></svg>{en ? 'USER PORTAL' : 'پنل کاربر'}</span>
-            </div>
-            <div className="zp-entry-title-row zk-public-title-row"><EntryBackButton lang={lang} /><h1 className="zp-h1">{en ? 'Welcome' : 'به پنل کاربر خوش آمدید'}</h1></div>
-            <p className="zp-sub">{en ? 'Sign in with your phone and tracking code, or register once to get your own tracking code.' : 'با شماره تماس و کد پیگیری وارد شوید؛ یا یکبار ثبتنام کنید تا کد پیگیری اختصاصی خودتان را بگیرید.'}</p>
+            <div className="zp-entry-title-row zk-public-title-row"><EntryBackButton lang={lang} /><h1 className="zp-h1">{en ? 'Welcome' : 'خوش آمدید!'}</h1></div>
+            <p className="zp-sub">{en ? 'Sign in with your phone and tracking code, or register once to get your own tracking code.' : <><span className="zp-sub-line">با شماره تماس و کد پیگیری وارد شوید؛</span><span className="zp-sub-line">اگر کد پیگیری دارید نیازی به ثبت‌نام دوباره نیست</span></>}</p>
             <div className="zp-tabs" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <button type="button" className={`zp-tab ${auth === 'login' ? 'on' : ''}`} onClick={() => { setAuth('login'); setErr(''); }}>{en ? 'Sign in' : 'ورود'}</button>
               <button type="button" className={`zp-tab ${auth === 'register' ? 'on' : ''}`} onClick={() => { setAuth('register'); setErr(''); setStep('form'); }}>{en ? 'Register' : 'ثبتنام'}</button>
@@ -295,7 +292,7 @@ export default function UserPortalPage() {
 
             {auth === 'register' && step === 'otp' && (<>
               <h1 className="zp-h1" style={{ fontSize: 18 }}>{en ? 'Enter the verification code' : 'کد تأیید را وارد کنید'}</h1>
-              <p className="zp-sub">{en ? `A 6-digit code was sent to ${maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, digitsOnly(phone))))}` : `کد ۶ رقمی به شمارهٔ ${maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, digitsOnly(phone))))} ارسال شد.`}</p>
+              <p className="zp-sub">{en ? `A 6-digit code was sent to ${maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, digitsOnly(phone))))}` : `کد ۶ رقمی به شماره ${maskPhoneLocal(normalizePhoneForServer(fullPhone(cc, digitsOnly(phone))))} ارسال شد.`}</p>
               {otpMode === 'test' && otpPreview && (
                 <div className="zp-note" style={{ marginBottom: 14, justifyContent: 'center' }}>
                   <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5z" /><path d="M9 12l2 2 4-4" /></svg>
@@ -317,8 +314,8 @@ export default function UserPortalPage() {
           {nextPath && (
             <div className="zp-note" style={{ marginBottom: 12, width: '100%' }}>
               <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              <span style={{ flex: 1 }}>{en ? 'You are signed in — continue your registration.' : 'وارد شدید — برای ادامهٔ ثبتنام، دوباره اقدام کنید.'}</span>
-              <button type="button" className="zp-ghost" style={{ marginTop: 0, width: 'auto', minHeight: 38, padding: '8px 16px', fontSize: 12.5 }} onClick={() => { const p = nextPath; setPortalNext(''); setNextPath(''); goto(p); }}>{en ? 'Continue' : 'ادامهٔ ثبتنام'}</button>
+              <span style={{ flex: 1 }}>{en ? 'You are signed in — continue your registration.' : 'وارد شدید — برای ادامه ثبتنام، دوباره اقدام کنید.'}</span>
+              <button type="button" className="zp-ghost" style={{ marginTop: 0, width: 'auto', minHeight: 38, padding: '8px 16px', fontSize: 12.5 }} onClick={() => { const p = nextPath; setPortalNext(''); setNextPath(''); goto(p); }}>{en ? 'Continue' : 'ادامه ثبتنام'}</button>
             </div>
           )}
           <div className="zp-hero">
@@ -339,7 +336,7 @@ export default function UserPortalPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%', marginBottom: 12 }}>
-            <button className="zp-btn" style={{ minHeight: 46, fontSize: 13.5 }} onClick={() => goto('courses')}>{en ? 'Register a course' : 'ثبت دورهٔ جدید'}</button>
+            <button className="zp-btn" style={{ minHeight: 46, fontSize: 13.5 }} onClick={() => goto('courses')}>{en ? 'Register a course' : 'ثبت دوره جدید'}</button>
             <button className="zp-ghost" style={{ marginTop: 0, minHeight: 46, fontSize: 13.5 }} onClick={() => goto('form')}>{en ? 'Consultation' : 'درخواست مشاوره'}</button>
           </div>
 
@@ -379,7 +376,7 @@ export default function UserPortalPage() {
                   </div>
                   <div className="zp-rec-tab-body">
                     {activeTab === 'usage' && (
-                      <div className="zp-sec"><b className="zp-sech">💊 {en ? 'Product usage instructions' : 'طریقهٔ مصرف محصولات'}</b>
+                      <div className="zp-sec"><b className="zp-sech">💊 {en ? 'Product usage instructions' : 'طریقه مصرف محصولات'}</b>
                         {(usage.rows || []).map((u: any, ui: number) => (
                           <div key={ui} style={{ fontSize: 11.5 }}>
                             <b>{u.name}</b>
@@ -393,14 +390,14 @@ export default function UserPortalPage() {
                     {activeTab === 'sport' && sel.sportPlan ? (<div className="zp-sec"><b className="zp-sech">{String(sel.sportPlan).trim().startsWith('🌳') ? `🌳 ${en ? 'Daily activity (under 6)' : 'فعالیت روزانه (زیر ۶ سال)'}` : `🏃 ${en ? 'Sport plan' : 'برنامه ورزشی'}`}</b><PlanView text={sel.sportPlan} small /></div>) : null}
                     {activeTab === 'reports' && (
                       <div className="zp-sec"><b className="zp-sech">🛠 {en ? 'Reports & advisor notes' : 'گزارش‌ها و نکات کارشناس'}</b>
-                        {(reports.followUps || []).map((fup: any) => <div key={fup.step} style={{ fontSize: 11.5 }}>{en ? `Step ${fup.step}: ` : `مرحلهٔ ${fup.step}: `}{fup.state}</div>)}
+                        {(reports.followUps || []).map((fup: any) => <div key={fup.step} style={{ fontSize: 11.5 }}>{en ? `Step ${fup.step}: ` : `مرحله ${fup.step}: `}{fup.state}</div>)}
                         {(reports.corrective || []).map((c: any) => <div key={c.label} style={{ fontSize: 11.5 }}>{c.label}: <b>{c.value}</b></div>)}
                         {sel.userNotes ? <div style={{ whiteSpace: 'pre-wrap', fontSize: 11.5, marginTop: 4 }}>📝 {sel.userNotes}</div> : null}
                       </div>
                     )}
                     {activeTab === 'info' && (
                       <div className="zp-sec">
-                        <b className="zp-sech">📋 {en ? 'Your submitted information' : 'اطلاعات ثبت‌شدهٔ شما'}</b>
+                        <b className="zp-sech">📋 {en ? 'Your submitted information' : 'اطلاعات ثبت‌شده شما'}</b>
                         {!editOn && (<>
                           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 10px', fontSize: 11.5 }}>
                             {formRows.map((f: any) => (<Fragment key={f.label}><span style={{ color: 'var(--zp-sub)', fontWeight: 700 }}>{f.label}</span><span style={{ color: 'var(--zp-ink)' }}>{f.value}</span></Fragment>))}
@@ -424,10 +421,10 @@ export default function UserPortalPage() {
                             ))}
                             {editErr ? <div className="zp-err" style={{ margin: 0 }}><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>{editErr}</div> : null}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                              <button type="button" className="zp-btn" style={{ minHeight: 40, fontSize: 13 }} disabled={editBusy} onClick={async () => { if (!session) return; setEditBusy(true); setEditErr(''); try { await portalUpdateInfo(session.phone, session.code, String(sel.id), editForm); setEditOn(false); await loadHistory(session); } catch (e: any) { setEditErr(e?.message || (en ? 'Save failed.' : 'ذخیره نشد.')); } finally { setEditBusy(false); } }}>{editBusy ? (en ? 'Saving…' : 'ذخیره…') : (en ? 'Save changes' : 'ذخیرهٔ تغییرات')}</button>
+                              <button type="button" className="zp-btn" style={{ minHeight: 40, fontSize: 13 }} disabled={editBusy} onClick={async () => { if (!session) return; setEditBusy(true); setEditErr(''); try { await portalUpdateInfo(session.phone, session.code, String(sel.id), editForm); setEditOn(false); await loadHistory(session); } catch (e: any) { setEditErr(e?.message || (en ? 'Save failed.' : 'ذخیره نشد.')); } finally { setEditBusy(false); } }}>{editBusy ? (en ? 'Saving…' : 'ذخیره…') : (en ? 'Save changes' : 'ذخیره تغییرات')}</button>
                               <button type="button" className="zp-ghost" style={{ marginTop: 0, minHeight: 40, fontSize: 13 }} onClick={() => { setEditOn(false); setEditErr(''); }}>{en ? 'Cancel' : 'انصراف'}</button>
                             </div>
-                            <small style={{ color: 'var(--zp-sub)', fontSize: 10.5, lineHeight: 1.8 }}>{en ? 'Changes are recorded in the expert panel as «edited» and are comparable with the previous version.' : 'تغییرات در پنل متخصص به‌عنوان «edited» ثبت می‌شود و با نسخهٔ قبلی قابل مقایسه است.'}</small>
+                            <small style={{ color: 'var(--zp-sub)', fontSize: 10.5, lineHeight: 1.8 }}>{en ? 'Changes are recorded in the expert panel as «edited» and are comparable with the previous version.' : 'تغییرات در پنل متخصص به‌عنوان «edited» ثبت می‌شود و با نسخه قبلی قابل مقایسه است.'}</small>
                           </div>
                         )}
                       </div>

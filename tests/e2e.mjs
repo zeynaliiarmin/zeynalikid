@@ -48,10 +48,10 @@ const page = await browser.newPage();
 await page.setExtraHTTPHeaders({ 'Accept-Language': 'fa-IR,fa;q=0.9,en;q=0.8' });
 
 // ─── مسیرهای عمومی ────────────────────────────────────────────────
-await check('صفحهٔ خانه بارگذاری', async () => {
+await check('صفحه خانه بارگذاری', async () => {
   await go('/');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 500) throw new Error(`بدنهٔ خانه خیلی کوتاه: ${body} کاراکتر`);
+  if (body < 500) throw new Error(`بدنه خانه خیلی کوتاه: ${body} کاراکتر`);
 });
 
 await check('منوی همبرگری باز می‌شود', async () => {
@@ -65,22 +65,22 @@ await check('زمان‌سنج دوربین لود می‌شود', async () => {
   await isVisible('video, .trust-box, [class*="trust"], .trustbox, #trust');
 });
 
-await check('صفحهٔ دوره‌ها لود می‌شود', async () => {
+await check('صفحه دوره‌ها لود می‌شود', async () => {
   await go('/courses');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 100) throw new Error('بدنهٔ دوره‌ها خالی است');
+  if (body < 100) throw new Error('بدنه دوره‌ها خالی است');
 });
 
-await check('صفحهٔ محصولات لود می‌شود', async () => {
+await check('صفحه محصولات لود می‌شود', async () => {
   await go('/products');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 100) throw new Error('بدنهٔ محصولات خالی است');
+  if (body < 100) throw new Error('بدنه محصولات خالی است');
 });
 
-await check('صفحهٔ فرم مشاوره لود می‌شود', async () => {
+await check('صفحه فرم مشاوره لود می‌شود', async () => {
   await go('/consultation');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 100) throw new Error('بدنهٔ مشاوره خالی است');
+  if (body < 100) throw new Error('بدنه مشاوره خالی است');
 });
 
 await check('فرم مشاوره فیلدها دارد', async () => {
@@ -88,92 +88,92 @@ await check('فرم مشاوره فیلدها دارد', async () => {
   await isVisible('input, textarea, select');
 });
 
-await check('صفحهٔ اطلاعات کودک لود می‌شود', async () => {
+await check('صفحه اطلاعات کودک لود می‌شود', async () => {
   await go('/child-info');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ child-info خالی است');
+  if (body < 50) throw new Error('بدنه child-info خالی است');
 });
 
-await check('صفحهٔارسال دوره لود می‌شود', async () => {
+await check('صفحهارسال دوره لود می‌شود', async () => {
   await go('/course-shipping');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ course-shipping خالی است');
+  if (body < 50) throw new Error('بدنه course-shipping خالی است');
 });
 
-await check('صفحهٔ پرداخت دوره лود می‌شود', async () => {
+await check('صفحه پرداخت دوره лود می‌شود', async () => {
   await go('/course-payment');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ course-payment خالی است');
+  if (body < 50) throw new Error('بدنه course-payment خالی است');
 });
 
-await check('صفحهٔ ردیابی لود می‌شود', async () => {
+await check('صفحه ردیابی لود می‌شود', async () => {
   await go('/track');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ track خالی است');
+  if (body < 50) throw new Error('بدنه track خالی است');
 });
 
-await check('صفحهٔ رشد لود می‌شود', async () => {
+await check('صفحه رشد لود می‌شود', async () => {
   await go('/growth');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ growth خالی است');
+  if (body < 50) throw new Error('بدنه growth خالی است');
 });
 
-await check('صفحهٔ تنظیمات لود می‌شود', async () => {
+await check('صفحه تنظیمات لود می‌شود', async () => {
   await go('/settings');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ settings خالی است');
+  if (body < 50) throw new Error('بدنه settings خالی است');
 });
 
-await check('صفحهٔ پروفایل لود می‌شود', async () => {
+await check('صفحه پروفایل لود می‌شود', async () => {
   await go('/profile');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ profile خالی است');
+  if (body < 50) throw new Error('بدنه profile خالی است');
 });
 
-await check('صفحهٔ تجربه لود می‌شود', async () => {
+await check('صفحه تجربه لود می‌شود', async () => {
   await go('/experience');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ experience خالی است');
+  if (body < 50) throw new Error('بدنه experience خالی است');
 });
 
-await check('صفحهٔ لایسنس‌ها لود می‌شود', async () => {
+await check('صفحه لایسنس‌ها لود می‌شود', async () => {
   await go('/licenses');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ licenses خالی است');
+  if (body < 50) throw new Error('بدنه licenses خالی است');
 });
 
-await check('صفحهٔ تحصیلات لود می‌شود', async () => {
+await check('صفحه تحصیلات لود می‌شود', async () => {
   await go('/education');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ education خالی است');
+  if (body < 50) throw new Error('بدنه education خالی است');
 });
 
-await check('صفحهٔ درباره ما لود می‌شود', async () => {
+await check('صفحه درباره ما لود می‌شود', async () => {
   await go('/about');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ about خالی است');
+  if (body < 50) throw new Error('بدنه about خالی است');
 });
 
-await check('صفحهٔ سوالات متداول لود می‌شود', async () => {
+await check('صفحه سوالات متداول لود می‌شود', async () => {
   await go('/faq');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ faq خالی است');
+  if (body < 50) throw new Error('بدنه faq خالی است');
 });
 
-await check('صفحهٔ تماس لود می‌شود', async () => {
+await check('صفحه تماس لود می‌شود', async () => {
   await go('/contact');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ contact خالی است');
+  if (body < 50) throw new Error('بدنه contact خالی است');
 });
 
-await check('صفحهٔ لاگین ادمین لود می‌شود', async () => {
+await check('صفحه لاگین ادمین لود می‌شود', async () => {
   await go('/desk');
   const body = await page.$eval('body', el => el.innerText?.length ?? 0);
-  if (body < 50) throw new Error('بدنهٔ admin-login خالی است');
+  if (body < 50) throw new Error('بدنه admin-login خالی است');
 });
 
 // ─── پنل ادمین (read-only — بدون ورود واقعی یا با ورود فقط مشاهده) ────
-await check('صفحهٔ admin (بدون لاگین) → ریدایرکت یا صفحه‌ی دسترسی', async () => {
+await check('صفحه admin (بدون لاگین) → ریدایرکت یا صفحه‌ی دسترسی', async () => {
   await go('/desk/app');
   const url = page.url();
   // یا ریدایرکت می‌شود یا صفحه‌ی لاگین نمایش داده می‌شود — هر دو قابل قبولند
@@ -187,13 +187,13 @@ await check('تب‌های صفحه admin پس از لاگین (تست толь�
   await go('/desk');
   // فیلد phone: کامپوننت Field با placeholder="09xxxxxxxxx"
   const phoneInput = await page.$('input[placeholder="09xxxxxxxxx"]');
-  if (!phoneInput) throw new Error('فیلد phone در صفحهٔ لاگین ادمین پیدا نشد');
+  if (!phoneInput) throw new Error('فیلد phone در صفحه لاگین ادمین پیدا نشد');
   await phoneInput.type('09125703684', { delay: 30 });
   // فیلد password: input دوم در صفحه
   const pwdInput = await page.$('input[type="password"]');
-  if (!pwdInput) throw new Error('فیلد password در صفحهٔ لاگین ادمین پیدا نشد');
+  if (!pwdInput) throw new Error('فیلد password در صفحه لاگین ادمین پیدا نشد');
   await pwdInput.type('1234', { delay: 30 });
-  // دکمهٔ Login: در DOM وجود دارد (بررسی می‌کنیم)
+  // دکمه Login: در DOM وجود دارد (بررسی می‌کنیم)
   const loginBtnFound = await page.evaluate(() => {
     const buttons = document.querySelectorAll('button');
     for (const b of buttons) {
@@ -207,7 +207,7 @@ await check('تب‌های صفحه admin پس از لاگین (تست толь�
   });
   if (!loginBtnFound) {
     const allBtns = await page.evaluate(() => Array.from(document.querySelectorAll('button')).map(b => b.textContent?.trim().slice(0,30)));
-    throw new Error('دکمهٔ Login پیدا نشد — مراجع: ' + JSON.stringify(allBtns));
+    throw new Error('دکمه Login پیدا نشد — مراجع: ' + JSON.stringify(allBtns));
   }
   await sleep(2500);
   const adminUrl = page.url();
@@ -242,7 +242,7 @@ if (adminPageUrl.includes('admin') && !adminPageUrl.includes('login') && !adminP
   });
 }
 
-await check('فوتر صفحهٔ خانه لود می‌شود', async () => {
+await check('فوتر صفحه خانه لود می‌شود', async () => {
   await go('/');
   await isVisible('footer, .footer, footer a, .contact-row');
 });
@@ -274,7 +274,7 @@ await check('ت switch زبان (FA/EN) در 홈페이지를 ب러그', async ()
   }
 });
 
-await check('صفحهٔ کاربری با URL ناشناخته → ریدایرکت به خانه', async () => {
+await check('صفحه کاربری با URL ناشناخته → ریدایرکت به خانه', async () => {
   await page.goto(BASE + '/this-page-does-not-exist-xyz-123', { waitUntil: 'domcontentloaded', timeout: 20000 });
   await sleep(1000);
   const url = page.url();

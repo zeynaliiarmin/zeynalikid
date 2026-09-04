@@ -16,12 +16,12 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const isArticle = item.type === 'article' || item.type === 'text' || item.type === 'image';
   const badgeCls = isArticle ? 't-text' : item.type === 'video' ? 't-video' : 't-audio';
   const Icon = isArticle ? TextIcon : item.type === 'video' ? VideoIcon : AudioIcon;
-  // کارت فقط جزئیات را باز می‌کند؛ پخش، در صفحهٔ جزئیات با کنترل خودِ پلتفرم انجام می‌شود.
+  // کارت فقط جزئیات را باز می‌کند؛ پخش، در صفحه جزئیات با کنترل خودِ پلتفرم انجام می‌شود.
   const cta = en ? 'View details' : 'مشاهده جزئیات';
   const viewsText = (typeof views === 'number' && !Number.isNaN(views))
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
-  // مدت‌زمان خودکار: مقاله = مطالعهٔ متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعهٔ توضیحات
+  // مدت‌زمان خودکار: مقاله = مطالعه متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعه توضیحات
   const mediaSeconds = useMediaDuration(item as any);
   const duration = formatDuration(item.type, computeDurationSeconds(item as any, mediaSeconds ?? 0), lang);
   // عکس در پیش‌نمایش کارت باید کامل و با ابعاد خودش دیده شود (نه برش‌خورده در قاب ۱۶:۹)

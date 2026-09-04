@@ -34,7 +34,7 @@ serve(async (req) => {
   try {
     const supabase = getSupabaseAdmin();
 
-    // پاک‌سازی همهٔ خطاها (فقط ادمین)
+    // پاک‌سازی همه خطاها (فقط ادمین)
     if (body?.action === 'clear') {
       const { error: delErr } = await supabase.from("error_logs").delete().neq("id", -1);
       if (delErr) {

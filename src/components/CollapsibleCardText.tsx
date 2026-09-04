@@ -12,7 +12,7 @@ type Props = {
   lessLabel?: string;
   className?: string;
   direction?: 'rtl' | 'ltr';
-  // اگر داده شود، دکمهٔ «بیشتر» به‌جای باز شدن inline، این callback را صدا می‌زند
+  // اگر داده شود، دکمه «بیشتر» به‌جای باز شدن inline، این callback را صدا می‌زند
   // (برای باز شدن bottom sheet اطلاعات کامل — مثل بخش نظرات)
   onMore?: () => void;
 };

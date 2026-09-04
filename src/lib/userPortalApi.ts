@@ -1,5 +1,5 @@
-// کلاینت فانکشن user-portal — ثبت‌نام / تأیید کد / ورود / تاریخچهٔ کاربر
-// الگوی فراخوانی دقیقاً مثل بقیهٔ فانکشن‌های عمومی پروژه (create-submission و track-submission)
+// کلاینت فانکشن user-portal — ثبت‌نام / تأیید کد / ورود / تاریخچه کاربر
+// الگوی فراخوانی دقیقاً مثل بقیه فانکشن‌های عمومی پروژه (create-submission و track-submission)
 
 const base = (import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '');
 
@@ -28,7 +28,7 @@ export const portalStart = (fullName: string, phone: string, captchaToken?: stri
 export const portalConfirm = (phone: string, otp: string): Promise<PortalResponse> =>
   call('confirm', { phone, otp });
 
-/** پیش‌نمایش ماسک‌شدهٔ شماره ثبت‌شده با کد پیگیری — فقط رقم‌های ماسک‌خورده برمی‌گردد */
+/** پیش‌نمایش ماسک‌شده شماره ثبت‌شده با کد پیگیری — فقط رقم‌های ماسک‌خورده برمی‌گردد */
 export const portalPhonePreview = (code: string): Promise<PortalResponse> =>
   call('preview-phone', { code });
 
@@ -36,10 +36,10 @@ export const portalPhonePreview = (code: string): Promise<PortalResponse> =>
 export const portalLogin = (phone: string, code: string, captchaToken?: string): Promise<PortalResponse> =>
   call('login', { phone, code, captchaToken });
 
-/** تاریخچهٔ دوره‌ها و مشاوره‌های کاربر */
+/** تاریخچه دوره‌ها و مشاوره‌های کاربر */
 export const portalHistory = (phone: string, code: string): Promise<PortalResponse> =>
   call('history', { phone, code });
 
-/** ویرایش محدود اطلاعات ثبت‌شده از پنل کاربر (با ثبت نسخهٔ قبلی برای پنل متخصص) */
+/** ویرایش محدود اطلاعات ثبت‌شده از پنل کاربر (با ثبت نسخه قبلی برای پنل متخصص) */
 export const portalUpdateInfo = (phone: string, code: string, id: string, fields: Record<string, string>): Promise<PortalResponse> =>
   call('update-info', { phone, code, id, fields });

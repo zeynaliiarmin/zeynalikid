@@ -26,8 +26,8 @@ const localExamples: Record<string, string> = {
   '+93': '0701234567',
 };
 
-// پیش‌شماره‌های واقعی و معتبر هر کشور + طول کل شمارهٔ محلی (بدون کد کشور)
-// این‌ها فقط برای ساخت شمارهٔ ماسک‌شدهٔ رندوم استفاده می‌شوند.
+// پیش‌شماره‌های واقعی و معتبر هر کشور + طول کل شماره محلی (بدون کد کشور)
+// این‌ها فقط برای ساخت شماره ماسک‌شده رندوم استفاده می‌شوند.
 const localPhoneSpecs: Record<string, { prefixes: string[]; length: number }> = {
   '+98': { prefixes: ['0910','0911','0912','0913','0914','0915','0916','0917','0918','0919','0920','0921','0922','0930','0931','0932','0933','0934','0935','0936','0937','0938','0939','0900','0901','0902','0903','0905','0990','0991','0992','0993'], length: 11 },
   '+1': { prefixes: ['212','310','415','646','650','718','732','818','929'], length: 10 },
@@ -45,7 +45,7 @@ const localPhoneSpecs: Record<string, { prefixes: string[]; length: number }> = 
   '+93': { prefixes: ['070','079','078','077'], length: 10 },
 };
 
-// طول کل شمارهٔ نمایشی (با احتساب کد کشور در صورت وجود) برای ساخت ماسک
+// طول کل شماره نمایشی (با احتساب کد کشور در صورت وجود) برای ساخت ماسک
 function localLength(countryCode: string, localLengthVal: number): number {
   const dial = reviewDigits(countryCode);
   return countryCode === '+98' ? localLengthVal : dial.length + localLengthVal;
@@ -131,7 +131,7 @@ export function manualMaskedPhoneTemplate(countryCode: string): string {
     const digits = `${prefix}${fill}`;
     return `${digits.slice(0, 5)}xxxx${digits.slice(-2)}`;
   }
-  // fallback: الگوی قدیمی با حفظ پیش‌شمارهٔ مثال
+  // fallback: الگوی قدیمی با حفظ پیش‌شماره مثال
   const local = localExamples[countryCode] || '12345678901';
   let digits = reviewDigits(local);
   const prefixLen = Math.min(4, digits.length);

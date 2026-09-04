@@ -3,7 +3,7 @@
  *   عنوان اصلی 32px Bold | زیرعنوان 18px Medium | عنوان بخش 22px Bold
  *   عنوان فیلد 18px Medium | مقدار فیلد 18px | توضیحات 18px
  *   فوتر 14px | تاریخ و ساعت 16px
- *  همهٔ اعداد به انگلیسی تبدیل می‌شوند (بدون رقم فارسی).
+ *  همه اعداد به انگلیسی تبدیل می‌شوند (بدون رقم فارسی).
  */
 const toEnglishDigits = (value: unknown) => String(value ?? '—').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString()).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
 const gender = (v: any) => v === 'male' ? 'پسر' : v === 'female' ? 'دختر' : (v || '—');
@@ -50,7 +50,7 @@ export async function generateFormImage(submission: any, format: 'webp' | 'jpg' 
   ctx.fillStyle='rgba(192,184,245,.24)';ctx.beginPath();ctx.arc(-65,height-85,165,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='rgba(15,118,110,.23)';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(88+(i%3)*22,92+Math.floor(i/3)*22,5,0,Math.PI*2);ctx.fill();}
 
-  // برگهٔ اصلی
+  // برگه اصلی
   ctx.shadowColor='rgba(16,91,87,.16)';ctx.shadowBlur=28;ctx.shadowOffsetY=12;round(pad,36,width-pad*2,height-72,32,'rgba(255,255,255,.93)','#E1EFED');ctx.shadowColor='transparent';
 
   // هدر گرادیانی + عنوان

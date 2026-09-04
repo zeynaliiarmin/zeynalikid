@@ -1,10 +1,10 @@
 // «فرم‌ها و دوره‌ها — نمای کاربر» — کاملاً در سطح ماژول تا هویت کامپوننت پایدار بماند.
-// (تعریف داخل بدنهٔ AdminPanel باعث remount زیردرخت در هر ست‌استیت والد می‌شد:
+// (تعریف داخل بدنه AdminPanel باعث remount زیردرخت در هر ست‌استیت والد می‌شد:
 //  تب جزئیات ریست می‌شد، مودال بسته نمی‌شد، انتخاب پیگیری ثبت نمی‌شد و صفحه می‌پرید.)
 // چیدمان کارت بسته (طبق درخواست مالک):
 //  سطر۱: نام راست · کد پیگیری چپ (کلیک = کپی)
 //  سطر۲: چک‌باکس انتخاب راست · شماره تماس وسط (بدون کادر؛ کلیک = تماس/واتساپ/روبیکا/کپی) · وضعیت چپ
-//  سطر۳: تاریخ راست · دکمهٔ جزئیات وسط · تگ‌ها (ناقص/مشاوره‌شده/تبِ مخالف) چپ
+//  سطر۳: تاریخ راست · دکمه جزئیات وسط · تگ‌ها (ناقص/مشاوره‌شده/تبِ مخالف) چپ
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Modal } from '../app/appSupport';
 import SubCard from './SubCard';
@@ -19,7 +19,7 @@ const ChipGroup = ({ label, options, val, set }: { label: string; options: strin
   return <section className={`zkad-filter-card ${open ? 'zkad-filter-open' : ''}`}><button type="button" className="zkad-filter-card-head" onClick={() => setOpen(v => !v)}><span>{label}</span><small>{val}</small><b>{open ? '⌃' : '⌄'}</b></button>{open && <div className="zkad-chiprow">{options.map(o => <button type="button" key={o} className={`zkad-chip ${val === o ? 'on' : ''}`} onClick={() => { set(o); setOpen(false); }}>{o}</button>)}</div>}</section>;
 };
 
-// شمارهٔ تماس — متن ساده بدون کادر؛ کلیک → منوی فشرده (نصف اندازهٔ قبل)
+// شماره تماس — متن ساده بدون کادر؛ کلیک → منوی فشرده (نصف اندازه قبل)
 function NvPhoneBtn({ T, raw, sub, onCopy }: { T: any; raw: string; sub?: any; onCopy: (v: string) => void }) {
   const [popOpen, setPopOpen] = useState(false);
   const closePop = useCallback(() => setPopOpen(false), []);
@@ -49,7 +49,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     selectedIds, setSelectedIds, toggleSelectAll, clearSelection, setSubs, setMsg, setMsgType,
     nvTab, setNvTab, nvQ, setNvQ, nvPhone, setNvPhone, subCardIO, setNvCounts } = app;
   const modalSubRaw = app.modalSub;
-  // زیرمجموعهٔ زنده: با هر patch در لیست، مقادیر مودال هم تازه بمانند (تیک‌ها/سوئیچ‌ها برنگردند)
+  // زیرمجموعه زنده: با هر patch در لیست، مقادیر مودال هم تازه بمانند (تیک‌ها/سوئیچ‌ها برنگردند)
   const modalSub = modalSubRaw ? ((subs as any[]).find((x: any) => String(x.id) === String((modalSubRaw as any).id)) || modalSubRaw) : null;
   const setModalSub = app.setModalSub;
   const [modalTab, setModalTab] = useState<'parent' | 'course' | undefined>(undefined);
@@ -244,7 +244,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
         <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 8, padding: '6px 10px', fontFamily: 'inherit', fontSize: 11.5, width: '100%', maxWidth: 320, outline: 'none' }}
           placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
         <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(nvTab === 'users' ? usersList.length : (nvTab === 'consult' ? consultList.length : courseList.length))}</span>
-        <button type="button" className="zkad-toolbtn" onClick={() => toggleSelectAll(nvListIds())} title={T.en ? 'Select all cards in this list' : 'انتخاب همهٔ کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en ? 'Select all' : 'انتخاب همه'} ({faNum(nvListIds().length)})</button>
+        <button type="button" className="zkad-toolbtn" onClick={() => toggleSelectAll(nvListIds())} title={T.en ? 'Select all cards in this list' : 'انتخاب همه کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en ? 'Select all' : 'انتخاب همه'} ({faNum(nvListIds().length)})</button>
         {selectedIds.size > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.accText, fontWeight: 800 }}>{faNum(selectedIds.size)} {T.en ? 'selected' : 'انتخاب‌شده'}
           {/* فقط وکتور سطل — بدون متن/عنوان */}
           <button type="button" className="zkad-toolbtn zkad-selected-delete" aria-label={T.en ? 'Delete selected' : 'حذف انتخاب‌شده‌ها'} style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px' }}

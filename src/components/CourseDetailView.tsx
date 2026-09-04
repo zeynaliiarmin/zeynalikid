@@ -14,7 +14,7 @@ import PublicBackButton from './PublicBackButton';
 
 // ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
 // سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
-// ۲ خط سؤال + ۲ خط پاسخ + دکمهٔ «بیشتر» (باز شدن bottom sheet کامل).
+// ۲ خط سؤال + ۲ خط پاسخ + دکمه «بیشتر» (باز شدن bottom sheet کامل).
 function FaqPreviewCard({ item, isFa, T, onMore }: { item: any; isFa: boolean; T: any; onMore: () => void }) {
   const q = String(item?.question || '');
   const a = String(item?.answer || '');
@@ -70,9 +70,9 @@ interface Props {
   hasReferral?: boolean;
   // مشاور ارجاع‌دهنده (برای نمایش کادر معرفی در ابتدای جزئیات دوره)
   referralConsultant?: any;
-  // باز کردن دورهٔ دیگر (برای بخش «دوره‌های مشابه»)
+  // باز کردن دوره دیگر (برای بخش «دوره‌های مشابه»)
   onOpenCourse?: (course: any) => void;
-  // سیگنال باز کردن خودکار تب مشاورهٔ بنفش (از دکمهٔ فوتر) + تپش دکمهٔ مشاوره
+  // سیگنال باز کردن خودکار تب مشاوره بنفش (از دکمه فوتر) + تپش دکمه مشاوره
   consultFocusSignal?: number;
 }
 
@@ -120,7 +120,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     // برای مشاوره تب باز می‌شود؛ برای ثبت‌نام تب بسته می‌شود تا دکمه به طرح اصلی برگردد
     if (target === 'consult') setConsultOpen(true);
     else setConsultOpen(false);
-    // اسکرول به دکمهٔ مربوطه در ابتدای صفحه؛ برای مشاوره کمی صبر می‌کنیم
+    // اسکرول به دکمه مربوطه در ابتدای صفحه؛ برای مشاوره کمی صبر می‌کنیم
     // تا آکاردئون کامل باز شود و دکمه در جای نهایی قرار بگیرد.
     const el = target === 'enroll' ? enrollTopRef.current : consultTopRef.current;
     const scrollNow = () => { try { el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} } };
@@ -134,7 +134,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     window.setTimeout(() => setPulseTarget(null), 3200);
   };
 
-  // وقتی از دکمهٔ فوتر «شروع مشاوره رایگان» صدا زده شود: تب باز + تپش دکمهٔ مشاوره
+  // وقتی از دکمه فوتر «شروع مشاوره رایگان» صدا زده شود: تب باز + تپش دکمه مشاوره
   React.useEffect(() => {
     if (consultFocusSignal && consultFocusSignal > 0) {
       setConsultOpen(true);
@@ -217,7 +217,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     return arr.slice(0, 5);
   }, [courseFaqs.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // باز/بستن صفحهٔ «مشاهده همه پرسش‌ها» با مدیریت دکمه back گوشی
+  // باز/بستن صفحه «مشاهده همه پرسش‌ها» با مدیریت دکمه back گوشی
   const openShowAllFaq = () => {
     if (!faqOverlayPushedRef.current) {
       try { window.history.pushState({ zkFaqOverlay: true }, ''); } catch {}
@@ -246,7 +246,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // باز/بستن صفحهٔ «مشاهده همه» محتوای آموزشی با مدیریت دکمه back گوشی
+  // باز/بستن صفحه «مشاهده همه» محتوای آموزشی با مدیریت دکمه back گوشی
   const eduOverlayPushedRef = React.useRef(false);
   const openShowAllEdu = () => {
     if (!eduOverlayPushedRef.current) {
@@ -326,12 +326,13 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
       {/* Header info */}
       <div style={{ padding: '16px 16px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 999, background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', fontWeight: 700 }}>{isFa ? 'دوره تخصصی' : 'Specialized Course'}</span>
-          {course.duration && <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{course.duration}</span>}
-        </div>
+        {course.duration && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: 'var(--zk-text-muted)' }}>{course.duration}</span>
+          </div>
+        )}
 
-        <div className="zk-public-title-row" style={{ margin: '6px 0 4px' }}>
+        <div className="zk-public-title-row" dir={isFa ? 'rtl' : 'ltr'} style={{ margin: '6px 0 4px' }}>
           <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={onClose} testId="public-course-detail-back" />
           <h1 style={{ flex: 1, minWidth: 0, fontSize: 21, fontWeight: 800, margin: 0, lineHeight: 1.25 }}>{title}</h1>
         </div>
@@ -371,8 +372,8 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         </div>
       </div>
 
-      {/* تب باز/بستهٔ مشاورهٔ رایگان — نازک و بدون کادر، چسبیده به پایین کادر اطلاعات.
-          با باز شدن، یک کادر با انیمیشن نرم باز می‌شود و بقیهٔ اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد. */}
+      {/* تب باز/بسته مشاوره رایگان — نازک و بدون کادر، چسبیده به پایین کادر اطلاعات.
+          با باز شدن، یک کادر با انیمیشن نرم باز می‌شود و بقیه اطلاعات دوره بعد از آن تا پایین ادامه می‌یابد. */}
       {!hasReferral && onConsult && (
         <div className="zk-consult-accordion">
           <button
@@ -392,7 +393,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 {isFa ? 'مطمئن نیستید کدام دوره مناسب فرزندتان است؟' : 'Not sure which course suits your child?'}
               </span>
               <span className="zk-consult-trigger-sub">
-                {isFa ? 'مشاورهٔ رایگان با کارشناس رشد و تغذیه' : 'Free consultation with our growth & nutrition specialist'}
+                {isFa ? 'مشاوره رایگان با کارشناس رشد و تغذیه' : 'Free consultation with our growth & nutrition specialist'}
               </span>
             </span>
             <svg className="zk-consult-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -401,22 +402,25 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </button>
           <div className={`zk-consult-panel-wrap${consultOpen ? ' zk-open' : ''}`}>
             <div className="zk-consult-panel-inner">
-              <div className="zk-consult-panel">
-                <div style={{ textAlign: 'center' }}>
-                  <SwapCta
-                    ref={consultTopRef}
-                    variant="consult"
-                    labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
-                    labelB={isFa ? 'شروع مشاورهٔ رایگان' : 'Start free consultation'}
-                    iconB={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.35 8.5 8.5 0 0 1-3.4-.7L3 21l1.9-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 9-8.35 8.38 8.38 0 0 1 9 8.35z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg>}
-                    onClick={onConsult}
-                    pulse={pulseTarget === 'consult'}
-                    style={{ minHeight: 46, padding: '12px 24px', fontSize: 14, width: 'auto' }}
-                  />
+              <div className="zk-consult-panel" data-testid="course-consult-panel">
+                <div className="zk-consult-panel-copy">
+                  <span className="zk-consult-panel-icon" aria-hidden="true">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><path d="M20 11.5a8.38 8.38 0 0 1-9 8.35 8.5 8.5 0 0 1-3.4-.7L3 21l1.9-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 9-8.35 8.38 8.38 0 0 1 9 8.35z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg>
+                  </span>
+                  <p className="zk-consult-note">
+                    {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
+                  </p>
                 </div>
-                <p className="zk-consult-note">
-                  {isFa ? 'کارشناس رشد و تغذیه، شرایط فرزندتان را بررسی و بهترین دوره را معرفی می‌کند.' : 'Our growth & nutrition specialist reviews your child’s condition and recommends the best course.'}
-                </p>
+                <SwapCta
+                  ref={consultTopRef}
+                  variant="consult"
+                  labelA={isFa ? 'درخواست مشاوره رایگان' : 'Request free consultation'}
+                  labelB={isFa ? 'شروع مشاوره رایگان' : 'Start free consultation'}
+                  iconB={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.35 8.5 8.5 0 0 1-3.4-.7L3 21l1.9-5.3A8.38 8.38 0 0 1 3 11.5a8.5 8.5 0 0 1 9-8.35 8.38 8.38 0 0 1 9 8.35z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg>}
+                  onClick={onConsult}
+                  pulse={pulseTarget === 'consult'}
+                  style={{ minHeight: 48, padding: '12px 18px', fontSize: 14, width: '100%' }}
+                />
               </div>
             </div>
           </div>
@@ -431,7 +435,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         ariaLabel={isFa ? 'بخش‌های صفحه جزئیات دوره' : 'Course detail sections'}
       />
 
-      {/* همهٔ محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
+      {/* همه محتوا در یک جریان پیوسته؛ ناوبری فقط پس از رسیدن کاربر به این محدوده ظاهر می‌شود. */}
       <div style={{ padding: '0 16px 24px' }}>
         <section id="course-detail-intro" data-detail-section style={{ ...detailSectionStyle(navTopOffset), borderTop: 0 }}>
           <h2 style={detailSectionTitleStyle}>{isFa ? 'معرفی دوره' : 'Course introduction'}</h2>
@@ -610,11 +614,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           </section>
         )}
 
-        {/* صفحهٔ جداگانهٔ «مشاهده همه» محتوای آموزشی — تمام‌صفحه با فیلتر نوع */}
+        {/* صفحه جداگانه «مشاهده همه» محتوای آموزشی — تمام‌صفحه با فیلتر نوع */}
         {showAllEdu && createPortal(
           <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', flexDirection: 'column', gap: 10, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="zk-public-title-row" dir={isFa ? 'rtl' : 'ltr'} style={{ alignItems: 'center' }}>
                 <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAllEdu} testId="public-course-education-back" />
                 <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'محتوای آموزشی' : 'Educational content'}</b>
               </div>
@@ -714,10 +718,10 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
         )}
       </div>
 
-      {/* صفحهٔ جداگانهٔ «مشاهده همه پرسش‌ها» — تمام‌صفحه با دکمه برگشت */}
+      {/* صفحه جداگانه «مشاهده همه پرسش‌ها» — تمام‌صفحه با دکمه برگشت */}
       {showAllFaq && createPortal(
         <div className="zk-overlay-fade" style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'var(--zk-surface, #fff)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
+          <div className="zk-public-title-row" dir={isFa ? 'rtl' : 'ltr'} style={{ position: 'sticky', top: 0, zIndex: 5, padding: 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px', background: 'var(--zk-surface, #fff)', borderBottom: '1px solid var(--zk-border)' }}>
             <PublicBackButton lang={isFa ? 'fa' : 'en'} onBack={closeShowAllFaq} testId="public-course-faq-back" />
             <b style={{ fontSize: 16, fontWeight: 900, color: 'var(--zk-text)' }}>{isFa ? 'پرسش‌های متداول' : 'Frequently asked questions'}</b>
           </div>
@@ -729,7 +733,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   <p style={{ margin: '10px 0 0', fontSize: 13, lineHeight: 1.9, color: 'var(--zk-text-muted)' }}>{item.answer}</p>
                 </details>
               ))}
-              {/* دکمهٔ «سوال دارم» در انتهای همه پرسش‌ها — باز شدن پاپ‌آپ پرسش */}
+              {/* دکمه «سوال دارم» در انتهای همه پرسش‌ها — باز شدن پاپ‌آپ پرسش */}
               <button type="button" onClick={() => setAskOpen(true)} style={{ marginTop: 8, minHeight: 48, borderRadius: 14, border: '1px solid var(--zk-primary)', background: 'var(--zk-primary-light)', color:'var(--zk-primary-text)', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                 {isFa ? 'سوال دارم' : 'Ask a question'}
               </button>

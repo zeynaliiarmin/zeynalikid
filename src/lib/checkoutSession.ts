@@ -4,9 +4,9 @@ export interface PaymentDetails {banks:PaymentBank[];wallets:PaymentWallet[];cry
 const functionBase=()=>String(import.meta.env.VITE_SUPABASE_URL||'').replace(/\/$/,'')+'/functions/v1';
 const parseJson=async(response:Response):Promise<Record<string,unknown>>=>response.json().catch(()=>({})) as Promise<Record<string,unknown>>;
 // ─── کشِ نشستِ پرداخت ───
-// بازگشت به صفحهٔ پرداخت نباید کاربر را دوباره پشتِ «در حال بررسی» بگذارد:
-// نتیجهٔ موفق تا ۱۵ دقیقه در sessionStorage نگه داشته می‌شود؛ همان اول نشان داده می‌شود و
-// در پس‌زمینه با پاسخ تازهٔ سرور به‌روز می‌شود (اعتبارسنجی کپچا سرِ جایش حفظ می‌شود).
+// بازگشت به صفحه پرداخت نباید کاربر را دوباره پشتِ «در حال بررسی» بگذارد:
+// نتیجه موفق تا ۱۵ دقیقه در sessionStorage نگه داشته می‌شود؛ همان اول نشان داده می‌شود و
+// در پس‌زمینه با پاسخ تازه سرور به‌روز می‌شود (اعتبارسنجی کپچا سرِ جایش حفظ می‌شود).
 const CACHE_PREFIX='zk_pay_cache_v1:';
 const CACHE_TTL_MS=15*60*1000;
 export function peekCachedPaymentDetails(courseId:string):PaymentDetails|null{

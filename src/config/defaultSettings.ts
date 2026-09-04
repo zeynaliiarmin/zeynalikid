@@ -26,7 +26,7 @@ const DEFAULT_SERVICES = [
   { id: 's5', title: 'تقویت سیستم ایمنی', titleEn: 'Immune System Boost', description: 'ایمن‌سازی طبیعی بدن کودک در برابر بیماری‌های ویروسی و عفونی با مکمل‌های کاملاً ارگانیک و گیاهی.', descriptionEn: 'Natural immunity against viral and infectious diseases with fully organic and herbal supplements.', icon: '' },
   { id: 's6', title: 'پایش تخصصی رشد قد و وزن', titleEn: 'Specialized Growth Tracking', description: 'بررسی دقیق روند رشد قدی، وزنی و استخوان‌بندی کودک.', descriptionEn: 'Precise tracking of height, weight and bone development.', icon: '' },
   { id: 's7', title: 'توانمندسازی والدین', titleEn: 'Parent Empowerment', description: 'آموزش نکات کاربردی تغذیه، مدیریت بدغذایی و اصلاح سبک زندگی؛ تا خودتان به متخصص سلامت فرزندتان تبدیل شوید.', descriptionEn: 'Practical nutrition, picky eating management and lifestyle training — become your child’s health expert.', icon: '‍‍' },
-  { id: 's8', title: 'برنامه ورزشی (در صورت نیاز)', titleEn: 'Exercise Program (if needed)', description: 'معرفی حرکات ورزشی ساده در خانه یا بهترین رشته ورزشی متناسب با شرایط فرزندتان، جهت همراهی بهتر در دورهٔ تخصصی.', descriptionEn: 'Simple home exercises or the best sport tailored to your child for better progress.', icon: '' },
+  { id: 's8', title: 'برنامه ورزشی (در صورت نیاز)', titleEn: 'Exercise Program (if needed)', description: 'معرفی حرکات ورزشی ساده در خانه یا بهترین رشته ورزشی متناسب با شرایط فرزندتان، جهت همراهی بهتر در دوره تخصصی.', descriptionEn: 'Simple home exercises or the best sport tailored to your child for better progress.', icon: '' },
   { id: 's9', title: 'تنظیم خواب و آرام‌سازی', titleEn: 'Sleep Regulation & Calm', description: 'بهبود کیفیت خواب شبانه با برنامه اصولی و مکمل‌های آرام‌بخش و گیاهی؛ خوابی که موتور اصلی ترشح هورمون رشد است.', descriptionEn: 'Improve nighttime sleep quality with proper routine and herbal calm supplements — sleep is the main engine for growth hormone.', icon: '' },
 ] as Array<{ id: string; title: string; titleEn?: string; description: string; descriptionEn?: string; icon: string }>;
 
@@ -250,8 +250,8 @@ export const defaultSettings = {
       enabled: true,
       storagePath: '',
     },
-    // ─── کتابخانهٔ تصاویر بخش‌ها (گالری مدیریت تصاویر) ───
-    // هر بخش تب و پوشهٔ مجزای خودش را دارد؛ عکس‌های هر بخش فقط در همان بخش دیده می‌شوند.
+    // ─── کتابخانه تصاویر بخش‌ها (گالری مدیریت تصاویر) ───
+    // هر بخش تب و پوشه مجزای خودش را دارد؛ عکس‌های هر بخش فقط در همان بخش دیده می‌شوند.
     library: {
       licenses: [],   // { id, url, alt, aspectRatio, objectPosition, storagePath, enabled }
       products: [],
@@ -265,7 +265,7 @@ export const defaultSettings = {
       enabled: true,
       storagePath: '',
     },
-    // عکس هیرو صفحهٔ درباره ما
+    // عکس هیرو صفحه درباره ما
     aboutHero: {
       url: '/images/specialist/specialist-hero-master.webp',
       alt: 'کارشناس ارشد زینالیکید',
@@ -317,7 +317,7 @@ export const defaultSettings = {
         { id: 'ht9', title: 'صفحه رشد یه درِ کشویی‌ست که یه روز برای همیشه بسته میشه.', description: 'قبل از بسته شدنش، سوخت لازم رو بهش برسون.', titleEn: 'The growth plate is a sliding door that one day closes forever.', descriptionEn: 'Before it closes, deliver the fuel it needs.', priority: 5, tabs: ['height'], active: true },
         { id: 'ht10', title: 'مکمل رشد قد، وقتی با طبع فرزندت هماهنگ باشه، بهتر جواب می‌ده.', description: 'ما با تحلیل تخصصی عکس زبان، مسیر جذب و رشد رو بهتر می‌شناسیم.', titleEn: 'Height supplements work best when they match your child’s temperament.', descriptionEn: 'With tongue photo analysis, we unlock absorption for your child’s stature.', priority: 4, tabs: ['height'], active: true },
         { id: 'ht11', title: 'عکس زبون بچهات، نقشه گنج سلامتی و قد بلندشه.', description: 'ما به جای حدس زدن، نقشه می‌خونیم. ریشه کندرشدی رو دقیقاً همونجا پیدا می‌کنیم.', titleEn: 'Your child’s tongue photo is the treasure map for health and tall stature.', descriptionEn: 'Instead of guessing, we read the map. We find the root of slow growth right there.', priority: 5, tabs: ['height'], active: true },
-        { id: 'ht12', title: 'نسخهٔ منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.', description: 'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.', titleEn: 'A unique prescription for your child’s unique growth.', descriptionEn: 'No two prescriptions at Zeynalikid are alike, because no two children are alike.', priority: 4, tabs: ['height'], active: true },
+        { id: 'ht12', title: 'نسخه منحصربه‌فرد برای رشد منحصربه‌فرد فرزندت.', description: 'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. چون هیچ دو کودکی شبیه هم نیستن.', titleEn: 'A unique prescription for your child’s unique growth.', descriptionEn: 'No two prescriptions at Zeynalikid are alike, because no two children are alike.', priority: 4, tabs: ['height'], active: true },
         { id: 'ht13', title: 'تجربه‌های والدین می‌تواند به انتخاب آگاهانه‌تر مسیر رشد کمک کند.', description: 'بازخوردها را ببینید و سپس متناسب با شرایط فرزندتان تصمیم بگیرید.', titleEn: 'Published parent experiences can support a more informed choice.', descriptionEn: 'Review published feedback and consider your child’s individual needs before deciding.', priority: 5, tabs: ['height'], active: true },
         { id: 'ht14', title: 'هر هفته که بگذره و اقدام نکنی، یه قدم از هم‌سن و سالاش عقب‌تر میفته.', description: 'کمبود وزن موندگار میشه و قد از دست میره. تصمیم سخت امروز، حسرت آسون فردا رو حذف می‌کنه.', titleEn: 'Every week you delay, they fall one step behind peers.', descriptionEn: 'Weight deficit becomes permanent and height is lost. Today’s hard decision removes tomorrow’s easy regret.', priority: 5, tabs: ['height'], active: true },
         { id: 'ht15', title: 'بچت قهرمان قدی میشه چون بدنش از درون ترمیم میشه.', description: 'تفاوت بین یه کودک خسته و کم‌قد، با یه کودک پرانرژی و بلندقامت، ریشه‌اش تو ترمیم سلولیه.', titleEn: 'Your child becomes a height champion because their body heals from within.', descriptionEn: 'The difference between a tired, short child and an energetic, tall child is cellular repair.', priority: 4, tabs: ['height'], active: true },
@@ -361,7 +361,7 @@ export const defaultSettings = {
         { id: 'm14', title: 'آینده تحصیلی بچهات، تو آشپزخونه رقم می‌خوره نه توی کلاس.', description: 'یه مغز گرسنه، بهترین معلم دنیا رو هم درک نمی‌کنه.', titleEn: 'Your child’s academic future is decided in the kitchen, not in class.', descriptionEn: 'A hungry brain cannot comprehend even the world’s best teacher.', priority: 4, tabs: ['mind'], active: true },
         { id: 'm15', title: 'فرزندت قرار نیست نابغه به دنیا بیاد؛ می‌تونه نابغه تغذیه بشه.', description: 'پتانسیل واقعی مغز، با تغذیه بیدار میشه.', titleEn: 'Your child won’t be born a genius; they can become a nutrition genius.', descriptionEn: 'The brain’s true potential is awakened by nutrition.', priority: 4, tabs: ['mind'], active: true },
         { id: 'm16', title: 'ذهن آروم، حافظه قوی و یادگیری سریع، محصول یه صبحانه مهندسی‌شده‌ست.', description: 'ما مهندس تغذیه مغزیم.', titleEn: 'A calm mind, strong memory and fast learning are the product of an engineered breakfast.', descriptionEn: 'We are brain nutrition engineers.', priority: 3, tabs: ['mind'], active: true },
-        { id: 'm17', title: 'ما با علم زبان‌شناسی و اصلاح طبع، مشکل تمرکز رو از ریشه حل می‌کنیم.', description: 'نه با داروهای شیمیایی. نسخهٔ منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.', titleEn: 'We solve focus problems from the root with tongue analysis and temperament correction.', descriptionEn: 'Not with chemicals. A unique prescription for your child’s unique mind.', priority: 5, tabs: ['mind'], active: true },
+        { id: 'm17', title: 'ما با علم زبان‌شناسی و اصلاح طبع، مشکل تمرکز رو از ریشه حل می‌کنیم.', description: 'نه با داروهای شیمیایی. نسخه منحصربه‌فرد برای ذهن منحصربه‌فرد فرزندت.', titleEn: 'We solve focus problems from the root with tongue analysis and temperament correction.', descriptionEn: 'Not with chemicals. A unique prescription for your child’s unique mind.', priority: 5, tabs: ['mind'], active: true },
         { id: 'm18', title: 'هیچ دو نسخه‌ای در زینالیکید شبیه هم نیست. حتی برای تقویت هوش.', description: 'چون هیچ دو کودکی شبیه هم نیستن.', titleEn: 'No two prescriptions at Zeynalikid are alike, even for boosting intelligence.', descriptionEn: 'Because no two children are alike.', priority: 3, tabs: ['mind'], active: true },
       ],
     },
@@ -397,7 +397,7 @@ export const defaultSettings = {
       },
     },
   },
-  // entryMode: 'track' = صفحهٔ پیگیری دوره (قدیمی، بدون نیاز به ورود)
+  // entryMode: 'track' = صفحه پیگیری دوره (قدیمی، بدون نیاز به ورود)
   // entryMode: 'user' = پنل کاربر؛ ثبت دوره و مشاوره فقط پس از ورود/ثبت‌نام
   entryMode: 'track' as 'track' | 'user',
   userPortal: {
@@ -522,7 +522,7 @@ export function migrateSettings(settings: any): any {
     const old = migrated.images;
     if (old.heroImage && !old.hero) {
       migrated.images = {
-        hero: { url: old.heroImage.url || '/images/asset13c-hero-mother-child.webp', alt: old.heroImage.alt || 'مادر و کودک در بنر اصلی صفحهٔ خانه', enabled: old.heroImage.enabled !== false, storagePath: '' },
+        hero: { url: old.heroImage.url || '/images/asset13c-hero-mother-child.webp', alt: old.heroImage.alt || 'مادر و کودک در بنر اصلی صفحه خانه', enabled: old.heroImage.enabled !== false, storagePath: '' },
         trustBox: { url: (old.trustBoxImage?.url) || '/images/trust-default.webp', alt: (old.trustBoxImage?.alt) || 'مادر و کودک خندان', enabled: (old.trustBoxImage?.enabled) !== false, storagePath: '' },
         courseDefault: { url: (old.courseImages?.defaultImage) || '/images/course-default.webp', alt: 'دوره آموزشی', enabled: (old.courseImages?.enabled) !== false },
         specialist: { url: '/images/specialist-default.webp', alt: 'کارشناس تغذیه', enabled: true, storagePath: '' },
@@ -549,7 +549,7 @@ export function migrateSettings(settings: any): any {
       };
     }
     delete migrated.images.specialistHome;
-    // اطمینان از وجود کتابخانهٔ تصاویر بخش‌ها
+    // اطمینان از وجود کتابخانه تصاویر بخش‌ها
     if (!migrated.images.library) {
       migrated.images.library = { licenses: [], products: [], courses: [], general: [] };
     } else {
@@ -557,7 +557,7 @@ export function migrateSettings(settings: any): any {
         if (!Array.isArray(migrated.images.library[k])) migrated.images.library[k] = [];
       }
     }
-    // اطمینان از وجود عکس فرم مشاوره و عکس دربارهٔ ما
+    // اطمینان از وجود عکس فرم مشاوره و عکس درباره ما
     if (!migrated.images.consultationPhoto) {
       migrated.images.consultationPhoto = {
         url: migrated.photoUrl || '/specialist-photo.webp',

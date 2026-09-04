@@ -310,7 +310,7 @@ export default function FAQPage(){
               }}
             >
               {lang === 'fa'
-                ? 'سؤال یا پاسخ مورد نظر یافت نشد. می‌توانید با ضربه زدن بر روی دکمه «سوال دارم؟» پرسش خود را مطرح کنید؛ شاید این دغدغهٔ بسیاری از والدین باشد. سؤال شما پس از بررسی، به‌صورت کاملاً محرمانه و بدون ذکر نام یا شماره تماس در این صفحه درج خواهد شد تا راهنمای سایر مادران نیز باشد.'
+                ? 'سؤال یا پاسخ مورد نظر یافت نشد. می‌توانید با ضربه زدن بر روی دکمه «سوال دارم؟» پرسش خود را مطرح کنید؛ شاید این دغدغه بسیاری از والدین باشد. سؤال شما پس از بررسی، به‌صورت کاملاً محرمانه و بدون ذکر نام یا شماره تماس در این صفحه درج خواهد شد تا راهنمای سایر مادران نیز باشد.'
                 : 'No matching question found. You can tap "Have a question?" to ask yours—it might be what many other parents are wondering too. After review, your question will be published anonymously and confidentially without your name or phone number to guide other parents as well.'}
             </p>
             <button

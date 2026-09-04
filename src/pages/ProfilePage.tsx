@@ -22,9 +22,9 @@ export default function ProfilePage(){
       </Helmet>
       <style>{css}</style>
       <section dir={en ? 'ltr' : 'rtl'} style={{ ...S.card, maxWidth: 560, marginTop: 18 }}>
-        <div className="zk-public-title-row" style={{ marginBottom: 14 }}>
+        <div className="zk-public-title-row" dir={en ? 'ltr' : 'rtl'} style={{ marginBottom: 14 }}>
           <PublicBackButton lang={en ? 'en' : 'fa'} onBack={() => setView('home')} />
-          <h1 id="profile-page-title" style={{ flex: 1, minWidth: 0, margin: 0, color: T.ttl, fontSize: 22, textAlign: 'center' }}>
+          <h1 id="profile-page-title" style={{ flex: 1, minWidth: 0, margin: 0, color: T.ttl, fontSize: 22, textAlign: 'start' }}>
             {en ? 'View your real records' : 'مشاهده پرونده‌های واقعی شما'}
           </h1>
         </div>

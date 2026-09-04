@@ -1,4 +1,4 @@
-// پیشرفت مشاهدهٔ استوری‌ها/هایلایت‌ها — کاملاً سمت کلاینت (localStorage).
+// پیشرفت مشاهده استوری‌ها/هایلایت‌ها — کاملاً سمت کلاینت (localStorage).
 // ⚠️ هیچ دیتابیس/فضای سوپابیس درگیر نمی‌شود؛ وضعیت «دیده‌شده» برای هر دستگاه جدا نگه داشته می‌شود
 // (مثل اپ‌های بدون لاگین). چون id استوری‌ها را نگه می‌داریم، هر وقت استوری جدیدی به یک هایلایت
 // اضافه شود، id آن در لیست «دیده‌شده» نیست و هایلایت دوباره رنگی می‌شود.
@@ -30,7 +30,7 @@ export function markStorySeen(highlightId: string, storyId: string): void {
   } catch { /* ignore */ }
 }
 
-/** آیا همهٔ استوری‌های این هایلایت دیده شده‌اند؟ (اگر هیچ استوری‌ای نباشد، true) */
+/** آیا همه استوری‌های این هایلایت دیده شده‌اند؟ (اگر هیچ استوری‌ای نباشد، true) */
 export function isHighlightSeen(highlightId: string, storyIds: string[]): boolean {
   if (!storyIds.length) return true;
   const seen = new Set((getStoryProgress()[highlightId]?.seen) || []);

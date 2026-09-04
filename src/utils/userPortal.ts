@@ -1,7 +1,7 @@
 // userPortal — ابزار مشترک پنل کاربر (نشست، اعتبارسنجی نام واقعی)
-// قانون نشست: فقط sessionStorage؛ هیچ دادهٔ حساسی در localStorage ذخیره نمیشود.
+// قانون نشست: فقط sessionStorage؛ هیچ داده حساسی در localStorage ذخیره نمیشود.
 export interface PortalSession {
-  phone: string;      // فقط ارقام (شمارهٔ کاربر)
+  phone: string;      // فقط ارقام (شماره کاربر)
   fullName: string;   // نام کامل ثبتنامشده
   code: string;       // کد پیگیری یکتای کاربر (همان کد ثبتنام)
 }
@@ -58,7 +58,7 @@ const EN_RE = /^[A-Za-z\s\u200c\u200f'.-]+$/;
 const FA_MIN_DEFAULT = 3;
 const EN_MIN = 2;
 
-/** «+989123456789» را به کد کشور + شمارهٔ داخلی تبدیل می‌کند (برای پر کردن خودکار فرم‌ها) */
+/** «+989123456789» را به کد کشور + شماره داخلی تبدیل می‌کند (برای پر کردن خودکار فرم‌ها) */
 export function splitE164(phone: any, countries: any[] = []): { cc: string; local: string } {
   const raw = String(phone || '').replace(/[^\d+]/g, '');
   if (!raw.startsWith('+')) return { cc: '+98', local: raw };
@@ -76,7 +76,7 @@ export function splitE164(phone: any, countries: any[] = []): { cc: string; loca
 const FA_START_RE = new RegExp(`^[${FA_CHARS}]`);
 const EN_TOKEN_RE = /^[A-Za-z][A-Za-z'.-]*$/;
 /**
- * اعتبارسنجی نام — بر پایهٔ «خطِ متن» نه زبان سایت:
+ * اعتبارسنجی نام — بر پایه «خطِ متن» نه زبان سایت:
  * نام کاملاً لاتین با قواعد لاتین (حداقل ۲ حرف)، وگرنه با قواعد فارسی (حداقل faMin حرف).
  * ترکیب فارسی+لاتین (مثلاً «علی Rezaei») هم مجاز است.
  */
@@ -120,7 +120,7 @@ export function normalizeLoginCode(raw: unknown): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// شمارهٔ تماس
+// شماره تماس
 // ─────────────────────────────────────────────────────────────────────────
 // تبدیل ارقام فارسی/عربی به لاتین + حذف غیررقم
 export function digitsOnly(v: any): string {
@@ -139,7 +139,7 @@ export function normalizePhoneForServer(raw: string): string {
   return `+${d}`;
 }
 
-// نمایش ماسکشدهٔ شماره برای UI: +98912xxxx789 / 0912xxxx789
+// نمایش ماسکشده شماره برای UI: +98912xxxx789 / 0912xxxx789
 export function maskPhoneLocal(phone: string): string {
   const d = digitsOnly(String(phone || '').replace(/^\+/, ''));
   if (d.length < 7) return String(phone || '');

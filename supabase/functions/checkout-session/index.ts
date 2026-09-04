@@ -37,8 +37,8 @@ serve(async(req)=>{
  const {data,error}=await admin.from('settings').select('settings').eq('key','app_settings').limit(1).maybeSingle();
  if(error||!data)return reply({error:"روند پرداخت در دسترس نیست"},503,origin);
  const settings=data.settings||{};
- // کپچا: اگر صفحهٔ ورودی سایت روی «پنل کاربر» باشد، بررسی امنیتی روی همان فرم ورود انجام شده
- // و در صفحهٔ پرداخت تکرار نمی‌شود؛ در حالت «پیگیری دوره» همان قفل قبلی سر جایش می‌ماند.
+ // کپچا: اگر صفحه ورودی سایت روی «پنل کاربر» باشد، بررسی امنیتی روی همان فرم ورود انجام شده
+ // و در صفحه پرداخت تکرار نمی‌شود؛ در حالت «پیگیری دوره» همان قفل قبلی سر جایش می‌ماند.
  if(String(settings.entryMode||'track')!=='user'){
   const remoteIp=String(req.headers.get('CF-Connecting-IP')||req.headers.get('X-Forwarded-For')||'').split(',')[0].trim();
   const hostname=new URL(origin).hostname;

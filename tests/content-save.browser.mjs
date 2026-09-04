@@ -24,7 +24,7 @@ let currentSettings = {
     }, {
       // The current education model presents images as article images, not a separate
       // inline-player type. This exercises the real image editor and public article view.
-      id: 'edu-image-test', title: 'آیتم تست عکس فوری', type: 'article', body: 'متن مقالهٔ تصویری', images: [{ id: 'image-browser-test', url: 'https://old.test/image.jpg', position: 0 }], active: true, order: 3,
+      id: 'edu-image-test', title: 'آیتم تست عکس فوری', type: 'article', body: 'متن مقاله تصویری', images: [{ id: 'image-browser-test', url: 'https://old.test/image.jpg', position: 0 }], active: true, order: 3,
     }, {
       id: 'edu-text-test', title: 'آیتم تست متن فوری', type: 'text', body: 'متن قدیمی', active: true, order: 4,
     }],

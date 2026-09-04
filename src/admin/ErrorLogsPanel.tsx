@@ -1,7 +1,7 @@
 /**
- * ErrorLogsPanel — نمایش خطاهای ثبت‌شدهٔ فرانت‌اند (فقط ادمین)
+ * ErrorLogsPanel — نمایش خطاهای ثبت‌شده فرانت‌اند (فقط ادمین)
  * خواندن/پاک‌سازی از طریق Edge Function «admin-error-logs» با نشست ادمین انجام می‌شود.
- * هر خطا یک دکمهٔ کپی دارد که با کپی موفق، به‌صورت بصری تغییر می‌کند.
+ * هر خطا یک دکمه کپی دارد که با کپی موفق، به‌صورت بصری تغییر می‌کند.
  */
 import { useEffect, useState } from 'react';
 import { getAdminSessionToken } from '../utils/adminSession';
@@ -31,18 +31,18 @@ const KIND_LABELS: Record<string, string> = {
   submit_review: 'خطای ثبت نظر',
   track_lookup: 'خطای جستجوی پیگیری',
   track_search: 'خطای صفحه پیگیری',
-  track_corrective: 'خطای ذخیرهٔ اصلاحی',
+  track_corrective: 'خطای ذخیره اصلاحی',
   track_pdf_sign: 'خطای دانلود PDF',
 };
 
 // توضیح فارسی کوتاه: خطا مربوط به چه چیزی است و چه عملکردی ممکن است مختل شود
 const KIND_DESCRIPTIONS: Record<string, string> = {
-  error: 'یک خطای غیرمنتظرهٔ صفحه رخ داده است.',
+  error: 'یک خطای غیرمنتظره صفحه رخ داده است.',
   unhandledrejection: 'یک عملیات ناهمگام (Promise) بدون مدیریت خطا شکست خورد.',
   boundary: 'بخشی از صفحه دچار کرش شد و به‌جای آن پیام خطا نمایش داده شد.',
   registration: 'ثبت اطلاعات (دوره یا مشاوره) با خطا مواجه شد؛ ممکن است ثبت نهایی نشده باشد.',
-  course_register: 'ذخیرهٔ ثبت دوره روی سرور ناموفق بود؛ ثبت به‌صورت موقت محلی ذخیره شد.',
-  consult_submit: 'ذخیرهٔ فرم مشاوره روی سرور ناموفق بود.',
+  course_register: 'ذخیره ثبت دوره روی سرور ناموفق بود؛ ثبت به‌صورت موقت محلی ذخیره شد.',
+  consult_submit: 'ذخیره فرم مشاوره روی سرور ناموفق بود.',
   consult_submit_fatal: 'ثبت فرم مشاوره با خطای جدی متوقف شد.',
   consult_update: 'به‌روزرسانی فرم مشاوره قبلی ناموفق بود.',
   consult_voice: 'آپلود یادداشت صوتی فرم مشاوره ناموفق بود.',
@@ -55,8 +55,8 @@ const KIND_DESCRIPTIONS: Record<string, string> = {
   ask_question: 'ثبت سوال کاربر ناموفق بود؛ سوال ممکن است به پنل نرسیده باشد.',
   submit_review: 'ثبت نظر ناموفق بود؛ نظر ممکن است ذخیره نشده باشد.',
   track_lookup: 'جستجوی کد پیگیری در سرور ناموفق بود.',
-  track_search: 'باز کردن نتیجهٔ پیگیری ناموفق بود.',
-  track_corrective: 'ذخیرهٔ اطلاعات اصلاحی ناموفق بود.',
+  track_search: 'باز کردن نتیجه پیگیری ناموفق بود.',
+  track_corrective: 'ذخیره اطلاعات اصلاحی ناموفق بود.',
   track_pdf_sign: 'ساخت لینک دانلود PDF ناموفق بود؛ فایل ممکن است قابل دانلود نباشد.',
 };
 
@@ -103,9 +103,9 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
     }
   };
 
-  // پاک‌سازی همهٔ خطاها (فقط ادمین)
+  // پاک‌سازی همه خطاها (فقط ادمین)
   const clearAll = async () => {
-    if (!window.confirm('همهٔ خطاهای گزارش‌شده پاک شوند؟ این عملیات قابل بازگشت نیست.')) return;
+    if (!window.confirm('همه خطاهای گزارش‌شده پاک شوند؟ این عملیات قابل بازگشت نیست.')) return;
     setClearing(true); setErr('');
     try {
       const token = getAdminSessionToken();
@@ -158,7 +158,7 @@ export default function ErrorLogsPanel({ T, S }: { T: any; S: any }) {
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <p style={{ fontSize: 12, color: T.mut, lineHeight: 1.9, margin: 0, minWidth: 0, flex: '1 1 240px' }}>
-          خطاهای ثبت‌شدهٔ کاربران در سایت (به‌صورت خودکار، بدون هیچ دادهٔ حساس مثل شماره یا کارت). خطاهای قدیمی‌تر از ۱۵ روز خودکار پاک می‌شوند.
+          خطاهای ثبت‌شده کاربران در سایت (به‌صورت خودکار، بدون هیچ داده حساس مثل شماره یا کارت). خطاهای قدیمی‌تر از ۱۵ روز خودکار پاک می‌شوند.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={load} disabled={loading} style={{ minHeight: 40, padding: '0 14px', borderRadius: 10, border: `1px solid ${T.brd}`, background: T.soft, color: T.ttl, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>{loading ? 'در حال دریافت...' : 'به‌روزرسانی'}</button>

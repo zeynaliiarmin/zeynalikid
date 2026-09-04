@@ -44,7 +44,7 @@ const COURSE_BADGES = [
   { key: 'popular', label: 'محبوب' },
   { key: 'bestseller', label: 'پرفروش' },
   { key: 'trending', label: 'پرطرفدار' },
-  { key: 'ageBadge', label: 'نمایش بازهٔ سنی' },
+  { key: 'ageBadge', label: 'نمایش بازه سنی' },
 ] as const;
 
 function CourseImageEditor({
@@ -265,7 +265,7 @@ export default function CoursesEditor({
 
       <Box title="مدیریت تب‌ها و دوره‌ها">
         <p style={{ margin: '0 0 12px', color: T.mut, fontSize: 11, lineHeight: 1.9 }}>
-          عکس بالای هر تب و عکس هر دوره مستقل است. اگر برای یک دوره عکس انتخاب نشود، کارت و صفحهٔ آن دوره بدون فضای تصویر نمایش داده می‌شود.
+          عکس بالای هر تب و عکس هر دوره مستقل است. اگر برای یک دوره عکس انتخاب نشود، کارت و صفحه آن دوره بدون فضای تصویر نمایش داده می‌شود.
         </p>
 
         {tabs.map((tab: any, tabIndex: number) => (
@@ -384,7 +384,7 @@ export default function CoursesEditor({
             {(tab.courses || []).map((course: any, courseIndex: number) => (
               <div key={course.id} style={{ border: `1px solid ${T.brd}`, borderRadius: 14, padding: 11, marginTop: 12, background: T.card }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <b style={{ color: T.ttl, fontSize: 12.5, flex: 1 }}>دورهٔ {courseIndex + 1}: {course.title}</b>
+                  <b style={{ color: T.ttl, fontSize: 12.5, flex: 1 }}>دوره {courseIndex + 1}: {course.title}</b>
                   <span style={{ color: T.mut, fontSize: 10, direction: 'ltr' }}>ID: {course.id}</span>
                 </div>
                 <label style={{ ...S.lbl, fontSize: 11 }}>عنوان دوره</label>

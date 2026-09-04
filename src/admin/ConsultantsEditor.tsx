@@ -82,7 +82,7 @@ export default function ConsultantsEditor(props: any) {
   return (
     <Box title="مشاورین و لینک‌های ارجاع">
       <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>
-        برای هر مشاور یک لینک ارجاع اختصاصی و کوتاه بسازید. نام انگلیسی مشاور برای ساخت کد الزامی است؛ کد به‌صورت خودکار از ۲ حرف اولِ نام انگلیسی ساخته می‌شود و قابل تغییر است. وقتی مخاطب از این لینک وارد سایت شود، کارت مشاور در صفحهٔ هوم نمایش داده می‌شود و اطلاعات بانکی/کیف پول همان مشاور در مرحلهٔ پرداخت در نظر گرفته می‌شود.
+        برای هر مشاور یک لینک ارجاع اختصاصی و کوتاه بسازید. نام انگلیسی مشاور برای ساخت کد الزامی است؛ کد به‌صورت خودکار از ۲ حرف اولِ نام انگلیسی ساخته می‌شود و قابل تغییر است. وقتی مخاطب از این لینک وارد سایت شود، کارت مشاور در صفحه هوم نمایش داده می‌شود و اطلاعات بانکی/کیف پول همان مشاور در مرحله پرداخت در نظر گرفته می‌شود.
       </p>
       <div style={{ marginBottom: 12, padding: 10, borderRadius: 10, background: 'var(--zkad-tag-warn-bg)', border: '1px solid var(--zkad-warn)', fontSize: 11.5, color: 'var(--zkad-tag-warn-tx)', lineHeight: 1.8 }}>
         مدیریت کامل مشاورین، لینک‌های ارجاع، اطلاعات بانکی/کیف پول و عکس هر مشاور دقیقاً از همین بخش («مشاورین و لینک‌های ارجاع») انجام می‌شود. عکس هر مشاور را از تب «عکس مشاور» آپلود کنید.
@@ -91,7 +91,7 @@ export default function ConsultantsEditor(props: any) {
       {/* تنظیمات سراسری ارجاع */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 14, padding: 10, background: T.soft, borderRadius: 10 }}>
         <Checklist label="نمایش انتخاب مشاور در روند ثبت‌نام" value={referral.showConsultantSelection === true} onChange={(v) => setReferral({ showConsultantSelection: v })} />
-        <Checklist label="نمایش دکمه‌های CTA صفحهٔ اصلی" value={referral.home?.showCta !== false} onChange={(v) => setReferral({ home: { ...(referral.home || {}), showCta: v } })} />
+        <Checklist label="نمایش دکمه‌های CTA صفحه اصلی" value={referral.home?.showCta !== false} onChange={(v) => setReferral({ home: { ...(referral.home || {}), showCta: v } })} />
       </div>
 
       {/* ── متن‌های راهنمای قابل ویرایش در حالت لینک ارجاع ── */}
@@ -99,21 +99,21 @@ export default function ConsultantsEditor(props: any) {
         <div style={{ fontWeight: 800, fontSize: 13, color: T.ttl, marginBottom: 4 }}>متن‌های راهنمای قابل ویرایش (در حالت لینک ارجاع)</div>
         <p style={{ fontSize: 11, color: T.mut, margin: '0 0 10px', lineHeight: 1.8 }}>مقدار داخل هر فیلد، همان متن پیش‌فرضی است که اکنون در سایت نمایش داده می‌شود؛ هر بخش را هر طور خواستید ویرایش کنید. اگر فیلدی را کاملاً خالی کنید، سایت دوباره همین متن پیش‌فرض را نشان می‌دهد (متن پیش‌فرض از سایت حذف نمی‌شود). توکن‌های <span dir="ltr">{'{tab}'}</span>، <span dir="ltr">{'{course}'}</span> و <span dir="ltr">{'{consultant}'}</span> به‌صورت خودکار با نام واقعی تب/دوره/مشاور جایگزین می‌شوند.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک پایه — فقط کد مشاور)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeBase || DEFAULT_REFERRAL_TEXTS.homeBase} onBlur={(e) => setReferralText('homeBase', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeTab || DEFAULT_REFERRAL_TEXTS.homeTab} onBlur={(e) => setReferralText('homeTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ هوم (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeCourse || DEFAULT_REFERRAL_TEXTS.homeCourse} onBlur={(e) => setReferralText('homeCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesTab || DEFAULT_REFERRAL_TEXTS.coursesTab} onBlur={(e) => setReferralText('coursesTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>پیام راهنما در صفحهٔ معرفی دوره‌ها (لینک دورهٔ مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesCourse || DEFAULT_REFERRAL_TEXTS.coursesCourse} onBlur={(e) => setReferralText('coursesCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>متن پیام پاپ‌آپ «درخواست مشاورهٔ مجدد»</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.popupTitle || DEFAULT_REFERRAL_TEXTS.popupTitle} onBlur={(e) => setReferralText('popupTitle', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک پایه)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryBase || DEFAULT_REFERRAL_TEXTS.popupPrimaryBase} onBlur={(e) => setReferralText('popupPrimaryBase', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک تب دوره)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryTab || DEFAULT_REFERRAL_TEXTS.popupPrimaryTab} onBlur={(e) => setReferralText('popupPrimaryTab', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ اصلی پاپ‌آپ (لینک دورهٔ مشخص)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryCourse || DEFAULT_REFERRAL_TEXTS.popupPrimaryCourse} onBlur={(e) => setReferralText('popupPrimaryCourse', e.target.value)} /></div>
-          <div><label style={S.lbl}>عنوان دکمهٔ «مجدداً درخواست مشاوره دارم»</label><input style={S.inp} defaultValue={referral.texts?.reconsultLabel || DEFAULT_REFERRAL_TEXTS.reconsultLabel} onBlur={(e) => setReferralText('reconsultLabel', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحه هوم (لینک پایه — فقط کد مشاور)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeBase || DEFAULT_REFERRAL_TEXTS.homeBase} onBlur={(e) => setReferralText('homeBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحه هوم (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeTab || DEFAULT_REFERRAL_TEXTS.homeTab} onBlur={(e) => setReferralText('homeTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحه هوم (لینک دوره مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.homeCourse || DEFAULT_REFERRAL_TEXTS.homeCourse} onBlur={(e) => setReferralText('homeCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحه معرفی دوره‌ها (لینک تب دوره)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesTab || DEFAULT_REFERRAL_TEXTS.coursesTab} onBlur={(e) => setReferralText('coursesTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>پیام راهنما در صفحه معرفی دوره‌ها (لینک دوره مشخص)</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.coursesCourse || DEFAULT_REFERRAL_TEXTS.coursesCourse} onBlur={(e) => setReferralText('coursesCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>متن پیام پاپ‌آپ «درخواست مشاوره مجدد»</label><textarea style={S.ta} rows={2} defaultValue={referral.texts?.popupTitle || DEFAULT_REFERRAL_TEXTS.popupTitle} onBlur={(e) => setReferralText('popupTitle', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمه اصلی پاپ‌آپ (لینک پایه)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryBase || DEFAULT_REFERRAL_TEXTS.popupPrimaryBase} onBlur={(e) => setReferralText('popupPrimaryBase', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمه اصلی پاپ‌آپ (لینک تب دوره)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryTab || DEFAULT_REFERRAL_TEXTS.popupPrimaryTab} onBlur={(e) => setReferralText('popupPrimaryTab', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمه اصلی پاپ‌آپ (لینک دوره مشخص)</label><input style={S.inp} defaultValue={referral.texts?.popupPrimaryCourse || DEFAULT_REFERRAL_TEXTS.popupPrimaryCourse} onBlur={(e) => setReferralText('popupPrimaryCourse', e.target.value)} /></div>
+          <div><label style={S.lbl}>عنوان دکمه «مجدداً درخواست مشاوره دارم»</label><input style={S.inp} defaultValue={referral.texts?.reconsultLabel || DEFAULT_REFERRAL_TEXTS.reconsultLabel} onBlur={(e) => setReferralText('reconsultLabel', e.target.value)} /></div>
           <div><label style={S.lbl}>سؤال «به چه دلیلی مجدداً درخواست مشاوره دارید؟»</label><input style={S.inp} defaultValue={referral.texts?.reconsultQuestion || DEFAULT_REFERRAL_TEXTS.reconsultQuestion} onBlur={(e) => setReferralText('reconsultQuestion', e.target.value)} /></div>
         </div>
       </div>
 
-      {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>هنوز مشاوری ثبت نشده است. دکمهٔ «افزودن مشاور» را بزنید.</p>}
+      {consultants.length === 0 && <p style={{ fontSize: 12, color: T.mut }}>هنوز مشاوری ثبت نشده است. دکمه «افزودن مشاور» را بزنید.</p>}
 
       {/* تب‌های مشاورین */}
       {consultants.length > 0 && (
@@ -284,7 +284,7 @@ export default function ConsultantsEditor(props: any) {
         <ul style={{ fontSize: 11.5, color: 'var(--zkad-mut)', lineHeight: 1.9, margin: '0 0 10px', paddingInlineStart: 18 }}>
           <li><b>لینک پایه</b> (مثال <code>/{active?.referralCode || 'code'}</code>): فقط صفحه اصلی + پیام راهنما.</li>
           <li><b>لینک تب</b> (مثال <code>/{active?.referralCode || 'code'}<span style={{color:'var(--zkad-acc)'}}>t</span></code>): دکمه‌ها به «مشاهده دوره‌های آن تب» تغییر می‌کنند و تب مربوطه باز می‌شود.</li>
-          <li><b>لینک دورهٔ مستقیم</b> (مثال <code>/{active?.referralCode || 'code'}<span style={{color:'var(--zkad-acc)'}}>t1</span></code>): دکمه‌ها به «ثبت آن دوره» تغییر می‌کنند و کلیک روی آن مستقیماً روند ثبت‌نام را شروع می‌کند.</li>
+          <li><b>لینک دوره مستقیم</b> (مثال <code>/{active?.referralCode || 'code'}<span style={{color:'var(--zkad-acc)'}}>t1</span></code>): دکمه‌ها به «ثبت آن دوره» تغییر می‌کنند و کلیک روی آن مستقیماً روند ثبت‌نام را شروع می‌کند.</li>
         </ul>
         <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--zkad-txt)', marginBottom: 6 }}>مخفف هر تب (قابل ویرایش):</div>
         <div style={{ display: 'grid', gap: 6 }}>

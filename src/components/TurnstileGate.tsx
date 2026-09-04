@@ -36,7 +36,7 @@ interface TurnstileGateProps {
  includeCrypto:boolean;
  onVerify:(token:string)=>void;
  onReset:()=>void;
- /** 'payment' = قفل اطلاعات پرداخت (پیش‌فرض) | 'auth' = صفحهٔ ورود و ثبت‌نام پنل کاربر */
+ /** 'payment' = قفل اطلاعات پرداخت (پیش‌فرض) | 'auth' = صفحه ورود و ثبت‌نام پنل کاربر */
  variant?:'payment'|'auth';
 }
 
@@ -69,7 +69,7 @@ export default function TurnstileGate({siteKey,lang,T,includeCrypto,onVerify,onR
  },[siteKey,lang,onVerify,onReset]);
  const isAuth=variant==='auth';
  return <div data-testid={isAuth?'auth-captcha-gate':'payment-captcha-gate'} style={{border:`1px solid ${T.brd}`,borderRadius:14,padding:'14px 12px',background:T.soft,margin:'10px 0 12px',textAlign:'center'}}>
-  <div style={{fontSize:13,fontWeight:800,color:T.txt,marginBottom:5}}>{isAuth?(lang==='en'?"To continue securely, confirm you're not a robot":'برای ادامهٔ امن، تأیید کنید ربات نیستید'):(lang==='en'?"For secure payment, confirm you're not a robot":'برای پرداخت امن، تأیید کنید ربات نیستید')}</div>
+  <div style={{fontSize:13,fontWeight:800,color:T.txt,marginBottom:5}}>{isAuth?(lang==='en'?"To continue securely, confirm you're not a robot":'برای ادامه امن، تأیید کنید ربات نیستید'):(lang==='en'?"For secure payment, confirm you're not a robot":'برای پرداخت امن، تأیید کنید ربات نیستید')}</div>
   <p style={{fontSize:11.5,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>{isAuth?(lang==='en'?'Complete the check to continue.':'برای ادامه، بررسی امنیتی زیر را تکمیل کنید.'):(lang==='en'?(includeCrypto?'Complete the check to view bank or crypto payment details.':'Complete the check to view bank payment details.'):(includeCrypto?'برای مشاهده اطلاعات بانکی یا پرداخت رمزارزی، بررسی امنیتی زیر را تکمیل کنید.':'برای مشاهده اطلاعات بانکی، بررسی امنیتی زیر را تکمیل کنید.'))}</p>
   <div ref={containerRef} style={{width:'100%',minHeight:65,display:'flex',justifyContent:'center',alignItems:'center'}}/>
   <div role={state==='error'?'alert':'status'} style={{fontSize:10.5,marginTop:7,color:state==='error'?T.err:state==='verified'?T.ok:T.mut,fontWeight:state==='verified'?800:500}}>
