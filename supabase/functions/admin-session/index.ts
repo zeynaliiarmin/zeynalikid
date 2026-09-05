@@ -116,14 +116,16 @@ serve(async (req) => {
 
     // Cross-instance limiter: unlike the in-memory guard above, this counter is
     // shared by every Edge instance and applies a 15-minute cooldown.
+    // Cross-instance, DB-backed limiter: keys on (IP + phone) so brute-force on
+    // a single account or from a single IP is blocked even across Edge instances.
     const strictRl = await centralRateLimit(req, "admin-login", {
-      maxRequests: 10,
+      maxRequests: 5,
       windowMs: 15 * 60_000,
-      blockMs: 15 * 60_000,
+      blockMs: 60 * 60_000,   // 1 hour lockout after 5 failed attempts
     }, phone);
     if (!strictRl.ok) {
       return jsonResponse(
-        { error: "تلاش‌های ورود بیش از حد مجاز است. لطفاً ۱۵ دقیقه بعد دوباره تلاش کنید." },
+        { error: "تلاش‌های ورود بیش از حد مجاز است. لطفاً یک ساعت بعد دوباره تلاش کنید." },
         429,
         origin,
       );

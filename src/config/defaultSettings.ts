@@ -656,8 +656,8 @@ export function migratePaymentConfig(settings: any): any {
       { id: 'idpay', label: 'آیدی‌پی', config: { apiKey: '', sandbox: false } },
       { id: 'payping', label: 'پی‌پینگ', config: { apiKey: '', clientId: '' } },
       { id: 'blubank', label: 'بلوبانک (بانک سامان)', config: { merchantCode: '', terminalCode: '' } },
-      { id: 'stripe', label: 'Stripe (بین‌المللی)', config: { secretKey: '', publishableKey: '' } },
-      { id: 'paypal', label: 'PayPal (بین‌المللی)', config: { clientId: '', clientSecret: '', sandbox: true } },
+      { id: 'stripe', label: 'Stripe (بین‌المللی) — در حال توسعه', enabled: false, config: { secretKey: '', publishableKey: '' } },
+      { id: 'paypal', label: 'PayPal (بین‌المللی) — در حال توسعه', enabled: false, config: { clientId: '', clientSecret: '', sandbox: true } },
       { id: 'crypto', label: 'ارز دیجیتال', config: { wallets: [] } },
     ];
 
