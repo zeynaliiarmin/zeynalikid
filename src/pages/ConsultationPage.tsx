@@ -565,7 +565,7 @@ export default function ConsultationPage(){
     const all = (cfg.consultTopics || []);
     const chip = (x: string) => {
       const chipActive = (fd.topics || []).includes(x);
-      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '9px 12px' : '9px 12px', borderRadius: 22, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11 : 12, fontWeight: 800, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 38, transition: 'all .2s ease', flex: '0 0 auto', maxWidth: lang === 'en' ? 148 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', display:'inline-flex', alignItems:'center', gap:5 }}>{trVal(x)}</button>;
+      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '11px 16px' : '11px 18px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', maxWidth: lang === 'en' ? 160 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', display:'inline-flex', alignItems:'center', gap:5 }}>{trVal(x)}</button>;
     };
     if (lang === 'en') return <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>{all.map(chip)}</div>;
     const first = all.slice(0, 4), rest = all.slice(4);
@@ -593,7 +593,7 @@ export default function ConsultationPage(){
         </div>
 
         {/* Notice */}
-        <div style={{ background: T.soft, borderRadius: 12, padding: 12, fontSize: 12, lineHeight: 1.9, marginBottom: 15, boxShadow: T.neuIn }}>{publicText('noticeText')}</div>
+        <div style={{ background: T.soft, borderRadius: 18, padding: '14px 16px', fontSize: 12.5, lineHeight: 2, marginBottom: 16, boxShadow: '0 3px 8px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04)', border: `1px solid color-mix(in srgb, ${T.brd} 55%, transparent)` }}>{publicText('noticeText')}</div>
 
         {/* Topics */}
         <div style={S.sec}><MiniIcon type="course" T={T} />{publicText('consultTopic', 'موضوع مشاوره')} <span style={{ color: T.err }}>*</span></div>
@@ -622,7 +622,7 @@ export default function ConsultationPage(){
           <div>
             <label style={S.lbl}>{publicText('gender', 'جنسیت')} <span style={{ color: T.err }}>*</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => {const isA=fd.gender===x[0];return <button key={x[0]} className={isA?'zk-chip is-active':'zk-chip'} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '11px 8px', borderRadius: 14, color: isA ? T.accText : T.mut, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 800, minHeight:46 }}>{x[1]}</button>;})}
+              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => {const isA=fd.gender===x[0];return <button key={x[0]} className={isA?'zk-chip is-active':'zk-chip'} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '12px 8px', borderRadius: 16, color: isA ? T.accText : T.mut, cursor: 'pointer', fontSize: 14, fontFamily: 'inherit', fontWeight: 800, minHeight:50 }}>{x[1]}</button>;})}
             </div>
             {errs.gender && <Err err={errs.gender} theme={T} />}
           </div>
