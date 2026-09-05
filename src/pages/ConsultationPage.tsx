@@ -563,7 +563,10 @@ export default function ConsultationPage(){
   // FIX: TopicChips inlined as stable rendering function to avoid nested component remount
   const TopicChips = useCallback(()=>{
     const all = (cfg.consultTopics || []);
-    const chip = (x: string) => <button key={x} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '7px 8px' : '7px 6px', borderRadius: 18, border: `1px solid ${fd.topics.includes(x) ? T.acc : T.brd}`, background: fd.topics.includes(x) ? T.soft : 'transparent', color: fd.topics.includes(x) ? T.acc : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 10 : 11, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', height: 34, transition: 'all .65s', flex: '0 0 auto', maxWidth: lang === 'en' ? 132 : 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trVal(x)}</button>;
+    const chip = (x: string) => {
+      const chipActive = (fd.topics || []).includes(x);
+      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '9px 12px' : '9px 12px', borderRadius: 22, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11 : 12, fontWeight: 800, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 38, transition: 'all .2s ease', flex: '0 0 auto', maxWidth: lang === 'en' ? 148 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', display:'inline-flex', alignItems:'center', gap:5 }}>{trVal(x)}</button>;
+    };
     if (lang === 'en') return <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>{all.map(chip)}</div>;
     const first = all.slice(0, 4), rest = all.slice(4);
     return <><div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, first.length)}, 1fr)`, gap: 5, marginBottom: rest.length ? 6 : 2 }}>{first.map(chip)}</div>{rest.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>{rest.map(chip)}</div>}</>;
@@ -619,7 +622,7 @@ export default function ConsultationPage(){
           <div>
             <label style={S.lbl}>{publicText('gender', 'جنسیت')} <span style={{ color: T.err }}>*</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => <button key={x[0]} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '10px 8px', borderRadius: 12, border: 'none', background: fd.gender === x[0] ? T.soft : T.card, color: fd.gender === x[0] ? T.acc : T.mut, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 700, boxShadow: fd.gender === x[0] ? T.neuIn : T.neuOut }}>{x[1]}</button>)}
+              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => {const isA=fd.gender===x[0];return <button key={x[0]} className={isA?'zk-chip is-active':'zk-chip'} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '11px 8px', borderRadius: 14, color: isA ? T.accText : T.mut, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 800, minHeight:46 }}>{x[1]}</button>;})}
             </div>
             {errs.gender && <Err err={errs.gender} theme={T} />}
           </div>

@@ -19,7 +19,8 @@ function shortCountry(c:any){return `${getCountryFlag(c)} ${c.code}`}
 
 function Popup({open,onClose,trigger,children,T,width}:{open:boolean,onClose:()=>void,trigger:any,children:any,T:any,width?:number|string}){const ref=useRef<HTMLDivElement|null>(null);const [place,setPlace]=useState<'top'|'bottom'>('bottom');useEffect(()=>{if(!open)return;const h=(e:MouseEvent)=>{if(ref.current&&!ref.current.contains(e.target as Node))onClose()};const calc=()=>{const r=ref.current?.getBoundingClientRect();if(r){const below=window.innerHeight-r.bottom;setPlace(below<window.innerHeight*.38&&r.top>below?'top':'bottom')}};calc();document.addEventListener('mousedown',h);window.addEventListener('resize',calc);window.addEventListener('scroll',calc,true);return()=>{document.removeEventListener('mousedown',h);window.removeEventListener('resize',calc);window.removeEventListener('scroll',calc,true)}},[open,onClose]);return <div ref={ref} style={{position:'relative'}}>{trigger}{open&&<div style={{position:'absolute',top:place==='bottom'?'calc(100% + 6px)':'auto',bottom:place==='top'?'calc(100% + 6px)':'auto',left:0,right:'auto',zIndex:3000,width:width||260,maxWidth:'min(33vw, calc(100vw - 34px))',minWidth:180,maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',background:T.pop,border:`1px solid ${T.brd}`,borderRadius:16,boxShadow:'0 18px 48px rgba(0,0,0,.16)',padding:8,animation:'fadeSlide .3s ease both'}}>{children}</div>}</div>}
 
-const CountrySelect = memo(function CountrySelectCmp({value,onChange,countries,T,lang,small=true}:{value:string,onChange:(v:string)=>void,countries:any[],T:any,lang:'fa'|'en',small?:boolean}){const [open,setOpen]=useState(false);const choose=useCallback((v:string)=>{onChange(v);setOpen(false)},[onChange]);return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button onClick={()=>setOpen((v:boolean)=>!v)} style={{height:44,minWidth:small?68:120,padding:'0 8px',background:T.inp,border:`1px solid ${T.brd}`,borderRadius:10,color:T.accText,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:700,whiteSpace:'nowrap',order:-1}}>{shortCountry(countries.find((x:any)=>x.code===value)||countries[0])}</button>}>{countries.map((c:any)=><button key={c.id} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountry(c,lang)}</button>)}</Popup>});
+const __countryBtnShadow = `inset 2px 2px 6px rgba(0,0,0,.06), inset -1px -1px 4px rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.04)`;
+const CountrySelect = memo(function CountrySelectCmp({value,onChange,countries,T,lang,small=true}:{value:string,onChange:(v:string)=>void,countries:any[],T:any,lang:'fa'|'en',small?:boolean}){const [open,setOpen]=useState(false);const choose=useCallback((v:string)=>{onChange(v);setOpen(false)},[onChange]);return <Popup open={open} onClose={()=>setOpen(false)} T={T} width={'33vw'} trigger={<button onClick={()=>setOpen((v:boolean)=>!v)} style={{height:48,minWidth:small?72:120,padding:'0 10px',background:T.inp,border:`1.5px solid color-mix(in srgb, ${T.brd} 85%, transparent)`,borderRadius:13,color:T.accText||T.acc,cursor:'pointer',fontSize:14,fontFamily:'inherit',fontWeight:800,whiteSpace:'nowrap',order:-1,boxShadow:__countryBtnShadow,transition:'all .2s ease'}}>{shortCountry(countries.find((x:any)=>x.code===value)||countries[0])}</button>}>{countries.map((c:any)=><button key={c.id} onClick={()=>choose(c.code)} style={{display:'block',width:'100%',padding:'9px 10px',background:value===c.code?T.soft:'transparent',border:0,borderRadius:9,color:value===c.code?T.acc:T.txt,cursor:'pointer',textAlign:'right',fontFamily:'inherit',fontSize:13}}>{labelCountry(c,lang)}</button>)}</Popup>});
 // --- پایان انتقال ---
 
 export default function CourseShippingPage(){
@@ -57,7 +58,7 @@ export default function CourseShippingPage(){
  },[receiverSelf,portalSessionKey]);
  const receiverToggle = portalSession ? <div style={{display:'flex',gap:8,marginBottom:12}}>
   {[{k:true,t:lang==='en'?'I am the receiver':'گیرنده خودم هستم'},{k:false,t:lang==='en'?'Someone else receives it':'گیرنده شخص دیگری است'}].map((o:any)=>(
-   <button key={String(o.k)} type="button" aria-pressed={receiverSelf===o.k} onClick={()=>setReceiverSelf(o.k)} style={{flex:1,padding:'10px 8px',borderRadius:12,border:`1.5px solid ${receiverSelf===o.k?T.acc:T.brd}`,background:receiverSelf===o.k?`${T.acc}12`:'transparent',color:receiverSelf===o.k?T.acc:T.mut,fontWeight:800,fontSize:12.5,fontFamily:'inherit',cursor:'pointer'}}>{o.t}</button>))}
+   <button key={String(o.k)} type="button" className={receiverSelf===o.k?'zk-chip is-active':'zk-chip'} aria-pressed={receiverSelf===o.k} onClick={()=>setReceiverSelf(o.k)} style={{flex:1,padding:'11px 10px',borderRadius:14,color:receiverSelf===o.k?T.accText:T.mut,fontWeight:800,fontSize:12.5,fontFamily:'inherit',cursor:'pointer',minHeight:44}}>{o.t}</button>))}
  </div> : null;
  const selfBox = portalSession ? <div dir="rtl" style={{marginBottom:12,padding:'9px 12px',borderRadius:13,background:`${T.acc}08`,border:`1px solid ${T.brd}`,display:'flex',alignItems:'center',gap:10}}>
   <span style={{fontSize:10.5,color:T.mut,fontWeight:700,flexShrink:0}}>{lang==='en'?'From your account':'از حساب شما'}</span>
@@ -87,23 +88,21 @@ export default function CourseShippingPage(){
         key={m.id}
         disabled={course.dest === 'intl' && methods.length === 1}
         onClick={() => setCourse({ ...course, shippingMethod: m.id })}
+        className={isActive?'zk-chip is-active':'zk-chip'}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
-          padding: '8px 14px',
-          borderRadius: 18,
-          border: isActive ? `1.5px solid ${T.acc}` : `1px solid ${T.brd}`,
-          background: isActive ? T.soft : 'transparent',
+          padding: '9px 16px',
+          borderRadius: 22,
           color: isActive ? T.accText : T.mut,
           cursor: 'pointer',
-          fontSize: 13,
-          fontWeight: 700,
+          fontSize: 12.5,
+          fontWeight: 800,
           fontFamily: 'inherit',
           whiteSpace: 'nowrap',
-          minHeight: 38,
+          minHeight: 40,
           transition: 'all 0.25s ease',
-          boxShadow: isActive ? T.neuIn : 'none',
         }}
       >
         <span>{trVal(m.title)}</span>
