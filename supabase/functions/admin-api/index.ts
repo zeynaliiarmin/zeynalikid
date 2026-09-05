@@ -797,7 +797,7 @@ async function approvePending(body: any, origin: string, session: any): Promise<
   if (!body.id) return err("id الزامی است", origin, 400);
   if (body.confirm !== true) return err("تأیید صریح لازم است", origin, 400);
   const supabase = getSupabaseAdmin();
-  const { data: pending, error: fetchErr } = await supabase.from("api_pending_approvals").select("*").eq("id", body.id).maybeSingle();
+  const { data: pending, error: fetchErr } = await supabase.from("api_pending_approvals").select("id,status,expires_at").eq("id", body.id).maybeSingle();
   if (fetchErr) return err("خطا در دسترسی", origin, 500);
   if (!pending) return err("درخواست یافت نشد", origin, 404);
   if (pending.status !== "pending") return err(`این درخواست قبلاً ${pending.status} شده است`, origin, 400);

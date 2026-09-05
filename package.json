@@ -12,7 +12,7 @@
     "test:media:ui": "node tests/media-preview-ui.mjs",
     "test:content-save:browser": "node tests/content-save.browser.mjs",
     "test": "npm run test:unit && npm run test:media && npm run test:security",
-    "build": "node scripts/generate-404.mjs && tsc -b && vite build && npm run build:ssg",
+    "build": "node scripts/generate-404.mjs && node scripts/generate-sitemap.mjs && tsc -b && vite build && npm run build:ssg",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
     "test:a11y": "A11Y_MODES=light,dark node tests/accessibility.mjs",

@@ -12,6 +12,11 @@ export default defineConfig({
   preview: { allowedHosts: true },
   build: {
     minify: 'esbuild',
+    esbuild: {
+      // Strip console.log/info/debug in production to reduce bundle size and leakage.
+      // console.warn and console.error are intentionally kept for production diagnostics.
+      drop: ['console.log', 'console.info', 'console.debug'],
+    },
     sourcemap: false,
     cssMinify: true,
     reportCompressedSize: true,
