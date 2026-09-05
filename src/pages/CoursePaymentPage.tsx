@@ -1,5 +1,5 @@
 import { useAppContext } from '../app/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { getUserSession, setPortalNext } from '../utils/userPortal';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -28,22 +28,21 @@ export function CryptoLogo({id,color,size=22}:{id:string,color?:string,size?:num
 
 export default function CoursePaymentPage(){
  const app=useAppContext();
- const navigate=useNavigate();
- const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress,referralConsultant}=app;
+  const {cfg,T,S,css,lang,setView,course,setCourse,publicText,showContactOn,Stepper,ContactPanel,MiniIcon,finalizeCourseRegistration,deleteStoredImage,uploadReceiptWithProgress,referralConsultant}=app;
  const siteBrand=String(cfg.browserTitle||cfg.siteTitle||'سامانه رشد کودک').replace(/[“”"]/g,'').trim();
  type PaymentDetailsState=PaymentDetails&{loading:boolean;unlocked:boolean;error?:string};
  const courseId=String(course?.selected?.id||'');
  const referralCode=String(referralConsultant?.referralCode||'');
  const captchaScope=`${courseId}:${referralCode.toLowerCase()}`;
  // در حالت «پنل کاربر» بررسی امنیتی روی همان صفحه ورود/ثبت‌نام انجام می‌شود، نه این‌جا
- const captchaMovedToPortal=String((cfg as any)?.entryMode||'user')==='user';
- // Gating: پرداخت بدون ورود در حالت user ممنوع
- useEffect(()=>{
-   if(String((cfg as any)?.entryMode||'user')!=='user') return;
-   if(getUserSession()) return;
+
+ // Gating (instant, no flash): در حالت «پنل کاربر» بدون ورود فوری به /portal هدایت شود
+ const __entryModeUser = String((cfg as any)?.entryMode || 'user') === 'user';
+ if (__entryModeUser && !getUserSession()) {
    setPortalNext('/course-payment');
-   navigate('/portal',{replace:true});
- },[]); // eslint-disable-line react-hooks/exhaustive-deps
+   return <Navigate to="/portal" replace />;
+ }
+ const captchaMovedToPortal=String((cfg as any)?.entryMode||'user')==='user';
 
  const [captchaProof,setCaptchaProof]=useState<{token:string;scope:string}|null>(null);
  const [captchaAttempt,setCaptchaAttempt]=useState(0);
