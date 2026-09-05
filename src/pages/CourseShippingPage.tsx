@@ -1,4 +1,6 @@
 import { useAppContext } from '../app/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { setPortalNext } from '../utils/userPortal';
 import { validateFullName, getUserSession, splitE164 } from '../utils/userPortal';
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -22,6 +24,7 @@ const CountrySelect = memo(function CountrySelectCmp({value,onChange,countries,T
 
 export default function CourseShippingPage(){
  const app=useAppContext();
+ const navigate=useNavigate();
  const {cfg,T,S,css,lang,setView,fd,course,setCourse,countries,publicText,trVal,showContactOn,Field,Err,Stepper,ContactPanel,deliveryText}=app;
  const methods=(cfg.shippingMethods[course.dest]||[]).filter((m:any)=>m.active).sort((a:any,b:any)=>(a.order||0)-(b.order||0)); const method=methods.find((m:any)=>m.id===course.shippingMethod)||methods[0];
  // اصلاح ۲۴: اگر نام/شماره والد از فرم مشاوره موجود باشد، به‌صورت خودکار در این صفحه پر می‌شود.
@@ -33,6 +36,14 @@ export default function CourseShippingPage(){
  // در حالت «پنل کاربر» گیرنده می‌تواند خودِ کاربر باشد؛ آن‌گاه نام و شماره تماس از حساب پر و قفل می‌شود
  // (مقادیر در رکورد ذخیره می‌شوند تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست)
  const portalSession = String((cfg as any)?.entryMode||'user')==='user' ? getUserSession() : null;
+ // Gating: در حالت «پنل کاربر» بدون ورود نباید به این صفحه دسترسی باشد
+ useEffect(()=>{
+   if(String((cfg as any)?.entryMode||'user')!=='user') return;
+   if(getUserSession()) return;
+   setPortalNext('/course-shipping');
+   navigate('/portal',{replace:true});
+ },[]); // eslint-disable-line react-hooks/exhaustive-deps
+
  const [receiverSelf,setReceiverSelf]=useState<boolean>(()=>!!portalSession);
  // نشست تازه‌ساخته‌شده را وارد deps نمی‌کنیم (حلقه رندر)؛ فقط کلید رشته‌ای + مقداردهی بی‌آزار
  const portalSessionKey = portalSession ? `${portalSession.fullName || ''}|${portalSession.phone || ''}` : '';

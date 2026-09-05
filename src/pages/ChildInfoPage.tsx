@@ -1,5 +1,7 @@
 import { useAppContext } from '../app/AppContext';
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getUserSession, setPortalNext } from '../utils/userPortal';
 import VoiceRecorder from '../components/VoiceRecorder';
 import PrivacyConsent from '../components/PrivacyConsent';
 import useExitGuard from '../hooks/useExitGuard';
@@ -41,6 +43,7 @@ function ReadonlyRow({ label, value, theme: T }: ReadonlyRowProps) {
 // ─── کامپوننت اصلی صفحه ───
 export default function ChildInfoPage(){
  const app=useAppContext();
+ const navigate=useNavigate();
  const { cfg, T, S, css, lang, setView, fd, setFd, course, setCourse, publicText, trVal, Field, SelectBox, MiniIcon, Stepper, p2e, editChild, setEditChild, Modal, uploadTonguePhoto, deleteStoredTonguePhoto } = app;
  const [draft, setDraft] = useState<any>({ ...fd });
  const [errs, setErrs] = useState<any>({});
@@ -48,6 +51,15 @@ export default function ChildInfoPage(){
  const [privacyAccepted,setPrivacyAccepted]=useState(false);
  const [privacyAttempted,setPrivacyAttempted]=useState(false);
  const selectedTitle = lang === 'en' ? (course.selected?.titleEn || course.selected?.title) : course.selected?.title;
+ // Gating: در حالت «پنل کاربر» (entryMode=user) دسترسی مستقیم به /child-info
+ // بدون ورود مجاز نیست؛ کاربر باید اول وارد پنل شود.
+ useEffect(()=>{
+   if(String((cfg as any)?.entryMode||'user')!=='user') return;
+   if(getUserSession()) return;
+   setPortalNext('/child-info');
+   navigate('/portal',{replace:true});
+ },[]); // eslint-disable-line react-hooks/exhaustive-deps
+
  // اگر از فرم مشاوره آمده باشد (fd.gender از قبل ست شده)، کل اطلاعات فرزند فقط نمایشی و غیرقابل ویرایش است.
  const fromConsultForm = !!fd?.gender;
  const isDirty = Boolean(draft.age || draft.height || draft.weight || draft.notes);

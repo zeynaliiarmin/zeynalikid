@@ -11,7 +11,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { TRACKING_PREFIX } from '../config/project';
-import { getUserSession, validateFullName, splitE164 } from '../utils/userPortal';
+import { getUserSession, validateFullName, splitE164, setPortalNext } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -188,6 +188,15 @@ export default function ConsultationPage(){
       : { ...prev, pName: s.fullName || prev.pName, cc: parts.cc, pPhone: parts.local });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portalSessionKey]);
+
+  // Gating: در حالت «پنل کاربر» مشاوره هم نیاز به ورود دارد
+  useEffect(()=>{
+    if(String((cfg as any)?.entryMode||'user')!=='user') return;
+    if(getUserSession()) return;
+    setPortalNext('/form');
+    navigate('/portal',{replace:true});
+  },[]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const isDirty = formView === 'form' && (fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0));
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
