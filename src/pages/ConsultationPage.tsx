@@ -565,11 +565,10 @@ export default function ConsultationPage(){
     const all = (cfg.consultTopics || []);
     const chip = (x: string) => {
       const chipActive = (fd.topics || []).includes(x);
-      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '11px 16px' : '11px 18px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', maxWidth: lang === 'en' ? 160 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', display:'inline-flex', alignItems:'center', gap:5 }}>{trVal(x)}</button>;
+      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '10px 15px' : '10px 16px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>{trVal(x)}</button>;
     };
-    if (lang === 'en') return <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>{all.map(chip)}</div>;
-    const first = all.slice(0, 4), rest = all.slice(4);
-    return <><div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, first.length)}, 1fr)`, gap: 5, marginBottom: rest.length ? 6 : 2 }}>{first.map(chip)}</div>{rest.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>{rest.map(chip)}</div>}</>;
+    // Scrollable horizontal row for both languages (no squeezed grid) — nicer on mobile
+    return <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', marginInline: -4, paddingInline: 4, scrollbarWidth: 'none' }}><style>{`.zk-chip::-webkit-scrollbar{display:none}`}</style>{all.map(chip)}</div>;
   }, [cfg.consultTopics, fd.topics, lang, T, trVal])
 
   // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)

@@ -25,7 +25,10 @@ const deviceInfo = () => ({
   user_agent: navigator.userAgent,
 });
 export async function adminSessionAction(action: string, payload: Record<string, unknown> = {}) {
-  const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...payload }) });
+  const token = getAdminSessionToken();
+  const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ action, ...payload }) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.message || data?.error || 'خطا در ارتباط با سرویس امنیت');
   return data;

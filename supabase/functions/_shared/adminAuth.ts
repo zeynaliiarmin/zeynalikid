@@ -74,15 +74,17 @@ export async function validateAdminSession(
 }
 
 /**
- * Extract session token from the Authorization Bearer header only.
- * The former body.sessionToken fallback is intentionally removed: sending
- * tokens in JSON bodies risks leaking them to request logs and analytics.
- * Canonical form: Authorization: Bearer <token>
+ * Extract session token. Primary path is the Authorization: Bearer header
+ * (canonical, avoids logging bodies). If the header is missing we fall back
+ * to body.sessionToken so legacy/cached clients that still send the token
+ * in the body do not break hard while they re-deploy.
  */
-export function extractSessionToken(req: Request, _body: any): string {
+export function extractSessionToken(req: Request, body: any): string {
   const auth = req.headers.get("Authorization") ?? "";
   if (auth.toLowerCase().startsWith("bearer ")) {
-    return auth.slice(7).trim();
+    const t = auth.slice(7).trim();
+    if (t) return t;
   }
-  return "";
+  const bodyTok = String(body?.sessionToken ?? "");
+  return bodyTok.length >= 16 ? bodyTok : "";
 }
