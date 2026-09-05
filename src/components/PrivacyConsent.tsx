@@ -14,10 +14,10 @@ interface PrivacyConsentProps {
 /**
  * Privacy consent checkbox.
  *
- * Markup is intentionally flat: one <label>, one inline text span containing
- * the sentence and the privacy link with no extra block wrappers. The link is
- * kept inline (not nowrap, not a block) so the browser wraps it naturally
- * together with the surrounding words on narrow screens.
+ * The privacy link is rendered as a plain inline <span role="button"> (not a
+ * <button>) so browsers do not inject any default inline-block / button chrome
+ * or line-box adjustments that could push it onto a new line or create vertical
+ * gaps on mobile wrap. All layout is controlled purely via inline styles.
  */
 export default function PrivacyConsent({accepted,attempted,lang,T,textFa,textEn,onChange,onOpenPrivacy}:PrivacyConsentProps){
   const invalid = attempted && !accepted;
@@ -57,26 +57,35 @@ export default function PrivacyConsent({accepted,attempted,lang,T,textFa,textEn,
           width:18,
           height:18,
           flex:'0 0 18px',
+          padding:0,
+          margin:0,
+          boxSizing:'border-box',
         }}
       />
       <span
         style={{
           display:'inline',
+          margin:0,
+          padding:0,
+          fontSize:'inherit',
+          lineHeight:'inherit',
           whiteSpace:'normal',
           wordBreak:'break-word',
           overflowWrap:'anywhere',
-          lineHeight:1.7,
         }}
       >
         {text}{' '}
-        <button
-          type="button"
+        <span
+          role="button"
+          tabIndex={0}
           onClick={event=>{event.preventDefault();event.stopPropagation();onOpenPrivacy()}}
+          onKeyDown={event=>{
+            if(event.key==='Enter'||event.key===' '){
+              event.preventDefault();event.stopPropagation();onOpenPrivacy();
+            }
+          }}
           style={{
             display:'inline',
-            whiteSpace:'normal',
-            background:'transparent',
-            border:0,
             padding:0,
             margin:0,
             color:T.accText,
@@ -87,16 +96,21 @@ export default function PrivacyConsent({accepted,attempted,lang,T,textFa,textEn,
             cursor:'pointer',
             textDecoration:'underline',
             textUnderlineOffset:2,
+            background:'transparent',
+            border:0,
+            verticalAlign:'baseline',
           }}
-        >{linkLabel}</button>
+        >{linkLabel}</span>
         {invalid && (
           <span
             role="alert"
             style={{
               display:'block',
+              margin:0,
               marginTop:6,
+              padding:0,
               fontSize:11,
-              lineHeight:1.7,
+              lineHeight:1.6,
               color:T.err,
               fontWeight:700,
             }}
