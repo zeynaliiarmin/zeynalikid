@@ -29,6 +29,7 @@ import {
   ZkMoneyIcon, ZkCalendarIcon, ZkPillIcon, ZkStethoscopeIcon, ZkCardIcon, ZkCopyIcon,
   ZkTrashIcon, ZkCoursesIcon, ZkBellIcon, ZkTruckIcon, ZkDownloadIcon, ZkPhoneIcon,
 } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export type SubTabId = 'parent' | 'course' | 'manage' | 'corrective';
 
@@ -353,7 +354,7 @@ function SubCardBase({
 
   // ویرایش فیلد ساده روی خود فرم (بدون Supabase مستقیم — setSubs خودش sync می‌کند)
   const patchSelf = useCallback((patch: any, logText?: string) => {
-    setSubs((list: any[]) => list.map(x => x.id === sub.id
+    setSubs((list: any[]) => list.map(async x => x.id === sub.id
       ? { ...x, ...patch, ...(logText ? { changeHistory: logChange(x, logText) } : {}) }
       : x));
   }, [setSubs, sub.id]);
@@ -371,7 +372,7 @@ function SubCardBase({
       a.download = `پرونده_${String(sub.pName || sub.fullPhone || sub.id).replace(/\s+/g, '_')}.${fmt}`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(u), 800);
-    } catch { alert('خطا در ساخت تصویر پرونده'); }
+    } catch { void zkAlert('خطا در ساخت تصویر پرونده'); }
   }, [sub]);
 
   return (
@@ -433,7 +434,7 @@ function SubCardBase({
               type="button"
               className="zkad-iconbtn zkad-sub-header-icon t-err"
               title="حذف فرم"
-              onClick={() => { if (confirm('این فرم به سطل بازیافت منتقل شود؟')) setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
+              onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
             >
               <ZkTrashIcon size={15} />
             </button>
@@ -521,7 +522,7 @@ function SubCardBase({
                         key={cr.id || idx}
                         type="button"
                         className={`zkad-chip ${selectedConsultIdx === idx ? 'is-active' : ''}`}
-                        onClick={() => setSelectedConsultIdx(idx)}
+                        onClick={async () => setSelectedConsultIdx(idx)}
                       >
                         فرم {idx + 1}{cr.date ? `: ${cr.date}` : ''}
                       </button>
@@ -570,7 +571,7 @@ function SubCardBase({
                       type="button"
                       className="zkad-btn sm t-err"
                       onClick={async () => {
-                        if (!confirm('همه عکس‌های زبان این فرم حذف شوند؟ این عملیات قابل بازگشت نیست.')) return;
+                        if (!(await zkConfirm('همه عکس‌های زبان این فرم حذف شوند؟ این عملیات قابل بازگشت نیست.'))) return;
                         try {
                           for (const url of (activeConsultRecord.tonguePhotos || sub.tonguePhotos || [])) await deleteStoredTonguePhoto?.(url);
                           setSubs((list: any[]) => list.map(x => {
@@ -581,7 +582,7 @@ function SubCardBase({
                             }
                             return x;
                           }));
-                        } catch { alert('حذف عکس‌های زبان انجام نشد.'); }
+                        } catch { void zkAlert('حذف عکس‌های زبان انجام نشد.'); }
                       }}
                     >
                       حذف عکس‌های زبان
@@ -631,7 +632,7 @@ function SubCardBase({
                         key={cr.id || idx}
                         type="button"
                         className={`zkad-chip ${selectedCourseIdx === idx ? 'is-active' : ''}`}
-                        onClick={() => setSelectedCourseIdx(idx)}
+                        onClick={async () => setSelectedCourseIdx(idx)}
                       >
                         سفارش {idx + 1}: {cr.course?.title || 'دوره'}{cr.date ? ` (${cr.date})` : ''}
                       </button>
@@ -765,11 +766,11 @@ function SubCardBase({
                       type="button"
                       className="zkad-btn sm t-err"
                       onClick={async () => {
-                        if (!confirm('آیا از حذف کامل این فیش واریزی مطمئن هستید؟')) return;
+                        if (!(await zkConfirm('آیا از حذف کامل این فیش واریزی مطمئن هستید؟'))) return;
                         try {
                           await deleteStoredImage(activeCourseRecord.payment.receipt);
                           updateField(activeCourseRecord.id, 'payment', { ...(activeCourseRecord.payment || {}), receipt: '', receipt_image: '', receiptDeletedAt: new Date().toISOString() }, 'حذف فیش واریزی توسط ادمین');
-                        } catch { alert('خطا در حذف فیش.'); }
+                        } catch { void zkAlert('خطا در حذف فیش.'); }
                       }}
                     >
                       <ZkTrashIcon size={12} /> حذف فیش
@@ -920,7 +921,7 @@ function SubCardBase({
                       setPlansBusy(true);
                       generatePlans(sub.id, true).then(d => {
                         patchSelf({ ...(d.mealPlan ? { mealPlan: d.mealPlan, showMealPlan: true } : {}), ...(d.sportPlan ? { sportPlan: d.sportPlan, showSportPlan: true } : {}), plansAiAt: Date.now() }, 'تولید برنامه‌ها با هوش مصنوعی');
-                      }).catch((e: any) => alert(String(e?.message || e) || 'تولید برنامه ناموفق بود')).finally(() => setPlansBusy(false));
+                      }).catch((e: any) => void zkAlert(String(e?.message || e) || 'تولید برنامه ناموفق بود')).finally(() => setPlansBusy(false));
                     }}>{plansBusy ? 'در حال تولید…' : '🤖 تولید/بازتولید با AI'}</button>
                   </div>
                   <label className="zkad-f">
@@ -967,7 +968,7 @@ function SubCardBase({
                           const url = await uploadPdfFile(file, f.folder);
                           if (sub[f.key]) await deleteStoredFile(sub[f.key]);
                           patchSelf({ [f.key]: url }, `آپلود فایل PDF ${f.log}`);
-                        } catch (err: any) { alert(err?.message || 'آپلود فایل انجام نشد.'); }
+                        } catch (err: any) { void zkAlert(err?.message || 'آپلود فایل انجام نشد.'); }
                         e.target.value = '';
                       }} />
                       {sub[f.key] ? 'جایگزینی فایل' : 'انتخاب فایل PDF'}
@@ -976,7 +977,7 @@ function SubCardBase({
                       <>
                         <a href={signedMap[sub[f.key]] || sub[f.key]} target="_blank" rel="noreferrer" className="zkad-link t-ok"><ZkCheckIcon size={11} /> مشاهده فایل فعلی</a>
                         <button type="button" className="zkad-btn sm t-err" onClick={async () => {
-                          if (!confirm(`فایل PDF ${f.log} حذف شود؟`)) return;
+                          if (!(await zkConfirm(`فایل PDF ${f.log} حذف شود؟`))) return;
                           await deleteStoredFile(sub[f.key]);
                           patchSelf({ [f.key]: '' }, `حذف فایل PDF ${f.log}`);
                         }}>حذف</button>
@@ -1014,7 +1015,7 @@ function SubCardBase({
                           </div>
                           <label className="zkad-f">
                             <span>توضیحات تکمیلی این محصول</span>
-                            <textarea className="zkad-textarea sm" defaultValue={u.note || ''} onBlur={e => setU('note', e.target.value)} />
+                            <textarea className="zkad-textarea sm" defaultValue={u.note || ''} onBlur={async e => setU('note', e.target.value)} />
                           </label>
                         </div>
                       )}
@@ -1057,7 +1058,7 @@ function SubCardBase({
                 <button type="button" className="zkad-btn" onClick={() => patchSelf({ priority: sub.priority === 'high' ? 'normal' : 'high' }, sub.priority === 'high' ? 'تغییر اولویت به عادی' : 'تغییر اولویت به زیاد')}>
                   {sub.priority === 'high' ? 'حذف اولویت زیاد' : 'تعیین اولویت زیاد'}
                 </button>
-                <button type="button" className="zkad-btn t-err" onClick={() => { if (confirm('این فرم به سطل بازیافت منتقل شود؟')) setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}>
+                <button type="button" className="zkad-btn t-err" onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}>
                   <ZkTrashIcon size={12} /> حذف فرم
                 </button>
               </div>
@@ -1092,7 +1093,7 @@ function SubCardBase({
                       if (sub.course) text += `\nدوره تهیه‌شده: ${sub.course.title || '—'}\n`;
                       if (sub.course?.price) text += `هزینه دوره: ${Number(sub.course.price).toLocaleString()} تومان\n`;
                       const ok = await copyText(text);
-                      alert(ok ? 'اطلاعات اصلاحی کپی شد.' : 'کپی انجام نشد.');
+                      void zkAlert(ok ? 'اطلاعات اصلاحی کپی شد.' : 'کپی انجام نشد.');
                     }}
                   >
                     <ZkCopyIcon size={13} /> کپی اطلاعات اصلاحی

@@ -63,3 +63,33 @@ export function getOrigin(req: Request): string {
   const origin = req.headers.get("Origin") ?? "";
   return isAllowedOrigin(origin) ? origin : "";
 }
+
+/**
+ * Returns a 403 response when the request Origin is not in the allow-list.
+ * For non-browser callers (curl / scripts / server-to-server) we explicitly reject
+ * cross-origin requests so that sensitive endpoints cannot be called from
+ * arbitrary hosts even when the caller ignores CORS. For endpoints that are
+ * intentionally public from any origin (curl, etc.) pass `allowNoOrigin: true`.
+ */
+export function rejectIfInvalidOrigin(
+  req: Request,
+  opts: { allowNoOrigin?: boolean } = {},
+): Response | null {
+  const origin = req.headers.get("Origin");
+  // No Origin header means a non-browser client (curl, server-side, etc.).
+  // Per endpoint policy decides whether to allow that.
+  if (!origin) {
+    if (opts.allowNoOrigin) return null;
+    return new Response(JSON.stringify({ error: "Origin required" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (!isAllowedOrigin(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}

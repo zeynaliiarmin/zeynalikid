@@ -46,6 +46,7 @@ import CoverCropModal from './CoverCropModal';
 import CoverImage from '../components/CoverImage';
 import { HIGHLIGHT_VECTORS, HighlightVectorGlyph } from '../components/HighlightVectors';
 import { isGatewayProductionReady } from '../services/payment/PaymentService';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 const TrashPanel=lazy(()=>import('./TrashPanel'));
 const UserQuestionsEditor=lazy(()=>import('./UserQuestionsEditor'));
@@ -296,7 +297,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const clearSelection=()=> setSelectedIds(new Set());
   const [imageFormat,setImageFormat]=useState<'webp'|'jpg'>(()=>{try{return localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp'}catch{return 'webp'}});
   const setPersistentImageFormat=(f:'webp'|'jpg')=>{setImageFormat(f);try{localStorage.setItem('zkid_form_image_format',f)}catch{}};
-  const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);alert('خطا در ساخت تصویر پرونده')}};
+  const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);void zkAlert('خطا در ساخت تصویر پرونده')}};
   const selectedCount = selectedIds.size;
   const statusOptions=['جدید','در انتظار پرداخت','پرداخت‌شده','ارسال‌شده','تکمیل‌شده','لغو‌شده','ناقص'];
   const getStatus=(x:any)=>x.orderStatus||(x.payment?.receipt?'پرداخت‌شده':x.course?'در انتظار پرداخت':x.isNew?'جدید':'جدید');
@@ -352,8 +353,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
     a.href=url; a.download='backup-'+new Date().toISOString().slice(0,10)+'.zip';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
-    alert('بکاپ کامل ساخته شد.\nبخش‌ها: تنظیمات / فرم‌ها و سفارشات / نظرات / سوالات / فایل‌های رسانه‌ای\nفایل‌های دانلودشده: '+saved+' — آدرس‌های دانلودنشده در images-list.json ذخیره شد.');
-   }catch(e:any){ alert('خطا در ساخت بکاپ: '+(e?.message||e)); }
+    void zkAlert('بکاپ کامل ساخته شد.\nبخش‌ها: تنظیمات / فرم‌ها و سفارشات / نظرات / سوالات / فایل‌های رسانه‌ای\nفایل‌های دانلودشده: '+saved+' — آدرس‌های دانلودنشده در images-list.json ذخیره شد.');
+   }catch(e:any){ void zkAlert('خطا در ساخت بکاپ: '+(e?.message||e)); }
   };
 
   const changeStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:logChange(x,`تغییر وضعیت به ${status}`)}:x)),[setSubs]);
@@ -405,7 +406,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
    <div className="zkad-stat-num">{value}</div>
    <div className="zkad-stat-foot">{typeof delta==='number'&&delta!==0&&<span className={`zkad-delta ${delta>0?'up':'down'}`} title="تغییر نسبت به هفته قبل">{delta>0?<ZkChevronUpIcon size={11}/>:<ZkChevronDownIcon size={11}/>}{faNum(Math.abs(delta))} هفته قبل</span>}{typeof delta==='number'&&delta===0&&<span className="zkad-delta flat">بدون تغییر نسبت به هفته قبل</span>}{sub&&<span className="zkad-stat-sub">{sub}</span>}</div>
   </div>;},[]);
-  const ChipGroup=useMemo(()=>function FilterCard({label,options,val,set}:{label:string,options:string[],val:string,set:(v:string)=>void}){const [open,setOpen]=useState(false);return <section className={`zkad-filter-card ${open?'zkad-filter-open':''}`}><button type="button" className="zkad-filter-card-head" onClick={()=>setOpen(v=>!v)}><span>{label}</span><small>{val}</small><b>{open?'⌃':'⌄'}</b></button>{open&&<div className="zkad-chiprow">{options.map(o=><button type="button" key={o} className={`zkad-chip ${val===o?'on':''}`} onClick={()=>{set(o);setOpen(false)}}>{o}</button>)}</div>}</section>},[]);
+  const ChipGroup=useMemo(()=>function FilterCard({label,options,val,set}:{label:string,options:string[],val:string,set:(v:string)=>void}){const [open,setOpen]=useState(false);return <section className={`zkad-filter-card ${open?'zkad-filter-open':''}`}><button type="button" className="zkad-filter-card-head" onClick={()=>setOpen(v=>!v)}><span>{label}</span><small>{val}</small><b>{open?'⌃':'⌄'}</b></button>{open&&<div className="zkad-chiprow">{options.map(o=><button type="button" key={o} className={`zkad-chip ${val===o?'on':''}`} onClick={async ()=>{set(o);setOpen(false)}}>{o}</button>)}</div>}</section>},[]);
   // پایش هوشمند ظرفیت دیتابیس و فضای ذخیره‌سازی
   const totalTonguePhotos = useMemo(() => subs.reduce((acc:number, x:any) => acc + (x.tonguePhotos || []).length, 0), [subs]);
   const totalReceipts = useMemo(() => subs.filter((x:any) => x.payment?.receipt).length, [subs]);
@@ -474,20 +475,20 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
             // 1) Dry-run to count target files
             const dry = await adminCleanupReceiptsDryRun();
             if (dry.targetFiles === 0) {
-              alert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.');
+              void zkAlert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.');
               return;
             }
             // 2) Confirm with user — show exact count
-            if (!confirm(`آیا از پاک‌سازی ${dry.targetFiles} فیش قدیمی (بیش از ۱ ماه) مطمئن هستید؟ این عملیات قابل بازگشت نیست.`)) return;
+            if (!(await zkConfirm(`آیا از پاک‌سازی ${dry.targetFiles} فیش قدیمی (بیش از ۱ ماه) مطمئن هستید؟ این عملیات قابل بازگشت نیست.`))) return;
             // 3) Execute
             const result = await adminCleanupReceiptsExecute();
-            alert(`پاک‌سازی با موفقیت انجام شد.\nفایل‌های حذف‌شده: ${result.deleted}\nرکوردهای به‌روزرسانی‌شده: ${result.cleanedRows}`);
+            void zkAlert(`پاک‌سازی با موفقیت انجام شد.\nفایل‌های حذف‌شده: ${result.deleted}\nرکوردهای به‌روزرسانی‌شده: ${result.cleanedRows}`);
           } catch (e: any) {
             if (e?.status === 401) {
-              alert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.');
+              void zkAlert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.');
               return;
             }
-            alert(e?.message || 'خطا در پاک‌سازی فیش‌ها.');
+            void zkAlert(e?.message || 'خطا در پاک‌سازی فیش‌ها.');
           }
         }}
       >
@@ -551,7 +552,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
       const list = dashFilter==='today'? todaySubs : dashFilter==='pending'? pendingList : dashFilter==='courseSuccess'? paidCourseSubs : dashFilter==='consult'? consultSubs : [];
       const sorted = [...list].sort((a:any,b:any)=> subTime(b)-subTime(a)).slice(0,20);
       if(sorted.length===0) return <div className="zkad-empty" style={{padding:'20px'}}><p>موردی یافت نشد</p></div>;
-      return <ul>{sorted.map((x:any)=><li key={x.id}><button type="button" className="zkad-activity" onClick={()=>{goTab('data');setExpId(x.id);setDashFilter(null);}}><span className={`zkad-activity-dot ${x.course?'t-info':'t-ok'}`}/><span className="zkad-activity-txt"><b>{x.pName||x.fullPhone||'بدون نام'}</b><span className="zkad-time">{fmtWhen(x)} · {relTime(subTime(x))}</span></span><span className={`zkad-tag ${x.course?'t-info':x.type==='consultation'?'t-warn':'t-mut'}`}>{x.course? 'سفارش' : x.type==='consultation' ? 'مشاوره' : 'فرم'}</span></button></li>)}</ul>;
+      return <ul>{sorted.map((x:any)=><li key={x.id}><button type="button" className="zkad-activity" onClick={async ()=>{goTab('data');setExpId(x.id);setDashFilter(null);}}><span className={`zkad-activity-dot ${x.course?'t-info':'t-ok'}`}/><span className="zkad-activity-txt"><b>{x.pName||x.fullPhone||'بدون نام'}</b><span className="zkad-time">{fmtWhen(x)} · {relTime(subTime(x))}</span></span><span className={`zkad-tag ${x.course?'t-info':x.type==='consultation'?'t-warn':'t-mut'}`}>{x.course? 'سفارش' : x.type==='consultation' ? 'مشاوره' : 'فرم'}</span></button></li>)}</ul>;
     })()}
   </section>
 ) : null}
@@ -589,7 +590,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,cursor:'pointer'}}><input type="checkbox" checked={isAllSelected} onChange={()=> toggleSelectAll(filteredAll.map((x:any)=>x.id))}/> انتخاب همه ({faNum(filteredAll.length)})</label>
   {selectedCount>0 && <span style={{fontSize:12,color:'var(--zkad-acc)',fontWeight:700}}>{faNum(selectedCount)} انتخاب شده</span>}
   {selectedCount>0 && <div style={{display:'flex',gap:6,marginInlineStart:'auto',flexWrap:'wrap'}}>
-    <button type="button" className="zkad-toolbtn zkad-selected-delete" title="حذف انتخاب‌شده‌ها" aria-label="حذف انتخاب‌شده‌ها" onClick={()=>{ if(!confirm(`حذف ${faNum(selectedCount)} مورد انتخاب شده؟`)) return; setSubs((prev:any)=> prev.filter((x:any)=> !selectedIds.has(x.id))); clearSelection(); }}><ZkTrashIcon size={16}/></button>
+    <button type="button" className="zkad-toolbtn zkad-selected-delete" title="حذف انتخاب‌شده‌ها" aria-label="حذف انتخاب‌شده‌ها" onClick={async()=>{ if(!(await zkConfirm(`حذف ${faNum(selectedCount)} مورد انتخاب شده؟`))) return; setSubs((prev:any)=> prev.filter((x:any)=> !selectedIds.has(x.id))); clearSelection(); }}><ZkTrashIcon size={16}/></button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const selectedRows = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map(s=>({نام:s.pName||'',شماره:s.fullPhone||'',موضوع:(s.topics||[]).join('|'),کشور:getCountry(s),دوره:getCourse(s),پرداخت:getPay(s),وضعیت:getStatus(s),تاریخ:s.date||'',شهر:s.shipping?.city||'',یادداشت:s.adminNotes||'',دسته‌بندی:getCategory(s)})); const keys=Object.keys(selectedRows[0]||{نام:'',شماره:'',موضوع:'',کشور:'',دوره:'',پرداخت:'',وضعیت:'',تاریخ:''}); const html=`<html><meta charset="utf-8"><body><table border="1"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${selectedRows.map((r:any)=>`<tr>${keys.map(k=>`<td>${String((r as any)[k]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`; const url=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-export.xls';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>Excel</button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const phones = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> x.fullPhone).filter(Boolean).join('\n'); const url=URL.createObjectURL(new Blob([phones],{type:'text/plain;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-phones.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>شماره‌ها</button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const links = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> digits(x.fullPhone||'')).filter(Boolean).map((n:any)=>`<p><a href="https://wa.me/${n}">${n}</a></p>`).join(''); const url=URL.createObjectURL(new Blob([`<html><meta charset="utf-8"><body>${links}</body></html>`],{type:'text/html;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-whatsapp.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>واتساپ</button>
@@ -1120,7 +1121,7 @@ function TaggedCoursesEditor(){
    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
     <button style={AdminBtn()} disabled={i===0} onClick={()=>move(i,-1)}><ZkArrowUpIcon size={13}/></button>
     <button style={AdminBtn()} disabled={i===arr.length-1} onClick={()=>move(i,1)}><ZkArrowDownIcon size={13}/></button>
-    <button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>setEditCfg({...editCfg,[path[0]]:{...editCfg[path[0]],[path[1]]:arr.filter((_:any,j:number)=>j!==i)}})}>حذف</button>
+    <button style={{...AdminBtn(),color:T.err,boxShadow:`3px 3px 8px ${T.err}22,-3px -3px 8px rgba(255,255,255,.6)`}} onClick={()=>setEditCfg({...editCfg,[path[0]]:{...editCfg[path[0]],[path[1]]:arr.filter(async (_:any,j:number)=>j!==i)}})}>حذف</button>
    </div>
   </div>)}
   <button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,[path[0]]:{...editCfg[path[0]],[path[1]]:[...arr,{id:'m'+uid(),title:'روش جدید',titleEn:'New method',active:true,requiresPostal:false,default:false,order:arr.length+1,help:'',tag:'',tagEn:''}]}})}>افزودن</button>
@@ -1206,17 +1207,17 @@ function DesignManagerEditor(){
   // admin-credentials (چک نشست + رمز فعلی + اعتبارسنجی + به‌روزرسانی Secret ها).
   // نکته: همه state/ref ها در سطح AdminPanel تعریف شده‌اند (قانون hooks — این تابع
   // با SecurityEditor() فراخوانی می‌شود نه JSX).
-  const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');alert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{alert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
-  const disableBio=()=>{removeAdminBiometric();alert('ورود بیومتریک این دستگاه غیرفعال شد.');};
+  const enableBio=async()=>{try{if(!biometricSupported())throw new Error();await enrollAdminBiometric(cfg.adminPhone||'admin');void zkAlert('ورود با اثر انگشت / Face ID روی این دستگاه فعال شد.')}catch{void zkAlert('فعال‌سازی انجام نشد یا دستگاه پشتیبانی نمی‌کند.')}};
+  const disableBio=()=>{removeAdminBiometric();void zkAlert('ورود بیومتریک این دستگاه غیرفعال شد.');};
   const logoutEverywhere=async()=>{
-   if(!confirm('همه نشست‌های پنل مدیریت (این دستگاه و همه دستگاه‌های دیگر) بسته شوند؟'))return;
+   if(!(await zkConfirm('همه نشست‌های پنل مدیریت (این دستگاه و همه دستگاه‌های دیگر) بسته شوند؟')))return;
    setRevokeBusy(true);
    try{
     await revokeAllAdminSessions();
     try{clearAdminSession()}catch{}
-    alert('همه نشست‌های پنل بسته شد. برای ورود دوباره باید با شماره و رمز وارد شوید.');
+    void zkAlert('همه نشست‌های پنل بسته شد. برای ورود دوباره باید با شماره و رمز وارد شوید.');
    }catch(e:any){
-    alert(e?.message||'خروج از همه نشست‌ها انجام نشد. اتصال را بررسی کنید.');
+    void zkAlert(e?.message||'خروج از همه نشست‌ها انجام نشد. اتصال را بررسی کنید.');
    }finally{setRevokeBusy(false)}
   };
   const doChangeCreds=async()=>{
@@ -1298,7 +1299,7 @@ function DesignManagerEditor(){
          </div>
          <div style={{fontSize:10.5,color:T.mut,marginTop:3}}>{d.browser||''}{d.platform?` • ${d.platform}`:''}{d.last_seen_at?` • آخرین فعالیت: ${new Date(d.last_seen_at).toLocaleDateString('fa-IR')} ${new Date(d.last_seen_at).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}`:''}</div>
         </div>
-        <button type="button" style={{...AdminBtn(),padding:'5px 10px',fontSize:11.5,color:T.err||'#DC2626',border:`1px solid ${(T.err||'#DC2626')}33`,background:`${(T.err||'#DC2626')}08`,flex:'0 0 auto'}} disabled={revokeBusy} onClick={async()=>{ if(!confirm('این دستگاه از پنل خارج شود؟'))return; setRevokeBusy(true); try{ await revokeAdminDevice(String(d.id)); const list=await listAdminDevices(); setDevicesList(list); alert('دستگاه از پنل خارج شد.'); }catch(e:any){ alert(e?.message||'خروج دستگاه انجام نشد.'); }finally{ setRevokeBusy(false); } }}>خروج دستگاه</button>
+        <button type="button" style={{...AdminBtn(),padding:'5px 10px',fontSize:11.5,color:T.err||'#DC2626',border:`1px solid ${(T.err||'#DC2626')}33`,background:`${(T.err||'#DC2626')}08`,flex:'0 0 auto'}} disabled={revokeBusy} onClick={async()=>{ if(!(await zkConfirm('این دستگاه از پنل خارج شود؟')))return; setRevokeBusy(true); try{ await revokeAdminDevice(String(d.id)); const list=await listAdminDevices(); setDevicesList(list); void zkAlert('دستگاه از پنل خارج شد.'); }catch(e:any){ void zkAlert(e?.message||'خروج دستگاه انجام نشد.'); }finally{ setRevokeBusy(false); } }}>خروج دستگاه</button>
        </div>;
       })}
      </div>}
@@ -1329,7 +1330,7 @@ function DesignManagerEditor(){
    setProductHomeCrop(null);
   };
   const startProductHomeCrop=(it:any,i:number,file?:File)=>{
-   if(file&&!(file.type.startsWith('image/')||/\.(jpe?g|png|webp|avif|heic|heif)$/i.test(file.name))){alert('فایل انتخاب‌شده تصویر نیست.');return;}
+   if(file&&!(file.type.startsWith('image/')||/\.(jpe?g|png|webp|avif|heic|heif)$/i.test(file.name))){void zkAlert('فایل انتخاب‌شده تصویر نیست.');return;}
    const src=file?URL.createObjectURL(file):String(it.homeImage||it.homeImageUrl||'');
    if(!src)return;
    setProductHomeCrop({productId:it.id,index:i,src,objectUrl:!!file,aspectRatio:it.homeImageAspectRatio||'4 / 3',oldUrl:it.homeImage||it.homeImageUrl||'',name:it.name||it.title||'product'});
@@ -1344,7 +1345,7 @@ function DesignManagerEditor(){
     const url=await fileToData(file,productHomeCrop.oldUrl,'products/home-featured');
     patchItem(targetIndex,{homeImage:url,homeImageUrl:url,homeImageAspectRatio:productHomeCrop.aspectRatio||'',homeImageObjectPosition:'center'});
     closeProductHomeCrop();
-   }catch(err:any){alert(err?.message==='STORAGE_FULL'?'فضای ذخیره‌سازی تکمیل شده است.':(err?.message||'آپلود عکس منتخب خانه انجام نشد.'));}
+   }catch(err:any){void zkAlert(err?.message==='STORAGE_FULL'?'فضای ذخیره‌سازی تکمیل شده است.':(err?.message||'آپلود عکس منتخب خانه انجام نشد.'));}
    finally{setProductHomeCropBusy(false);}
   };
   return <>
@@ -1401,7 +1402,7 @@ function DesignManagerEditor(){
        <p style={{fontSize:10.5,color:T.mut,lineHeight:1.7,margin:'0 0 8px'}}>این عکس در صفحه کامل محصولات استفاده می‌شود.</p>
        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
         {(it.image||it.imageUrl)&&<img src={it.image||it.imageUrl} alt="" style={{width:74,height:74,objectFit:'cover',objectPosition:it.objectPosition||'center',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-        <input type="file" aria-label={`بارگذاری عکس اصلی ${it.name||it.title||''}`} accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(f){try{const url=await fileToData(f,it.image||it.imageUrl,'products');patchItem(i,{image:url,imageUrl:url})}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
+        <input type="file" aria-label={`بارگذاری عکس اصلی ${it.name||it.title||''}`} accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(f){try{const url=await fileToData(f,it.image||it.imageUrl,'products');patchItem(i,{image:url,imageUrl:url})}catch(err:any){void zkAlert(err?.message||'آپلود انجام نشد')}}}}/>
         <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>patchItem(i,{image:url,imageUrl:url})} current={it.image||it.imageUrl} AdminBtn={AdminBtn}/>
        </div>
        <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>patchItem(i,{image:e.target.value.trim(),imageUrl:e.target.value.trim()})} placeholder="https://... یا لینک مستقیم عکس"/>
@@ -1562,7 +1563,7 @@ function DesignManagerEditor(){
       <label style={S.lbl}>عکس مجوز (آپلود یا لینک مستقیم)</label>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginBottom:8}}>
        {it.image&&<img src={it.image} alt="" style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:`1px solid ${T.brd}`}}/>}
-       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'licenses');chg(i,'image',url)}catch(err:any){alert(err?.message||'آپلود انجام نشد')}}}}/>
+       <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'licenses');chg(i,'image',url)}catch(err:any){void zkAlert(err?.message||'آپلود انجام نشد')}}}}/>
        <LibraryPicker T={T} S={S} editCfg={editCfg} section="licenses" onSelect={(url:string)=>chg(i,'image',url)} current={it.image} AdminBtn={AdminBtn} />
       </div>
       <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onBlur={e=>chg(i,'image',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
@@ -1609,7 +1610,7 @@ function DesignManagerEditor(){
     items.forEach((it:any,i:number)=>{if(!used.has(i)&&!mergedDefaults.some((x:any)=>x.id===it?.id))mergedDefaults.push(normalizeItem({...it,isDefault:false}))});
     return {...defCol,...existing,items:mergedDefaults};
    });
-   columns.slice(defaultCarouselColumns.length).forEach((col:any,ci:number)=>out.push({...col,id:col.id||`col-extra-${ci+1}`,items:(col.items||[]).map((it:any)=>normalizeItem({...it,isDefault:false}))}));
+   columns.slice(defaultCarouselColumns.length).forEach((col:any,ci:number)=>out.push({...col,id:col.id||`col-extra-${ci+1}`,items:(col.items||[]).map(async (it:any)=>normalizeItem({...it,isDefault:false}))}));
    return out;
   };
   const dm=editCfg.servicesDisplayMode||{home:'carousel',courses:'carousel'};
@@ -1622,8 +1623,8 @@ function DesignManagerEditor(){
   const updCs=(next:any)=>setEditCfg({...editCfg,carouselSettings:next});
   const updLs=(items:any[])=>setEditCfg({...editCfg,listSettings:{...ls,items}});
   const updSv=(k:string,v:boolean)=>setEditCfg({...editCfg,servicesVisibility:{...sv,[k]:v}});
-  const resetList=()=>{if(confirm('لیست خدمات به ۹ خدمت پیش‌فرض بازنشانی شود؟'))setEditCfg({...editCfg,listSettings:{items:defaultListItems}})};
-  const resetCarousel=()=>{if(confirm('کاروسل خدمات به حالت پیش‌فرض بازنشانی شود؟'))setEditCfg({...editCfg,carouselSettings:{...serviceDefaults.carouselSettings,columnsData:defaultCarouselColumns}})};
+  const resetList=async()=>{if(!(await zkConfirm('لیست خدمات به ۹ خدمت پیش‌فرض بازنشانی شود؟')))return;setEditCfg({...editCfg,listSettings:{items:defaultListItems}})};
+  const resetCarousel=async()=>{if(!(await zkConfirm('کاروسل خدمات به حالت پیش‌فرض بازنشانی شود؟')))return;setEditCfg({...editCfg,carouselSettings:{...serviceDefaults.carouselSettings,columnsData:defaultCarouselColumns}})};
 
   const chgListItem=(i:number,k:string,v:any)=>{const a=[...ls.items];a[i]={...a[i],[k]:v};updLs(a)};
   const addListItem=()=>updLs([...ls.items,{id:'li'+uid(),title:'',description:'',icon:'',isVisible:true,isDefault:false}]);

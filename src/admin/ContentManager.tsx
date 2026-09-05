@@ -18,6 +18,7 @@ import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { getMediaDestinations, MEDIA_DESTINATIONS, migrateMediaItem, type MediaDestination } from '../utils/mediaPlacement';
 import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any; Field: any;

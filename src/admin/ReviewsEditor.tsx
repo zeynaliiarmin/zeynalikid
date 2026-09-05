@@ -33,6 +33,7 @@ import {
   todayPersianReviewDate,
 } from '../utils/reviewPresentation';
 import { adminCreateReview } from '../lib/adminApi';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export default function ReviewsEditor({ app }: { app: any }) {
   const { T, S, AdminBtn, Box, cfg } = app;
@@ -264,17 +265,17 @@ export default function ReviewsEditor({ app }: { app: any }) {
     const edit = editMap[r.id];
     if (!edit) return;
     if (!edit.name.trim()) {
-      alert('لطفاً نام والد را وارد نمایید.');
+      void zkAlert('لطفاً نام والد را وارد نمایید.');
       return;
     }
 
     const createdAt = persianReviewDateToIso(edit.createdAt);
     if (!createdAt) {
-      alert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
+      void zkAlert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
       return;
     }
     if (!edit.placements.length) {
-      alert('حداقل یکی از دو محل «جزئیات دوره» یا «جزئیات محصول» را انتخاب کنید.');
+      void zkAlert('حداقل یکی از دو محل «جزئیات دوره» یا «جزئیات محصول» را انتخاب کنید.');
       return;
     }
 
@@ -294,7 +295,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       showToast('تغییرات نظر و محل‌های نمایش با موفقیت ذخیره شد.');
     } catch (e) {
       console.error('Update review error:', e);
-      alert('خطا در ذخیره تغییرات نظر.');
+      void zkAlert('خطا در ذخیره تغییرات نظر.');
     }
   };
 
@@ -309,7 +310,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
-      alert('خطا در تأیید گروهی نظرات.');
+      void zkAlert('خطا در تأیید گروهی نظرات.');
     } finally {
       setLoading(false);
     }
@@ -325,7 +326,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
-      alert('خطا در رد گروهی نظرات.');
+      void zkAlert('خطا در رد گروهی نظرات.');
     } finally {
       setLoading(false);
     }
@@ -342,7 +343,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       setSelectedIds([]);
     } catch (e) {
       console.error(e);
-      alert('خطا در حذف گروهی نظرات.');
+      void zkAlert('خطا در حذف گروهی نظرات.');
     } finally {
       setLoading(false);
     }
@@ -351,7 +352,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
   const handleApplyBulkPlacements = async () => {
     if (!selectedIds.length) return;
     if (!bulkTargetPlacements.length) {
-      alert('حداقل یکی از دو محل نمایش را انتخاب کنید.');
+      void zkAlert('حداقل یکی از دو محل نمایش را انتخاب کنید.');
       return;
     }
     setLoading(true);
@@ -362,7 +363,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       showToast(`محل نمایش ${selectedIds.length} نظر انتخاب‌شده با موفقیت بروزرسانی شد.`);
     } catch (e) {
       console.error(e);
-      alert('خطا در تغییر گروهی محل‌های نمایش.');
+      void zkAlert('خطا در تغییر گروهی محل‌های نمایش.');
     } finally {
       setLoading(false);
     }
@@ -371,7 +372,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
   // دانلودها
   const handleDownloadSelectedCSV = () => {
     if (!selectedIds.length) {
-      alert('لطفاً ابتدا حداقل یک نظر را انتخاب نمایید.');
+      void zkAlert('لطفاً ابتدا حداقل یک نظر را انتخاب نمایید.');
       return;
     }
     const targetReviews = reviews.filter((r) => selectedIds.includes(r.id));
@@ -387,24 +388,24 @@ export default function ReviewsEditor({ app }: { app: any }) {
   const handleAddNewReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.name.trim()) {
-      alert('لطفاً نام کاربر را وارد نمایید.');
+      void zkAlert('لطفاً نام کاربر را وارد نمایید.');
       return;
     }
     if (!newReview.comment.trim()) {
-      alert('لطفاً متن نظر را وارد نمایید.');
+      void zkAlert('لطفاً متن نظر را وارد نمایید.');
       return;
     }
     if (!/^\d{5}x{4}\d{2}$/.test(newReview.phone)) {
-      alert('شماره دستی باید شامل پنج رقم اول، چهار x و دو رقم آخر باشد.');
+      void zkAlert('شماره دستی باید شامل پنج رقم اول، چهار x و دو رقم آخر باشد.');
       return;
     }
     const createdAt = persianReviewDateToIso(newReview.createdAt);
     if (!createdAt) {
-      alert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
+      void zkAlert('تاریخ ثبت باید یک تاریخ معتبر هجری شمسی مانند ۱۴۰۴/۰۵/۲۳ باشد.');
       return;
     }
     if (!newReview.placements.length) {
-      alert('حداقل یک محل نمایش را انتخاب کنید.');
+      void zkAlert('حداقل یک محل نمایش را انتخاب کنید.');
       return;
     }
 
@@ -438,7 +439,7 @@ export default function ReviewsEditor({ app }: { app: any }) {
       showToast('نظر جدید با موفقیت ثبت و در بخش‌های تعیین‌شده منتشر گردید.');
     } catch (err) {
       console.error('Create review fail:', err);
-      alert('خطایی در ثبت نظر رخ داد.');
+      void zkAlert('خطایی در ثبت نظر رخ داد.');
     }
   };
 

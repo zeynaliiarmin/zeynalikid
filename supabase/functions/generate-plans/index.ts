@@ -2,7 +2,7 @@
 // «برنامه‌ها» — مسیر ادمین: احراز نشست + محدودیت نرخ، سپس هسته مشترک (plansCore) تولید/ذخیره برنامه‌ها.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
-import { handleOptions, getOrigin } from "../_shared/cors.ts";
+import { handleOptions, getOrigin, rejectIfInvalidOrigin } from "../_shared/cors.ts";
 import { validateAdminSession, extractSessionToken } from "../_shared/adminAuth.ts";
 import { ok, err } from "../_shared/http.ts";
 import { centralRateLimit } from "../_shared/rateLimit.ts";
@@ -12,6 +12,7 @@ serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
   const origin = getOrigin(req);
+  const _originCheck = rejectIfInvalidOrigin(req, { allowNoOrigin: true }); if (_originCheck) return _originCheck;
   if (!origin) return err("Origin not allowed", origin ?? "", 403);
   if (req.method !== "POST") return err("Method not allowed", origin, 405);
 

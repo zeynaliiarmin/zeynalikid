@@ -6,6 +6,7 @@ import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, verifyAdmi
 import { loginAdminSession, getAdminSessionToken, validateAdminSession } from '../utils/adminSession';
 import './portal.css';
 import { designModeFromThemeId, warmZpVars } from '../theme/warmPalettes';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export default function AdminLoginPage() {
   const app = useAppContext();
@@ -21,7 +22,7 @@ export default function AdminLoginPage() {
     if (!enteredPhone || !enteredPassword) { setAErr(en ? 'Phone number and password are required.' : 'شماره تماس و رمز عبور الزامی است'); return; }
     try {
       await loginAdminSession(enteredPhone, enteredPassword); setAErr('');
-      if (biometricSupported() && !hasAdminBiometric() && confirm(en ? 'Enable fingerprint or Face ID sign-in on this device?' : 'آیا ورود با اثر انگشت یا Face ID را روی این دستگاه فعال میکنید؟')) {
+      if (biometricSupported() && !hasAdminBiometric() && (await zkConfirm(en ? 'Enable fingerprint or Face ID sign-in on this device?' : 'آیا ورود با اثر انگشت یا Face ID را روی این دستگاه فعال میکنید؟'))) {
         try { await enrollAdminBiometric(enteredPhone) } catch { }
       }
       done();

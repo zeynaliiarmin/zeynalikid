@@ -11,6 +11,7 @@ import SubCard from './SubCard';
 import AdminPopover from './AdminPopover';
 import { digits, faNum, fmtWhen } from './adminUtils';
 import { ZkCheckIcon, ZkTrashIcon, ZkFilterIcon, ZkResetIcon, ZkPhoneIcon, ZkCopyIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type NvTab = 'consult' | 'course' | 'users';
 
@@ -235,7 +236,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 9 }}>
         <div className="zkad-seg" style={{ display: 'flex', gap: 6, padding: 4, background: T.inp, borderRadius: 12, border: `1px solid ${T.brd}` }}>
           {(['consult', 'course', 'users'] as const).map((t) => (
-            <button key={t} type="button" onClick={() => setNvTab(t)}
+            <button key={t} type="button" onClick={async () => setNvTab(t)}
               style={{ padding: '6px 11px', borderRadius: 8, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, whiteSpace: 'nowrap', gap: 4, background: nvTab === t ? T.acc : 'transparent', color: nvTab === t ? '#fff' : T.mut }}>
               {t === 'consult' ? (T.en ? 'Consultations' : 'درخواست مشاوره') : t === 'course' ? (T.en ? 'Courses' : 'ثبت دوره') : (T.en ? 'Signups' : 'ثبت‌نام پنل')}<small style={{ opacity: .85, marginInlineStart: 5, fontSize: 10.5 }}>({faNum(t === 'consult' ? consultList.length : t === 'course' ? courseList.length : usersList.length)})</small>
             </button>
@@ -248,7 +249,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
         {selectedIds.size > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.accText, fontWeight: 800 }}>{faNum(selectedIds.size)} {T.en ? 'selected' : 'انتخاب‌شده'}
           {/* فقط وکتور سطل — بدون متن/عنوان */}
           <button type="button" className="zkad-toolbtn zkad-selected-delete" aria-label={T.en ? 'Delete selected' : 'حذف انتخاب‌شده‌ها'} style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px' }}
-            onClick={() => { if (!confirm(T.en ? `Move ${selectedIds.size} selected items to the trash?` : `حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`)) return; setSubs((prev: any) => prev.filter((x: any) => !selectedIds.has(x.id))); clearSelection(); setMsg(T.en ? 'Moved to trash' : 'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}>
+            onClick={async () => { if (!(await zkConfirm(T.en ? `Move ${selectedIds.size} selected items to the trash?` : `حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`))) return; setSubs((prev: any) => prev.filter((x: any) => !selectedIds.has(x.id))); clearSelection(); setMsg(T.en ? 'Moved to trash' : 'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}>
             <ZkTrashIcon size={15}/>
           </button>
         </span>}

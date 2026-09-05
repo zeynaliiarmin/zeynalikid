@@ -1,24 +1,32 @@
-/* Zeynalikid Service Worker — Stage 9
+/* Zeynalikid Service Worker — Stage 10
  * استراتژی: Stale-While-Revalidate برای assetهای استاتیک هم‌خاستگاه،
  * Network-First برای ناوبری/HTML (نسخه تازه پس از هر دیپلوی)،
  * و عدم کش هر درخواست API/Supabase/خارج‌خاستگاه.
  */
-const VERSION = 'zkid-v27-2026-08-21-chunk-reload';
+const VERSION = 'zkid-v28-2026-09-05-cors-origin-guard';
 const STATIC_CACHE = 'static-' + VERSION;
 const NAV_CACHE = 'nav-' + VERSION;
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(STATIC_CACHE).then((c) => c.addAll(['/', '/courses', '/faq', '/education', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'])).then(cleanOldCaches).then(() => self.skipWaiting()));
-});
 
 async function cleanOldCaches() {
   const keys = await caches.keys();
   await Promise.all(keys.filter((k) => !k.endsWith(VERSION) && (k.startsWith('static-') || k.startsWith('nav-'))).map((k) => caches.delete(k)));
 }
-self.addEventListener('install', (e) => { e.waitUntil(cleanOldCaches()); });
+
+self.addEventListener('install', (e) => {
+  // Cache essential static shells and immediately take control so updates
+  // reach the user on the very next navigation (no stale-SW flash).
+  e.waitUntil(
+    caches.open(STATIC_CACHE)
+      .then((c) => c.addAll(['/', '/courses', '/faq', '/education', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']))
+      .then(cleanOldCaches)
+      .then(() => self.skipWaiting()),
+  );
+});
+
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => { await cleanOldCaches(); await self.clients.claim(); })());
 });
+
 self.addEventListener('message', (e) => { if (e.data === 'zk-clean-caches') { e.waitUntil ? e.waitUntil(cleanOldCaches()) : cleanOldCaches(); } });
 
 self.addEventListener('fetch', (e) => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminListPendingApprovals } from '../lib/adminApi';
 import type { PendingApproval } from '../lib/adminApi';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Props = {
   T: any;

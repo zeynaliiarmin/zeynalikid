@@ -27,7 +27,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import {
-  handleOptions, jsonResponse, getOrigin,
+  handleOptions, jsonResponse, getOrigin, rejectIfInvalidOrigin,
 } from "../_shared/cors.ts";
 import {
   rateLimit, rateLimitKey, centralRateLimit, cleanupExpiredBuckets,
@@ -49,6 +49,7 @@ serve(async (req) => {
   const optionsResp = handleOptions(req);
   if (optionsResp) return optionsResp;
   const origin = getOrigin(req);
+  const _originCheck = rejectIfInvalidOrigin(req, { allowNoOrigin: true }); if (_originCheck) return _originCheck;
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);

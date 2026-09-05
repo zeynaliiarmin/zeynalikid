@@ -1,6 +1,6 @@
 import {serve} from "https://deno.land/std@0.177.0/http/server.ts";
 import {getSupabaseAdmin} from "../_shared/supabaseClient.ts";
-import {handleOptions,jsonResponse,getOrigin} from "../_shared/cors.ts";
+import {handleOptions,jsonResponse,getOrigin, rejectIfInvalidOrigin} from "../_shared/cors.ts";
 import {centralRateLimit} from "../_shared/rateLimit.ts";
 
 const encodeToken=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -24,6 +24,7 @@ async function verifyTurnstile(token:string,remoteIp:string,expectedHostname:str
 serve(async(req)=>{
  const options=handleOptions(req);if(options)return options;
  const origin=getOrigin(req);
+  const _originCheck = rejectIfInvalidOrigin(req, { allowNoOrigin: true }); if (_originCheck) return _originCheck;
  if(!origin)return reply({error:"مبدأ درخواست مجاز نیست"},403,origin);
  if(req.method!=="POST")return reply({error:"Method not allowed"},405,origin);
  const rate=await centralRateLimit(req,"checkout-session",{maxRequests:12,windowMs:10*60_000,blockMs:10*60_000});

@@ -14,6 +14,7 @@
 import React, { useState, useCallback } from 'react';
 import { getCountryFlag } from '../utils/phone';
 import { ZkCloseIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkPlusIcon, ZkTrashIcon, ZkBellIcon, ZkUploadIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any;
@@ -129,7 +130,7 @@ export default function SettingsManager(props: Props) {
         ))}
       </Box>
 
-      {arrKeys.map((x) => <ArrList key={x[0]} k={x[0]} title={x[1]} />)}
+      {arrKeys.map(async (x) => <ArrList key={x[0]} k={x[0]} title={x[1]} />)}
 
       <Box title="پیام‌های موفقیت و راهنما">
         <TextField label="متن پیام موفقیت" defaultValue={draft.successMsg || ''} onCommit={(v: string) => up('successMsg', v)} S={S} />
@@ -150,16 +151,16 @@ export default function SettingsManager(props: Props) {
   // ── تب ۲: پروژه اصلی (دوره‌ها + پنل) ──
   // تمام تنظیمات محصولات و بخش «محصولات منتخب» فقط در صفحه مستقل «محصولات» مدیریت می‌شوند.
   const cleanupReceipts = async () => {
-    if (!confirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.')) return;
+    if (!(await zkConfirm('آیا از پاک‌سازی فیش‌های قدیمی‌تر از ۱ ماه مطمئن هستید؟ این عملیات قابل بازگشت نیست.'))) return;
     try {
       const { adminCleanupReceiptsDryRun, adminCleanupReceiptsExecute } = await import('../lib/adminApi');
       const dry = await adminCleanupReceiptsDryRun();
-      if (dry.targetFiles === 0) { alert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.'); return; }
-      if (!confirm(`${dry.targetFiles} فیش قدیمی یافت شد. ادامه می‌دهید؟`)) return;
+      if (dry.targetFiles === 0) { void zkAlert('هیچ فیش قدیمی‌ای برای پاک‌سازی یافت نشد.'); return; }
+      if (!(await zkConfirm(`${dry.targetFiles} فیش قدیمی یافت شد. ادامه می‌دهید؟`))) return;
       const r = await adminCleanupReceiptsExecute();
-      alert(`پاک‌سازی موفق بود.\nفایل‌های حذف‌شده: ${r.deleted}\nرکوردهای به‌روزرسانی‌شده: ${r.cleanedRows}`);
+      void zkAlert(`پاک‌سازی موفق بود.\nفایل‌های حذف‌شده: ${r.deleted}\nرکوردهای به‌روزرسانی‌شده: ${r.cleanedRows}`);
     } catch (e: any) {
-      if (e?.status === 401) { alert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.'); } else { alert(e?.message || 'خطا در پاک‌سازی فیش‌ها.'); }
+      if (e?.status === 401) { void zkAlert('نشست ادمین معتبر نیست. لطفاً دوباره وارد شوید.'); } else { void zkAlert(e?.message || 'خطا در پاک‌سازی فیش‌ها.'); }
     }
   };
 

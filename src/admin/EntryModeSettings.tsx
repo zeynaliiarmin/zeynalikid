@@ -1,6 +1,7 @@
 // EntryModeSettings — تنظیمات «صفحه ورودی سایت»: پیگیری دوره یا پنل کاربر
 // فایل مستقل src/admin/* — ویرایش روی editCfg انجام و با دکمه ذخیره پنل اعمال میشود
 import { useState } from 'react';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 const OTP_MODES = [
   { id: 'test', label: 'حالت تست (نمایش کد — تا خرید پنل پیامکی)' },

@@ -8,6 +8,7 @@
  * تمام رنگ‌های روز از توکن‌های --zkad-* گرفته می‌شوند تا با تم پنل هماهنگ بمانند.
  */
 import React from 'react';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 interface Props {
   dark: boolean;

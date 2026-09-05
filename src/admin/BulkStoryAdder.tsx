@@ -7,6 +7,7 @@
 // بتواند متن باقی‌مانده را به اسلایدهای تکی تبدیل کند.
 import { useState } from 'react';
 import { extractImageLinkList } from '../utils/mediaInput';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export default function BulkStoryAdder({ T, S, AdminBtn, internalText, externalText, onInternalChange, onExternalChange, onBuild }: {
   T: any; S: any; AdminBtn: () => any;

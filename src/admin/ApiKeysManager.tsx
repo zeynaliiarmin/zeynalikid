@@ -11,6 +11,7 @@ import {
   type PendingApproval,
   type ApiAuditLog,
 } from '../lib/adminApi';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Props = {
   T: any;
@@ -111,7 +112,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
 
   // Poll pending every 15s for notifier + list
   useEffect(()=>{
-    const iv = setInterval(()=>{ loadPending(); }, 15000);
+    const iv = setInterval(async ()=>{ loadPending(); }, 15000);
     return ()=>clearInterval(iv);
   }, []);
 
@@ -153,7 +154,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
   };
 
   const handleRevoke = async (id: string, name: string) => {
-    if (!confirm(`آیا از ابطال کلید "${name}" مطمئن هستید؟ تمام ایجنت‌هایی که از این کلید استفاده می‌کنند دسترسی‌شان قطع می‌شود.`)) return;
+    if (!(await zkConfirm(`آیا از ابطال کلید "${name}" مطمئن هستید؟ تمام ایجنت‌هایی که از این کلید استفاده می‌کنند دسترسی‌شان قطع می‌شود.`))) return;
     try {
       await adminRevokeApiKey(id);
       setMsg(`کلید "${name}" باطل شد`);
@@ -166,7 +167,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
   };
 
   const handleApprove = async (id: string) => {
-    if (!confirm('این درخواست گروهی تایید شود؟ ایجنت می‌تواند عملیات را اجرا کند.')) return;
+    if (!(await zkConfirm('این درخواست گروهی تایید شود؟ ایجنت می‌تواند عملیات را اجرا کند.'))) return;
     try {
       await adminApprovePending(id);
       setMsg('درخواست تایید شد. به ایجنت بگویید تایید شد.');
@@ -180,7 +181,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
 
   const handleReject = async (id: string) => {
     const reason = prompt('دلیل رد (اختیاری):') || '';
-    if (!confirm('این درخواست رد شود؟')) return;
+    if (!(await zkConfirm('این درخواست رد شود؟'))) return;
     try {
       await adminRejectPending(id, reason);
       setMsg('درخواست رد شد');
@@ -193,7 +194,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
   };
 
   const copyToClipboard = (text: string) => {
-    try { navigator.clipboard.writeText(text); setMsg('کپی شد'); setMsgType('ok'); setTimeout(()=>setMsg(''),2000); } catch { alert(text); }
+    try { navigator.clipboard.writeText(text); setMsg('کپی شد'); setMsgType('ok'); setTimeout(()=>setMsg(''),2000); } catch { void zkAlert(text); }
   };
 
   return (

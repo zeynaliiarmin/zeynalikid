@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured, fetchPageViewStats } from '../lib/supabase';
 import { ZkChartIcon, ZkWarnIcon, ZkStarIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Stats = {
   total: number;

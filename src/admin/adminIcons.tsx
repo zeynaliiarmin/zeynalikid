@@ -4,6 +4,7 @@
  * Stroke-based, currentColor, dense 24-grid. RTL-safe (no direction baked in).
  */
 import React from 'react';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export interface ZkIconProps {
   size?: number;

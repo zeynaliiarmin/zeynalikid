@@ -1,4 +1,5 @@
 import React from 'react';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Props = {
   cfg: any;

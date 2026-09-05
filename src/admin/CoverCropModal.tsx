@@ -10,6 +10,7 @@
 // ⚠️ این کامپوننت باید در ماژول مستقل (خارج از بدنه AdminPanel) بماند تا remount نشود.
 import { useEffect, useRef, useState } from 'react';
 import { coverGeometry } from '../components/CoverImage';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 const COVER_FRAME = 280;
 const MAX_ZOOM = 3;

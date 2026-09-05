@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { applyResolvedZkTheme, applyZkTheme, getLegacyZkThemePref, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './adminTheme';
 import AdminThemeToggle from './AdminThemeToggle';
 import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkCloseIcon, ZkStaffIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export interface AdminNavLeaf { id: string; label: string; icon?: React.ReactNode; }
 export interface AdminNavGroup { id: string; label: string; icon?: React.ReactNode; items?: AdminNavLeaf[]; }

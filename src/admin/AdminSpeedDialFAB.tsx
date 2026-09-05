@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ZkPlusIcon, ZkCoursesIcon, ZkProductsIcon, ZkCheckIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export interface AdminSpeedDialFABProps {
   T: any;

@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { makeReferralCode, suggestTabShortCode } from '../utils/referral';
 import { DEFAULT_REFERRAL_TEXTS } from '../config/referralTexts';
 import { ZkPlusIcon, ZkArrowUpIcon, ZkArrowDownIcon, ZkCloseIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 const Checklist = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
   <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>

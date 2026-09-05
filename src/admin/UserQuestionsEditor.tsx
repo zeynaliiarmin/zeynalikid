@@ -8,6 +8,7 @@ import {
 } from '../lib/supabase';
 import FAQManagementEditor from './FAQManagementEditor';
 import { adminGetSignedUrls } from '../lib/adminApi';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 // فیلد پاسخ — کامپوننت جدا با state محلی تا تایپ باعث re-render کل لیست نشود (رفع fg)
 const AnswerField = React.memo(function AnswerField({ initial, onCommit, T, S }: { initial: string; onCommit: (v: string) => void; T: any; S: any }) {
@@ -48,7 +49,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     const urls=questions.map(q=>q.voice_note_url).filter((u):u is string=>!!u&&u.startsWith('http'));
     if(!urls.length){setSignedVoiceMap({});return}
     let alive=true;
-    adminGetSignedUrls([...new Set(urls)]).then(map=>{if(alive)setSignedVoiceMap(map||{})}).catch(()=>{if(alive)setSignedVoiceMap({})});
+    adminGetSignedUrls([...new Set(urls)]).then(map=>{if(alive)setSignedVoiceMap(map||{})}).catch(async ()=>{if(alive)setSignedVoiceMap({})});
     return()=>{alive=false};
   },[questions]);
 
@@ -75,8 +76,8 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
     const nextCfg = { ...(cfg as any), manualUserQuestions: a };
     if (setEditCfg) setEditCfg(nextCfg);
   };
-  const handleDeleteManual = (idx: number) => {
-    if (!confirm('این سؤال دستی حذف شود؟')) return;
+  const handleDeleteManual = async (idx: number) => {
+    if (!(await zkConfirm('این سؤال دستی حذف شود؟'))) return;
     const a = manualList.filter((_: any, j: number) => j !== idx);
     const nextCfg = { ...(cfg as any), manualUserQuestions: a.map((x: any, i: number) => ({ ...x, order: i + 1 })) };
     if (setEditCfg) setEditCfg(nextCfg);
@@ -183,7 +184,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
   // Bulk select handlers
   const toggleSelectOne = (id: number) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter(async (x) => x !== id) : [...prev, id]));
   };
   const handleSelectAll = () => {
     const ids = filtered.map((q) => q.id);
@@ -199,7 +200,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
 
   const handleBulkArchive = async () => {
     if (!selectedIds.length) return;
-    if (!confirm(`آیا ${selectedIds.length} سوال انتخاب‌شده بایگانی شوند؟`)) return;
+    if (!(await zkConfirm(`آیا ${selectedIds.length} سوال انتخاب‌شده بایگانی شوند؟`))) return;
     setLoading(true);
     try {
       for (const id of selectedIds) await archiveUserQuestion(id);
@@ -210,7 +211,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   };
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
-    if (!confirm(`آیا ${selectedIds.length} سوال انتخاب‌شده حذف شوند؟ این عمل غیرقابل بازگشت است.`)) return;
+    if (!(await zkConfirm(`آیا ${selectedIds.length} سوال انتخاب‌شده حذف شوند؟ این عمل غیرقابل بازگشت است.`))) return;
     setLoading(true);
     try {
       for (const id of selectedIds) await deleteUserQuestion(id);
@@ -229,7 +230,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
       showToast('سؤال با موفقیت حذف شد.');
     } catch (e) {
       console.error('Delete question fail:', e);
-      alert('خطایی در حذف سؤال رخ داد.');
+      void zkAlert('خطایی در حذف سؤال رخ داد.');
     }
   };
 
@@ -254,11 +255,11 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
   const handleSaveToFAQ = () => {
     if (!faqModalItem) return;
     if (!faqModalItem.questionFa.trim()) {
-      alert('لطفاً متن سوال فارسی را وارد فرمایید.');
+      void zkAlert('لطفاً متن سوال فارسی را وارد فرمایید.');
       return;
     }
     if (!faqModalItem.answerFa.trim()) {
-      alert('لطفاً متن پاسخ فارسی را وارد فرمایید.');
+      void zkAlert('لطفاً متن پاسخ فارسی را وارد فرمایید.');
       return;
     }
 
@@ -316,7 +317,7 @@ export default function UserQuestionsEditor({ app }: { app: any }) {
       showToast('با موفقیت به سوالات متداول (FAQ) اضافه و منتشر شد!');
     } catch (err) {
       console.error('Error saving to FAQ:', err);
-      alert('خطایی در افزودن به سوالات متداول رخ داد.');
+      void zkAlert('خطایی در افزودن به سوالات متداول رخ داد.');
     }
   };
 

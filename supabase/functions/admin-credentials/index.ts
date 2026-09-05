@@ -4,7 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
-import { handleOptions, jsonResponse, getOrigin } from "../_shared/cors.ts";
+import { handleOptions, jsonResponse, getOrigin, rejectIfInvalidOrigin } from "../_shared/cors.ts";
 import { validateAdminSession, extractSessionToken } from "../_shared/adminAuth.ts";
 import { centralRateLimit } from "../_shared/rateLimit.ts";
 import { changeAdminCredentials } from "../_shared/adminCredentials.ts";
@@ -15,6 +15,7 @@ const maskPhone=(phone:string)=>{const d=digitsOnly(phone);return d.length>=7?`$
 serve(async(req)=>{
   const options=handleOptions(req);if(options)return options;
   const origin=getOrigin(req);
+  const _originCheck = rejectIfInvalidOrigin(req, { allowNoOrigin: true }); if (_originCheck) return _originCheck;
   if(req.method!=="POST")return jsonResponse({error:"Method not allowed"},405,origin);
 
   let body:any={};try{body=await req.json()}catch{return jsonResponse({error:"درخواست نامعتبر است"},400,origin)}

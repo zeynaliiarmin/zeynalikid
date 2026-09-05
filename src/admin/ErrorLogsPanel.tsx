@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getAdminSessionToken } from '../utils/adminSession';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 const ADMIN_ERROR_LOGS_URL = `${(import.meta.env.VITE_SUPABASE_URL as string || '').replace(/\/$/, '')}/functions/v1/admin-error-logs`;
 

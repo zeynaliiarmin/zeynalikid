@@ -4,9 +4,20 @@ const TOKEN_KEY = 'zk_admin_session_token';
 const DEVICE_KEY = 'zk_admin_device_id';
 const AUTHED_KEY = 'zk_admin_authed';
 const PASSWORD_UPGRADE_KEY='zk_admin_password_upgrade_required';
-// نشست ادمین در localStorage ذخیره می‌شود (نه sessionStorage) تا هنگام ورود با
-// Face ID / اثر انگشت یا پس از رفرش، نشست معتبر حفظ شود و به صفحه لاگین برنگردد.
-const STORE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = typeof localStorage !== 'undefined' ? localStorage : (typeof sessionStorage !== 'undefined' ? sessionStorage : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as any));
+// Default session storage keeps the admin token out of long-lived browser
+// storage and mitigates XSS token exfiltration that persists across tabs/windows.
+// If biometric "remember this device" was previously elected (key in localStorage),
+// we fall back to localStorage so the returning admin is not kicked out.
+const BIOMETRIC_TRUST_KEY = 'zk_admin_biometric_trusted';
+const wantsPersistent = (): boolean => {
+  try { return (typeof localStorage !== 'undefined') && localStorage.getItem(BIOMETRIC_TRUST_KEY) === '1'; } catch { return false; }
+};
+const pickStore = (): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> => {
+  if (typeof sessionStorage !== 'undefined' && !wantsPersistent()) return sessionStorage;
+  if (typeof localStorage !== 'undefined') return localStorage;
+  return { getItem: () => null, setItem: () => {}, removeItem: () => {} } as any;
+};
+const STORE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = pickStore();
 const deviceInfo = () => ({
   device_name: `${navigator.platform || 'Device'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`,
   platform: navigator.platform || 'Unknown',
@@ -25,13 +36,22 @@ export async function loginAdminSession(phone: string, password: string) {
   STORE.setItem(DEVICE_KEY, data.deviceId);
   STORE.setItem(AUTHED_KEY,'true');
   if(data?.mustChangePassword===true)STORE.setItem(PASSWORD_UPGRADE_KEY,'true');else STORE.removeItem(PASSWORD_UPGRADE_KEY);
-  // زمان لاگین برای رد شدن از validate مجدد بلافاصله پس از ورود (کاهش تأخیر ورود به پنل)
-  try { (typeof localStorage!=='undefined'?localStorage:STORE).setItem('zk_admin_login_at', String(Date.now())); } catch {}
+  // If the login response says biometric enrollment was attempted/accepted,
+  // persist the trust flag so the next login picks localStorage as the store.
+  try {
+    const ls = typeof localStorage !== 'undefined' ? localStorage : null;
+    if (ls) {
+      if (data?.biometricEnrolled === true || data?.trustedDevice === true) {
+        ls.setItem(BIOMETRIC_TRUST_KEY, '1');
+      }
+      ls.setItem('zk_admin_login_at', String(Date.now()));
+    }
+  } catch {}
   return data;
 }
 export const getAdminSessionToken = () => STORE.getItem(TOKEN_KEY) || '';
 export const getAdminDeviceId = () => STORE.getItem(DEVICE_KEY) || '';
-export const clearAdminSession=()=>{STORE.removeItem(TOKEN_KEY);STORE.removeItem(DEVICE_KEY);STORE.removeItem(AUTHED_KEY)};
+export const clearAdminSession=()=>{STORE.removeItem(TOKEN_KEY);STORE.removeItem(DEVICE_KEY);STORE.removeItem(AUTHED_KEY);STORE.removeItem(PASSWORD_UPGRADE_KEY);try{if(typeof localStorage!=='undefined'){localStorage.removeItem(BIOMETRIC_TRUST_KEY);localStorage.removeItem('zk_admin_login_at');}}catch{}};
 export const isAdminPasswordUpgradeRequired=()=>STORE.getItem(PASSWORD_UPGRADE_KEY)==='true';
 
 /**

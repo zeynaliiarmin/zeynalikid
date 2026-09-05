@@ -1,12 +1,13 @@
 import {serve} from "https://deno.land/std@0.177.0/http/server.ts";
 import {getSupabaseAdmin} from "../_shared/supabaseClient.ts";
-import {handleOptions,jsonResponse,getOrigin} from "../_shared/cors.ts";
+import {handleOptions,jsonResponse,getOrigin, rejectIfInvalidOrigin} from "../_shared/cors.ts";
 import {centralRateLimit} from "../_shared/rateLimit.ts";
 const cleanBanks=(items:any)=>Array.isArray(items)?items.filter(Boolean).map((b:any)=>({id:String(b.id||''),name:String(b.name||''),card:String(b.card||''),iban:String(b.iban||''),holder:String(b.holder||b.accountName||''),color:b.color,active:b.active!==false,order:Number(b.order||0)})).filter((b:any)=>b.active&&(b.card||b.iban)).slice(0,10):[];
 const cleanWallets=(items:any)=>Array.isArray(items)?items.filter(Boolean).map((w:any)=>({id:String(w.id||''),name:String(w.name||''),symbol:String(w.symbol||''),address:String(w.address||''),network:String(w.network||''),color:w.color,active:w.active!==false})).filter((w:any)=>w.active&&w.address).slice(0,10):[];
 const hashToken=async(token:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))).map(value=>value.toString(16).padStart(2,'0')).join('');
 serve(async req=>{
  const options=handleOptions(req);if(options)return options;const origin=getOrigin(req);
+  const _originCheck = rejectIfInvalidOrigin(req, { allowNoOrigin: true }); if (_originCheck) return _originCheck;
  if(req.method!=="POST")return jsonResponse({error:"Method not allowed"},405,origin);
  const checkoutToken=String(req.headers.get('X-Checkout-Token')||'').trim();
  if(!/^[A-Za-z0-9_-]{40,100}$/.test(checkoutToken))return jsonResponse({error:"نشست پرداخت معتبر نیست"},401,origin);

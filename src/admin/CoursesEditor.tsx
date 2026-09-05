@@ -1,6 +1,7 @@
 import React from 'react';
 import { FrameControls, LibraryPicker } from './ImagesManager';
 import { ZkPlusIcon, ZkUploadIcon } from './adminIcons';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Props = {
   T: any;
@@ -243,7 +244,7 @@ export default function CoursesEditor({
         (url) => updateCourse(tabIndex, courseIndex, 'image', url),
       );
     } catch (error: any) {
-      alert(error?.message || 'آپلود عکس دوره انجام نشد. دوباره تلاش کنید.');
+      void zkAlert(error?.message || 'آپلود عکس دوره انجام نشد. دوباره تلاش کنید.');
     } finally {
       setUploadingImage(null);
     }

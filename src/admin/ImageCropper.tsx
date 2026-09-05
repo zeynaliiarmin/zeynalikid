@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export type ImageCropperProps = {
   src: string;
@@ -218,7 +219,7 @@ export default function ImageCropper({
       await onDone(new File([blob], fileName, { type: 'image/webp' }));
     } catch (error) {
       console.warn('image crop failed', error);
-      alert('تنظیم کادر تصویر انجام نشد. دوباره تلاش کنید.');
+      void zkAlert('تنظیم کادر تصویر انجام نشد. دوباره تلاش کنید.');
     } finally {
       setBusy(false);
     }
