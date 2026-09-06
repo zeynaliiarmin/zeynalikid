@@ -58,7 +58,7 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.4" /><path d="M5 20c.7-3.8 3.4-6 7-6s6.3 2.2 7 6" /></svg>{en?(item.authorEn||item.author||'Editorial team'):(item.author||'تیم تحریریه')}</span>
             <span>{en ? item.dateEn : item.date}</span>
             {item.reviewedAt?<span>{en?'Reviewed: ':'بازبینی: '}{item.reviewedAt}</span>:isArticle&&<span style={{color:'var(--zk-text-muted,#64748b)'}}>{en?'No specialist review recorded':'بازبینی تخصصی ثبت نشده'}</span>}
-            {safeSourceUrl(item.sourceUrl)&&<a href={safeSourceUrl(item.sourceUrl)} target="_blank" rel="noreferrer" style={{color:'var(--zk-primary,#0B5D56)'}}>{en?'Scientific source':'منبع علمی'}</a>}
+            {safeSourceUrl(item.sourceUrl)&&<a href={safeSourceUrl(item.sourceUrl)} target="_blank" rel="noreferrer" style={{color:'var(--zk-primary,#0B5D56)',display:'inline-flex',alignItems:'center',gap:4,fontWeight:700}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>{en?'Scientific source (English)':'منبع علمی (انگلیسی)'}</a>}
             <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> {duration}</span>
           </div>
 

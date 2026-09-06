@@ -47,10 +47,16 @@ export async function validateAdminSession(
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return { ok: false };
-  if (data.is_revoked) return { ok: false };
-  if (data.revoked_at) return { ok: false };
-  if (new Date(data.expires_at).getTime() < Date.now()) return { ok: false };
+  if (error || !data) {
+    console.warn("validateAdminSession: lookup error or no data", error?.message || error);
+    return { ok: false };
+  }
+  if (data.is_revoked) { console.warn("validateAdminSession: revoked"); return { ok: false }; }
+  if (data.revoked_at) { console.warn("validateAdminSession: revoked_at set"); return { ok: false }; }
+  if (new Date(data.expires_at).getTime() < Date.now()) {
+    console.warn("validateAdminSession: expired", data.expires_at);
+    return { ok: false };
+  }
 
   const session: AdminSession = {
     sessionId: data.id,
@@ -59,15 +65,23 @@ export async function validateAdminSession(
     expiresAt: data.expires_at,
   };
 
-  // Best-effort: update last_seen_at on session + device
+  // Best-effort: update last_seen_at on session + device.
+  // admin_devices might not exist on older deployments — every branch is wrapped individually so
+  // a missing/wrong table or RLS error cannot invalidate the session.
   const now = new Date().toISOString();
   try {
-    await Promise.all([
-      supabase.from("admin_sessions").update({ last_seen_at: now }).eq("id", session.sessionId),
-      supabase.from("admin_devices").update({ last_seen_at: now }).eq("id", session.deviceId),
-    ]);
+    const p1 = supabase.from("admin_sessions").update({ last_seen_at: now }).eq("id", session.sessionId);
+    p1.then(r => { if (r.error) console.warn("admin_sessions last_seen update:", r.error.message); }).catch(()=>{});
   } catch (e) {
-    console.warn("Could not update last_seen_at:", e);
+    console.warn("Could not schedule admin_sessions last_seen update:", e);
+  }
+  try {
+    if (session.deviceId) {
+      const p2 = supabase.from("admin_devices").update({ last_seen_at: now }).eq("id", session.deviceId);
+      p2.then(r => { if (r.error) console.warn("admin_devices last_seen update:", r.error.message); }).catch(()=>{});
+    }
+  } catch (e) {
+    console.warn("Could not schedule admin_devices last_seen update:", e);
   }
 
   return { ok: true, session };
@@ -77,14 +91,29 @@ export async function validateAdminSession(
  * Extract session token. Primary path is the Authorization: Bearer header
  * (canonical, avoids logging bodies). If the header is missing we fall back
  * to body.sessionToken so legacy/cached clients that still send the token
- * in the body do not break hard while they re-deploy.
+/**
+ * Extract the admin session token. Priority:
+ *   1. `sessionToken` in the body (JS clients send this explicitly so we can
+ *      bypass the auto-injected Supabase ANON/SERVICE key in the Authorization header).
+ *   2. `Authorization: Bearer <token>` — but ONLY if it does NOT look like a
+ *      Supabase anon/service_role JWT (which supabase-js auto-injects; those are
+ *      NOT admin session tokens).
+ *
+ * Supabase JWTs always start with "eyJ" and are typically 200+ chars. Admin
+ * session tokens are 64-char hex (SHA-256) or random tokens from randomToken().
  */
 export function extractSessionToken(req: Request, body: any): string {
+  // 1) Body takes priority (used by all admin UI helpers — see sourceFinder.ts, plansApi.ts, etc.)
+  const bodyTok = String(body?.sessionToken ?? "").trim();
+  if (bodyTok.length >= 16) return bodyTok;
+
+  // 2) Authorization header — only treat as admin session if it does NOT look like a JWT.
   const auth = req.headers.get("Authorization") ?? "";
   if (auth.toLowerCase().startsWith("bearer ")) {
     const t = auth.slice(7).trim();
-    if (t) return t;
+    if (t && !/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(t)) {
+      return t;
+    }
   }
-  const bodyTok = String(body?.sessionToken ?? "");
-  return bodyTok.length >= 16 ? bodyTok : "";
+  return "";
 }

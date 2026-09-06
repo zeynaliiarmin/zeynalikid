@@ -191,7 +191,11 @@ export function EducationPage(){
  const mediaVpnOn=useVpn(cfg);
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
- const source:any[]=usingSamples?(EDU_SAMPLES as any[]):real;
+ // Backfill default author/source for any legacy education item missing author (E-E-A-T).
+ const DEFAULT_AUTHOR='آرمین زینالی';
+ const DEFAULT_AUTHOR_EN='Armin Zeinali';
+ const withAuthor=(it:any)=>({...it, author:it.author||DEFAULT_AUTHOR, authorEn:it.authorEn||DEFAULT_AUTHOR_EN});
+ const source:any[]=usingSamples?(EDU_SAMPLES as any[]).map(withAuthor):real.map(withAuthor);
  // پل دستیار: اگر لینک «مشاهده همین مورد» باز شد، همان آیتم خودکار در پنجره نمایشگرش باز می‌شود.
  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o||openItem)return;const it=(source as any[]).find((x:any)=>!usingSamples&&String(x?.id)===o);if(it){openEduItem(it as EduItem);const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())}}catch{}},[source.length]);
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);

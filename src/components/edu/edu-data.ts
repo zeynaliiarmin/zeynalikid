@@ -76,6 +76,9 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'A calm guide to understand your child’s eating behaviour.',
     minutes: 6, date: '۲۰ بهمن ۱۴۰۴', dateEn: 'Feb 2026',
     keywords: ['بدغذایی', 'اشتها', 'سفره', 'کودک'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
+    sourceUrl: 'https://publications.aap.org/pediatrics/article/138/3/e20151743/60246/Characteristics-of-Picky-Eaters-in-a-Nationally',
     quote: 'سفره آرام، تمرین کوچکِ هر روز است؛ نه میدان جنگ.',
     body: 'خیلی از والدین می‌پرسند کودک‌شان «بدغذا» است یا فقط انتخابگر. تفاوت این دو بیشتر از یک کلمه است؛ انتخابگری بخشی از رشد طبیعی سلیقه کودک است و معمولاً با صبر و تنوعِ بدون فشار، به‌مرور آرام می‌شود.\n\nقدم اول این است که الگوی غذایی کودک را چند روز یادداشت کنید؛ ساعت‌ها، مقدارها و حال‌وهوای وعده‌ها. این یادداشت به شما و مشاور کمک می‌کند تصویر واقعی‌تری ببینید، نه تصویری که نگرانی می‌سازد.\n\nقدم دوم، جدا کردن «مسئولیت‌ها» است: چه چیزی و چه زمانی ارائه شود با والدین است، و چه مقدار خورده شود با کودک. این ساده‌سازی، فشار را از سفره کم می‌کند و به کودک اجازه می‌دهد به sinyal‌های سیری و گرسنگی خودش اعتماد کند.\n\nو در نهایت، اگر الگوی غذایی کودک با رشد یا انرژی روزمره او گره خورده و نگران‌کننده به نظر می‌رسد، بهترین مسیر گفت‌وگو با یک مشاور متخصص است؛ محتوای عمومی فقط برای آگاهی است، نه قضاوت یا نسخه.',
   },
@@ -87,6 +90,9 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'How a simple sleep routine can smooth the school day.',
     minutes: 5, date: '۵ بهمن ۱۴۰۴', dateEn: 'Jan 2026',
     keywords: ['خواب', 'تمرکز', 'مدرسه'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
+    sourceUrl: 'https://pubmed.ncbi.nlm.nih.gov/26216113/',
     quote: 'خوابِ کافی، زمینه آرامِ یادگیری است.',
     body: 'تمرکز در کلاس درس از شبِ قبل شروع می‌شود. کودکی که ساعت خواب نامنظم دارد، صبح با ذخیره کمترِ توجه بیدار می‌شود، حتی اگر صبحانه خوبی خورده باشد.\n\nیک روتین لازم نیست پیچیده باشد: ساعت ثابت خواب، نور کم‌تر در یک ساعت پایانی، و یک فعالیت آرام مثل کتاب خواندنِ مشترک. تکرارِ همین سه قدم، سیگنال امنی برای بدن کودک می‌سازد.\n\nاگر بی‌قراری شبانه یا خستگی روزانه ادامه داشت، به‌جای راه‌حل‌های عمومی، مشورت تخصصی مسیر درست‌تری است؛ چون الگوی خواب هر کودک می‌تواند ریشه متفاوتی داشته باشد.',
   },
@@ -98,6 +104,8 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'A short video on what is observed first in the TC approach.',
     minutes: 8, date: '۱۲ بهمن ۱۴۰۴', dateEn: 'Feb 2026',
     keywords: ['TC', 'تغذیه', 'روش'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
   },
   {
     id: 's-v2', type: 'video',
@@ -107,6 +115,9 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'Tiny practical ideas for introducing new foods without pressure.',
     minutes: 6, date: '۲۸ دی ۱۴۰۴', dateEn: 'Jan 2026',
     keywords: ['تنوع غذایی', 'سفره', 'بدغذایی'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
+    sourceUrl: 'https://publications.aap.org/pediatrics/article/140/5/e20163208/37739/Practical-Feeding-Recommendations-for-Children',
   },
   {
     id: 's-p1', type: 'audio',
@@ -116,6 +127,9 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'A short talk about common appetite beliefs.',
     minutes: 12, date: '۲۲ بهمن ۱۴۰۴', dateEn: 'Feb 2026',
     keywords: ['اشتها', 'افسانه‌ها', 'پادکست'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
+    sourceUrl: 'https://www.cdc.gov/nutrition/infantandtoddlernutrition/foods-drinks/picky-eating.html',
   },
   {
     id: 's-p2', type: 'audio',
@@ -125,6 +139,9 @@ export const EDU_SAMPLES: EduItem[] = [
     descEn: 'A talk on genetics, sleep and nutrition in growth.',
     minutes: 14, date: '۸ بهمن ۱۴۰۴', dateEn: 'Jan 2026',
     keywords: ['قد', 'ژنتیک', 'رشد'],
+    author: 'آرمین زینالی',
+    authorEn: 'Armin Zeinali',
+    sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet',
   },
 ];
 

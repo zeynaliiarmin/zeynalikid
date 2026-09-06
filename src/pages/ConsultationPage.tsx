@@ -156,10 +156,8 @@ export default function ConsultationPage(){
   const [trackCopied, setTrackCopied] = useState(false);
   const [copyToast, setCopyToast] = useState('');
   const usedMsgIdx = useRef<number[]>([]);
-  const [dupEntry, setDupEntry] = useState<any>(null);
   const [editId, setEditId] = useState<any>(null);
   const editEntryRef = useRef<any>(null);
-  const [allowNewChild, setAllowNewChild] = useState(false);
   const [submitting,setSubmitting]=useState(false);
   const [privacyAccepted,setPrivacyAccepted]=useState(false);
   const [privacyAttempted,setPrivacyAttempted]=useState(false);
@@ -253,6 +251,23 @@ export default function ConsultationPage(){
     return sc;
   };
 
+  // Find the most likely previous submission from the same phone number.
+  // Gender is intentionally NOT required to match: a parent may register a boy first
+  // and a girl second, or vice versa. We score similarity so the dialog can still
+  // show the closest prior entry, and if they choose "other child" we ALWAYS
+  // generate a fresh tracking code (never reuse).
+  const findPriorForPhone = (list: any[], fp: string) => {
+    const samePhone = list.filter((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
+    if (!samePhone.length) return null;
+    // Prefer same gender, then highest similarity, then most recent.
+    return samePhone.slice().sort((a: any, b: any) => {
+      const ga = a.gender === fd.gender ? 1 : 0;
+      const gb = b.gender === fd.gender ? 1 : 0;
+      if (ga !== gb) return gb - ga;
+      return similarityScore(b, fd) - similarityScore(a, fd);
+    })[0];
+  };
+
   const country = countries?.find((c: any) => c.code === fd.cc) || countries?.[0];
   const hasCt = Object.values(cfg.contacts || {}).some((v: any) => Array.isArray(v) ? v.length : v);
 
@@ -280,10 +295,8 @@ export default function ConsultationPage(){
     setShowCt(false);
     setEditId(null);
     editEntryRef.current = null;
-    setAllowNewChild(false);
-    setPrivacyAccepted(false);
+        setPrivacyAccepted(false);
     setPrivacyAttempted(false);
-    setDupEntry(null);
     setFormView('form');
   };
 
@@ -322,18 +335,19 @@ export default function ConsultationPage(){
     return !Object.keys(e).length;
   };
 
-  const doSubmit = async (allowNewChildOverride?: boolean) => {
+  const doSubmit = async () => {
     if(!privacyAccepted){setPrivacyAttempted(true);return}
     if (!validateConsult() || submitting) return;
     setSubmitting(true);
     try {
       const fp = fullPhone(fd.cc, fd.pPhone);
       const list = subsCacheRef.current || await loadSubs();
-      const effectiveAllowNewChild = allowNewChildOverride ?? allowNewChild;
-      if (!editId && !effectiveAllowNewChild) {
-        const dup = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.gender === fd.gender && x.gender);
-        if (dup) { setDupEntry(dup); setSubmitting(false); return; }
-      }
+      // قانون جدید (شهریور ۱۴۰۵): هر شماره موبایل والد فقط یک کد پیگیری دارد. هر ثبت
+      // مشاوره/دوره جدید (چه فرزند دیگر، چه دوره جدید، چه درخواست مشاوره مجدد) روی همان کد
+      // به‌عنوان رکورد/کارت جدید در پنل ادمین ذخیره می‌شود.
+      // پنجره «فرم تکراری» حذف شد — هیچ‌طور جلو ثبت گرفته نمی‌شود.
+      // فقط وقتی کاربر از پنل کاربری روی «ویرایش اطلاعات» می‌زند (editId موجود است) همان
+      // رکورد قبلی update می‌شود.
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       if (editId) {
         const prev = editEntryRef.current || {};
@@ -376,11 +390,16 @@ export default function ConsultationPage(){
         setLastTrack(String(trackingCode));
       } else {
         const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
-        const us2 = getUserSession(); const trackingCode = us2?.code || (effectiveAllowNewChild ? generateSecureTrackingCode(existingCodes,TRACKING_PREFIX) : (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes,TRACKING_PREFIX)));
+        const us2 = getUserSession();
+        // هر شماره موبایل والد یک‌بار کد پیگیری می‌گیرد و همهٔ ثبت‌های بعدی (مشاوره/دوره/فرزند دیگر)
+        // روی همان کد انجام می‌شود؛ فقط رکورد جدید در پنل ادمین ایجاد می‌شود.
+        const trackingCode = us2?.code || (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX));
+        // similarTo: اگر والد قبلاً پرونده‌ای با همان شماره داشت، رکورد جدید به آن ارجاع داده می‌شود
+        // تا ادمین در پنل ببیند این ادامه/فرزند دیگرِ یک خانواده است.
         let similarTo: any = null;
-        if (effectiveAllowNewChild) {
+        if (prevSame) {
           const sim = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && similarityScore(x, fd) >= 0.7);
-          if (sim) similarTo = sim.id;
+          similarTo = (sim || prevSame).id;
         }
         const sameNumberAll = list.filter((x: any) => digits(x.fullPhone || '') === digits(fp));
         const hasCoursePrev = sameNumberAll.some((x: any) => x.type === 'course');
@@ -460,8 +479,7 @@ export default function ConsultationPage(){
       }
       setEditId(null);
       editEntryRef.current = null;
-      setAllowNewChild(false);
-      pickNextMsg();
+            pickNextMsg();
       clearPublicFormDrafts();
       setFormView('success');
     } catch (e) {
@@ -473,19 +491,7 @@ export default function ConsultationPage(){
     }
   };
 
-  const chooseDupEdit = () => {
-    const d = dupEntry;
-    if (!d) return;
-    setFd({ topics: d.topics || [], pName: d.pName || '', cc: d.cc || '+98', pPhone: d.pPhone || '', gender: d.gender || '', age: d.age || '', height: d.height || '', weight: d.weight || '', digest: d.digest || [], appetite: d.appetite || '', disease: d.disease || '', specials: d.specials || [], notes: d.notes || '' });
-    setEditId(d.id);
-    editEntryRef.current = d;
-    setAllowNewChild(false);
-    setPrivacyAccepted(false);
-    setPrivacyAttempted(false);
-    setDupEntry(null);
-  };
-  const chooseDupNo = () => setDupEntry(null);
-  const chooseDupNewChild = () => { setAllowNewChild(true); setEditId(null); editEntryRef.current = null; setDupEntry(null); doSubmit(true); };
+
 
   const updateTimeSlot = (nv: string) => {
     setTsSlot(nv);
@@ -666,22 +672,6 @@ export default function ConsultationPage(){
         <button style={{...S.btn,opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</button>
       </div>
 
-      {/* Duplicate modal */}
-      {dupEntry && <div onMouseDown={e => { if (e.currentTarget === e.target) setDupEntry(null) }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both' }}>
-        <div style={{ width: '100%', maxWidth: 420, background: T.pop, border: `1px solid ${T.brd}`, borderRadius: 20, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,.22)', animation: 'modalIn .35s ease both' }}>
-          <h3 style={{ color: T.ttl, marginTop: 0, fontSize: 15 }}>{lang === 'en' ? 'Duplicate form detected' : 'فرم تکراری شناسایی شد'}</h3>
-          <p style={{ fontSize: 13, color: T.txt, lineHeight: 2 }}>
-            {lang === 'en'
-              ? `A form was already submitted with this phone number${dupEntry.pName ? ` by "${dupEntry.pName}"` : ''} for a child (${dupEntry.age || '—'} years old, ${dupEntry.gender === 'male' ? 'boy' : 'girl'}). Do you need to edit the information?`
-              : `با این شماره تماس قبلاً${dupEntry.pName ? ` توسط «${dupEntry.pName}»` : ''} برای فرزندی (${dupEntry.age || '—'} ساله، ${dupEntry.gender === 'male' ? 'پسر' : 'دختر'}) فرم ثبت شده است. آیا نیاز به ویرایش اطلاعات دارید؟`}
-          </p>
-          <button style={{ ...S.btn, marginBottom: 8 }} onClick={chooseDupEdit}>{lang === 'en' ? 'Edit information' : 'ویرایش اطلاعات'}</button>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button style={S.btnGhost} onClick={chooseDupNo}>{lang === 'en' ? 'No' : 'خیر'}</button>
-            <button style={S.btnGhost} onClick={chooseDupNewChild}>{lang === 'en' ? 'It is for my other child' : 'برای فرزند دیگرم هست'}</button>
-          </div>
-        </div>
-      </div>}
 
       {/* Emergency modal */}
       {emergencyModalOpen && <div onMouseDown={e => { if (e.currentTarget === e.target) setEmergencyModalOpen(false) }} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,30,45,.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .3s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>

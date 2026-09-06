@@ -108,8 +108,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({title,subtitle,imageUrl,imageA
               style={animateCoursesCta ? {
                 minHeight:54, padding:'14px 26px', fontSize:15, fontWeight:800,
                 border:'2px solid var(--zk-primary)',
-                animation:'zk-hero-pulse 1.6s ease-in-out infinite',
-                WebkitAnimation:'zk-hero-pulse 1.6s ease-in-out infinite',
+                animation:'zk-hero-pulse 2.4s ease-in-out 3',
+                WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',
+                animationFillMode:'forwards',
+                WebkitAnimationFillMode:'forwards',
                 transform:'scale(1.05)',
               } : {minHeight:48, padding:'13px 22px', fontSize:14}}
             >

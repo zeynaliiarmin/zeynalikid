@@ -14,11 +14,12 @@
 //   - key پایدار (id) برای آیتم‌ها و <details>
 //   - فیلدها با defaultValue + onBlur (بدون re-render هنگام تایپ)
 // ============================================================================
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { getMediaDestinations, MEDIA_DESTINATIONS, migrateMediaItem, type MediaDestination } from '../utils/mediaPlacement';
 import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
 import { zkAlert, zkConfirm } from '../components/ZkDialog';
+import { findSourceForArticle } from '../lib/sourceFinder';
 
 interface Props {
   T: any; S: any; AdminBtn: () => any; Box: any; Field: any;
@@ -460,15 +461,88 @@ function MediaLibraryManager(props: any) {
       };
     }));
   }, [setItems, sourceDestination]);
-  const add = useCallback(() => setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, author: isEdu ? '' : undefined, authorEn: isEdu ? '' : undefined, sourceUrl: isEdu ? '' : undefined, reviewedAt: isEdu ? '' : undefined, quote: isEdu ? '' : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]), [setItems, uid, sectionKey, sourceDestination, isEdu]);
+  const add = useCallback(() => {
+    const PROJECT_AUTHOR = 'آرمین زینالی';
+    const PROJECT_AUTHOR_EN = 'Armin Zeinali';
+    setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, author: isEdu ? PROJECT_AUTHOR : undefined, authorEn: isEdu ? PROJECT_AUTHOR_EN : undefined, sourceUrl: isEdu ? '' : undefined, reviewedAt: isEdu ? '' : undefined, quote: isEdu ? '' : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]);
+  }, [setItems, uid, sectionKey, sourceDestination, isEdu]);
   const remove = useCallback((i: number) => setItems((prev: any[]) => prev.filter((_, j) => j !== i)), [setItems]);
   const move = useCallback((i: number, dir: -1 | 1) => setItems((prev: any[]) => {
     const a = [...prev]; const j = i + dir; if (j < 0 || j >= a.length) return prev;
     [a[i], a[j]] = [a[j], a[i]]; return a.map((x, idx) => ({ ...x, order: idx + 1 }));
   }), [setItems]);
+  const [sourceBusy,setSourceBusy]=useState<Record<number,boolean>>({});
+  const [backfillRunning,setBackfillRunning]=useState(false);
+  const findSourceForIdx=useCallback(async(i:number)=>{
+    const item = items[i];
+    if (!item) return;
+    const title=String(item.title||'').trim();
+    if (!title || title==='آیتم جدید') { zkAlert('ابتدا عنوان مقاله را وارد کنید.'); return; }
+    setSourceBusy(s=>({...s,[i]:true}));
+    try{
+      const r = await findSourceForArticle({ title, body: String(item.body||item.description||'').slice(0,400), limit:3, mode:'multi' });
+      if (!r.ok || !r.top) { zkAlert(r.error || 'منبع علمی مرتبطی پیدا نشد.'); return; }
+      const top = r.top;
+      chg(i,'sourceUrl', top.url);
+      // Flush the DOM-bound StableAdminInput so the URL is visible immediately without needing blur/Save.
+      try { window.dispatchEvent(new Event('zk-admin-flush-drafts')); } catch {}
+      // Also set the visible input's value directly (StableAdminInput uses defaultValue
+      // and keeps its own DOM state; otherwise the user would have to close/re-open the
+      // card to see the filled URL).
+      try {
+        // Find the closest fieldset around the clicked button and its url input.
+        const btns = document.querySelectorAll('button');
+        btns.forEach(b => {
+          if ((b as HTMLButtonElement).textContent?.includes('دستیار سوم')) {
+            const parent = b.closest('fieldset') || b.parentElement?.parentElement;
+            const inp = parent?.querySelector('input[type="url"]') as HTMLInputElement | null;
+            if (inp) inp.value = top.url;
+          }
+        });
+      } catch { /* ignore */ }
+      zkAlert?.(`منبع پیدا و ثبت شد: ${top.title} (${top.year||'—'})${top.authors?.length?(' — '+top.authors.slice(0,2).join(', ')):''}`);
+    }finally{ setSourceBusy(s=>({...s,[i]:false})); }
+  }, [items, chg]);
+  const backfillMissingSources=useCallback(async()=>{
+    // Any education item (article/video/audio) with a real title but empty sourceUrl counts as missing.
+    const isEduItem=(it:any)=>isEdu && !!it && String(it.title||'').trim() && String(it.title||'').trim()!=='آیتم جدید';
+    const missing:number[]=[];
+    items.forEach((it:any,i:number)=>{
+      if (isEduItem(it) && !String(it.sourceUrl||'').trim()) missing.push(i);
+    });
+    if (!missing.length) { zkAlert('همه آیتم‌های آموزش منبع دارند.'); return; }
+    setBackfillRunning(true);
+    let done=0;
+    for (const i of missing) {
+      // eslint-disable-next-line no-await-in-loop
+      const r = await findSourceForArticle({
+        title: String(items[i]?.title||''),
+        body: String(items[i]?.body||items[i]?.description||'').slice(0,400),
+        limit:1, mode:'single',
+      });
+      if (r.ok && r.top) {
+        chg(i,'sourceUrl', r.top.url);
+        done++;
+      }
+      // Small delay to be kind to Semantic Scholar rate limits
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise(res=>setTimeout(res, 1200));
+    }
+    setBackfillRunning(false);
+    zkAlert(`منبع‌یابی تمام شد. ${done} آیتم از ${missing.length} آیتم منبع دریافت کرد.`);
+  }, [items, isEdu, chg]);
+  // When a brand-new article is saved (title changes from placeholder to real title AND sourceUrl still empty), auto-run once.
+  const autoRanRef=useRef<Set<string>>(new Set());
 
   return (
     <Box title={title}>
+      {isEdu && (
+        <div style={{marginBottom:10, display:'flex', gap:8, flexWrap:'wrap'}}>
+          <button type="button" disabled={backfillRunning} onClick={backfillMissingSources} style={{minHeight:38,padding:'0 14px',borderRadius:10,border:`1px solid ${T.brd}`,background:backfillRunning?T.mut:T.soft,color:T.accText,fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+            {backfillRunning?'در حال منبع‌یابی خودکار مقالات قدیمی…':'🪄 دستیار سوم: تکمیل خودکار منابع مقالات قدیمی'}
+          </button>
+        </div>
+      )}
       {items.map((it: any, i: number) => (
         <details key={it.id || i} style={{ border: `1px solid ${T.brd}`, borderRadius: 12, padding: 10, marginBottom: 8, background: T.badge }}>
           <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -530,22 +604,30 @@ function MediaLibraryManager(props: any) {
               <input style={{ ...S.inp, marginBottom: 8 }} defaultValue={(it.keywords || []).join(', ')} onBlur={(e) => chg(i, 'keywords', e.target.value.split(/[,،]/).map((s: string) => s.trim()).filter(Boolean))} placeholder="رشد قد, بی‌اشتهایی, هوش" />
             </>
           )}
-          {(isEdu ? normType(it.type) === 'article' : (it.type || 'video') === 'text') ? (
-            <>
-              {isEdu && (
+          {isEdu && (
                 <fieldset style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: '10px', margin: '0 0 10px' }}>
-                  <legend style={{ fontSize: 12, fontWeight: 800, padding: '0 5px' }}>اعتبار و منبع مقاله</legend>
-                  <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.8, margin: '0 0 8px' }}>اطلاعات واقعی نویسنده/بازبین و لینک مستقیم منبع علمی را وارد کنید. خالی‌ماندن این فیلدها، محتوای فعلی را تغییر نمی‌دهد.</p>
+                  <legend style={{ fontSize: 12, fontWeight: 800, padding: '0 5px' }}>اعتبار و منبع {normType(it.type) === 'article' ? 'مقاله' : (it.type === 'audio' ? 'پادکست' : 'ویدیو')}</legend>
+                  <p style={{ fontSize: 10.5, color: T.mut, lineHeight: 1.8, margin: '0 0 8px' }}>نویسنده به‌صورت خودکار پر شده. برای پیدا کردن خودکار نزدیک‌ترین مقاله علمی انگلیسی روی «دستیار سوم» بزنید.</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 8 }}>
-                    <div><label style={S.lbl}>نویسنده یا بازبین (فارسی)</label><StableAdminInput style={S.inp} defaultValue={it.author || ''} onCommit={(v: string) => chg(i, 'author', v.trim())} placeholder="نام و عنوان حرفه‌ای" /></div>
-                    <div><label style={S.lbl}>Author / reviewer (English)</label><StableAdminInput dir="ltr" style={S.inp} defaultValue={it.authorEn || ''} onCommit={(v: string) => chg(i, 'authorEn', v.trim())} placeholder="Name and credentials" /></div>
+                    <div><label style={S.lbl}>نویسنده (فارسی)</label><StableAdminInput style={S.inp} defaultValue={it.author || ''} onCommit={(v: string) => chg(i, 'author', v.trim())} placeholder="نام نویسنده (بدون لقب)" /></div>
+                    <div><label style={S.lbl}>Author (English)</label><StableAdminInput dir="ltr" style={S.inp} defaultValue={it.authorEn || ''} onCommit={(v: string) => chg(i, 'authorEn', v.trim())} placeholder="Author name" /></div>
                     <div><label style={S.lbl}>تاریخ آخرین بازبینی</label><input type="date" dir="ltr" style={S.inp} defaultValue={it.reviewedAt || ''} onBlur={(event) => chg(i, 'reviewedAt', event.target.value)} /></div>
-                    <div><label style={S.lbl}>لینک منبع علمی</label><StableAdminInput dir="ltr" type="url" style={S.inp} defaultValue={it.sourceUrl || ''} onCommit={(v: string) => chg(i, 'sourceUrl', v.trim())} placeholder="https://..." /></div>
+                    <div>
+                      <label style={S.lbl}>لینک منبع علمی</label>
+                      <div style={{display:'flex',gap:6}}>
+                        <StableAdminInput dir="ltr" type="url" style={{...S.inp,flex:1}} defaultValue={it.sourceUrl || ''} onCommit={(v: string) => chg(i, 'sourceUrl', v.trim())} placeholder="https://..." />
+                        <button type="button" disabled={!!sourceBusy[i]} onClick={()=>findSourceForIdx(i)} style={{minHeight:50,padding:'0 12px',border:`1px solid ${T.brd}`,borderRadius:12,background:sourceBusy[i]?T.mut:T.soft,color:T.accText,fontSize:11,fontWeight:800,cursor:sourceBusy[i]?'wait':'pointer',whiteSpace:'nowrap',fontFamily:'inherit',opacity:sourceBusy[i]?0.7:1}} title="پیدا کردن خودکار نزدیک‌ترین مقاله علمی انگلیسی و پر کردن فیلد منبع">{sourceBusy[i]?'در حال یافتن…':'🪄 دستیار سوم'}</button>
+                      </div>
+                    </div>
                   </div>
-                  <label style={{ ...S.lbl, marginTop: 8 }}>نقل‌قول برجسته (اختیاری)</label>
-                  <StableAdminTextarea style={{ ...S.ta, minHeight: 58 }} defaultValue={it.quote || ''} onCommit={(v: string) => chg(i, 'quote', v.trim())} rows={2} />
+                  {normType(it.type) === 'article' && (<>
+                    <label style={{ ...S.lbl, marginTop: 8 }}>نقل‌قول برجسته (اختیاری)</label>
+                    <StableAdminTextarea style={{ ...S.ta, minHeight: 58 }} defaultValue={it.quote || ''} onCommit={(v: string) => chg(i, 'quote', v.trim())} rows={2} />
+                  </>)}
                 </fieldset>
               )}
+          {(isEdu ? normType(it.type) === 'article' : (it.type || 'video') === 'text') ? (
+            <>
               <label style={S.lbl}>متن کامل مقاله (هر پاراگراف را با یک خط خالی جدا کنید)</label>
               <StableAdminTextarea style={{ ...S.ta, marginBottom: 8, minHeight: 140 }} defaultValue={it.body || ''} onCommit={(v: string) => chg(i, 'body', v)} rows={7} placeholder={'پاراگراف اول\n\nپاراگراف دوم\n\n...'} />
               {isEdu && (

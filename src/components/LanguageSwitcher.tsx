@@ -15,7 +15,19 @@ export default function LanguageSwitcher({ lang, setLang, T, glass }: Props) {
     window.addEventListener('storage',onStorage);
     return()=>window.removeEventListener('storage',onStorage);
   },[setLang]);
-  const changeLang=(l:'fa'|'en')=>{setLang(l);try{localStorage.setItem('zkid_lang',JSON.stringify(l))}catch{}setOpen(false)};
+  const changeLang=(l:'fa'|'en')=>{
+    setLang(l);
+    try{localStorage.setItem('zkid_lang',JSON.stringify(l));}catch{}
+    // Keep ?lang= in sync so hreflang targets and shared links land on the chosen language.
+    try{
+      const u=new URL(window.location.href);
+      if(u.searchParams.get('lang')!==l){
+        u.searchParams.set('lang',l);
+        window.history.replaceState(null,'',u.toString());
+      }
+    }catch{}
+    setOpen(false);
+  };
   const glassDark=/(?:^|-)dark$/.test(String(T.id||''));
   const btnStyle:any = glass
     ? (glassDark

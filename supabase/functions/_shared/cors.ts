@@ -11,7 +11,15 @@ const ALLOWED_PREVIEW_PREFIX="zeynalikid-";
 const ALLOWED_LOCAL="http://localhost:5173";
 // Custom domains can be added at runtime through the comma-separated
 // ALLOWED_ORIGINS Edge secret; no code change or cross-project wildcard is needed.
-const CONFIGURED_ORIGINS=new Set(String(Deno.env.get("ALLOWED_ORIGINS")||"").split(",").map(v=>v.trim().replace(/\/$/,"")).filter(Boolean));
+// Future production domains (e.g. a purchased .com/.ir) are added here before cutover.
+const FUTURE_PRODUCTION_ORIGINS: string[] = [
+  // "https://zeynalikid.com",
+  // "https://www.zeynalikid.com",
+];
+const CONFIGURED_ORIGINS=new Set([
+  ...FUTURE_PRODUCTION_ORIGINS,
+  ...String(Deno.env.get("ALLOWED_ORIGINS")||"").split(",").map(v=>v.trim().replace(/\/$/,"")).filter(Boolean),
+]);
 
 export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
