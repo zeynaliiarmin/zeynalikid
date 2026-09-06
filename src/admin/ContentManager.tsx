@@ -480,26 +480,43 @@ function MediaLibraryManager(props: any) {
     if (!title || title==='آیتم جدید') { zkAlert('ابتدا عنوان مقاله را وارد کنید.'); return; }
     setSourceBusy(s=>({...s,[i]:true}));
     try{
-      const r = await findSourceForArticle({ title, body: String(item.body||item.description||'').slice(0,400), limit:3, mode:'multi' });
+      const r = await findSourceForArticle({ title, body: String(item.body||item.description||'').slice(0,800), limit:3, mode:'multi' });
       if (!r.ok || !r.top) { zkAlert(r.error || 'منبع علمی مرتبطی پیدا نشد.'); return; }
       const top = r.top;
-      chg(i,'sourceUrl', top.url);
-      // Flush the DOM-bound StableAdminInput so the URL is visible immediately without needing blur/Save.
-      try { window.dispatchEvent(new Event('zk-admin-flush-drafts')); } catch {}
-      // Also set the visible input's value directly (StableAdminInput uses defaultValue
-      // and keeps its own DOM state; otherwise the user would have to close/re-open the
-      // card to see the filled URL).
+      // 1) Set the DOM <input>.value FIRST so any later commit/blur/flush reads the filled URL,
+      //    not the previous empty string. We walk up from the clicked button (preferred) then
+      //    fall back to a DOM scan for any visible url input beside a «دستیار سوم» button.
+      let targetInput: HTMLInputElement | null = null;
       try {
-        // Find the closest fieldset around the clicked button and its url input.
-        const btns = document.querySelectorAll('button');
-        btns.forEach(b => {
-          if ((b as HTMLButtonElement).textContent?.includes('دستیار سوم')) {
-            const parent = b.closest('fieldset') || b.parentElement?.parentElement;
-            const inp = parent?.querySelector('input[type="url"]') as HTMLInputElement | null;
-            if (inp) inp.value = top.url;
-          }
-        });
+        const doc = document as any;
+        const evTarget: HTMLElement | null = doc?.activeElement || (typeof window !== 'undefined' && (window.event as any)?.target) || null;
+        let scan: HTMLElement | null = evTarget;
+        for (let walk = 0; walk < 10 && scan; walk++) {
+          const inp = scan.querySelector ? (scan.querySelector('input[type="url"]') as HTMLInputElement | null) : null;
+          if (inp) { targetInput = inp; break; }
+          scan = scan.parentElement;
+        }
+        if (!targetInput) {
+          const allBtns = document.querySelectorAll('button');
+          allBtns.forEach(b => {
+            if ((b as HTMLButtonElement).textContent?.includes('دستیار سوم')) {
+              const parent = b.closest('fieldset') || b.parentElement?.parentElement;
+              const inp = parent?.querySelector('input[type="url"]') as HTMLInputElement | null;
+              if (inp && !targetInput) targetInput = inp;
+            }
+          });
+        }
       } catch { /* ignore */ }
+      if (targetInput) {
+        targetInput.value = top.url;
+        // Dispatch input+change so any controlled-input layer picks it up.
+        try { targetInput.dispatchEvent(new Event('input',{bubbles:true})); } catch {}
+        try { targetInput.dispatchEvent(new Event('change',{bubbles:true})); } catch {}
+      }
+      // 2) Commit into local state. Do NOT dispatch zk-admin-flush-drafts here — it would
+      //    re-commit *all* mounted StableAdminInputs (some of which may still hold an empty
+      //    default if they haven't been touched yet) and clobber the value we just set.
+      chg(i,'sourceUrl', top.url);
       zkAlert?.(`منبع پیدا و ثبت شد: ${top.title} (${top.year||'—'})${top.authors?.length?(' — '+top.authors.slice(0,2).join(', ')):''}`);
     }finally{ setSourceBusy(s=>({...s,[i]:false})); }
   }, [items, chg]);
@@ -513,14 +530,21 @@ function MediaLibraryManager(props: any) {
     if (!missing.length) { zkAlert('همه آیتم‌های آموزش منبع دارند.'); return; }
     setBackfillRunning(true);
     let done=0;
+    let skipped=0;
     for (const i of missing) {
+      const it=items[i];
+      const titleLen=String(it?.title||'').trim().length;
+      const bodyLen=String(it?.body||it?.description||'').trim().length;
+      // Skip items that are essentially placeholders (title < 4 chars AND body shorter than ~30 chars).
+      // A super-short title like «قد» without any body text will just match generic "growth" papers.
+      if (titleLen < 4 && bodyLen < 30) { skipped++; continue; }
       // eslint-disable-next-line no-await-in-loop
       const r = await findSourceForArticle({
-        title: String(items[i]?.title||''),
-        body: String(items[i]?.body||items[i]?.description||'').slice(0,400),
+        title: String(it?.title||''),
+        body: String(it?.body||it?.description||'').slice(0,800),
         limit:1, mode:'single',
       });
-      if (r.ok && r.top) {
+      if (r.ok && r.top && r.top.url) {
         chg(i,'sourceUrl', r.top.url);
         done++;
       }
@@ -529,7 +553,8 @@ function MediaLibraryManager(props: any) {
       await new Promise(res=>setTimeout(res, 1200));
     }
     setBackfillRunning(false);
-    zkAlert(`منبع‌یابی تمام شد. ${done} آیتم از ${missing.length} آیتم منبع دریافت کرد.`);
+    const skippedText = skipped ? ` (${skipped} آیتم خیلی کوتاه نادیده گرفته شد)` : '';
+    zkAlert(`منبع‌یابی تمام شد. ${done} آیتم از ${missing.length-skipped} آیتم منبع دریافت کرد${skippedText}.`);
   }, [items, isEdu, chg]);
   // When a brand-new article is saved (title changes from placeholder to real title AND sourceUrl still empty), auto-run once.
   const autoRanRef=useRef<Set<string>>(new Set());
