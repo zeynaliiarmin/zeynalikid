@@ -1,5 +1,5 @@
 import { useAppContext } from '../app/AppContext';
-import { PrimaryButton } from '../components/ui/atoms';
+import { PrimaryButton, TextArea, TextField } from "../components/ui/atoms";
 // --- مدیریت دیزاین (مرحله  - بازطراحی تدریجی) ---
 
 import { lazy,memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'react';
@@ -64,8 +64,8 @@ type Any=Record<string,any>;
 
 
 // FIX: StableAdminInput با تاخیر در commit و حفظ فوکوس — رفع fg انتخاب سریع و سپس لغو
-// علت جدید: بعد از کلیک A->B، B ابتدا انتخاب سپس سریع لغو می‌شد — چون commit قبلی بدون حفظ activeElement، رندر والد فوکوس B را می‌دزدید
-const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter}:any){
+// Stage-5: استایل پایه از TextField اتم می‌آید تا یکپارچگی حفظ شود.
+const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommit,placeholder='',style,numeric=false,type='text',inputMode,onEnter,...rest}:any){
   const ref=useRef<HTMLInputElement|null>(null);
   const handleChange=useCallback((e:any)=>{ if(numeric) e.target.value=p2e(e.target.value); },[numeric]);
   const commit=useCallback(()=>{
@@ -87,10 +87,11 @@ const StableAdminInput = memo(function StableAdminInput({defaultValue='',onCommi
     return()=>window.removeEventListener('zk-admin-flush-drafts',flush);
   },[onCommit]);
   const keyDown=useCallback((e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); onEnter?.(ref.current?.value||''); } },[commit,onEnter]);
-  return <input ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={style} placeholder={placeholder}/>;
+  return <TextField ref={ref} type={type} defaultValue={defaultValue} onChange={handleChange} onBlur={commit} onKeyDown={keyDown} inputMode={inputMode||(numeric?'numeric':undefined)} style={{width:'100%',...style}} placeholder={placeholder} {...rest}/>;
 });
 
-const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',onCommit,placeholder='',style,rows=3}:any){
+// Stage-5: استایل پایه از TextArea اتم می‌آید.
+const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',onCommit,placeholder='',style,rows=3,...rest}:any){
   const ref=useRef<HTMLTextAreaElement|null>(null);
   const commit=useCallback(()=>{
     const val = ref.current?.value||'';
@@ -110,7 +111,7 @@ const StableAdminTextarea = memo(function StableAdminTextarea({defaultValue='',o
     window.addEventListener('zk-admin-flush-drafts',flush);
     return()=>window.removeEventListener('zk-admin-flush-drafts',flush);
   },[onCommit]);
-  return <textarea ref={ref} defaultValue={defaultValue} onBlur={commit} placeholder={placeholder} style={style} rows={rows}/>;
+  return <TextArea ref={ref} defaultValue={defaultValue} onBlur={commit} placeholder={placeholder} style={{width:'100%',...style}} rows={rows} {...rest}/>;
 });
 
 
@@ -281,7 +282,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const handleKeyDown=useCallback((e:any)=>{
     if(e.key==='Enter'){ e.preventDefault(); commit(); }
   },[commit]);
-  return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><input ref={ref} inputMode={isNumeric?'numeric':undefined} type={type} style={S.inp} value={local} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={ph}/></div>;
+  return <div style={{marginBottom:13}}><label style={S.lbl}>{label}{required&&<span style={{color:'#F59E0B',marginInlineStart:4,fontWeight:800}}>*</span>}</label><TextField ref={ref} inputMode={isNumeric?'numeric':undefined} type={type} value={local} onChange={handleChange} onBlur={handleBlur} onKeyDown={handleKeyDown} placeholder={ph} /></div>;
 },[S,T.err]);
 
  function Admin(){
@@ -657,14 +658,14 @@ function FAQEditor(){
   return <Box title="مدیریت سوالات متداول (FAQ)">
    <div style={{display:'flex',gap:16,flexWrap:'wrap',marginBottom:14,padding:10,background:T.soft,borderRadius:10}}>
     <label style={{fontSize:13,color:T.mut,display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}><input type="checkbox" checked={faqDisplay.home?.show!==false} onChange={e=>updDisplay({show:e.target.checked})}/> نمایش در صفحه اصلی</label>
-    <label style={{fontSize:13,color:T.mut,display:'flex',alignItems:'center',gap:6}}>تعداد: <input type="number" min={1} max={20} style={{...S.inp,width:60}} defaultValue={faqDisplay.home?.maxItems||4} onBlur={e=>updDisplay({maxItems:Math.min(20,Math.max(1,+p2e(e.target.value)||4))})}/></label>
+    <label style={{fontSize:13,color:T.mut,display:'flex',alignItems:'center',gap:6}}>تعداد: <TextField type="number" min={1} max={20} style={{width:60}} defaultValue={faqDisplay.home?.maxItems||4} onBlur={e=>updDisplay({maxItems:Math.min(20,Math.max(1,+p2e(e.target.value)||4))})} /></label>
     <label style={{fontSize:13,color:T.mut,display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}><input type="checkbox" checked={faqDisplay.home?.viewAllLink!==false} onChange={e=>updDisplay({viewAllLink:e.target.checked})}/> نمایش لینک «مشاهده همه»</label>
    </div>
    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
     <div>
      <h4 style={{color:T.ttl,margin:'0 0 8px'}}>فارسی ({faList.length})</h4>
      {faList.map((item:any,i:number)=><div key={item.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.badge}}>
-      <input style={{...S.inp,marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgFa(i,'question',e.target.value)} placeholder="سوال"/>
+      <TextField style={{marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgFa(i,'question',e.target.value)} placeholder="سوال" />
       <textarea style={{...S.ta,minHeight:64}} defaultValue={item.answer||''} onBlur={e=>chgFa(i,'answer',e.target.value)} placeholder="پاسخ"/>
       <div style={{display:'flex',gap:6,marginTop:6}}>
        <button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===0} onClick={()=>move(faList,updFa,i,-1)}><ZkArrowUpIcon size={13}/></button>
@@ -677,7 +678,7 @@ function FAQEditor(){
     <div>
      <h4 style={{color:T.ttl,margin:'0 0 8px'}}>English ({enList.length})</h4>
      {enList.map((item:any,i:number)=><div key={item.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.badge}}>
-      <input dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgEn(i,'question',e.target.value)} placeholder="Question"/>
+      <TextField dir="ltr" style={{marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgEn(i,'question',e.target.value)} placeholder="Question" />
       <textarea dir="ltr" style={{...S.ta,minHeight:64}} defaultValue={item.answer||''} onBlur={e=>chgEn(i,'answer',e.target.value)} placeholder="Answer"/>
       <div style={{display:'flex',gap:6,marginTop:6}}>
        <button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===0} onClick={()=>move(enList,updEn,i,-1)}><ZkArrowUpIcon size={13}/></button>
@@ -710,7 +711,7 @@ function FAQEditor(){
      <h4 style={{color:T.ttl,margin:'0 0 8px'}}>فارسی ({faList.length})</h4>
      {faList.map((item:any,i:number)=><div key={item.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.badge}}>
       <select style={{...S.inp,marginBottom:6}} value={item.tab||'growth'} onChange={e=>chgFa(i,'tab',e.target.value)}>{tabOptions.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-      <input style={{...S.inp,marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgFa(i,'question',e.target.value)} placeholder="سوال"/>
+      <TextField style={{marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgFa(i,'question',e.target.value)} placeholder="سوال" />
       <textarea style={{...S.ta,minHeight:64}} defaultValue={item.answer||''} onBlur={e=>chgFa(i,'answer',e.target.value)} placeholder="پاسخ"/>
       <div style={{display:'flex',gap:6,marginTop:6}}>
        <button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===0} onClick={()=>move(faList,updFa,i,-1)}><ZkArrowUpIcon size={13}/></button>
@@ -724,7 +725,7 @@ function FAQEditor(){
      <h4 style={{color:T.ttl,margin:'0 0 8px'}}>English ({enList.length})</h4>
      {enList.map((item:any,i:number)=><div key={item.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:10,padding:10,marginBottom:8,background:T.badge}}>
       <select style={{...S.inp,marginBottom:6}} value={item.tab||'growth'} onChange={e=>chgEn(i,'tab',e.target.value)}>{tabOptions.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-      <input dir="ltr" style={{...S.inp,marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgEn(i,'question',e.target.value)} placeholder="Question"/>
+      <TextField dir="ltr" style={{marginBottom:6}} defaultValue={item.question||''} onBlur={e=>chgEn(i,'question',e.target.value)} placeholder="Question" />
       <textarea dir="ltr" style={{...S.ta,minHeight:64}} defaultValue={item.answer||''} onBlur={e=>chgEn(i,'answer',e.target.value)} placeholder="Answer"/>
       <div style={{display:'flex',gap:6,marginTop:6}}>
        <button style={{...AdminBtn(),padding:'6px 10px'}} disabled={i===0} onClick={()=>move(enList,updEn,i,-1)}><ZkArrowUpIcon size={13}/></button>
@@ -774,12 +775,12 @@ function FAQEditor(){
     <p style={{fontSize:11,color:T.mut,lineHeight:1.8,margin:'0 0 10px'}}>برای هر راه ارتباطی عنوان (مثلاً «ایتا») و لینک/شماره را وارد کنید. رنگ و آیکون دلخواه هم قابل تنظیم است.</p>
     {custom.map((it:any,i:number)=><div key={it.id||i} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-      <input style={S.inp} value={it.title||''} onChange={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان (مثلاً ایتا)"/>
-      <input style={S.inp} value={it.url||''} onChange={e=>updCustom(i,'url',e.target.value)} placeholder="لینک یا شماره"/>
+      <TextField value={it.title||''} onChange={e=>updCustom(i,'title',e.target.value)} placeholder="عنوان (مثلاً ایتا)" />
+      <TextField value={it.url||''} onChange={e=>updCustom(i,'url',e.target.value)} placeholder="لینک یا شماره" />
      </div>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
       <input type="color" style={{...S.inp,height:44,padding:4}} value={it.color||'#2564a8'} onChange={e=>updCustom(i,'color',e.target.value)}/>
-      <input style={S.inp} value={it.iconUrl||''} onChange={e=>updCustom(i,'iconUrl',e.target.value)} placeholder="لینک آیکون (اختیاری)"/>
+      <TextField value={it.iconUrl||''} onChange={e=>updCustom(i,'iconUrl',e.target.value)} placeholder="لینک آیکون (اختیاری)" />
      </div>
      <div style={{display:'flex',gap:6,marginTop:8,flexWrap:'wrap'}}>
       <button type="button" style={AdminBtn()} disabled={i===0} onClick={()=>moveCustom(i,-1)}>بالا</button>
@@ -826,11 +827,11 @@ function FeaturedCoursesEditor(){
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
      <div>
       <label style={S.lbl}>عنوان بخش (فارسی)</label>
-      <input style={S.inp} defaultValue={fc.title||'پرطرفدارترین‌ها'} onBlur={e=>up({title:e.target.value})}/>
+      <TextField defaultValue={fc.title||'پرطرفدارترین‌ها'} onBlur={e=>up({title:e.target.value})} />
      </div>
      <div>
       <label style={S.lbl}>عنوان بخش (English)</label>
-      <input style={S.inp} dir="ltr" defaultValue={fc.titleEn||'Most Popular'} onBlur={e=>up({titleEn:e.target.value})}/>
+      <TextField dir="ltr" defaultValue={fc.titleEn||'Most Popular'} onBlur={e=>up({titleEn:e.target.value})} />
      </div>
     </div>
 
@@ -880,20 +881,20 @@ function TaggedCoursesEditor(){
     {/* عنوان فارسی */}
     <div>
      <label style={S.lbl}>عنوان بخش (فارسی)</label>
-     <input style={S.inp} defaultValue={tc.title||'پرفروش‌ترین دوره‌ها'} onBlur={e=>up({title:e.target.value})}/>
+     <TextField defaultValue={tc.title||'پرفروش‌ترین دوره‌ها'} onBlur={e=>up({title:e.target.value})} />
     </div>
 
     {/* عنوان انگلیسی */}
     <div>
      <label style={S.lbl}>عنوان بخش (English)</label>
-     <input style={S.inp} dir="ltr" defaultValue={tc.titleEn||'Best Selling Courses'} onBlur={e=>up({titleEn:e.target.value})}/>
+     <TextField dir="ltr" defaultValue={tc.titleEn||'Best Selling Courses'} onBlur={e=>up({titleEn:e.target.value})} />
     </div>
 
     {/* تگ‌ها */}
     <div>
      <label style={S.lbl}>تگ‌های دوره‌های ویژه</label>
      <p style={{fontSize:10,color:T.mut,margin:'2px 0 6px'}}>تگ‌ها را با کاما جدا کنید. دوره‌هایی که حداقل یکی از این تگ‌ها را داشته باشند نمایش داده می‌شوند.</p>
-     <input style={S.inp} defaultValue={(tc.tags||[]).join(', ')} onBlur={e=>{const tags=e.target.value.split(',').map((t:string)=>t.trim()).filter(Boolean);up({tags})}} placeholder="پرفروش, پرطرفدار, محبوب"/>
+     <TextField defaultValue={(tc.tags||[]).join(', ')} onBlur={e=>{const tags=e.target.value.split(',').map((t:string)=>t.trim()).filter(Boolean);up({tags})}} placeholder="پرفروش, پرطرفدار, محبوب" />
      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
       {tagOptions.map(tag=><span key={tag} style={{padding:'4px 10px',borderRadius:12,background:T.soft,border:`1px solid ${T.brd}`,fontSize:11,fontWeight:700,color:T.accText}}>{tag}</span>)}
      </div>
@@ -902,7 +903,7 @@ function TaggedCoursesEditor(){
     {/* حداکثر تعداد */}
     <div>
      <label style={S.lbl}>حداکثر تعداد دوره‌های نمایشی</label>
-     <input style={S.inp} inputMode="numeric" type="number" min={1} max={12} defaultValue={tc.maxCourses||6} onBlur={e=>up({maxCourses:Math.min(12,Math.max(1,parseInt(p2e(e.target.value))||6))})}/>
+     <TextField inputMode="numeric" type="number" min={1} max={12} defaultValue={tc.maxCourses||6} onBlur={e=>up({maxCourses:Math.min(12,Math.max(1,parseInt(p2e(e.target.value))||6))})} />
     </div>
 
     {/* توضیحات */}
@@ -999,7 +1000,7 @@ function TaggedCoursesEditor(){
      <span>{tb.enabled!==false?'باکس جملات اعتمادساز فعال است':'باکس جملات اعتمادساز غیرفعال است'}</span>
     </label>
     <label style={S.lbl}>زمان تغییر پیش‌فرض (ثانیه)</label>
-    <input style={S.inp} inputMode="numeric" type="number" min={3} max={30} defaultValue={tb.defaultInterval||8} onBlur={e=>upGeneral('defaultInterval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))}/>
+    <TextField inputMode="numeric" type="number" min={3} max={30} defaultValue={tb.defaultInterval||8} onBlur={e=>upGeneral('defaultInterval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))} />
    </Box>
    <Box title="تنظیمات باکس صفحه اصلی">
     <label style={{display:'flex',alignItems:'center',gap:7,padding:'6px 0',fontWeight:800,fontSize:12,cursor:'pointer'}}>
@@ -1007,7 +1008,7 @@ function TaggedCoursesEditor(){
      {(tb.home?.enabled)!==false?'فعال در صفحه اصلی':'غیرفعال در صفحه اصلی'}
     </label>
     <label style={S.lbl}>زمان تغییر (ثانیه)</label>
-    <input style={S.inp} inputMode="numeric" type="number" min={3} max={30} defaultValue={tb.home?.interval||8} onBlur={e=>upHome('interval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))}/>
+    <TextField inputMode="numeric" type="number" min={3} max={30} defaultValue={tb.home?.interval||8} onBlur={e=>upHome('interval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))} />
    </Box>
    <Box title="تنظیمات باکس تب‌های دوره">
     {courseTabsActive.map((tItem: any) => {
@@ -1021,7 +1022,7 @@ function TaggedCoursesEditor(){
        {(tabCfg.enabled)!==false?'فعال':'غیرفعال'}
       </label>
       <label style={S.lbl}>زمان تغییر (ثانیه)</label>
-      <input style={S.inp} inputMode="numeric" type="number" min={3} max={30} defaultValue={tabCfg.interval||8} onBlur={e=>upTab(tabId,'interval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))}/>
+      <TextField inputMode="numeric" type="number" min={3} max={30} defaultValue={tabCfg.interval||8} onBlur={e=>upTab(tabId,'interval',Math.max(3,Math.min(30,parseInt(p2e(e.target.value))||8)))} />
      </div>})}
    </Box>
    <Box title={'مدیریت جملات - '+catLabels[activeCat]+' ('+list.length+' جمله)'}>
@@ -1040,7 +1041,7 @@ function TaggedCoursesEditor(){
       <button style={{...AdminBtn(),padding:'4px 8px',color:T.err}} onClick={()=>remove(i)}>حذف</button>
      </div>
      <div style={{display:'grid',gap:6}}>
-      <input style={S.inp} defaultValue={item.title||''} onBlur={e=>chg(i,'title',e.target.value)} placeholder="عنوان جمله"/>
+      <TextField defaultValue={item.title||''} onBlur={e=>chg(i,'title',e.target.value)} placeholder="عنوان جمله" />
       <textarea style={{...S.ta,minHeight:50}} defaultValue={item.description||''} onBlur={e=>chg(i,'description',e.target.value)} placeholder="توضیحات جمله..."/>
      </div>
     </div>)}
@@ -1060,19 +1061,19 @@ function TaggedCoursesEditor(){
   const addWallet=(gi:number)=>{const w=[...(gateways[gi].config?.wallets||[])];w.push({currency:'USDT',address:'',network:''});upCfg(gi,'wallets',w)};
   const rmWallet=(gi:number,wi:number)=>{const w=[...(gateways[gi].config?.wallets||[])];w.splice(wi,1);upCfg(gi,'wallets',w)};
   const renderGatewayConfig=(gi:number)=>{const gw=gateways[gi];const c=gw.config||{};switch(gw.id){
-   case 'blubank':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Merchant Code</label><input style={S.inp} defaultValue={c.merchantCode||''} onBlur={e=>upCfg(gi,'merchantCode',e.target.value)}/></div><div><label style={S.lbl}>Terminal Code</label><input style={S.inp} defaultValue={c.terminalCode||''} onBlur={e=>upCfg(gi,'terminalCode',e.target.value)}/></div></div>);
-   case 'zarinpal':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Merchant ID</label><input style={S.inp} dir="ltr" defaultValue={c.merchantId||''} onBlur={e=>upCfg(gi,'merchantId',e.target.value)}/></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={!!c.sandbox} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
-   case 'idpay':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>API Key</label><input style={S.inp} dir="ltr" defaultValue={c.apiKey||''} onBlur={e=>upCfg(gi,'apiKey',e.target.value)}/></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={!!c.sandbox} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
-   case 'payping':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>API Key</label><input style={S.inp} dir="ltr" defaultValue={c.apiKey||''} onBlur={e=>upCfg(gi,'apiKey',e.target.value)}/></div><div><label style={S.lbl}>Client ID</label><input style={S.inp} dir="ltr" defaultValue={c.clientId||''} onBlur={e=>upCfg(gi,'clientId',e.target.value)}/></div></div>);
-   case 'stripe':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Secret Key</label><input style={S.inp} dir="ltr" type="password" defaultValue={c.secretKey||''} onBlur={e=>upCfg(gi,'secretKey',e.target.value)}/></div><div><label style={S.lbl}>Publishable Key</label><input style={S.inp} dir="ltr" defaultValue={c.publishableKey||''} onBlur={e=>upCfg(gi,'publishableKey',e.target.value)}/></div></div>);
-   case 'paypal':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Client ID</label><input style={S.inp} dir="ltr" defaultValue={c.clientId||''} onBlur={e=>upCfg(gi,'clientId',e.target.value)}/></div><div><label style={S.lbl}>Client Secret</label><input style={S.inp} dir="ltr" type="password" defaultValue={c.clientSecret||''} onBlur={e=>upCfg(gi,'clientSecret',e.target.value)}/></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={c.sandbox!==false} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
-   case 'crypto':return(<div style={{display:'flex',flexDirection:'column',gap:10}}>{(c.wallets||[]).map((w:any,wi:number)=><div key={wi} style={{display:'grid',gridTemplateColumns:'100px 1fr 100px 36px',gap:6,alignItems:'end'}}><div><label style={S.lbl}>ارز</label><select style={S.inp} value={w.currency||'USDT'} onChange={e=>upWallet(gi,wi,'currency',e.target.value)}>{['USDT','BTC','ETH','DOGE','LTC'].map(cc=><option key={cc} value={cc}>{cc}</option>)}</select></div><div><label style={S.lbl}>آدرس</label><input style={S.inp} dir="ltr" defaultValue={w.address||''} onBlur={e=>upWallet(gi,wi,'address',e.target.value)}/></div><div><label style={S.lbl}>شبکه</label><input style={S.inp} dir="ltr" defaultValue={w.network||''} onBlur={e=>upWallet(gi,wi,'network',e.target.value)}/></div><button style={{...AdminBtn(),color:T.err,padding:'8px 0',marginBottom:0}} onClick={()=>rmWallet(gi,wi)}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>addWallet(gi)}>+ افزودن کیف پول</button></div>);
+   case 'blubank':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Merchant Code</label><TextField defaultValue={c.merchantCode||''} onBlur={e=>upCfg(gi,'merchantCode',e.target.value)} /></div><div><label style={S.lbl}>Terminal Code</label><TextField defaultValue={c.terminalCode||''} onBlur={e=>upCfg(gi,'terminalCode',e.target.value)} /></div></div>);
+   case 'zarinpal':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Merchant ID</label><TextField dir="ltr" defaultValue={c.merchantId||''} onBlur={e=>upCfg(gi,'merchantId',e.target.value)} /></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={!!c.sandbox} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
+   case 'idpay':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>API Key</label><TextField dir="ltr" defaultValue={c.apiKey||''} onBlur={e=>upCfg(gi,'apiKey',e.target.value)} /></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={!!c.sandbox} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
+   case 'payping':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>API Key</label><TextField dir="ltr" defaultValue={c.apiKey||''} onBlur={e=>upCfg(gi,'apiKey',e.target.value)} /></div><div><label style={S.lbl}>Client ID</label><TextField dir="ltr" defaultValue={c.clientId||''} onBlur={e=>upCfg(gi,'clientId',e.target.value)} /></div></div>);
+   case 'stripe':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Secret Key</label><TextField dir="ltr" type="password" defaultValue={c.secretKey||''} onBlur={e=>upCfg(gi,'secretKey',e.target.value)} /></div><div><label style={S.lbl}>Publishable Key</label><TextField dir="ltr" defaultValue={c.publishableKey||''} onBlur={e=>upCfg(gi,'publishableKey',e.target.value)} /></div></div>);
+   case 'paypal':return(<div style={{display:'flex',flexDirection:'column',gap:10}}><div><label style={S.lbl}>Client ID</label><TextField dir="ltr" defaultValue={c.clientId||''} onBlur={e=>upCfg(gi,'clientId',e.target.value)} /></div><div><label style={S.lbl}>Client Secret</label><TextField dir="ltr" type="password" defaultValue={c.clientSecret||''} onBlur={e=>upCfg(gi,'clientSecret',e.target.value)} /></div><label style={{display:'flex',alignItems:'center',gap:7,cursor:'pointer',fontSize:12}}><input type="checkbox" checked={c.sandbox!==false} onChange={e=>upCfg(gi,'sandbox',e.target.checked)}/>Sandbox</label></div>);
+   case 'crypto':return(<div style={{display:'flex',flexDirection:'column',gap:10}}>{(c.wallets||[]).map((w:any,wi:number)=><div key={wi} style={{display:'grid',gridTemplateColumns:'100px 1fr 100px 36px',gap:6,alignItems:'end'}}><div><label style={S.lbl}>ارز</label><select style={S.inp} value={w.currency||'USDT'} onChange={e=>upWallet(gi,wi,'currency',e.target.value)}>{['USDT','BTC','ETH','DOGE','LTC'].map(cc=><option key={cc} value={cc}>{cc}</option>)}</select></div><div><label style={S.lbl}>آدرس</label><TextField dir="ltr" defaultValue={w.address||''} onBlur={e=>upWallet(gi,wi,'address',e.target.value)} /></div><div><label style={S.lbl}>شبکه</label><TextField dir="ltr" defaultValue={w.network||''} onBlur={e=>upWallet(gi,wi,'network',e.target.value)} /></div><button style={{...AdminBtn(),color:T.err,padding:'8px 0',marginBottom:0}} onClick={()=>rmWallet(gi,wi)}><ZkCloseIcon size={13}/></button></div>)}<button style={AdminBtn()} onClick={()=>addWallet(gi)}>+ افزودن کیف پول</button></div>);
    default:return null;
   }};
   // نرمال‌سازی banks: اطمینان از آرایه بودن
   const banks:any[]=Array.isArray(editCfg.banks)?editCfg.banks:(editCfg.banks&&typeof editCfg.banks==='object'?Object.values(editCfg.banks):[]);
   const cryptoWallets:any[]=Array.isArray(editCfg.cryptoWallets)?editCfg.cryptoWallets:(editCfg.cryptoWallets&&typeof editCfg.cryptoWallets==='object'?Object.values(editCfg.cryptoWallets):[]);
-  const save=()=>{const bad=banks.some((b:any)=>b.active&&((b.card&&!b.iban)||(!b.card&&b.iban))); if(bad){setBankErr('برای هر حساب فعال، شماره کارت و شبا باید هر دو تکمیل باشند.');return} setBankErr(''); setSave(editCfg)}; const chgBank=(i:number,k:string,v:any)=>{const a=[...banks];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,banks:a})}; const chgCrypto=(i:number,k:string,v:any)=>{const a=[...cryptoWallets];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,cryptoWallets:a})}; return <><Box title="روش‌های ارسال"><ArrSimple path={['shippingMethods','iran']} title="ارسال ایران"/><ArrSimple path={['shippingMethods','intl']} title="ارسال خارج"/><label><input className="zkad-switch" type="checkbox" checked={!!editCfg.whatsappNeedsCountryCode} onChange={e=>setEditCfg({...editCfg,whatsappNeedsCountryCode:e.target.checked})}/> واتساپ دارای کد کشور باشد</label><label style={{display:'block'}}><input className="zkad-switch" type="checkbox" checked={!!editCfg.showReceiptImage} onChange={e=>setEditCfg({...editCfg,showReceiptImage:e.target.checked})}/> نمایش تصویر فیش واریزی</label></Box><Box title="حساب‌های بانکی">{bankErr&&<Err x={bankErr}/>} {banks.map((b:any,i:number)=><div key={b.id} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}><Field label="نام بانک" value={b.name} onChange={(v:string)=>chgBank(i,'name',v)} ph=""/><Field label="نام صاحب کارت/حساب" inputMode="text" value={b.holder||b.accountName||''} onChange={(v:string)=>chgBank(i,'holder',v)} ph="مثلاً امیر افرادی"/><Field label="شماره کارت" value={b.card} onChange={(v:string)=>chgBank(i,'card',v)} ph=""/><Field label="شبا" value={b.iban} onChange={(v:string)=>chgBank(i,'iban',v)} ph=""/><select style={S.inp} value={b.color} onChange={e=>chgBank(i,'color',e.target.value)}>{['blue','sky','yellow','red','black','green','gray','brown'].map(x=><option key={x}>{x}</option>)}</select><label><input className="zkad-switch" type="checkbox" checked={b.active} onChange={e=>chgBank(i,'active',e.target.checked)}/> فعال</label><button className="zkad-del" title="حذف حساب" onClick={()=>setEditCfg({...editCfg,banks:banks.filter((_:any,j:number)=>j!==i)})}>حذف</button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,banks:[...banks,{id:'b'+uid(),name:'حساب جدید',card:'',iban:'',color:'blue',active:true,order:banks.length+1}]})}><ZkPlusIcon size={13}/> افزودن حساب</button></Box><Box title="پرداخت رمزارزی"><label style={S.lbl}>نمایش پرداخت رمزارزی برای کاربران داخل ایران</label><select style={{...S.inp,marginBottom:12}} value={editCfg.cryptoVisibility||'intl'} onChange={e=>setEditCfg({...editCfg,cryptoVisibility:e.target.value})}><option value="intl">فقط خارج از ایران (پیش‌فرض)</option><option value="all">همه کاربران</option><option value="off">غیرفعال</option></select>{cryptoWallets.map((w:any,i:number)=><div key={w.id} style={{border:`1px solid ${w.color||T.brd}55`,background:`${w.color||T.acc}0d`,borderRadius:12,padding:10,marginBottom:8}}><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}><span style={{width:12,height:12,borderRadius:'50%',background:w.color,flexShrink:0,border:`1px solid ${T.brd}`}}/><b style={{fontSize:13,color:T.txt}} dir="ltr">{w.name} ({w.symbol||String(w.id).toUpperCase()})</b><label style={{marginInlineStart:'auto',fontSize:12}}><input className="zkad-switch" type="checkbox" checked={!!w.active} onChange={e=>chgCrypto(i,'active',e.target.checked)}/> فعال</label></div><label style={S.lbl}>آدرس کیف پول</label><input dir="ltr" style={{...S.inp,fontFamily:'monospace,-apple-system,"Courier New"',marginBottom:8}} defaultValue={w.address||''} onBlur={e=>chgCrypto(i,'address',e.target.value.trim())} placeholder="Wallet address..."/><label style={S.lbl}>شبکه (Network)</label><input dir="ltr" style={S.inp} defaultValue={w.network||''} onBlur={e=>chgCrypto(i,'network',e.target.value.trim())} placeholder="TRC20 / ERC20 / ..."/></div>)}</Box>
+  const save=()=>{const bad=banks.some((b:any)=>b.active&&((b.card&&!b.iban)||(!b.card&&b.iban))); if(bad){setBankErr('برای هر حساب فعال، شماره کارت و شبا باید هر دو تکمیل باشند.');return} setBankErr(''); setSave(editCfg)}; const chgBank=(i:number,k:string,v:any)=>{const a=[...banks];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,banks:a})}; const chgCrypto=(i:number,k:string,v:any)=>{const a=[...cryptoWallets];a[i]={...a[i],[k]:v};setEditCfg({...editCfg,cryptoWallets:a})}; return <><Box title="روش‌های ارسال"><ArrSimple path={['shippingMethods','iran']} title="ارسال ایران"/><ArrSimple path={['shippingMethods','intl']} title="ارسال خارج"/><label><input className="zkad-switch" type="checkbox" checked={!!editCfg.whatsappNeedsCountryCode} onChange={e=>setEditCfg({...editCfg,whatsappNeedsCountryCode:e.target.checked})}/> واتساپ دارای کد کشور باشد</label><label style={{display:'block'}}><input className="zkad-switch" type="checkbox" checked={!!editCfg.showReceiptImage} onChange={e=>setEditCfg({...editCfg,showReceiptImage:e.target.checked})}/> نمایش تصویر فیش واریزی</label></Box><Box title="حساب‌های بانکی">{bankErr&&<Err x={bankErr}/>} {banks.map((b:any,i:number)=><div key={b.id} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8}}><Field label="نام بانک" value={b.name} onChange={(v:string)=>chgBank(i,'name',v)} ph=""/><Field label="نام صاحب کارت/حساب" inputMode="text" value={b.holder||b.accountName||''} onChange={(v:string)=>chgBank(i,'holder',v)} ph="مثلاً امیر افرادی"/><Field label="شماره کارت" value={b.card} onChange={(v:string)=>chgBank(i,'card',v)} ph=""/><Field label="شبا" value={b.iban} onChange={(v:string)=>chgBank(i,'iban',v)} ph=""/><select style={S.inp} value={b.color} onChange={e=>chgBank(i,'color',e.target.value)}>{['blue','sky','yellow','red','black','green','gray','brown'].map(x=><option key={x}>{x}</option>)}</select><label><input className="zkad-switch" type="checkbox" checked={b.active} onChange={e=>chgBank(i,'active',e.target.checked)}/> فعال</label><button className="zkad-del" title="حذف حساب" onClick={()=>setEditCfg({...editCfg,banks:banks.filter((_:any,j:number)=>j!==i)})}>حذف</button></div>)}<button style={AdminBtn()} onClick={()=>setEditCfg({...editCfg,banks:[...banks,{id:'b'+uid(),name:'حساب جدید',card:'',iban:'',color:'blue',active:true,order:banks.length+1}]})}><ZkPlusIcon size={13}/> افزودن حساب</button></Box><Box title="پرداخت رمزارزی"><label style={S.lbl}>نمایش پرداخت رمزارزی برای کاربران داخل ایران</label><select style={{...S.inp,marginBottom:12}} value={editCfg.cryptoVisibility||'intl'} onChange={e=>setEditCfg({...editCfg,cryptoVisibility:e.target.value})}><option value="intl">فقط خارج از ایران (پیش‌فرض)</option><option value="all">همه کاربران</option><option value="off">غیرفعال</option></select>{cryptoWallets.map((w:any,i:number)=><div key={w.id} style={{border:`1px solid ${w.color||T.brd}55`,background:`${w.color||T.acc}0d`,borderRadius:12,padding:10,marginBottom:8}}><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}><span style={{width:12,height:12,borderRadius:'50%',background:w.color,flexShrink:0,border:`1px solid ${T.brd}`}}/><b style={{fontSize:13,color:T.txt}} dir="ltr">{w.name} ({w.symbol||String(w.id).toUpperCase()})</b><label style={{marginInlineStart:'auto',fontSize:12}}><input className="zkad-switch" type="checkbox" checked={!!w.active} onChange={e=>chgCrypto(i,'active',e.target.checked)}/> فعال</label></div><label style={S.lbl}>آدرس کیف پول</label><TextField dir="ltr" style={{fontFamily:'monospace,-apple-system,"Courier New"',marginBottom:8}} defaultValue={w.address||''} onBlur={e=>chgCrypto(i,'address',e.target.value.trim())} placeholder="Wallet address..." /><label style={S.lbl}>شبکه (Network)</label><TextField dir="ltr" defaultValue={w.network||''} onBlur={e=>chgCrypto(i,'network',e.target.value.trim())} placeholder="TRC20 / ERC20 / ..." /></div>)}</Box>
    <Box title={<><ZkCardIcon size={16} color={T.ttl}/> درگاه‌های پرداخت</>}>
     <p style={{fontSize:11,color:T.mut,margin:'0 0 14px',lineHeight:1.8}}>درگاه‌های فعال در صفحه پرداخت به کاربر نمایش داده می‌شوند.</p>
     <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16}}>
@@ -1091,7 +1092,7 @@ function TaggedCoursesEditor(){
     </div>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
      <div><label style={S.lbl}>واحد پول</label><select style={S.inp} value={pc.defaultCurrency||'IRR'} onChange={e=>upPC('defaultCurrency',e.target.value)}><option value="IRR">ریال</option><option value="IRT">تومان</option><option value="USD">دلار</option></select></div>
-     <div><label style={S.lbl}>Callback URL</label><input style={S.inp} dir="ltr" defaultValue={pc.callbackUrl||''} onBlur={e=>upPC('callbackUrl',e.target.value)}/></div>
+     <div><label style={S.lbl}>Callback URL</label><TextField dir="ltr" defaultValue={pc.callbackUrl||''} onBlur={e=>upPC('callbackUrl',e.target.value)} /></div>
     </div>
    </Box>
    <PrimaryButton type="button" onClick={save}>ذخیره</PrimaryButton></>}
@@ -1103,16 +1104,16 @@ function TaggedCoursesEditor(){
   const move=(i:number,dir:-1|1)=>{const a=[...arr];const j=i+dir;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];setEditCfg({...editCfg,[path[0]]:{...editCfg[path[0]],[path[1]]:a}})};
   return <div><h4>{title}</h4>{arr.map((m:any,i:number)=><div key={m.id} style={{border:`1px solid ${T.brd}`,borderRadius:12,padding:10,marginBottom:8,background:T.badge}}>
    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-    <input style={S.inp} defaultValue={m.title} onBlur={e=>ch(i,'title',e.target.value)} placeholder="عنوان فارسی"/>
-    <input style={S.inp} defaultValue={m.titleEn||''} onBlur={e=>ch(i,'titleEn',e.target.value)} placeholder="عنوان انگلیسی"/>
+    <TextField defaultValue={m.title} onBlur={e=>ch(i,'title',e.target.value)} placeholder="عنوان فارسی" />
+    <TextField defaultValue={m.titleEn||''} onBlur={e=>ch(i,'titleEn',e.target.value)} placeholder="عنوان انگلیسی" />
    </div>
    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:8}}>
-    <input style={S.inp} inputMode="numeric" defaultValue={m.order} onBlur={e=>ch(i,'order',Math.max(1,+p2e(e.target.value)||1))} placeholder="ترتیب"/>
-    <input style={S.inp} defaultValue={m.help||''} onBlur={e=>ch(i,'help',e.target.value)} placeholder="متن راهنما"/>
-    <input style={S.inp} defaultValue={m.tag||''} onBlur={e=>ch(i,'tag',e.target.value)} placeholder="تگ فارسی (مثلاً: سریع‌ترین)"/>
+    <TextField inputMode="numeric" defaultValue={m.order} onBlur={e=>ch(i,'order',Math.max(1,+p2e(e.target.value)||1))} placeholder="ترتیب" />
+    <TextField defaultValue={m.help||''} onBlur={e=>ch(i,'help',e.target.value)} placeholder="متن راهنما" />
+    <TextField defaultValue={m.tag||''} onBlur={e=>ch(i,'tag',e.target.value)} placeholder="تگ فارسی (مثلاً: سریع‌ترین)" />
    </div>
    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-    <input style={S.inp} defaultValue={m.tagEn||''} onBlur={e=>ch(i,'tagEn',e.target.value)} placeholder="تگ انگلیسی (مثلاً: Fastest)"/>
+    <TextField defaultValue={m.tagEn||''} onBlur={e=>ch(i,'tagEn',e.target.value)} placeholder="تگ انگلیسی (مثلاً: Fastest)" />
     <div style={{display:'flex',alignItems:'center',gap:12}}>
      <label style={{fontSize:12,display:'flex',alignItems:'center',gap:5,cursor:'pointer'}}><input type="checkbox" checked={m.active} onChange={e=>ch(i,'active',e.target.checked)}/> فعال</label>
      <label style={{fontSize:12,display:'flex',alignItems:'center',gap:5,cursor:'pointer'}}><input type="checkbox" checked={m.requiresPostal} onChange={e=>ch(i,'requiresPostal',e.target.checked)}/> کدپستی</label>
@@ -1265,14 +1266,14 @@ function DesignManagerEditor(){
     {credMsg&&<div style={{fontSize:12,fontWeight:800,color:T.ok||'#047857',background:`${T.ok}12`,border:`1px solid ${T.ok}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>✓ {credMsg}</div>}
     {credErr&&<div style={{fontSize:12,fontWeight:800,color:T.err||'#DC2626',background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:10,padding:'8px 12px',marginBottom:10}}>{credErr}</div>}
     <div style={{display:'flex',flexDirection:'column',gap:10}}>
-     <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور فعلی *</span><input ref={credCurPwdRef} type="password" style={S.inp} placeholder="رمز فعلی"/></label>
+     <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور فعلی *</span><TextField ref={credCurPwdRef} type="password" placeholder="رمز فعلی" /></label>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>شماره جدید</span><input ref={credNewPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="09123456789"/></label>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شماره جدید</span><input ref={credRepPhoneRef} type="tel" inputMode="numeric" style={S.inp} placeholder="تکرار شماره"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>شماره جدید</span><TextField ref={credNewPhoneRef} type="tel" inputMode="numeric" placeholder="09123456789" /></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار شماره جدید</span><TextField ref={credRepPhoneRef} type="tel" inputMode="numeric" placeholder="تکرار شماره" /></label>
      </div>
      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><input ref={credNewPwdRef} type="password" style={S.inp} placeholder="حداقل ۱۲ کاراکتر"/></label>
-      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار رمز جدید</span><input ref={credRepPwdRef} type="password" style={S.inp} placeholder="تکرار رمز جدید"/></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>رمز عبور جدید</span><TextField ref={credNewPwdRef} type="password" placeholder="حداقل ۱۲ کاراکتر" /></label>
+      <label style={{display:'block'}}><span style={{fontSize:12,fontWeight:700,color:T.txt,display:'block',marginBottom:4}}>تکرار رمز جدید</span><TextField ref={credRepPwdRef} type="password" placeholder="تکرار رمز جدید" /></label>
      </div>
      <div><button type="button" style={{...AdminBtn(),background:T.acc||'#0F766E',color:'var(--zkad-acc-contrast, #fff)',border:0,fontWeight:800}} disabled={credBusy} onClick={doChangeCreds}>{credBusy?'در حال ذخیره…':'ذخیره تغییرات ورود'}</button></div>
     </div>
@@ -1391,11 +1392,11 @@ function DesignManagerEditor(){
       <label style={S.lbl}>توضیحات محصول</label>
       <textarea style={{...S.ta,marginBottom:8,minHeight:60}} defaultValue={it.description||it.desc||''} onBlur={e=>patchItem(i,{description:e.target.value,desc:e.target.value})} placeholder="توضیحات کامل محصول..."/>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-       <div><label style={S.lbl}>قیمت (تومان)</label><input style={S.inp} inputMode="numeric" defaultValue={it.price||''} onBlur={e=>chg(i,'price',p2e(e.target.value).replace(/[^0-9]/g,''))} placeholder="قیمت"/></div>
-       <div><label style={S.lbl}>قیمت تخفیف‌دار (اختیاری)</label><input style={S.inp} inputMode="numeric" defaultValue={it.discountedPrice||''} onBlur={e=>chg(i,'discountedPrice',Number(p2e(e.target.value).replace(/[^0-9]/g,''))||0)} placeholder="0"/></div>
+       <div><label style={S.lbl}>قیمت (تومان)</label><TextField inputMode="numeric" defaultValue={it.price||''} onBlur={e=>chg(i,'price',p2e(e.target.value).replace(/[^0-9]/g,''))} placeholder="قیمت" /></div>
+       <div><label style={S.lbl}>قیمت تخفیف‌دار (اختیاری)</label><TextField inputMode="numeric" defaultValue={it.discountedPrice||''} onBlur={e=>chg(i,'discountedPrice',Number(p2e(e.target.value).replace(/[^0-9]/g,''))||0)} placeholder="0" /></div>
       </div>
-      <label style={S.lbl}>دسته‌بندی</label><input style={S.inp} defaultValue={it.category||''} onBlur={e=>chg(i,'category',e.target.value.trim())} placeholder="مثلاً: مکمل / منبع / برنامه شخصی / باندل"/>
-      <label style={S.lbl}>آیکون (اختیاری)</label><input style={S.inp} defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value.trim())} placeholder="آیکون"/>
+      <label style={S.lbl}>دسته‌بندی</label><TextField defaultValue={it.category||''} onBlur={e=>chg(i,'category',e.target.value.trim())} placeholder="مثلاً: مکمل / منبع / برنامه شخصی / باندل" />
+      <label style={S.lbl}>آیکون (اختیاری)</label><TextField defaultValue={it.icon||''} onBlur={e=>chg(i,'icon',e.target.value.trim())} placeholder="آیکون" />
       <label style={S.lbl}>ویژگی‌ها (با | یا کاما یا خط جدید جدا کنید)</label><textarea style={{...S.ta,marginBottom:8,minHeight:50}} defaultValue={(it.features||[]).join(' | ')} onBlur={e=>chgFeatures(i,e.target.value)} placeholder="ویژگی ۱ | ویژگی ۲ | ..."/>
 
       <div style={{padding:'11px',border:`1px solid ${T.brd}`,borderRadius:12,background:T.card,marginTop:10}}>
@@ -1406,7 +1407,7 @@ function DesignManagerEditor(){
         <input type="file" aria-label={`بارگذاری عکس اصلی ${it.name||it.title||''}`} accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];e.target.value='';if(f){try{const url=await fileToData(f,it.image||it.imageUrl,'products');patchItem(i,{image:url,imageUrl:url})}catch(err:any){void zkAlert(err?.message||'آپلود انجام نشد')}}}}/>
         <LibraryPicker T={T} S={S} editCfg={editCfg} section="products" onSelect={(url:string)=>patchItem(i,{image:url,imageUrl:url})} current={it.image||it.imageUrl} AdminBtn={AdminBtn}/>
        </div>
-       <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>patchItem(i,{image:e.target.value.trim(),imageUrl:e.target.value.trim()})} placeholder="https://... یا لینک مستقیم عکس"/>
+       <TextField style={{marginBottom:8}} defaultValue={it.image||it.imageUrl||''} onBlur={e=>patchItem(i,{image:e.target.value.trim(),imageUrl:e.target.value.trim()})} placeholder="https://... یا لینک مستقیم عکس" />
        <FrameControls T={T} S={S} value={{aspectRatio:it.aspectRatio,objectPosition:it.objectPosition}} onChange={(p:any)=>patchItem(i,p)}/>
       </div>
 
@@ -1421,7 +1422,7 @@ function DesignManagerEditor(){
         <ZkUploadIcon size={15}/> انتخاب عکس دیگر و تنظیم کادر لمسی
         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)startProductHomeCrop(it,i,f)}}/>
        </label>
-       <input aria-label={`لینک عکس منتخب خانه ${it.name||it.title||''}`} style={{...S.inp,marginBottom:8}} defaultValue={it.homeImage||it.homeImageUrl||''} onBlur={e=>patchItem(i,{homeImage:e.target.value.trim(),homeImageUrl:e.target.value.trim()})} placeholder="لینک مستقیم عکس مخصوص صفحه خانه (اختیاری)"/>
+       <TextField aria-label={`لینک عکس منتخب خانه ${it.name||it.title||''}`} style={{marginBottom:8}} defaultValue={it.homeImage||it.homeImageUrl||''} onBlur={e=>patchItem(i,{homeImage:e.target.value.trim(),homeImageUrl:e.target.value.trim()})} placeholder="لینک مستقیم عکس مخصوص صفحه خانه (اختیاری)" />
        <FrameControls key={`home-frame-${it.homeImageAspectRatio||'4 / 3'}-${it.homeImageObjectPosition||'center'}`} T={T} S={S} value={{aspectRatio:it.homeImageAspectRatio||'4 / 3',objectPosition:it.homeImageObjectPosition||'center'}} onChange={(p:any)=>patchItem(i,p.aspectRatio!==undefined?{homeImageAspectRatio:p.aspectRatio}:{homeImageObjectPosition:p.objectPosition})}/>
        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
         {(it.homeImage||it.homeImageUrl)&&<button type="button" style={{...AdminBtn(),color:T.accText}} onClick={()=>startProductHomeCrop(it,i)}><ZkImageIcon size={14}/> تنظیم مجدد کادر لمسی</button>}
@@ -1567,7 +1568,7 @@ function DesignManagerEditor(){
        <input type="file" accept="image/jpeg,image/png,image/webp" style={S.inp} onChange={async e=>{const f=e.target.files?.[0];if(f){try{const url=await fileToData(f,it.image,'licenses');chg(i,'image',url)}catch(err:any){void zkAlert(err?.message||'آپلود انجام نشد')}}}}/>
        <LibraryPicker T={T} S={S} editCfg={editCfg} section="licenses" onSelect={(url:string)=>chg(i,'image',url)} current={it.image} AdminBtn={AdminBtn} />
       </div>
-      <input style={{...S.inp,marginBottom:8}} defaultValue={it.image||''} onBlur={e=>chg(i,'image',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس"/>
+      <TextField style={{marginBottom:8}} defaultValue={it.image||''} onBlur={e=>chg(i,'image',e.target.value.trim())} placeholder="https://... یا لینک مستقیم عکس" />
       <FrameControls T={T} S={S} value={{ aspectRatio: it.aspectRatio, objectPosition: it.objectPosition }} onChange={(p:any)=>chg(i, Object.keys(p)[0], Object.values(p)[0])} />
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
        <button style={AdminBtn()} disabled={i===0} onClick={()=>moveLicense(i,-1)}><ZkArrowUpIcon size={13}/> بالا</button>
@@ -1652,7 +1653,7 @@ function DesignManagerEditor(){
      <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,fontWeight:800,cursor:'pointer'}}><input type="checkbox" checked={item.isVisible!==false} onChange={e=>onChange('isVisible',e.target.checked)}/> نمایش</label>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'70px 1fr',gap:8,alignItems:'start'}}>
-     <div><label style={S.lbl}>وکتور</label><input style={{...S.inp,textAlign:'center',fontSize:20,padding:8}} defaultValue={item.icon||''} onBlur={e=>onChange('icon',e.target.value)} placeholder="اختیاری"/></div>
+     <div><label style={S.lbl}>وکتور</label><TextField style={{textAlign:'center',fontSize:20,padding:8}} defaultValue={item.icon||''} onBlur={e=>onChange('icon',e.target.value)} placeholder="اختیاری" /></div>
      <Field label="عنوان" value={item.title||''} onChange={(v:string)=>onChange('title',v)} ph="عنوان خدمت"/>
     </div>
     <label style={S.lbl}>توضیحات</label>
