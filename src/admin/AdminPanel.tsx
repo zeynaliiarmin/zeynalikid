@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton } from '../components/ui/atoms';
 // --- مدیریت دیزاین (مرحله  - بازطراحی تدریجی) ---
 
 import { lazy,memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState } from 'react';
@@ -687,7 +688,7 @@ function FAQEditor(){
      <button style={AdminBtn()} onClick={addEn}>+ Add New Question (English)</button>
     </div>
    </div>
-   <button style={{...S.btn,marginTop:12}} onClick={()=>setSave(editCfg)}>ذخیره سوالات متداول</button>
+   <PrimaryButton style={{marginTop:12}} onClick={()=>setSave(editCfg)}>ذخیره سوالات متداول</PrimaryButton>
   </Box>;
  }
 
@@ -734,7 +735,7 @@ function FAQEditor(){
      <button style={AdminBtn()} onClick={addEn}>+ Add New Question (English)</button>
     </div>
    </div>
-   <button style={{...S.btn,marginTop:12}} onClick={()=>setSave(editCfg)}>ذخیره سوالات دوره‌ها</button>
+   <PrimaryButton style={{marginTop:12}} onClick={()=>setSave(editCfg)}>ذخیره سوالات دوره‌ها</PrimaryButton>
   </Box>;
  }
 

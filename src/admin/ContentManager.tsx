@@ -15,6 +15,7 @@
 //   - فیلدها با defaultValue + onBlur (بدون re-render هنگام تایپ)
 // ============================================================================
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { PrimaryButton } from '../components/ui/atoms';
 import { flushSync } from 'react-dom';
 import { getMediaDestinations, MEDIA_DESTINATIONS, migrateMediaItem, type MediaDestination } from '../utils/mediaPlacement';
 import { canonicalizeMediaInput, extractDirectMediaUrl } from '../utils/mediaInput';
@@ -210,15 +211,15 @@ export default function ContentManager(props: Props) {
 
       {/* ═══════════ ذخیره همه ═══════════ */}
       <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button
+        <PrimaryButton
           type="button"
           data-testid="content-save"
-          style={{ ...S.btn, flex: '0 1 auto', minWidth: 190, opacity: saveStatus === 'saving' ? .7 : 1 }}
+          style={{ flex: '0 1 auto', minWidth: 190, opacity: saveStatus === 'saving' ? .7 : 1 }}
           onClick={saveAll}
           disabled={saveStatus === 'saving'}
         >
           {saveStatus === 'saving' ? 'در حال ذخیره…' : 'ذخیره تغییرات محتوا'}
-        </button>
+        </PrimaryButton>
         {saveStatus === 'saved' && <span role="status" style={{ color: T.ok || '#169b62', fontSize: 12, fontWeight: 800 }}>تغییرات محتوا با موفقیت ذخیره شد.</span>}
         {saveStatus === 'error' && <span role="alert" style={{ color: T.err || '#d33', fontSize: 12, fontWeight: 800 }}>ذخیره انجام نشد؛ اتصال را بررسی و دوباره تلاش کنید.</span>}
       </div>

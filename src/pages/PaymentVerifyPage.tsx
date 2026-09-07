@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton, GhostButton } from '../components/ui/atoms';
 /**
  * PaymentVerifyPage — صفحه تأیید پرداخت
  *
@@ -248,31 +249,27 @@ export default function PaymentVerifyPage(){
 
         {/* دکمه‌ها */}
         {status === 'success' && (
-          <button
+          <PrimaryButton
             onClick={() => setView('course-done')}
             style={{
-              ...S.btn,
-              width: '100%',
               padding: '14px',
               fontSize: 15,
             }}
           >
             {lang === 'en' ? 'Continue to confirmation' : 'ادامه به صفحه تأیید'}
-          </button>
+          </PrimaryButton>
         )}
 
         {canReturnToPayment && (
           <div style={{ marginTop: 8 }}>
-            <button
+            <GhostButton
               onClick={() => setView('home')}
               style={{
-                ...S.btnGhost,
-                width: '100%',
                 padding: '12px',
               }}
             >
               {lang === 'en' ? 'Home' : 'صفحه اصلی'}
-            </button>
+            </GhostButton>
           </div>
         )}
 

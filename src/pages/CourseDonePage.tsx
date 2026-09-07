@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton, GhostButton } from '../components/ui/atoms';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { courseSuccessMessages, getRandomMessageTracked } from '../config/successMessages';
@@ -26,8 +27,8 @@ export default function CourseDonePage(){
   {trackingCode&&<div style={{background:`${T.warn}18`,borderRadius:12,padding:12,marginBottom:12,textAlign:'right',boxShadow:T.neuIn}}><div style={{fontSize:12,color:T.warn,fontWeight:800,lineHeight:1.9,marginBottom:6}}>{lang==='en'?'Please save or write down your tracking code for the next steps:':'حتماً کد پیگیری را برای مراحل بعدی ذخیره یا یادداشت بفرمایید:'}</div><TrackingCodeBox trackingCode={trackingCode} T={T} lang={lang} label={lang==='en'?'Your tracking code:':'کد پیگیری شما:'} copiedLabel={publicText('copied','کپی شد')} copyLabel={publicText('copy','کپی')}/></div>}
   <p style={{color:T.mut,fontSize:getTrustFontSize(String(message),13),lineHeight:1.7,margin:'0 0 10px',textAlign:'right',background:T.soft,borderRadius:12,padding:'9px 11px',boxShadow:T.neuIn,overflow:'hidden'}}>{message}</p>
   <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>
-    <button style={{...S.btnGhost,padding:'11px 18px',display:'flex',alignItems:'center',gap:6}} onClick={()=>setView('home')}><HomeIcon size={16} color={T.acc}/>{lang==='en'?'Home':'خانه'}</button>
-    <button style={S.btn} onClick={()=>setView('courses')}>{lang==='en'?'Register a new course':'ثبت دوره جدید'}</button>
+    <GhostButton style={{padding:'11px 18px',display:'flex',alignItems:'center',gap:6,width:'auto'}} onClick={()=>setView('home')}><HomeIcon size={16} color={T.acc}/>{lang==='en'?'Home':'خانه'}</GhostButton>
+    <PrimaryButton style={{width:'auto',padding:'12px 22px'}} onClick={()=>setView('courses')}>{lang==='en'?'Register a new course':'ثبت دوره جدید'}</PrimaryButton>
   </div>
   {showContactOn('courseDone')&&<ContactPanel cfg={cfg} T={T} lang={lang}/>}
  </div></div>

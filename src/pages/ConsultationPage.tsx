@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton, GhostButton } from '../components/ui/atoms';
 import { CountryCodePopup } from '../components/CountryCodePicker';
 import PrivacyConsent from '../components/PrivacyConsent';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -669,7 +670,7 @@ export default function ConsultationPage(){
         {Object.keys(errs).length > 0 && <div style={{ background: `${T.err}12`, border: `1px solid ${T.err}`, borderRadius: 12, padding: 12, marginBottom: 12, color: T.err, fontSize: 12 }}>
           {Object.values(errs).map((x: any, i) => <div key={i}>- {x}</div>)}
         </div>}
-        <button style={{...S.btn,opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</button>
+        <PrimaryButton style={{opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</PrimaryButton>
       </div>
 
 
@@ -723,13 +724,13 @@ export default function ConsultationPage(){
         </div>}
 
         {/* Direct course registration — INTERNAL NAVIGATION */}
-        <button style={{ ...S.btn, marginBottom: 8, padding: 14, fontSize: 16 }} onClick={goToCourses}>
+        <PrimaryButton style={{ marginBottom: 8, padding: 14, fontSize: 16 }} onClick={goToCourses}>
           <MiniIcon type="course" T={{ acc: '#fff' }} /> {publicText('directCourseBtn')}
-        </button>
+        </PrimaryButton>
 
         <div style={{ display: 'grid', gridTemplateColumns: showContactOnPage('consultSuccess') ? '1fr 1fr' : '1fr', gap: 8 }}>
-          <button style={{ ...S.btnGhost, padding: 11 }} onClick={resetForm}>{publicText('newFormBtn')}</button>
-          {showContactOnPage('consultSuccess') && <button style={{ ...S.btnGhost, padding: 11 }} onClick={() => setShowCt(v => !v)}>{publicText('contactBtn')}</button>}
+          <GhostButton style={{ padding: 11 }} onClick={resetForm}>{publicText('newFormBtn')}</GhostButton>
+          {showContactOnPage('consultSuccess') && <GhostButton style={{ padding: 11 }} onClick={() => setShowCt(v => !v)}>{publicText('contactBtn')}</GhostButton>}
         </div>
 
         <p style={{ color: T.mut, fontSize: getTrustFontSize(String(successMsgRnd), 13), lineHeight: 2, margin: '8px 0 0', textAlign: 'right', background: T.soft, borderRadius: 12, padding: '9px 11px', boxShadow: T.neuIn, overflow: 'hidden' }}>{successMsgRnd}</p>
