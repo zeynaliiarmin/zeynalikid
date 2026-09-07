@@ -39,6 +39,15 @@ import type { AppContextValue, DynamicRecord } from './app/AppContext';
 // palette lives in zk-tokens.css (imported by index.css); this file only adds
 // the per-page overrides that react to T.
 import { buildRuntimeThemeVars, buildS } from './theme/tokens';
+// Stage-2 refactor: ثابت‌ها و توابع کمکی روند دوره (بدون وابستگی به state)
+// از App.tsx استخراج شدند.
+import {
+  COURSE_TIMER_MS,
+  TIMER_VIEWS,
+  FLOW_COMPLETE_VIEWS,
+  buildDeliveryText,
+  validateOptionalSendDate,
+} from './lib/courseFlow';
 
 import {
   APP_B_URL, SK, p2e, digits, uid, today, now, getLS, getPreloadedSettings, setLS, emptyFd, emptyCourse,
@@ -166,7 +175,9 @@ useEffect(()=>{
  const [fd,setFd]=useState<DynamicRecord>(()=>emptyFd());
  const [courseTab,setCourseTab]=useState(cfg.courseTabs?.find((x:DynamicRecord)=>x.active)?.id||cfg.courseTabs?.[0]?.id); const [expandedCourse,setExpandedCourse]=useState<DynamicRecord|null>(null); const [shipModal,setShipModal]=useState<DynamicRecord|null>(null); const [course,setCourse]=useState<DynamicRecord>(()=>{ try{ const draft=getLS('zkid_course_draft',null); if(draft&&typeof draft==='object') return {...emptyCourse(),...draft}; }catch{} return emptyCourse(); }); const [courseResult,setCourseResult]=useState<DynamicRecord|null>(null); const [editChild,setEditChild]=useState(false);
  // ─── تایمر ۱۵ دقیقه‌ای روند ثبت دوره (اعتمادسازی — فقط نمایشی/هدایتی) ───
- const COURSE_TIMER_MS=15*60*1000; const timerViews=['child-info','course-shipping','course-payment','course-confirm'];
+ // Stage-2 refactor: ثابت‌های تایمر به src/lib/courseFlow.ts منتقل شدند و
+ // اینجا با نام سازگار با بدنهٔ موجود import می‌شوند.
+ const timerViews: readonly string[] = TIMER_VIEWS;
  const [flowDeadline,setFlowDeadline]=useState<number|null>(()=>{try{const v=sessionStorage.getItem('zkid_flow_deadline');const n=Number(v);if(n&&n>Date.now())return n;}catch{}return null;});
  const flowExpiredRef=useRef(false);
  const expireCourseFlowRef=useRef<()=>void>(()=>{});
@@ -443,8 +454,21 @@ useEffect(()=>{
  function Tag({x}:{x:string}){return <span style={{fontSize:10,padding:'3px 7px',borderRadius:T.badgeRadius||12,background:T.soft,color:T.accText,border:`1px solid ${T.brd}`}}>{trVal(x)}</span>}
  // اصلاح ۱-۵ (مرحله ۴): مقدار پیش‌فرض کشور مقصد (برای dest==='iran') اکنون بر اساس زبان انتخاب‌شده نمایش داده می‌شود (فارسی: «ایران»، انگلیسی: «Iran»)
  function chooseDest(dest:string,cr:DynamicRecord){if((cfg as any)?.entryMode==='user'&&!getUserSession()){setPortalNext('/courses');setView('portal');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
- function deliveryText(){if(!course.dest)return `${trVal(cfg.delivery.iranFastText)} / ${trVal(cfg.delivery.iranOtherText)} / ${trVal(cfg.delivery.intlText)}`; if(course.dest==='intl')return trVal(cfg.delivery.intlText); if(course.shippingMethod === 'mahaks') return lang === 'en' ? '48-hour delivery' : 'تحویل ۴۸ ساعته'; const city=String(course.form.city||'').trim(); if(!city)return publicText('deliveryAddressRequired','برای تخمین زمان تحویل، ابتدا باید قسمت آدرس تکمیل شود.'); return cfg.delivery.iranFastCities.some((x:string)=>city.includes(x))?trVal(cfg.delivery.iranFastText):trVal(cfg.delivery.iranOtherText)}
- function validateOptionalDate(){const s=p2e(course.optionalSendDate).trim(); if(!s)return ''; if(course.dest==='iran'){return /^14\d{2}[\/\-\.](0?[1-9]|1[0-2])[\/\-\.](0?[1-9]|[12]\d|3[01])$/.test(s)?'':trVal('برای مقصد ایران فقط تاریخ شمسی مانند 1403/05/20 وارد کنید')} return /^20\d{2}[\/\-\.](0?[1-9]|1[0-2])[\/\-\.](0?[1-9]|[12]\d|3[01])$/.test(s)?'':trVal('برای خارج از ایران فقط تاریخ میلادی مانند 2026/08/20 وارد کنید')}
+ function deliveryText(){return buildDeliveryText({
+   dest:String(course.dest||''),
+   shippingMethod:course.shippingMethod,
+   city:String(course.form?.city||''),
+   optionalSendDate:String(course.optionalSendDate||''),
+   delivery:cfg.delivery as any,
+   trVal:((x:unknown)=>trVal(x)) as any,
+   publicText:((k:string,fb:string)=>publicText(k,fb)) as any,
+   lang,
+ })}
+ function validateOptionalDate(){return validateOptionalSendDate({
+   dateValue:String(course.optionalSendDate||''),
+   dest:String(course.dest||''),
+   trVal:(s:string)=>trVal(s) as unknown as string,
+ })}
  async function finalizeCourseRegistration(paymentOverride?:DynamicRecord){const pay=paymentOverride||course.payment; const fp=fullPhone(course.form.phoneCc,course.form.phone); const data={...fd,pName:course.form.receiver||fd.pName,cc:course.form.phoneCc,pPhone:course.form.phone,fullPhone:fp}; let trackingCode=''; let existingCodes:string[]=[]; let existingList:Submission[]=[]; const portalUser=getUserSession(); try{let list:Submission[]=getLS(SK.subs,[]); existingList=list; existingCodes=list.map((x:Submission)=>String(x.trackingCode||'')).filter(Boolean); const prevSame=list.find((x:Submission)=>digits(x.fullPhone||'')===digits(fp)&&x.trackingCode); if(prevSame)trackingCode=prevSame.trackingCode}catch{} if(!trackingCode)trackingCode=generateSecureTrackingCode(existingCodes,TRACKING_PREFIX); if(portalUser)trackingCode=portalUser.code;
 // اصلاح ۳-ج: اولویت زیاد خودکار اگر همین شماره تماس هم فرم مشاوره و هم ثبت‌نام دوره داشته باشد، یا بیش از یک فرم مشاوره/بیش از یک ثبت‌نام دوره ثبت کرده باشد؛ در غیر این صورت اولویت عادی (قابل تغییر دستی توسط ادمین)
 const sameNumberAll=existingList.filter((x:Submission)=>digits(x.fullPhone||'')===digits(fp)); const hasConsultPrev=sameNumberAll.some((x:Submission)=>x.type==='consultation'); const consultCountPrev=sameNumberAll.filter((x:Submission)=>x.type==='consultation').length; const courseCountPrev=sameNumberAll.filter((x:Submission)=>x.type==='course').length; const autoPriority=(hasConsultPrev||consultCountPrev>=1||courseCountPrev>=1)?'high':'normal';
@@ -490,12 +514,12 @@ const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data
  useEffect(()=>{
   if(!flowDeadline)return;
   if(timerViews.includes(view))return;
-  if(view==='course-done'||view==='payment-verify')return;
+  if(FLOW_COMPLETE_VIEWS.includes(view as any))return;
   const t=window.setTimeout(()=>{
    try{
     const p=(window.location.pathname||'').replace(/\/+$/,'')||'/';
     const v=pathToView[p]||'home';
-    if(!timerViews.includes(v)&&v!=='course-done'&&v!=='payment-verify'){
+    if(!timerViews.includes(v)&&!FLOW_COMPLETE_VIEWS.includes(v as any)){
      markIncomplete('User left the course registration before completing it.','کاربر پیش از تکمیل، روند ثبت دوره را ترک کرد.');
     }
    }catch{}
