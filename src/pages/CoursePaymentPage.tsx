@@ -1,5 +1,5 @@
 import { useAppContext } from '../app/AppContext';
-import { PrimaryButton } from '../components/ui/atoms';
+import { PrimaryButton, TextArea } from '../components/ui/atoms';
 import { Navigate } from 'react-router-dom';
 import { getUserSession, setPortalNext } from '../utils/userPortal';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -272,10 +272,10 @@ export default function CoursePaymentPage(){
     {publicText('receiptTextHint','اگر امکان آپلود عکس فیش را ندارید، متن پیامک واریز را در کادر زیر کپی-پیست کنید.')}
   </div>
 
-  <textarea
+  <TextArea
     ref={receiptTextRef}
     rows={2}
-    style={{...S.ta,minHeight:52,height:52,lineHeight:1.3,padding:6,resize:'none',opacity:pay.receipt?.length?0.58:1}}
+    style={{minHeight:52,height:52,lineHeight:1.3,padding:6,resize:'none',opacity:pay.receipt?.length?0.58:1}}
     defaultValue={pay.receiptText||''}
     disabled={!!pay.receipt}
     onBlur={e=>setCourse({...course,payment:{...pay,receiptText:e.target.value,receiptMethod:e.target.value.trim()?'text':pay.receipt?'image':null}})}

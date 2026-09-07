@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TextField } from '../components/ui/atoms';
 import faDict from '../locales/fa';
 import enDict from '../locales/en';
 import { defaultCountries,defaultSettings as configDefaultSettings,migrateSettings,CURRENT_SETTINGS_VERSION } from '../config/defaultSettings';
@@ -783,9 +784,9 @@ export const StableField = memo(function StableField({label,value,onChange,ph,ty
     const val = isNumeric ? __p2e(raw).replace(/[^0-9]/g,'') : raw;
     onChange?.(val);
   };
-  const s = S || {lbl:{display:'block',fontSize:14,marginBottom:7,fontWeight:700}, inp:{width:'100%',padding:'13px 14px',border:'1px solid #ddd',borderRadius:12,minHeight:48,fontSize:16,boxSizing:'border-box'}};
+  const s = S || {lbl:{display:'block',fontSize:14,marginBottom:7,fontWeight:700}, inp:{}};
   const tt = T || {err:'var(--zk-error, #dc2626)'};
-  return <div style={{marginBottom:13}}><label style={s.lbl}>{_tr(label)}{required&&<span style={{color:tt.err,marginInlineStart:4}}>*</span>}</label><input inputMode={isNumeric?'numeric':undefined} type={type} style={s.inp} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} /></div>;
+  return <div style={{marginBottom:13}}><label style={s.lbl}>{_tr(label)}{required&&<span style={{color:tt.err,marginInlineStart:4}}>*</span>}</label><TextField inputMode={isNumeric?'numeric':undefined} type={type} style={s.inp} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} /></div>;
 });
 export const StableSelectBox = memo(function StableSelectBox({label,items,val,setVal,multi=false,S,T,trVal,cfg,lang}:any){
   const [open,setOpen]=useState(false);

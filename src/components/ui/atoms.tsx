@@ -4,6 +4,7 @@
 // هماهنگ می‌مانند. هدف این فایل حذف style={{...S.btn,...}} های پرتکرار در JSX
 // است، نه تغییر بصری. همه پراپ‌های استاندارد HTML از طریق ...rest عبور می‌کنند
 // تا form/button type, disabled, onClick, aria-*, و ... بدون تغییر کار کنند.
+import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, TextareaHTMLAttributes, InputHTMLAttributes } from 'react';
 
 type Styleable = { className?: string; style?: React.CSSProperties };
@@ -121,50 +122,48 @@ export function Divider({ style, className }: { style?: React.CSSProperties; cla
 
 /** Input متنی — همان S.inp. این یک نسخه پایه است؛ در مراحل بعدی
  *  با جایگزینی در صفحات فرم به‌تدریج توسعه خواهد یافت و تا آن زمان DefaultValue+onBlur
- *  پایدار می‌ماند (باید type="text" و ...rest پاس دهد). */
-export function TextField({
-  style,
-  className,
-  ...rest
-}: InputHTMLAttributes<HTMLInputElement> & Styleable) {
-  return (
-    <input
-      className={className}
-      style={{
-        width: '100%', padding: 'var(--zk-space-input, 14px 16px)',
-        background: 'var(--zk-inp)', border: 'var(--zk-border-input)',
-        borderRadius: 'var(--zk-radius-input, 16px)', minHeight: 50,
-        color: 'var(--zk-text)', fontSize: 16, outline: 'none',
-        boxSizing: 'border-box', fontFamily: 'inherit',
-        boxShadow: 'var(--zk-shadow-input)',
-        transition: 'box-shadow .22s ease, border-color .22s ease, transform .1s ease',
-        ...style,
-      }}
-      {...rest}
-    />
-  );
-}
+ *  پایدار می‌ماند (باید type="text" و ...rest پاس دهد). ref را هم forward می‌کند. */
+export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & Styleable>(
+  function TextField({ style, className, ...rest }, ref) {
+    return (
+      <input
+        ref={ref}
+        className={className}
+        style={{
+          width: '100%', padding: 'var(--zk-space-input, 14px 16px)',
+          background: 'var(--zk-inp)', border: 'var(--zk-border-input)',
+          borderRadius: 'var(--zk-radius-input, 16px)', minHeight: 50,
+          color: 'var(--zk-text)', fontSize: 16, outline: 'none',
+          boxSizing: 'border-box', fontFamily: 'inherit',
+          boxShadow: 'var(--zk-shadow-input)',
+          transition: 'box-shadow .22s ease, border-color .22s ease, transform .1s ease',
+          ...style,
+        }}
+        {...rest}
+      />
+    );
+  }
+);
 
-/** Textarea (همان S.ta) */
-export function TextArea({
-  style,
-  className,
-  ...rest
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & Styleable) {
-  return (
-    <textarea
-      className={className}
-      style={{
-        width: '100%', padding: 'var(--zk-space-input, 14px 16px)',
-        background: 'var(--zk-inp)', border: 'var(--zk-border-input)',
-        borderRadius: 'var(--zk-radius-input, 16px)', color: 'var(--zk-text)',
-        fontSize: 16, outline: 'none', boxSizing: 'border-box',
-        minHeight: 120, resize: 'vertical', fontFamily: 'inherit',
-        boxShadow: 'var(--zk-shadow-input)',
-        transition: 'box-shadow .22s ease, border-color .22s ease',
-        ...style,
-      }}
-      {...rest}
-    />
-  );
-}
+/** Textarea (همان S.ta) — با forwardRef. */
+export const TextArea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & Styleable>(
+  function TextArea({ style, className, ...rest }, ref) {
+    return (
+      <textarea
+        ref={ref}
+        className={className}
+        style={{
+          width: '100%', padding: 'var(--zk-space-input, 14px 16px)',
+          background: 'var(--zk-inp)', border: 'var(--zk-border-input)',
+          borderRadius: 'var(--zk-radius-input, 16px)', color: 'var(--zk-text)',
+          fontSize: 16, outline: 'none', boxSizing: 'border-box',
+          minHeight: 120, resize: 'vertical', fontFamily: 'inherit',
+          boxShadow: 'var(--zk-shadow-input)',
+          transition: 'box-shadow .22s ease, border-color .22s ease',
+          ...style,
+        }}
+        {...rest}
+      />
+    );
+  }
+);

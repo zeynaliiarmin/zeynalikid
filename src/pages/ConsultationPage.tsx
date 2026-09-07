@@ -1,5 +1,5 @@
 import { useAppContext } from '../app/AppContext';
-import { PrimaryButton, GhostButton } from '../components/ui/atoms';
+import { PrimaryButton, GhostButton, TextField, TextArea } from '../components/ui/atoms';
 import { CountryCodePopup } from '../components/CountryCodePicker';
 import PrivacyConsent from '../components/PrivacyConsent';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -73,7 +73,7 @@ const StableFieldLocal = memo(function StableFieldLocal({label,value,onChange,ph
     const v = isNumeric ? p2e(raw).replace(/[^0-9]/g,'') : raw;
     onChange?.(v);
   };
-  return <div style={{marginBottom:13}}><label style={S.lbl}>{_tr(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><input type={type} style={S.inp} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} inputMode={isNumeric?'numeric':undefined} /></div>;
+  return <div style={{marginBottom:13}}><label style={S.lbl}>{_tr(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><TextField type={type} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} inputMode={isNumeric?'numeric':undefined} /></div>;
 });
 const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val,setVal,multi=false,S,T,trVal,cfg,lang}:any){
   const [open,setOpen]=useState(false);

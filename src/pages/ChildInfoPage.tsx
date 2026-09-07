@@ -9,7 +9,7 @@ import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import PublicBackButton from '../components/PublicBackButton';
 import { pushInPageHistoryState } from '../utils/scrollRestoration';
-import { PrimaryButton, GhostButton } from '../components/ui/atoms';
+import { PrimaryButton, GhostButton, TextArea } from '../components/ui/atoms';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -142,7 +142,7 @@ export default function ChildInfoPage(){
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}><SelectBox label={publicText('digest','مشکل گوارشی')} multi items={cfg.digestiveOptions} val={draft.digest||[]} setVal={onDigestChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /><SelectBox label={publicText('appetite','وضعیت اشتها')} items={cfg.appetiteOptions} val={draft.appetite||''} setVal={onAppetiteChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /></div>
   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:12}}>{cfg.formFields.disease?.show!==false&&<Field label={publicText('disease',cfg.formFields.disease.label)} value={draft.disease} onChange={onDiseaseChange} ph={cfg.formFields.disease.placeholder} S={S} T={T} trVal={trVal} p2e={p2e} />}<SelectBox label={publicText('specials','شرایط خاص')} multi items={cfg.specialConditions} val={draft.specials} setVal={onSpecialsChange} S={S} T={T} trVal={trVal} cfg={cfg} lang={lang} /></div>
   {/* اصلاح ۲۵: فیلد جدید — توضیحات تکمیلی — FIX: کنترل مستقیم بدون تعریف داخلی کامپوننت */}
-  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><textarea style={S.ta} value={draft.notes||''} onChange={onNotesChange} placeholder={trVal(cfg.formFields.notes.placeholder)}/></div>}
+  {cfg.formFields.notes?.show!==false&&<div style={{marginTop:12}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6,marginBottom:7}}><label style={{fontSize:14,color:T.mut,fontWeight:700}}>{publicText('notes',cfg.formFields.notes.label)}</label><VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved}/></div><TextArea value={draft.notes||''} onChange={onNotesChange} placeholder={trVal(cfg.formFields.notes.placeholder)} style={{minHeight:100}}/></div>}
  </>}
 
  {/* اصلاح ۳۰ (مرحله ۷): بخش آپلود عکس زبان فرزند — پیش از ادامه فرایند */}
