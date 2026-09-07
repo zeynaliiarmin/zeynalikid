@@ -21,14 +21,11 @@ export default defineConfig({
     cssMinify: true,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 600,
-    rolldownOptions: {
+    rollupOptions: {
       output: {
-        // اصلاح چانک-۱: Code Splitting — تفکیک وابستگی‌های بزرگ به فایل‌های جداگانه
+        // Code Splitting — تفکیک وابستگی‌های بزرگ به فایل‌های جداگانه
         manualChunks(id: string) {
-          if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/react-router-dom/')) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
             return 'react-vendor';
           }
           if (id.includes('node_modules/@supabase/')) {
@@ -36,6 +33,9 @@ export default defineConfig({
           }
           if (id.includes('src/locales/')) {
             return 'i18n-locales';
+          }
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas')) {
+            return 'pdf-vendor';
           }
         },
       },

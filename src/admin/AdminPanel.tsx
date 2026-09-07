@@ -12,6 +12,7 @@ import { biometricSupported, enrollAdminBiometric, hasAdminBiometric, removeAdmi
 // Phase 7: خروج واقعی از همه نشست‌ها از طریق admin-session (revoke_all)
 import { revokeAllAdminSessions, clearAdminSession, listAdminDevices, revokeAdminDevice, getAdminDeviceId, getAdminCredsInfo, changeAdminCredentials, isAdminPasswordUpgradeRequired } from '../utils/adminSession';
 import { generateFormImage } from '../utils/exportFormToImage';
+import { exportSubsBackup, exportFullBackup, requestTelegramBackup, maybeAutoBackupToTelegram } from '../utils/backupUtils';
 import AdminSpeedDialFAB from './AdminSpeedDialFAB';
 import { ZkArrowUpIcon, ZkArrowDownIcon, ZkChevronUpIcon, ZkChevronDownIcon, ZkCheckIcon, ZkCloseIcon,
  ZkCheckCircleIcon, ZkXCircleIcon, ZkEyeIcon, ZkEyeOffIcon, ZkCameraIcon, ZkDocIcon,
@@ -299,7 +300,44 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   const clearSelection=()=> setSelectedIds(new Set());
   const [imageFormat,setImageFormat]=useState<'webp'|'jpg'>(()=>{try{return localStorage.getItem('zkid_form_image_format')==='jpg'?'jpg':'webp'}catch{return 'webp'}});
   const setPersistentImageFormat=(f:'webp'|'jpg')=>{setImageFormat(f);try{localStorage.setItem('zkid_form_image_format',f)}catch{}};
+  const [backupProgress,setBackupProgress]=useState<string>('');
   const downloadFormImage=async (item:any)=>{try{const blob=await generateFormImage(item,imageFormat);const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`پرونده_${String(item.pName||item.fullPhone||item.id).replace(/\s+/g,'_')}.${imageFormat}`;a.click();setTimeout(()=>URL.revokeObjectURL(u),800)}catch(e){console.error('image export failed',e);void zkAlert('خطا در ساخت تصویر پرونده')}};
+  const runBackup = async (target:'subs'|'full', fmt?:'excel'|'txt'|'image') => {
+    try {
+      setMsg('');
+      if (target === 'subs') {
+        const items = selectedCount > 0 ? filteredAll.filter((x:any)=> selectedIds.has(x.id)) : subs;
+        await exportSubsBackup(items, fmt || 'excel', { imageFormat, onProgress: (m) => setBackupProgress(m) });
+      } else {
+        await exportFullBackup({ subs, cfg: editCfg || cfg, imageFormat, onProgress: (m) => setBackupProgress(m) });
+      }
+      setBackupProgress('');
+      setMsg('بک‌آپ با موفقیت ساخته شد'); setMsgType('ok'); setTimeout(() => setMsg(''), 4000);
+    } catch (e: any) {
+      setBackupProgress('');
+      setMsg(String(e?.message || e)); setMsgType('err');
+    }
+  };
+  const sendBackupToTelegram = async () => {
+    setBackupProgress('در حال ارسال به تلگرام…');
+    const r = await requestTelegramBackup((m) => setBackupProgress(m));
+    setBackupProgress('');
+    if (r.ok) { setMsg(r.message || 'بک‌آپ به ربات تلگرام ارسال شد'); setMsgType('ok'); }
+    else { setMsg('خطا در ارسال تلگرام: ' + (r.message || '')); setMsgType('err'); }
+    setTimeout(() => setMsg(''), 6000);
+  };
+
+  // بک‌آپ خودکار ۳روزه وقتی ادمین وارد داشبورد می‌شود (فقط در صورت تغییر)
+  useEffect(() => {
+    if (aTab !== 'dashboard' || loadingSubs) return;
+    let mounted = true;
+    maybeAutoBackupToTelegram(() => subs, () => editCfg || cfg).then((r) => {
+      if (!mounted || !r.sent) return;
+      setMsg(r.message || ''); setMsgType('ok'); setTimeout(() => setMsg(''), 5000);
+    }).catch(() => { /* silent */ });
+    return () => { mounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aTab, loadingSubs]);
   const selectedCount = selectedIds.size;
   const statusOptions=['جدید','در انتظار پرداخت','پرداخت‌شده','ارسال‌شده','تکمیل‌شده','لغو‌شده','ناقص'];
   const getStatus=(x:any)=>x.orderStatus||(x.payment?.receipt?'پرداخت‌شده':x.course?'در انتظار پرداخت':x.isNew?'جدید':'جدید');
@@ -437,7 +475,8 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
   }
   `}</style><AdminLayout lang={lang} groups={navGroups} active={aTab} onNavigate={(id:string)=>{setATab(id);setEditCfg(JSON.parse(JSON.stringify(cfg)))}} onLogout={onLogout} onHome={goHome} version="1.0.0">
   <div className="admin-main"><div style={{maxWidth:1100,margin:'0 auto'}}>{aTab!=='dashboard'&&aTab!=='data'&&<div className="zkad-page-head"><div><h2>{(navGroups.find(g=>g.id===aTab||(g.items||[]).some(i=>i.id===aTab))||{}).label||''}</h2><p>{({assistant:'آموزش، آزمایش و مدیریت پاسخ‌های دستیار راهنمای زینالیکید',userQuestions:'مدیریت سوالات و درخواست‌های تماس مخاطبین (بخش سوال دارم) همراه با شماره تماس، ویس و متن سوال',settings:'پیکربندی فرم‌ها، فیلدها و رفتار سایت',content:'متن‌های صفحات، سوالات متداول و ترجمه‌ها',consultants:'مدیریت مشاورین، لینک‌های ارجاع اختصاصی، اطلاعات بانکی/کیف پول و نمایش در صفحه درباره ما و صفحه هوم',contacts:'شماره‌ها، شبکه‌های اجتماعی و راه‌های ارتباطی',courses:'تب‌ها، دوره‌ها و واحد پول',featured:'بخش دوره‌های ویژه صفحه اصلی',tagged:'دوره‌های ویژه با تگ',trustbox:'جملات اعتمادساز باکس صفحه اصلی',trust:'جملات صفحات موفقیت',shipping:'روش‌های ارسال، حساب‌های بانکی و درگاه‌ها',analytics:'بازدید صفحات به تفکیک زمان',security:'شماره تماس و رمز عبور پنل',products:'محصولات فروشگاه',highlights:'هایلایت استوری‌ها',licenses:'مجوزها و گواهی‌ها',services:'خدمات و کاروسل صفحه اصلی',images:'تصاویر صفحه اصلی و فرم مشاوره',design:'دیزاین هر بخش از سایت',trash:'موارد حذف‌شده قابل بازیابی'} as any)[aTab]||''}</p></div></div>}
-  {aTab==='dashboard'&&<><div className="zkad-page-head"><div><h2>داشبورد</h2><p>نمای کلی عملکرد و درخواست‌های امروز</p></div><button type="button" className="zkad-head-btn" onClick={goHome}><ZkHomeIcon size={14}/> بازدید از سایت</button></div>
+  {aTab==='dashboard'&&<><div className="zkad-page-head"><div><h2>داشبورد</h2><p>نمای کلی عملکرد، بک‌آپ و درخواست‌های امروز</p></div><div style={{display:'flex',gap:8}}><button type="button" className="zkad-head-btn" onClick={()=>runBackup('full')} style={{background:'linear-gradient(135deg,#0ea5e9,#6366f1)',color:'#fff',border:'none'}}>💾 بک‌آپ کامل (زیپ)</button><button type="button" className="zkad-head-btn" onClick={sendBackupToTelegram} style={{background:T.ok,color:'#fff',border:'none'}}>📨 بک‌آپ تلگرام</button><button type="button" className="zkad-head-btn" onClick={goHome}><ZkHomeIcon size={14}/> بازدید از سایت</button></div></div>
+{backupProgress && <div style={{padding:'10px 14px',background:'#eef2ff',border:'1px solid #818cf8',borderRadius:10,color:'#3730a3',fontSize:13,fontWeight:700,marginBottom:12}}>⏳ {backupProgress}</div>}
 
 {/* بنر هوشمند پایش و هشدار ظرفیت دیتابیس و استوریج (هایلایت قرمز بولد در صورت کمبود فضا) */}
 <div className="zkad-storage-banner" style={{
@@ -591,13 +630,23 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
 </div>}{/* اصلاح ۱: فقط سرگروه (جدیدترین فرم) در لیست اصلی نمایش داده می‌شود؛ بقیه فرم‌های همان شماره از داخل خودِ کارت («فرم‌های دیگر با این شماره تماس») با کلیک در یک مودال مستقل باز می‌شوند — بدون نمایش تو رفته/زیرمجموعه در لیست اصلی */}<div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,padding:'8px 12px',background:'var(--zkad-card)',border:'1px solid var(--zkad-brd)',borderRadius:8}}>
   <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,cursor:'pointer'}}><input type="checkbox" checked={isAllSelected} onChange={()=> toggleSelectAll(filteredAll.map((x:any)=>x.id))}/> انتخاب همه ({faNum(filteredAll.length)})</label>
   {selectedCount>0 && <span style={{fontSize:12,color:'var(--zkad-acc)',fontWeight:700}}>{faNum(selectedCount)} انتخاب شده</span>}
-  {selectedCount>0 && <div style={{display:'flex',gap:6,marginInlineStart:'auto',flexWrap:'wrap'}}>
+  {selectedCount>0 && <div style={{display:'flex',alignItems:'center',gap:8,marginInlineStart:'auto',flexWrap:'wrap'}}>
     <button type="button" className="zkad-toolbtn zkad-selected-delete" title="حذف انتخاب‌شده‌ها" aria-label="حذف انتخاب‌شده‌ها" onClick={async()=>{ if(!(await zkConfirm(`حذف ${faNum(selectedCount)} مورد انتخاب شده؟`))) return; setSubs((prev:any)=> prev.filter((x:any)=> !selectedIds.has(x.id))); clearSelection(); }}><ZkTrashIcon size={16}/></button>
-    <button type="button" className="zkad-toolbtn" onClick={()=>{ const selectedRows = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map(s=>({نام:s.pName||'',شماره:s.fullPhone||'',موضوع:(s.topics||[]).join('|'),کشور:getCountry(s),دوره:getCourse(s),پرداخت:getPay(s),وضعیت:getStatus(s),تاریخ:s.date||'',شهر:s.shipping?.city||'',یادداشت:s.adminNotes||'',دسته‌بندی:getCategory(s)})); const keys=Object.keys(selectedRows[0]||{نام:'',شماره:'',موضوع:'',کشور:'',دوره:'',پرداخت:'',وضعیت:'',تاریخ:''}); const html=`<html><meta charset="utf-8"><body><table border="1"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${selectedRows.map((r:any)=>`<tr>${keys.map(k=>`<td>${String((r as any)[k]||'')}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`; const url=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-export.xls';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>Excel</button>
+    <label className="zkad-toolbtn" style={{display:'inline-flex',alignItems:'center',gap:4}}>فرمت <select value={imageFormat} onChange={e=>setPersistentImageFormat(e.target.value as any)} style={{border:0,background:'transparent',fontFamily:'inherit'}}><option value="webp">webp</option><option value="jpg">jpg</option></select></label>
+    <div style={{position:'relative',display:'inline-flex'}}>
+      <button type="button" className="zkad-toolbtn" style={{background:'linear-gradient(135deg,#0ea5e9,#6366f1)',color:'#fff',border:'none',fontWeight:800}} onClick={(e)=>{const menu=(e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement|null; if(menu){menu.style.display=menu.style.display==='block'?'none':'block'; setTimeout(()=>{const h=()=>{menu.style.display='none';document.removeEventListener('click',h)}; document.addEventListener('click',h,{once:true})},0)}}}>💾 بک‌آپ{selectedCount>0?` ${faNum(selectedCount)} مورد`:''}</button>
+      <div style={{display:'none',position:'absolute',top:'calc(100% + 6px)',insetInlineStart:0,minWidth:220,background:T.pop||'#fff',border:`1px solid ${T.brd}`,borderRadius:12,padding:6,boxShadow:'0 12px 30px rgba(0,0,0,.18)',zIndex:520}} onClick={e=>e.stopPropagation()}>
+        <button type="button" className="zkad-toolbtn" style={{width:'100%',justifyContent:'flex-start',border:0,background:'transparent',color:T.txt,padding:'9px 10px'}} onClick={()=>runBackup('subs','excel')}>📊 Excel (فقط انتخاب‌شده‌ها{!selectedCount?' / همه':''})</button>
+        <button type="button" className="zkad-toolbtn" style={{width:'100%',justifyContent:'flex-start',border:0,background:'transparent',color:T.txt,padding:'9px 10px'}} onClick={()=>runBackup('subs','txt')}>📝 متن (TXT)</button>
+        <button type="button" className="zkad-toolbtn" style={{width:'100%',justifyContent:'flex-start',border:0,background:'transparent',color:T.txt,padding:'9px 10px'}} onClick={()=>runBackup('subs','image')}>🖼️ {imageFormat.toUpperCase()} {selectedCount>10||!selectedCount?'(زیپ)':'(تکی)'}</button>
+        <div style={{height:1,background:T.brd,margin:'4px 0'}}/>
+        <button type="button" className="zkad-toolbtn" style={{width:'100%',justifyContent:'flex-start',border:0,background:'transparent',color:T.acc,padding:'9px 10px',fontWeight:800}} onClick={()=>{runBackup('full')}}>📦 بک‌آپ کامل (همه‌چیز)</button>
+        <button type="button" className="zkad-toolbtn" style={{width:'100%',justifyContent:'flex-start',border:0,background:'transparent',color:T.ok,padding:'9px 10px'}} onClick={sendBackupToTelegram}>📨 ارسال به ربات تلگرام</button>
+      </div>
+    </div>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const phones = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> x.fullPhone).filter(Boolean).join('\n'); const url=URL.createObjectURL(new Blob([phones],{type:'text/plain;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-phones.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>شماره‌ها</button>
     <button type="button" className="zkad-toolbtn" onClick={()=>{ const links = filteredAll.filter((x:any)=> selectedIds.has(x.id)).map((x:any)=> digits(x.fullPhone||'')).filter(Boolean).map((n:any)=>`<p><a href="https://wa.me/${n}">${n}</a></p>`).join(''); const url=URL.createObjectURL(new Blob([`<html><meta charset="utf-8"><body>${links}</body></html>`],{type:'text/html;charset=utf-8'})); const a=document.createElement('a');a.href=url;a.download='selected-whatsapp.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500); }}>واتساپ</button>
-    <label className="zkad-toolbtn" style={{display:'inline-flex',alignItems:'center',gap:4}}>تصویر <select value={imageFormat} onChange={e=>setPersistentImageFormat(e.target.value as any)} style={{border:0,background:'transparent',fontFamily:'inherit'}}><option value="webp">webp</option><option value="jpg">jpg</option></select></label>
-    <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تصویر انتخاب‌شده</button>
+    <button type="button" className="zkad-toolbtn" onClick={async()=>{for(const x of filtered.filter((x:any)=>selectedIds.has(x.id))) await downloadFormImage(x)}}>تک‌تصویر</button>
   </div>}
 </div>
 {groups.length?groups.map(g=><LazySubCard key={g.head.id} sub={g.head} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} groupCount={g.children.length} allSubs={subs} onOpenRelated={setModalSub} selectedIds={selectedIds} toggleSelect={toggleSelect} isOpen={expId===g.head.id} onToggleOpen={toggleOpenForm} {...subCardIO}/>):<div className="zkad-empty"><ZkSearchIcon size={26}/><p>موردی یافت نشد</p><small>عبارت جستجو یا فیلترها را تغییر دهید</small>{filtersActive&&<button type="button" className="zkad-toolbtn" onClick={clearFilters}><ZkFilterIcon size={14}/> حذف فیلترها</button>}</div>}{modalSub&&<Modal T={T} onClose={()=>setModalSub(null)} max={640}><SubCard sub={modalSub} statusOptions={statusOptions} getStatus={getStatus} onStatusChange={changeStatus} allSubs={subs} onOpenRelated={setModalSub} forceOpen selectedIds={selectedIds} toggleSelect={toggleSelect} {...subCardIO}/></Modal>}<div className="zkad-pager"><button type="button" className="zkad-pager-btn" disabled={safePage<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>قبلی</button><span className="zkad-pager-cur" title={`صفحه ${safePage} از ${totalPages}`}>{faNum(safePage)}</span><span className="zkad-pager-total">از {faNum(totalPages)}</span><button type="button" className="zkad-pager-btn" disabled={safePage>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>بعدی</button></div></>:<DataNewViewPanel app={{T,subs,filteredAll,statusOptions,getStatus,getPay,changeStatus,changeConsultStatus,selectedIds,setSelectedIds,toggleSelect,toggleSelectAll,clearSelection,setSubs,setMsg,setMsgType,modalSub,setModalSub,nvTab,setNvTab,nvQ,setNvQ,nvPhone,setNvPhone,subCardIO, setNvCounts}}/>}</>}{aTab==='settings'&&editCfg&&SettingsEditor()}{aTab==='content'&&editCfg&&ContentEditor()}{aTab==='assistant'&&<AssistantManager T={T} S={S} cfg={editCfg||cfg}/>} {aTab==='userQuestions'&&<UserQuestionsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='reviews'&&<ReviewsEditor app={{...app, AdminBtn, Box, setEditCfg, cfg:editCfg||cfg}}/>}{aTab==='consultants'&&editCfg&&<ConsultantsEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='contacts'&&editCfg&&ContactsEditor()}{aTab==='courses'&&editCfg&&<CoursesEditor T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} p2e={p2e} fileToData={fileToData} deleteStoredImage={deleteStoredImage} AdminBtn={AdminBtn} Box={Box} />}{aTab==='featured'&&editCfg&&FeaturedCoursesEditor()}{aTab==='tagged'&&editCfg&&TaggedCoursesEditor()}{aTab==='trust'&&editCfg&&TrustEditor()}{aTab==='trustbox'&&editCfg&&TrustBoxManagerEditor()}{aTab==='images'&&editCfg&&<ImagesManager T={T} S={S} editCfg={editCfg} setEditCfg={setEditCfg} setSave={setSave} uid={uid} fileToData={fileToData} deleteStoredImage={deleteStoredImage} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} AdminBtn={AdminBtn} />}{aTab==='design'&&editCfg&&DesignManagerEditor()}{aTab==='shipping'&&editCfg&&ShippingBankEditor()}{aTab==='analytics'&&<AnalyticsPanel T={T} S={S}/>}{aTab==='errors'&&<ErrorLogsPanel T={T} S={S}/>}{aTab==='security'&&SecurityEditor()}{aTab==='products'&&editCfg&&ProductsTabEditor()}{aTab==='highlights'&&editCfg&&HighlightsTabEditor(hlCoverCropFor,setHlCoverCropFor,hlBulkTexts,setHlBulkTexts)}{aTab==='licenses'&&editCfg&&LicensesTabEditor()}{aTab==='services'&&editCfg&&ServicesTabEditor()}{aTab==='trash'&&<TrashPanel T={T} S={S} AdminBtn={AdminBtn} refreshKey={trashKey} onRestored={(sub:any)=>{const {deleted_at,...clean}=sub;setSubsState(prev=>prev.some((x:any)=>x.id===clean.id)?prev:[clean,...prev]); if(!isSupabaseConfigured){const subs=getLS(SK.subs,[]); if(!subs.some((x:any)=>x.id===clean.id))setLS(SK.subs,[clean,...subs])}}}/>}{(msg||saveProgress!==null)&&<div style={{position:'fixed',top:16,right:16,zIndex:6000,minWidth:220,maxWidth:320,background:T.pop,border:`1px solid ${msgType==='err'?T.err:(msgType==='ok'?T.ok:T.brd)}`,borderRadius:14,boxShadow:'0 10px 30px rgba(0,0,0,.18)',padding:'12px 14px',animation:'fadeSlide .3s ease both'}}>

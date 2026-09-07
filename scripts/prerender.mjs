@@ -25,10 +25,21 @@ async function loadPublicSettings(){
 
 const settings=await loadPublicSettings();
 const serialized=JSON.stringify(settings).replace(/</g,'\\u003c').replaceAll(String.fromCharCode(0x2028),'\\u2028').replaceAll(String.fromCharCode(0x2029),'\\u2029');
+const heroUrl = settings.images?.hero?.url || '/images/asset13c-hero-mother-child.webp';
+const supabaseUrl = String(process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
+const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
+
 for(const route of routes){
  const result=await render(route,settings);
  let html=template.replace(/<div id="root"><\/div>/,`<div id="root" data-ssg="true">${result.body}</div>`);
- html=html.replace('</head>',`${result.head}
+ if (heroUrl && heroUrl !== '/images/asset13c-hero-mother-child.webp') {
+   html = html.replace('/images/asset13c-hero-mother-child.webp', heroUrl);
+ }
+ let extraHead = '';
+ if (supabaseOrigin) {
+   extraHead += `\n<link rel="preconnect" href="${supabaseOrigin}" crossorigin />\n<link rel="dns-prefetch" href="${supabaseOrigin}" />`;
+ }
+ html=html.replace('</head>',`${result.head}${extraHead}
 <script>window.__APP_SSG_SETTINGS__=${serialized};{const mode=window.__APP_SSG_SETTINGS__?.publicThemeMode;if(mode==='light'||mode==='dark'||mode==='auto')window.__zkApplyPublicMode?.(mode)}</script>
 </head>`);
  const relative=route==='/'?'index.html':path.join(route.slice(1),'index.html');

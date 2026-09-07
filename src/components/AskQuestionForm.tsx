@@ -346,7 +346,18 @@ export default function AskQuestionForm({
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form
+            id="zk-ask-question-form"
+            name="ask_question_form"
+            action="#"
+            method="post"
+            data-webmcp-form="ask_question"
+            data-webmcp-purpose="parent_question_inquiry"
+            data-webmcp-version="1.0"
+            itemScope
+            itemType="https://schema.org/ContactForm"
+            onSubmit={handleSubmit}
+          >
             {/* Informational Guidance Notice */}
             <div
               style={{

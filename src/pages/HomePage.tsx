@@ -99,6 +99,92 @@ export default function HomePage(){
 
    {!referralConsultant && heroImage.enabled!==false&&<HeroSection title={lang==='en'?(cfg.heroTitleEn||cfg.heroTitle||'A clearer path for your child’s growth'):(cfg.heroTitle||'مسیر روشن‌تری برای رشد فرزند شما')} subtitle={lang==='en'?(cfg.heroSubtitleEn||cfg.heroSubtitle||'Understand growth, nutrition and daily needs with calm, expert guidance.'):(cfg.heroSubtitle||'با شناخت بهتر رشد، تغذیه و نیازهای روزانه، آگاهانه‌تر کنار فرزندتان باشید.')} imageUrl={heroImage.url||'/images/asset13c-hero-mother-child.webp'} imageAlt={heroImage.alt||'کودک شاد و سالم'} imageAspect={heroImage.aspectRatio} imagePosition={heroImage.objectPosition} ctaText={lang==='en'?'Request consultation':'ثبت درخواست مشاوره'} ctaLink="/form" onCtaClick={()=>requestConsult?.()} secondaryCtaText={coursesCtaLabel} secondaryCtaLink={coursesCtaTo||undefined} onSecondaryClick={coursesCtaTo?undefined:onCoursesCta} T={T} lang={lang} animateCoursesCta={animateCta} animateConsultCta={!!consultPulse}/>}
 
+   {/* WebMCP Quick Consultation Form Section for 100% Agentic Browsing & User Convenience */}
+   <section className="zk-home-section zk-home-consult-quick" style={{ marginBottom: 18 }}>
+     <form
+       id="home-consultation-form"
+       name="consultation_form"
+       action="/form"
+       method="post"
+       data-webmcp-form="consultation"
+       data-webmcp-purpose="child_growth_consultation"
+       data-webmcp-version="1.0"
+       itemScope
+       itemType="https://schema.org/ContactForm"
+       onSubmit={(e) => { e.preventDefault(); requestConsult?.(); }}
+       style={{
+         background: 'var(--zk-surface, #fff)',
+         border: '1px solid var(--zk-border, #E5E0D8)',
+         borderRadius: '20px',
+         padding: '16px 18px',
+         boxShadow: 'var(--zk-shadow-light)',
+         display: 'flex',
+         flexDirection: 'column',
+         gap: '10px'
+       }}
+     >
+       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+         <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--zk-primary-light, #E0F2FE)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--zk-primary, #0F766E)" strokeWidth="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.80 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+         </div>
+         <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: 'var(--zk-text)' }}>
+           {lang === 'en' ? 'Quick consultation request' : 'ثبت سریع درخواست مشاوره'}
+         </h3>
+       </div>
+       <p style={{ margin: 0, fontSize: 12, color: 'var(--zk-text-muted)', lineHeight: 1.6 }}>
+         {lang === 'en' ? 'Enter your phone number to receive expert guidance on child growth.' : 'شماره تماس خود را وارد فرمایید تا کارشناسان ما جهت راهنمایی رشد و تغذیه فرزندتان با شما تماس بگیرند.'}
+       </p>
+       <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+         <label htmlFor="homeParentPhone" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
+           {lang === 'en' ? 'Phone Number' : 'شماره تماس'}
+         </label>
+         <input
+           id="homeParentPhone"
+           name="parent_phone"
+           autoComplete="tel"
+           data-webmcp-field="parent_phone"
+           data-webmcp-label="شماره تماس جهت مشاوره"
+           required
+           dir="ltr"
+           type="tel"
+           inputMode="numeric"
+           placeholder={lang === 'en' ? 'e.g. 09123456789' : 'مثال: ۰۹۱۲۳۴۵۶۷۸۹'}
+           style={{
+             flex: 1,
+             minWidth: 0,
+             padding: '10px 14px',
+             background: 'var(--zk-inp, #fff)',
+             border: '1px solid var(--zk-border, #E5E0D8)',
+             borderRadius: '14px',
+             fontSize: 14,
+             outline: 'none',
+             color: 'var(--zk-text)',
+             fontFamily: 'inherit'
+           }}
+         />
+         <button
+           type="submit"
+           data-webmcp-action="submit"
+           style={{
+             padding: '10px 20px',
+             background: 'var(--zk-primary, #0F766E)',
+             color: 'var(--zk-text-inverse, #fff)',
+             border: 0,
+             borderRadius: '14px',
+             fontSize: 13.5,
+             fontWeight: 800,
+             cursor: 'pointer',
+             whiteSpace: 'nowrap',
+             fontFamily: 'inherit',
+             boxShadow: 'var(--zk-shadow-btn)'
+           }}
+         >
+           {lang === 'en' ? 'Request Call' : 'ثبت درخواست'}
+         </button>
+       </div>
+     </form>
+   </section>
+
    {/* وقتی لینک ارجاع پایه است، یک باکس شناور زرد برای راهنمایی والد نمایش می‌دهیم */}
    {showBaseTip && (
      <section style={{marginBottom:16,padding:'14px 16px',background:'color-mix(in srgb, var(--zk-warning) 10%, var(--zk-surface))',border:'1.5px solid color-mix(in srgb, var(--zk-warning) 52%, var(--zk-border))',borderRadius:18,boxShadow:'0 8px 24px rgba(250,204,21,0.18)',fontSize:13.5,lineHeight:1.9,color:'var(--zk-warning)',fontWeight:700}}>

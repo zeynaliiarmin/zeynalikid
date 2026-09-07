@@ -13,6 +13,7 @@ const ALLOWED_LOCAL="http://localhost:5173";
 // ALLOWED_ORIGINS Edge secret; no code change or cross-project wildcard is needed.
 // Future production domains (e.g. a purchased .com/.ir) are added here before cutover.
 const FUTURE_PRODUCTION_ORIGINS: string[] = [
+  "https://farzandman.vercel.app",
   // "https://zeynalikid.com",
   // "https://www.zeynalikid.com",
 ];

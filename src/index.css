@@ -1,6 +1,12 @@
 @import './foundation.css';
 @import './zk-tokens.css';
 
+/* Font Display Swap Fallback */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-display: swap;
+}
+
 /* ═══════════════════════════════════════════════
    Zeynalikid — Stage 1 Global Styles (Mobile-First)
    Design System: Warm Trust (Teal/Blue + Cream)

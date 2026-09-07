@@ -38,7 +38,10 @@
 
     <!-- فونت (CDN — preload محلی نیاز نیست) -->
 
-    <!-- Schema.org: Organization + WebSite -->
+    <!-- Preload Hero Image -->
+    <link rel="preload" href="/images/asset13c-hero-mother-child.webp" as="image" type="image/webp" fetchpriority="high" />
+
+    <!-- Schema.org: Organization + WebSite + WebMCP ContactForm -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -68,6 +71,26 @@
           "name": "زینالیکید",
           "inLanguage": ["fa-IR", "en"],
           "publisher": { "@id": "https://zeynalikid.vercel.app/#org" }
+        },
+        {
+          "@type": "ContactForm",
+          "@id": "https://zeynalikid.vercel.app/form#consultation-form",
+          "name": "فرم مشاوره تخصصی رشد و تغذیه کودک",
+          "description": "فرم آنلاین ثبت درخواست مشاوره تلفنی درباره رشد قد، اشتها، وزن و تمرکز کودک و نوجوان",
+          "url": "https://zeynalikid.vercel.app/form",
+          "potentialAction": {
+            "@type": "AssessAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://zeynalikid.vercel.app/form",
+              "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"]
+            },
+            "query-input": [
+              "required name=parent_phone",
+              "required name=child_age",
+              "required name=child_gender"
+            ]
+          }
         }
       ]
     }

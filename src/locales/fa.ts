@@ -13,7 +13,7 @@ const fa = {
   freeConsultation: '(مشاوره رایگان)', consultThisCourse: 'مشاوره این دوره', registerCourse: 'ثبت دوره', registerNewCourse: 'ثبت دوره جدید', backToCourses: 'بازگشت به دوره‌ها',
   selectedCourse: 'دوره انتخاب‌شده', submitChildInfo: 'ثبت اطلاعات فرزند و ادامه', childName: 'نام فرزند', childAge: 'سن فرزند', childGender: 'جنسیت فرزند', childHeight: 'قد', childWeight: 'وزن', childDisease: 'بیماری خاص', childNotes: 'توضیحات تکمیلی',
   initialCourseDone: 'ثبت اولیه دوره انجام شد', finalCourseDone: 'ثبت نهایی انجام شد',
-  duplicateFormTitle: 'فرم تکراری شناسایی شد', duplicateEdit: 'ویرایش اطلاعات', duplicateNo: 'خیر', duplicateOtherChild: 'برای فرزند دیگرم هست',
+  duplicateFormTitle: 'فرم تکراری شناسایی شد', duplicateEdit: 'ویرایش اطلاعات', duplicateCancel: 'بازگشت', duplicateOtherChild: 'برای فرزند دیگرم هست', duplicateFormMsg: 'شما قبلاً یک فرم مشاوره با همین اطلاعات ثبت کرده‌اید. این فرم برای همان کودک است یا فرزند دیگری؟',
   trackTitle: 'پیگیری ثبت‌نام', trackDesc: 'کد پیگیری و شماره تماسی که هنگام ثبت وارد کردید را وارد کنید.', trackBtn: 'پیگیری', registeredPhone: 'شماره ثبت‌شده:', requestCorrection: 'درخواست اصلاحیه', usageInstructions: 'طریقه مصرف', registrationDate: 'تاریخ ثبت', orderStatus: 'وضعیت سفارش',
   mediaTitle: 'پاسخ به نگرانی‌های مادران', mediaVideo: ' ویدیو', mediaVoice: ' ویس', mediaPhoto: 'عکس',
   statusNew: 'جدید', statusPending: 'در انتظار پرداخت', statusPaid: 'پرداخت‌شده', statusShipped: 'ارسال‌شده', statusCompleted: 'تکمیل‌شده', statusCancelled: 'لغو‌شده', changeStatus: 'تغییر وضعیت', history: 'تاریخچه', followReminder: 'یادآور پیگیری',

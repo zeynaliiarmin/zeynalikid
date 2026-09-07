@@ -97,8 +97,8 @@
       "destination": "/spa.html"
     },
     {
-      "source": "/:refCode",
-      "destination": "/api/referral/:refCode"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     },
     {
       "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|track|portal|profile|growth|settings|desk|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|admin-sw.js|admin-manifest.webmanifest|spa.html|404.html).*)",
@@ -213,6 +213,33 @@
         {
           "key": "Content-Type",
           "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/icons/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=31536000"
+        }
+      ]
+    },
+    {
+      "source": "/(courses|experience|licenses|education|about|faq|contact|products|privacy|index.html|$)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800"
         }
       ]
     }

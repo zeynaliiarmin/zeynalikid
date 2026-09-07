@@ -19,7 +19,7 @@ const en: Record<string, string> = {
   freeConsultation: '(free consultation)', consultThisCourse: 'Consultation for this course', registerCourse: 'Register Course', registerNewCourse: 'Register New Course', backToCourses: 'Back to Courses',
   selectedCourse: 'Selected Course', submitChildInfo: 'Save child info and continue', childName: 'Child Name', childAge: 'Child Age', childGender: 'Child Gender', childHeight: 'Height', childWeight: 'Weight', childDisease: 'Special Disease', childNotes: 'Additional Notes',
   initialCourseDone: 'Initial course registration completed', finalCourseDone: 'Final registration completed',
-  duplicateFormTitle: 'Duplicate form detected', duplicateEdit: 'Edit information', duplicateNo: 'No', duplicateOtherChild: 'It is for my other child',
+  duplicateFormTitle: 'Duplicate form detected', duplicateEdit: 'Edit information', duplicateCancel: 'Back', duplicateOtherChild: 'It is for my other child', duplicateFormMsg: 'You already submitted a consultation with similar information. Is this for the same child or a different child?',
   trackTitle: 'Track your registration', trackDesc: 'Enter your tracking code and the phone number used at registration.', trackBtn: 'Track', registeredPhone: 'Registered phone:', requestCorrection: 'Request a correction', usageInstructions: 'Usage instructions', registrationDate: 'Registration date', orderStatus: 'Status',
   mediaTitle: 'Answers to mothers’ concerns', mediaVideo: ' Video', mediaVoice: ' Voice', mediaPhoto: 'Photo',
   // Order statuses (English labels for reference; admin panel stays Persian)

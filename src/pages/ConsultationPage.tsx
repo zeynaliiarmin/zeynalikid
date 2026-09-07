@@ -12,7 +12,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { TRACKING_PREFIX } from '../config/project';
-import { getUserSession, validateFullName, splitE164 } from '../utils/userPortal';
+import { getUserSession, validateFullName, splitE164, setUserSession, type PortalSession } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -65,7 +65,7 @@ function ContactPanelLocal({ cfg, lang, T, publicText, digits }: any) {
 }
 
 // ─── FIX: Stable Form Components for Consultation (module-level, no remount) ───
-const StableFieldLocal = memo(function StableFieldLocal({label,value,onChange,ph,type='text',required=false,S,T,trVal}:any){
+const StableFieldLocal = memo(function StableFieldLocal({id,name,autoComplete,label,value,onChange,ph,type='text',required=false,S,T,trVal}:any){
   const _tr = trVal || ((s:any)=>String(s||''));
   const isNumeric = /phone|whatsapp|شماره|کارت|شبا|قیمت|price|کد|postal|zip|سن|قد|وزن|age|height|weight/i.test(String(label||''));
   const handleChange = (e:any)=>{
@@ -73,7 +73,8 @@ const StableFieldLocal = memo(function StableFieldLocal({label,value,onChange,ph
     const v = isNumeric ? p2e(raw).replace(/[^0-9]/g,'') : raw;
     onChange?.(v);
   };
-  return <div style={{marginBottom:13}}><label style={S.lbl}>{_tr(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><TextField type={type} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} inputMode={isNumeric?'numeric':undefined} /></div>;
+  const fid = id || (name ? `zk-field-${name}` : undefined);
+  return <div style={{marginBottom:13}}><label htmlFor={fid} style={S.lbl}>{_tr(label)}{required&&<span style={{color:T.err,marginInlineStart:4}}>*</span>}</label><TextField id={fid} name={name} autoComplete={autoComplete} data-webmcp-field={name||fid} data-webmcp-label={_tr(label)} type={type} value={value ?? ''} onChange={handleChange} placeholder={_tr(ph)} inputMode={isNumeric?'numeric':undefined} /></div>;
 });
 const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val,setVal,multi=false,S,T,trVal,cfg,lang}:any){
   const [open,setOpen]=useState(false);
@@ -157,6 +158,8 @@ export default function ConsultationPage(){
   const [trackCopied, setTrackCopied] = useState(false);
   const [copyToast, setCopyToast] = useState('');
   const usedMsgIdx = useRef<number[]>([]);
+  const [dupEntry, setDupEntry] = useState<any>(null);
+  const [allowNewChild, setAllowNewChild] = useState(false);
   const [editId, setEditId] = useState<any>(null);
   const editEntryRef = useRef<any>(null);
   const [submitting,setSubmitting]=useState(false);
@@ -164,6 +167,7 @@ export default function ConsultationPage(){
   const [privacyAttempted,setPrivacyAttempted]=useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
+  const [dupModal, setDupModal] = useState<null | { similarId: any; trackingCode: string }>(null);
   const subsCacheRef = useRef<any[] | null>(null);
 
   // FIX: Stabilize VoiceRecorder callbacks to prevent remounting / lost blob on parent re-render (فرم مشاوره)
@@ -336,23 +340,73 @@ export default function ConsultationPage(){
     return !Object.keys(e).length;
   };
 
-  const doSubmit = async () => {
+  const chooseDupEdit = () => {
+    const d = dupEntry;
+    if (!d) return;
+    setFd({
+      topics: d.topics || [],
+      pName: d.pName || '',
+      cc: d.cc || '+98',
+      pPhone: d.pPhone || '',
+      gender: d.gender || '',
+      age: d.age || '',
+      height: d.height || '',
+      weight: d.weight || '',
+      digest: d.digest || [],
+      appetite: d.appetite || '',
+      disease: d.disease || '',
+      specials: d.specials || [],
+      notes: d.notes || ''
+    });
+    setEditId(d.id);
+    editEntryRef.current = d;
+    setAllowNewChild(false);
+    setPrivacyAccepted(false);
+    setPrivacyAttempted(false);
+    setDupEntry(null);
+  };
+
+  const chooseDupNo = () => {
+    setDupEntry(null);
+  };
+
+  const chooseDupNewChild = () => {
+    setAllowNewChild(true);
+    setEditId(null);
+    editEntryRef.current = null;
+    setDupEntry(null);
+    doSubmit(true);
+  };
+
+  const doSubmit = async (allowNewChildOverride?: boolean) => {
     if(!privacyAccepted){setPrivacyAttempted(true);return}
     if (!validateConsult() || submitting) return;
     setSubmitting(true);
     try {
       const fp = fullPhone(fd.cc, fd.pPhone);
-      const list = subsCacheRef.current || await loadSubs();
-      // قانون جدید (شهریور ۱۴۰۵): هر شماره موبایل والد فقط یک کد پیگیری دارد. هر ثبت
-      // مشاوره/دوره جدید (چه فرزند دیگر، چه دوره جدید، چه درخواست مشاوره مجدد) روی همان کد
-      // به‌عنوان رکورد/کارت جدید در پنل ادمین ذخیره می‌شود.
-      // پنجره «فرم تکراری» حذف شد — هیچ‌طور جلو ثبت گرفته نمی‌شود.
-      // فقط وقتی کاربر از پنل کاربری روی «ویرایش اطلاعات» می‌زند (editId موجود است) همان
-      // رکورد قبلی update می‌شود.
+      const list = subsCacheRef.current || await loadSubs().catch(() => []);
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
-      if (editId) {
-        const prev = editEntryRef.current || {};
-        const us = getUserSession(); const trackingCode = us?.code || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(list.map((x:any)=>String(x.trackingCode||'')).filter(Boolean),TRACKING_PREFIX);
+      const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
+      const effectiveAllowNewChild = allowNewChildOverride ?? allowNewChild;
+
+      // ── تشخیص فرم تکراری ──
+      if (!editId && !effectiveAllowNewChild) {
+        const dup = list.find((x: any) =>
+          digits(x.fullPhone || '') === digits(fp) &&
+          x.type === 'consultation' &&
+          x.trackingCode
+        );
+        if (dup) {
+          setSubmitting(false);
+          setDupEntry(dup);
+          return;
+        }
+      }
+
+      const effectiveEditId = editId || null;
+      if (effectiveEditId) {
+        const prev = editEntryRef.current || list.find((x:any) => String(x.id) === String(effectiveEditId)) || {};
+        const us = getUserSession(); const trackingCode = us?.code || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
         const updated = {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           ...(us ? { userCode: us.code, userPhone: us.phone, userName: us.fullName } : {}),
@@ -381,26 +435,30 @@ export default function ConsultationPage(){
           }
           // Also update localStorage for immediate UI feedback
           const subs = getLS(SK.subs, []);
-          setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
+          setLS(SK.subs, subs.map((x: any) => x.id === effectiveEditId ? { ...x, ...updated } : x));
         } else {
           const subs = getLS(SK.subs, []);
-          setLS(SK.subs, subs.map((x: any) => x.id === editId ? { ...x, ...updated } : x));
+          setLS(SK.subs, subs.map((x: any) => x.id === effectiveEditId ? { ...x, ...updated } : x));
         }
-        if (subsCacheRef.current) subsCacheRef.current = subsCacheRef.current.map((x: any) => x.id === editId ? { ...x, ...updated } : x);
-        setLastId(editId);
+        if (subsCacheRef.current) subsCacheRef.current = subsCacheRef.current.map((x: any) => x.id === effectiveEditId ? { ...x, ...updated } : x);
+        setLastId(effectiveEditId);
         setLastTrack(String(trackingCode));
       } else {
-        const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
         const us2 = getUserSession();
-        // هر شماره موبایل والد یک‌بار کد پیگیری می‌گیرد و همهٔ ثبت‌های بعدی (مشاوره/دوره/فرزند دیگر)
-        // روی همان کد انجام می‌شود؛ فقط رکورد جدید در پنل ادمین ایجاد می‌شود.
-        const trackingCode = us2?.code || (prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX));
-        // similarTo: اگر والد قبلاً پرونده‌ای با همان شماره داشت، رکورد جدید به آن ارجاع داده می‌شود
-        // تا ادمین در پنل ببیند این ادامه/فرزند دیگرِ یک خانواده است.
+        // ── انتخاب trackingCode بر اساس اینکه فرزند دیگر است یا همان فرزند ──
+        let trackingCode: string;
         let similarTo: any = null;
-        if (prevSame) {
-          const sim = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && similarityScore(x, fd) >= 0.7);
-          similarTo = (sim || prevSame).id;
+        if (us2?.code) {
+          trackingCode = us2.code;
+          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,fd)>=0.7); similarTo=(sim||prevSame).id; }
+        } else if (effectiveAllowNewChild) {
+          // همیشه کد جدید تولید می‌شود
+          trackingCode = generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
+          if (prevSame) similarTo = prevSame.id;
+        } else {
+          // ثبت عادی (بدون تشخیص تکراری)
+          trackingCode = prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
+          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,fd)>=0.7); similarTo=(sim||prevSame).id; }
         }
         const sameNumberAll = list.filter((x: any) => digits(x.fullPhone || '') === digits(fp));
         const hasCoursePrev = sameNumberAll.some((x: any) => x.type === 'course');
@@ -440,7 +498,7 @@ export default function ConsultationPage(){
           category: 'مشاوره اولیه', consultationStatus: 'مشاوره اولیه',
           consultationStatusChangedAt: new Date().toISOString(),
           priority: autoPriority, unread: true, isNew: true, followReminder: true,
-          similarTo, followUps: [null, null, null, null],
+          similarTo: similarTo ? String(similarTo) : null, followUps: [null, null, null, null],
           adminNotes: voiceUploadFailed ? '(یادداشت صوتی در ارسال اولیه با خطا مواجه شد)' : '',
           usageInstructions: '', timeSlot: '', course: null, shipping: null, payment: null, editHistory: [],
           advisor: referralConsultant ? { id: referralConsultant.id, name: referralConsultant.name, nameEn: referralConsultant.nameEn, referralCode: referralConsultant.referralCode } : null
@@ -477,10 +535,23 @@ export default function ConsultationPage(){
         }
         if (subsCacheRef.current) subsCacheRef.current = [...subsCacheRef.current, entry];
         setLastTrack(String(entry.trackingCode||trackingCode));
+        // اگر کاربر هنوز وارد پنل نشده بود، خودکار با همین کد پیگیری واردش کن
+        // تا دفعه بعد از آدمک/همبرگر یک‌راست به پنلش برسد.
+        if (!getUserSession() && entry.trackingCode && (entry.pName || fd.pName)) {
+          try {
+            const sess: PortalSession = {
+              phone: fp,
+              fullName: String(entry.pName || fd.pName || ''),
+              code: String(entry.trackingCode),
+            };
+            setUserSession(sess);
+          } catch { /* ignore */ }
+        }
       }
-      setEditId(null);
-      editEntryRef.current = null;
-            pickNextMsg();
+      setEditId(null); editEntryRef.current = null;
+      setAllowNewChild(false);
+      setDupEntry(null);
+      pickNextMsg();
       clearPublicFormDrafts();
       setFormView('success');
     } catch (e) {
@@ -587,10 +658,22 @@ export default function ConsultationPage(){
       </Helmet>
       <style>{css}</style>
       <div style={{ ...S.card, marginTop: 0 }}>
+        <form
+          id="zk-consultation-form"
+          name="consultation_form"
+          action="/form"
+          method="post"
+          data-webmcp-form="consultation"
+          data-webmcp-purpose="child_growth_consultation"
+          data-webmcp-version="1.0"
+          itemScope
+          itemType="https://schema.org/ContactForm"
+          onSubmit={(e) => { e.preventDefault(); doSubmit(); }}
+        >
         {/* Specialist photo + title */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
           {cfg.showSpecialistPhoto && <div style={{ flexShrink: 0, position: 'relative', width: 72, height: 72, borderRadius: '50%', padding: 3, background: T.grad, boxShadow: `0 6px 16px ${T.acc}33` }}>
-            <img src={cfg.images?.consultationPhoto?.url || cfg.photoUrl || '/specialist-photo.webp'} alt={lang==='en'?(cfg.specialistNameEn||cfg.specialistName||'Consultation specialist'):(cfg.specialistName||'کارشناس مشاوره')} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
+            <img src={cfg.images?.consultationPhoto?.url || cfg.photoUrl || '/specialist-photo.webp'} alt={lang==='en'?(cfg.specialistNameEn||cfg.specialistName||'Consultation specialist'):(cfg.specialistName||'کارشناس مشاوره')} width={72} height={72} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: `2px solid ${T.card}` }} />
           </div>}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 16, margin: '0 0 6px', color: T.ttl, fontWeight: 800, lineHeight: 1.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{publicText('heroTitle')}</h1>
@@ -611,12 +694,12 @@ export default function ConsultationPage(){
         {/* Parent info */}
         <div style={S.sec}><MiniIcon type="user" T={T} />{publicText('parentInfo', 'اطلاعات والد / سرپرست')}</div>
         {portalSession && <div style={{ marginBottom: 13, fontSize: 12.5, color: T.mut, fontWeight: 700, lineHeight: 1.9 }}>{lang === 'en' ? `Name and contact number are taken from your account (${portalSession.fullName}).` : `نام و شماره تماس از حساب کاربری شما (${portalSession.fullName}) استفاده می‌شود.`}</div>}
-        {!portalSession && cfg.formFields?.parentName?.show !== false && <Field label={cfg.formFields.parentName.label} value={fd.pName} onChange={(v: string) => setFd({ ...fd, pName: v })} ph={cfg.formFields.parentName.placeholder} />}
+        {!portalSession && cfg.formFields?.parentName?.show !== false && <Field id="pName" name="parent_name" autoComplete="name" label={cfg.formFields.parentName.label} value={fd.pName} onChange={(v: string) => setFd({ ...fd, pName: v })} ph={cfg.formFields.parentName.placeholder} />}
         {!portalSession && cfg.formFields?.parentPhone?.show !== false && <div style={{ marginBottom: 13 }}>
-          <label style={S.lbl}>{trVal(cfg.formFields.parentPhone.label)} <span style={{ color: T.err }}>*</span></label>
+          <label htmlFor="pPhone" style={S.lbl}>{trVal(cfg.formFields.parentPhone.label)} <span style={{ color: T.err }}>*</span></label>
           <div style={{ display: 'flex', gap: 5, alignItems: 'stretch', direction: 'ltr' }}>
             <CountrySelectLocal value={fd.cc} onChange={(v: string) => setFd({ ...fd, cc: v })} />
-            <input dir="ltr" style={{ ...S.inp, flex: 1, borderColor: errs.pPhone ? T.err : T.brd }} value={fd.pPhone} onChange={e => setFd({ ...fd, pPhone: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={phonePlaceholder(fd.cc, lang)} inputMode="numeric" />
+            <input id="pPhone" name="parent_phone" autoComplete="tel" data-webmcp-field="parent_phone" data-webmcp-label="شماره تماس والد" required dir="ltr" style={{ ...S.inp, flex: 1, borderColor: errs.pPhone ? T.err : T.brd }} value={fd.pPhone} onChange={e => setFd({ ...fd, pPhone: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={phonePlaceholder(fd.cc, lang)} inputMode="numeric" />
           </div>
           {errs.pPhone && <Err err={errs.pPhone} theme={T} />}
         </div>}
@@ -628,19 +711,19 @@ export default function ConsultationPage(){
           <div>
             <label style={S.lbl}>{publicText('gender', 'جنسیت')} <span style={{ color: T.err }}>*</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => {const isA=fd.gender===x[0];return <button key={x[0]} className={isA?'zk-chip is-active':'zk-chip'} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '12px 8px', borderRadius: 16, color: isA ? T.accText : T.mut, cursor: 'pointer', fontSize: 14, fontFamily: 'inherit', fontWeight: 800, minHeight:50 }}>{x[1]}</button>;})}
+              {([['male', publicText('boy', 'پسر')], ['female', publicText('girl', 'دختر')]] as any[]).map((x: any) => {const isA=fd.gender===x[0];return <button key={x[0]} type="button" className={isA?'zk-chip is-active':'zk-chip'} onClick={() => setFd({ ...fd, gender: x[0] })} style={{ padding: '12px 8px', borderRadius: 16, color: isA ? T.accText : T.mut, cursor: 'pointer', fontSize: 14, fontFamily: 'inherit', fontWeight: 800, minHeight:50 }}>{x[1]}</button>;})}
             </div>
             {errs.gender && <Err err={errs.gender} theme={T} />}
           </div>
           {cfg.formFields?.age?.show !== false && <div>
-            <label style={S.lbl}>{publicText('age', cfg.formFields?.age?.label)} <span style={{ color: T.err }}>*</span></label>
-            <input type="number" min={Number(cfg.formFields?.age?.min ?? 2) || 2} max={Number(cfg.formFields?.age?.max ?? 17) || 17} style={{ ...S.inp, borderColor: errs.age ? T.err : T.brd }} value={fd.age} onChange={e => setFd({ ...fd, age: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={trVal(cfg.formFields?.age?.placeholder)} inputMode="numeric" />
+            <label htmlFor="childAge" style={S.lbl}>{publicText('age', cfg.formFields?.age?.label)} <span style={{ color: T.err }}>*</span></label>
+            <input id="childAge" name="child_age" data-webmcp-field="child_age" data-webmcp-label="سن فرزند" required type="number" min={Number(cfg.formFields?.age?.min ?? 2) || 2} max={Number(cfg.formFields?.age?.max ?? 17) || 17} style={{ ...S.inp, borderColor: errs.age ? T.err : T.brd }} value={fd.age} onChange={e => setFd({ ...fd, age: p2e(e.target.value).replace(/[^0-9]/g, '') })} placeholder={trVal(cfg.formFields?.age?.placeholder)} inputMode="numeric" />
             {errs.age && <Err err={errs.age} theme={T} />}
           </div>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {cfg.formFields?.height?.show !== false && <Field label={publicText('height', cfg.formFields?.height?.label)} value={fd.height} onChange={(v: string) => setFd({ ...fd, height: v })} ph={cfg.formFields?.height?.placeholder} type="number" />}
-          {cfg.formFields?.weight?.show !== false && <Field label={publicText('weight', cfg.formFields?.weight?.label)} value={fd.weight} onChange={(v: string) => setFd({ ...fd, weight: v })} ph={cfg.formFields?.weight?.placeholder} type="number" />}
+          {cfg.formFields?.height?.show !== false && <Field id="childHeight" name="child_height" label={publicText('height', cfg.formFields?.height?.label)} value={fd.height} onChange={(v: string) => setFd({ ...fd, height: v })} ph={cfg.formFields?.height?.placeholder} type="number" />}
+          {cfg.formFields?.weight?.show !== false && <Field id="childWeight" name="child_weight" label={publicText('weight', cfg.formFields?.weight?.label)} value={fd.weight} onChange={(v: string) => setFd({ ...fd, weight: v })} ph={cfg.formFields?.weight?.placeholder} type="number" />}
         </div>
         <div style={S.div} />
 
@@ -651,17 +734,17 @@ export default function ConsultationPage(){
           <SelectBox label={publicText('appetite', 'وضعیت اشتها')} items={cfg.appetiteOptions || []} val={fd.appetite} setVal={(v: any) => setFd({ ...fd, appetite: v })} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {cfg.formFields?.disease?.show !== false && <Field label={publicText('disease', cfg.formFields?.disease?.label)} value={fd.disease} onChange={(v: string) => setFd({ ...fd, disease: v })} ph={cfg.formFields?.disease?.placeholder} />}
+          {cfg.formFields?.disease?.show !== false && <Field id="childDisease" name="disease" label={publicText('disease', cfg.formFields?.disease?.label)} value={fd.disease} onChange={(v: string) => setFd({ ...fd, disease: v })} ph={cfg.formFields?.disease?.placeholder} />}
           <SelectBox label={publicText('specials', 'شرایط خاص')} multi items={cfg.specialConditions || []} val={fd.specials} setVal={(v: any) => setFd({ ...fd, specials: v })} />
         </div>
 
         {/* Notes + Voice recorder */}
         {cfg.formFields?.notes?.show !== false && <div style={{ marginTop: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 7 }}>
-            <label style={{ fontSize: 14, color: T.mut, fontWeight: 700 }}>{publicText('notes', cfg.formFields?.notes?.label)}</label>
+            <label htmlFor="consultNotes" style={{ fontSize: 14, color: T.mut, fontWeight: 700 }}>{publicText('notes', cfg.formFields?.notes?.label)}</label>
             <VoiceRecorder T={T} lang={lang} maxDuration={90} onRecorded={handleVoiceRecorded} onRemoved={handleVoiceRemoved} />
           </div>
-          <textarea style={LS.ta} value={fd.notes} onChange={e => setFd({ ...fd, notes: e.target.value })} placeholder={trVal(cfg.formFields?.notes?.placeholder)} />
+          <textarea id="consultNotes" name="notes" data-webmcp-field="notes" data-webmcp-label="توضیحات تکمیلی" style={LS.ta} value={fd.notes} onChange={e => setFd({ ...fd, notes: e.target.value })} placeholder={trVal(cfg.formFields?.notes?.placeholder)} />
           {voiceBlob && <div style={{ fontSize: 11, color: T.ok, marginTop: 6, fontWeight: 700 }}>✓ یادداشت صوتی آماده ارسال است ({(voiceBlob.size/1024).toFixed(1)} KB)</div>}
         </div>}
 
@@ -670,7 +753,8 @@ export default function ConsultationPage(){
         {Object.keys(errs).length > 0 && <div style={{ background: `${T.err}12`, border: `1px solid ${T.err}`, borderRadius: 12, padding: 12, marginBottom: 12, color: T.err, fontSize: 12 }}>
           {Object.values(errs).map((x: any, i) => <div key={i}>- {x}</div>)}
         </div>}
-        <PrimaryButton style={{opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting} onClick={()=>doSubmit()}>{publicText('submitBtnText')}</PrimaryButton>
+        <PrimaryButton type="submit" data-webmcp-action="submit" style={{opacity:submitting?0.65:1,cursor:submitting?'wait':'pointer'}} disabled={submitting}>{publicText('submitBtnText')}</PrimaryButton>
+        </form>
       </div>
 
 
@@ -686,6 +770,29 @@ export default function ConsultationPage(){
           <div style={{ display: 'grid', gap: 8 }}>
             <a href={`tel:${cfg.adminPhone || cfg.contacts?.phone || '09125703684'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 12, background: T.grad, color: '#fff', textDecoration: 'none', fontSize: 14.5, fontWeight: 800 }}>تماس تلفنی مستقیم</a>
             <button type="button" onClick={() => setEmergencyModalOpen(false)} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${T.brd}`, background: 'transparent', color: T.mut, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>{lang === 'fa' ? 'بستن و تلاش مجدد' : 'Close and retry'}</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Duplicate modal (Old exact design restored, no tracking code displayed) */}
+      {dupEntry && <div onMouseDown={e => { if (e.currentTarget === e.target) setDupEntry(null); }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>
+        <div style={{ width: '100%', maxWidth: 420, background: T.pop || T.card || '#fff', border: `1px solid ${T.brd || '#E5E0D8'}`, borderRadius: 20, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,.22)', animation: 'modalIn .35s ease both' }}>
+          <h3 style={{ color: T.ttl || T.txt, marginTop: 0, fontSize: 15, fontWeight: 800 }}>{lang === 'en' ? 'Duplicate form detected' : 'فرم تکراری شناسایی شد'}</h3>
+          <p style={{ fontSize: 13, color: T.txt, lineHeight: 2, margin: '10px 0 16px' }}>
+            {lang === 'en'
+              ? `A form was already submitted with this phone number${dupEntry.pName ? ` by "${dupEntry.pName}"` : ''} for a child (${dupEntry.age || '—'} years old, ${dupEntry.gender === 'male' ? 'boy' : 'girl'}). Do you need to edit the information?`
+              : `با این شماره تماس قبلاً${dupEntry.pName ? ` توسط «${dupEntry.pName}»` : ''} برای فرزندی (${dupEntry.age || '—'} ساله، ${dupEntry.gender === 'male' ? 'پسر' : 'دختر'}) فرم ثبت شده است. آیا نیاز به ویرایش اطلاعات دارید؟`}
+          </p>
+          <PrimaryButton style={{ marginBottom: 8, padding: 12, fontSize: 14.5 }} onClick={chooseDupEdit}>
+            {lang === 'en' ? 'Edit information' : 'ویرایش اطلاعات'}
+          </PrimaryButton>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={chooseDupNo}>
+              {lang === 'en' ? 'No' : 'خیر'}
+            </GhostButton>
+            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={chooseDupNewChild}>
+              {lang === 'en' ? 'It is for my other child' : 'برای فرزند دیگرم هست'}
+            </GhostButton>
           </div>
         </div>
       </div>}
