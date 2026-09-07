@@ -34,6 +34,11 @@ import AssistantWidget from './components/AssistantWidget';
 import AppRoutes from './app/AppRoutes';
 import useRouteScrollRestoration from './hooks/useRouteScrollRestoration';
 import type { AppContextValue, DynamicRecord } from './app/AppContext';
+// Stage-1 tokens: CSS-variable layer on top of S; runtime palette values are
+// injected here and consumed through var(--zk-…) by inline styles. The static
+// palette lives in zk-tokens.css (imported by index.css); this file only adds
+// the per-page overrides that react to T.
+import { buildRuntimeThemeVars, buildS } from './theme/tokens';
 
 import {
   APP_B_URL, SK, p2e, digits, uid, today, now, getLS, getPreloadedSettings, setLS, emptyFd, emptyCourse,
@@ -173,7 +178,15 @@ useEffect(()=>{
  useLayoutEffect(()=>{
   const root=document.documentElement;
   const body=document.body;
-  const adminInlineVars=['--zk-bg','--zk-surface','--zk-text','--zk-text-muted','--zk-border','--zk-primary'];
+  // Stage-1 tokens: list of runtime CSS variables that the public theme sets on
+  // :root and must be removed when we enter the admin shell (so the admin
+  // palette from adminTheme.ts wins without specificity fights).
+  const adminInlineVars=['--zk-bg','--zk-surface','--zk-text','--zk-text-muted','--zk-border','--zk-primary',
+    '--zk-pri','--zk-pri-text','--zk-ttl','--zk-card','--zk-inp','--zk-br','--zk-mut','--zk-err',
+    '--zk-grad','--zk-shadow-chip','--zk-shadow-chip-active','--zk-shadow-input','--zk-shadow-input-focus',
+    '--zk-shadow-card','--zk-shadow-btn','--zk-border-input','--zk-border-btn-ghost','--zk-border-card',
+    '--zk-radius-card','--zk-radius-input','--zk-radius-btn','--zk-radius-badge',
+    '--zk-space-card','--zk-space-input','--zk-space-btn'];
   if(isAdminRoute&&!isAdminLoginView){
    const final=adminDark?'dark':'light';
    body.classList.remove('public-root');
@@ -385,13 +398,18 @@ useEffect(()=>{
    // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [referralTarget, cfg]);
  // بازطراحی ظاهری: نئومورفیسم (سایه‌های نرم دوطرفه) + مینیمال (فضای باز، بدون شلوغی) + ممفیس (اشکال هندسی پاستلی در پس‌زمینه)
- const __chipShadow = `0 3px 8px rgba(0,0,0,.09), 0 1px 3px rgba(0,0,0,.06), -1px -1px 0 rgba(255,255,255,.6)`;
- const __chipShadowActive = `0 2px 5px rgba(0,0,0,.06), 0 0 0 2.5px color-mix(in srgb, ${T.acc} 35%, transparent), inset 0 1px 2px rgba(255,255,255,.7)`;
- const __inpBorder = `1px solid color-mix(in srgb, ${T.brd} 80%, transparent)`;
- const __inpShadow = `0 3px 8px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.5)`;
- const __inpFocusShadow = `0 4px 12px rgba(0,0,0,.10), 0 0 0 3px ${T.acc}28, 0 1px 2px rgba(0,0,0,.04)`;
- const __cardShadow = `0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05), -1px -1px 0 rgba(255,255,255,.5)`;
- const S=useMemo(()=>({page:{minHeight:'100dvh',fontFamily:"'Vazirmatn','Tahoma',Arial,sans-serif",direction:lang==='fa'?'rtl':'ltr',padding:'calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',display:'flex',justifyContent:'center',alignItems:'flex-start',color:T.txt,position:'relative' as const,overflowX:'hidden' as const},card:{width:'100%',maxWidth:'min(880px, 100%)',background:T.card,border:`1px solid color-mix(in srgb, ${T.brd} 70%, transparent)`,borderRadius:T.cardRadius||22,padding:T.cardPadding||20,boxShadow:__cardShadow,boxSizing:'border-box' as const,position:'relative' as const,zIndex:1},lbl:{display:'block',fontSize:13,color:T.mut,marginBottom:9,fontWeight:700,letterSpacing:'0'},inp:{width:'100%',padding:T.inputPadding||'14px 16px',background:T.inp,border:__inpBorder,borderRadius:T.inputRadius||16,minHeight:50,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',boxShadow:__inpShadow,transition:'box-shadow .22s ease, border-color .22s ease, transform .1s ease'},ta:{width:'100%',padding:T.inputPadding||'14px 16px',background:T.inp,border:__inpBorder,borderRadius:T.inputRadius||16,color:T.txt,fontSize:16,outline:'none',boxSizing:'border-box' as const,minHeight:120,resize:'vertical' as const,fontFamily:'inherit',boxShadow:__inpShadow,transition:'box-shadow .22s ease, border-color .22s ease'},btn:{width:'100%',minHeight:52,padding:T.btnPadding||'14px 28px',background:T.grad,border:0,borderRadius:T.btnRadius||16,color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:`0 8px 18px rgba(0,0,0,.14), 0 3px 6px rgba(0,0,0,.08), 0 10px 24px ${T.acc}30`,fontFamily:'inherit',transition:'all .25s ease'},btnGhost:{width:'100%',minHeight:48,padding:T.btnPadding||'12px 24px',background:T.card,border:`1.5px solid color-mix(in srgb, ${T.brd} 75%, transparent)`,borderRadius:T.btnRadius||16,color:T.accText,fontSize:14.5,fontWeight:700,cursor:'pointer',boxShadow:__chipShadow,fontFamily:'inherit',transition:'all .25s ease'},chip:__chipShadow,chipActive:__chipShadowActive,inpFocus:__inpFocusShadow,sec:{fontSize:14.5,fontWeight:800,color:T.ttl,margin:'20px 0 12px',display:'flex',gap:8,alignItems:'center'},div:{height:1,background:`linear-gradient(to right,transparent,${T.brd},transparent)`,margin:'18px 0'}}),[T,lang]);
+ // Stage-1 refactor: shadow / border strings moved to src/theme/tokens.ts as
+ // CSS variables; S below now reads from var(--zk-…). The __* consts are kept
+ // for inlined JSX outside S (e.g. modal buttons) until those bits move in a
+ // later stage — and they now just point at the same CSS variables so they
+ // stay in sync.
+ const __chipShadow = 'var(--zk-shadow-chip)';
+ const __chipShadowActive = 'var(--zk-shadow-chip-active)';
+ const __inpBorder = 'var(--zk-border-input)';
+ const __inpShadow = 'var(--zk-shadow-input)';
+ const __inpFocusShadow = 'var(--zk-shadow-input-focus)';
+ const __cardShadow = 'var(--zk-shadow-card)';
+ const S=useMemo(()=>buildS(lang as 'fa'|'en'),[lang]);
  const countries=cfg.countryCodes||baseCountries; const hasCt=Object.values(cfg.contacts||{}).some((v)=>Array.isArray(v)?v.length:v);
  // اصلاح ۱۸: هدایت به پروژه ثانویه (فرم مشاوره)
  const goToSecondaryApp=()=>{
@@ -526,7 +544,7 @@ const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referra
  };
  const hreflangFa=buildLangHref('fa');
  const hreflangEn=buildLangHref('en');
- const themeVars = `:root{--zk-pri:${T.acc};--zk-pri-text:${T.accText};--zk-card:${T.card};--zk-inp:${T.inp};--zk-br:${T.brd};--zk-mut:${T.mut};--zk-err:${T.err};--zk-bg:${T.bg};}
+ const themeVars = buildRuntimeThemeVars(T) + `
 /* Desktop width + reduced motion */
 @media (min-width: 900px){
   .zk-card{max-width:760px !important;}
