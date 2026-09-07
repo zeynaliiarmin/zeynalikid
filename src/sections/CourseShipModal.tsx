@@ -1,10 +1,9 @@
 // src/sections/CourseShipModal.tsx
 // Stage-3 refactor: مودال «انتخاب مقصد ارسال» که در App.tsx به‌صورت inline
-// در return تعریف شده بود. این فایل JSX را با همان props قبلی بازتولید می‌کند
-// و به state دست نمی‌زند — همه callback ها از بالا پاس می‌گیرند تا رفتار
-// بایت‌به‌بایت مشابه قبل بماند. در مرحله ۴ (تقسیم context) به useAppContext
-// مهاجرت خواهد کرد.
+// در return تعریف شده بود. Stage-5: استایل‌های تکراری دکمه به کامپوننت اتمی
+// PrimaryButton/GhostButton منتقل شدند؛ رفتار دقیقاً مثل قبل است.
 import { Modal, MiniIcon } from '../app/appSupport';
+import { PrimaryButton, GhostButton } from '../components/ui/atoms';
 
 interface CourseShipModalProps {
   T: Record<string, any>;
@@ -36,14 +35,20 @@ export default function CourseShipModal({
             : 'ارسال برای داخل ایران انجام می‌شود یا خارج از کشور؟ روش ارسال و درگاه‌های پرداخت بر اساس انتخاب شما تنظیم خواهند شد.'}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button type="button" onClick={() => onChooseIran(shipModal)} style={{ ...S.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 52, fontSize: 15 }}>
+          <PrimaryButton
+            onClick={() => onChooseIran(shipModal)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 52, fontSize: 15 }}
+          >
             <span>🇮🇷</span>
             <span>{publicText('sendIran', 'ارسال برای ایران')}</span>
-          </button>
-          <button type="button" onClick={() => onChooseIntl(shipModal)} style={{ ...S.btnGhost, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 52, fontSize: 15 }}>
+          </PrimaryButton>
+          <GhostButton
+            onClick={() => onChooseIntl(shipModal)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 52, fontSize: 15 }}
+          >
             <span>🌐</span>
             <span>{publicText('sendIntl', 'ارسال برای خارج از ایران')}</span>
-          </button>
+          </GhostButton>
         </div>
       </div>
     </Modal>

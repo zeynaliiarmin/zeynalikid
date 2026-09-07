@@ -1,10 +1,11 @@
 // src/sections/ReferralConsultModal.tsx
 // Stage-3 refactor: پاپ‌آپ «شما قبلاً توسط X مشاوره شده‌اید» در حالت ارجاع.
-// منطق تشخیص tab/course و labelها و دکمه‌ها عیناً از App.tsx استخراج شده —
-// این کامپوننت هیچ setStateی انجام نمی‌دهد؛ callbackها از بالا می‌آیند.
+// Stage-5: دکمه‌های inline به کامپوننت اتمی PrimaryButton + استایل محلی
+// برای حالت‌های disabled منتقل شدند.
 import { useNavigate } from 'react-router-dom';
 import { Modal, MiniIcon } from '../app/appSupport';
 import { fillReferralText, findTabByCode } from '../utils/referral';
+import { PrimaryButton, GhostButton, TextArea } from '../components/ui/atoms';
 
 interface ReferralConsultModalProps {
   T: Record<string, any>;
@@ -58,6 +59,7 @@ export default function ReferralConsultModal({
   };
 
   const consultantName = lang === 'en' ? (consultant.nameEn || consultant.name) : consultant.name;
+  const reasonOk = reason.trim().length > 0;
 
   return (
     <Modal T={T} onClose={() => { onClose(); setShowReason(false); }} closeLabel={lang === 'en' ? 'Close' : 'بستن'} max={480}>
@@ -73,50 +75,47 @@ export default function ReferralConsultModal({
               : `شما قبلاً توسط ${consultantName} مشاوره شده‌اید؛ نیازی به درخواست مشاوره جدید نیست.`)}
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-          <button
-            type="button"
+          <PrimaryButton
             onClick={primary}
             style={{
-              minHeight: 52, padding: '12px 16px', borderRadius: 14,
-              background: 'var(--zk-primary)', color: 'var(--zk-text-inverse, #fff)',
-              border: 0, fontWeight: 800, fontSize: 14.5, cursor: 'pointer', fontFamily: 'inherit',
+              minHeight: 52, padding: '12px 16px', borderRadius: 14, fontSize: 14.5,
               animation: 'zk-hero-pulse 2.4s ease-in-out 3',
               WebkitAnimation: 'zk-hero-pulse 2.4s ease-in-out 3',
               animationFillMode: 'forwards', WebkitAnimationFillMode: 'forwards',
             }}
           >
             {mainLabel}
-          </button>
-          <button
-            type="button"
+          </PrimaryButton>
+          <GhostButton
             onClick={() => setShowReason(true)}
-            style={{ minHeight: 48, padding: '11px 16px', borderRadius: 14, background: T.card, border: `1px solid ${T.brd}`, color: T.txt, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ minHeight: 48, padding: '11px 16px', borderRadius: 14, fontSize: 13.5 }}
           >
             {cfg.referral?.texts?.reconsultLabel || (lang === 'en' ? 'I need a consultation again' : 'مجدداً درخواست مشاوره دارم')}
-          </button>
+          </GhostButton>
         </div>
         {showReason && (
           <div style={{ marginTop: 14, animation: 'fadeSlide .3s ease both', textAlign: 'right' }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: T.ttl, marginBottom: 8 }}>
               {cfg.referral?.texts?.reconsultQuestion || (lang === 'en' ? 'Why do you need a consultation again?' : 'به چه دلیلی مجدداً درخواست مشاوره دارید؟')}
             </label>
-            <textarea
+            <TextArea
               dir="auto"
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder={lang === 'en' ? 'Please describe your reason...' : 'لطفاً دلیل خود را بنویسید...'}
-              style={{ width: '100%', padding: '11px 12px', background: T.inp, border: `1px solid ${T.brd}`, borderRadius: 12, color: T.txt, fontSize: 14, fontFamily: 'inherit', minHeight: 80, resize: 'vertical', boxSizing: 'border-box' }}
+              style={{ padding: '11px 12px', borderRadius: 12, fontSize: 14, minHeight: 80 }}
             />
             <button
               type="button"
               onClick={submitReason}
-              disabled={!reason.trim()}
+              disabled={!reasonOk}
               style={{
                 width: '100%', minHeight: 48, marginTop: 8, padding: '11px 16px', borderRadius: 14,
-                background: reason.trim() ? 'var(--zk-primary)' : `${T.acc}33`,
-                color: reason.trim() ? 'var(--zk-text-inverse, #fff)' : T.mut,
-                border: 0, fontWeight: 800, fontSize: 14, cursor: reason.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
+                background: reasonOk ? 'var(--zk-primary)' : `${T.acc}33`,
+                color: reasonOk ? 'var(--zk-text-inverse, #fff)' : T.mut,
+                border: 0, fontWeight: 800, fontSize: 14,
+                cursor: reasonOk ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
               }}
             >
               {lang === 'en' ? 'Continue to consultation form' : 'ادامه به فرم مشاوره'}
