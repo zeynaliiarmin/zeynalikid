@@ -158,8 +158,6 @@ export default function ConsultationPage(){
   const [trackCopied, setTrackCopied] = useState(false);
   const [copyToast, setCopyToast] = useState('');
   const usedMsgIdx = useRef<number[]>([]);
-  const [dupEntry, setDupEntry] = useState<any>(null);
-  const [allowNewChild, setAllowNewChild] = useState(false);
   const [editId, setEditId] = useState<any>(null);
   const editEntryRef = useRef<any>(null);
   const [submitting,setSubmitting]=useState(false);
@@ -340,45 +338,10 @@ export default function ConsultationPage(){
     return !Object.keys(e).length;
   };
 
-  const chooseDupEdit = () => {
-    const d = dupEntry;
-    if (!d) return;
-    setFd({
-      topics: d.topics || [],
-      pName: d.pName || '',
-      cc: d.cc || '+98',
-      pPhone: d.pPhone || '',
-      gender: d.gender || '',
-      age: d.age || '',
-      height: d.height || '',
-      weight: d.weight || '',
-      digest: d.digest || [],
-      appetite: d.appetite || '',
-      disease: d.disease || '',
-      specials: d.specials || [],
-      notes: d.notes || ''
-    });
-    setEditId(d.id);
-    editEntryRef.current = d;
-    setAllowNewChild(false);
-    setPrivacyAccepted(false);
-    setPrivacyAttempted(false);
-    setDupEntry(null);
-  };
+  const [dupMode, setDupMode] = useState<'edit'|'newchild'|null>(null);
+  const editOverrideRef = useRef<{id:string, trackingCode:string} | null>(null);
 
-  const chooseDupNo = () => {
-    setDupEntry(null);
-  };
-
-  const chooseDupNewChild = () => {
-    setAllowNewChild(true);
-    setEditId(null);
-    editEntryRef.current = null;
-    setDupEntry(null);
-    doSubmit(true);
-  };
-
-  const doSubmit = async (allowNewChildOverride?: boolean) => {
+  const doSubmit = async () => {
     if(!privacyAccepted){setPrivacyAttempted(true);return}
     if (!validateConsult() || submitting) return;
     setSubmitting(true);
@@ -387,26 +350,26 @@ export default function ConsultationPage(){
       const list = subsCacheRef.current || await loadSubs().catch(() => []);
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
-      const effectiveAllowNewChild = allowNewChildOverride ?? allowNewChild;
 
-      // ── تشخیص فرم تکراری ──
-      if (!editId && !effectiveAllowNewChild) {
+      // ── تشخیص فرم تکراری (منطق جدید) ──
+      if (!editId && !dupMode) {
         const dup = list.find((x: any) =>
           digits(x.fullPhone || '') === digits(fp) &&
           x.type === 'consultation' &&
-          x.trackingCode
+          x.trackingCode &&
+          similarityScore(x, fd) >= 0.7
         );
         if (dup) {
           setSubmitting(false);
-          setDupEntry(dup);
+          setDupModal({ similarId: dup.id, trackingCode: String(dup.trackingCode) });
           return;
         }
       }
 
-      const effectiveEditId = editId || null;
+      const effectiveEditId = editId || editOverrideRef.current?.id || null;
       if (effectiveEditId) {
         const prev = editEntryRef.current || list.find((x:any) => String(x.id) === String(effectiveEditId)) || {};
-        const us = getUserSession(); const trackingCode = us?.code || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
+        const us = getUserSession(); const trackingCode = us?.code || editOverrideRef.current?.trackingCode || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
         const updated = {
           ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           ...(us ? { userCode: us.code, userPhone: us.phone, userName: us.fullName } : {}),
@@ -446,13 +409,17 @@ export default function ConsultationPage(){
       } else {
         const us2 = getUserSession();
         // ── انتخاب trackingCode بر اساس اینکه فرزند دیگر است یا همان فرزند ──
+        // «edit» (ویرایش) از همان کد پیگیری قبلی استفاده می‌کند؛ «newchild» همیشه کد تصادفی جدید می‌گیرد.
         let trackingCode: string;
         let similarTo: any = null;
-        if (us2?.code) {
+        if (dupMode === 'edit' && dupModal?.trackingCode) {
+          trackingCode = dupModal.trackingCode;
+          similarTo = dupModal.similarId;
+        } else if (us2?.code) {
           trackingCode = us2.code;
           if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,fd)>=0.7); similarTo=(sim||prevSame).id; }
-        } else if (effectiveAllowNewChild) {
-          // همیشه کد جدید تولید می‌شود
+        } else if (dupMode === 'newchild') {
+          // همیشه کد جدید تولید می‌شود (هیچ‌وقت کد قبلی را reuse نمی‌کنیم)
           trackingCode = generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
           if (prevSame) similarTo = prevSame.id;
         } else {
@@ -549,8 +516,8 @@ export default function ConsultationPage(){
         }
       }
       setEditId(null); editEntryRef.current = null;
-      setAllowNewChild(false);
-      setDupEntry(null);
+      editOverrideRef.current = null;
+      setDupModal(null); setDupMode(null);
       pickNextMsg();
       clearPublicFormDrafts();
       setFormView('success');
@@ -774,23 +741,31 @@ export default function ConsultationPage(){
         </div>
       </div>}
 
-      {/* Duplicate modal (Old exact design restored, no tracking code displayed) */}
-      {dupEntry && <div onMouseDown={e => { if (e.currentTarget === e.target) setDupEntry(null); }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>
+      {/* Duplicate modal (Old design restored, updated logic preserved, no tracking code shown) */}
+      {dupModal && <div onMouseDown={e => { if (e.currentTarget === e.target) { setDupModal(null); setDupMode(null); } }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>
         <div style={{ width: '100%', maxWidth: 420, background: T.pop || T.card || '#fff', border: `1px solid ${T.brd || '#E5E0D8'}`, borderRadius: 20, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,.22)', animation: 'modalIn .35s ease both' }}>
           <h3 style={{ color: T.ttl || T.txt, marginTop: 0, fontSize: 15, fontWeight: 800 }}>{lang === 'en' ? 'Duplicate form detected' : 'فرم تکراری شناسایی شد'}</h3>
           <p style={{ fontSize: 13, color: T.txt, lineHeight: 2, margin: '10px 0 16px' }}>
-            {lang === 'en'
-              ? `A form was already submitted with this phone number${dupEntry.pName ? ` by "${dupEntry.pName}"` : ''} for a child (${dupEntry.age || '—'} years old, ${dupEntry.gender === 'male' ? 'boy' : 'girl'}). Do you need to edit the information?`
-              : `با این شماره تماس قبلاً${dupEntry.pName ? ` توسط «${dupEntry.pName}»` : ''} برای فرزندی (${dupEntry.age || '—'} ساله، ${dupEntry.gender === 'male' ? 'پسر' : 'دختر'}) فرم ثبت شده است. آیا نیاز به ویرایش اطلاعات دارید؟`}
+            {publicText('duplicateFormMsg')}
           </p>
-          <PrimaryButton style={{ marginBottom: 8, padding: 12, fontSize: 14.5 }} onClick={chooseDupEdit}>
+          <PrimaryButton style={{ marginBottom: 8, padding: 12, fontSize: 14.5 }} onClick={async () => {
+            setDupMode('edit');
+            editOverrideRef.current = { id: dupModal.similarId, trackingCode: dupModal.trackingCode };
+            setDupModal(null); setSubmitting(true);
+            await doSubmit();
+          }}>
             {lang === 'en' ? 'Edit information' : 'ویرایش اطلاعات'}
           </PrimaryButton>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={chooseDupNo}>
+            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={() => { setDupModal(null); setDupMode(null); }}>
               {lang === 'en' ? 'No' : 'خیر'}
             </GhostButton>
-            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={chooseDupNewChild}>
+            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={async () => {
+              setDupMode('newchild');
+              setSubmitting(true);
+              setDupModal(null);
+              await doSubmit();
+            }}>
               {lang === 'en' ? 'It is for my other child' : 'برای فرزند دیگرم هست'}
             </GhostButton>
           </div>
