@@ -9,6 +9,7 @@ import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import PublicBackButton from '../components/PublicBackButton';
 import { pushInPageHistoryState } from '../utils/scrollRestoration';
+import { PrimaryButton } from '../components/ui/atoms';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -149,7 +150,7 @@ export default function ChildInfoPage(){
 
  <PrivacyConsent accepted={privacyAccepted} attempted={privacyAttempted} lang={lang} T={T} textFa="با استفاده از این اطلاعات برای ارائه و پیگیری دوره درخواستی موافقم." textEn="I consent to using this information to provide and follow up the requested course." onChange={accepted=>{setPrivacyAccepted(accepted);if(accepted)setPrivacyAttempted(false)}} onOpenPrivacy={()=>{try{sessionStorage.setItem('zk_privacy_return_to',location.pathname||'/child-info')}catch{};setView('privacy')}}/>
  {Object.keys(errs).length>0&&<div style={{background:`${T.err}12`,border:`1px solid ${T.err}`,borderRadius:12,padding:12,margin:'12px 0',color:T.err,fontSize:12}}>{Object.values(errs).map((x:any,i:number)=><div key={`err-${i}`}>• {x}</div>)}</div>}<div style={{display:'grid',gridTemplateColumns:'1fr',gap:10,marginTop:12, position:'sticky', bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', background: T.card, paddingTop:10, paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))', zIndex:10, borderTop: `1px solid ${T.brd}`}}>
-  <button type="button" style={{...S.btn,minHeight:52,opacity:1,cursor:'pointer'}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</button>
+  <PrimaryButton type="button" style={{minHeight:52,opacity:1,cursor:"pointer"}} onClick={submit}>{lang==='en'?'Save child info and continue':'ثبت اطلاعات فرزند و ادامه'}</PrimaryButton>
 </div></div>
  {editChild&&<EditChildOnInfoModal app={app}/>}
  </div>

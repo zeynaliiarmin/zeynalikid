@@ -9,14 +9,16 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, TextareaHTMLAttri
 type Styleable = { className?: string; style?: React.CSSProperties };
 
 /** دکمه اصلی (CTA) — همان S.btn. نوع پیش‌فرض button است تا در فرم‌ها
- *  اتفاقی submit نکند؛ هر جا به type="submit" نیاز است به‌صراحت پاس دهید. */
+ *  اتفاقی submit نکند؛ هر جا به type="submit" نیاز است به‌صراحت پاس دهید.
+ *  با pill=true گوشه‌ها کاملاً گرد (border-radius:9999) می‌شوند. */
 export function PrimaryButton({
   type = 'button',
+  pill = false,
   children,
   style,
   className,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & Styleable & { children?: ReactNode }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & Styleable & { children?: ReactNode; pill?: boolean }) {
   return (
     <button
       type={type}
@@ -24,7 +26,7 @@ export function PrimaryButton({
       style={{
         width: '100%', minHeight: 52, padding: 'var(--zk-space-btn, 14px 28px)',
         background: 'var(--zk-grad, var(--zk-primary))', border: 0,
-        borderRadius: 'var(--zk-radius-btn, 16px)', color: 'var(--zk-text-inverse, #fff)',
+        borderRadius: pill ? 9999 : 'var(--zk-radius-btn, 16px)', color: 'var(--zk-text-inverse, #fff)',
         fontSize: 16, fontWeight: 800, cursor: 'pointer',
         boxShadow: 'var(--zk-shadow-btn)', fontFamily: 'inherit',
         transition: 'all .25s ease', ...style,
@@ -38,11 +40,12 @@ export function PrimaryButton({
 
 /** دکمه ثانویه (نوع گاست/بازگشت) — همان S.btnGhost */
 export function GhostButton({
+  pill = false,
   children,
   style,
   className,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & Styleable & { children?: ReactNode }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & Styleable & { children?: ReactNode; pill?: boolean }) {
   return (
     <button
       type="button"
@@ -50,7 +53,7 @@ export function GhostButton({
       style={{
         width: '100%', minHeight: 48, padding: '12px 24px',
         background: 'var(--zk-card)', border: 'var(--zk-border-btn-ghost)',
-        borderRadius: 'var(--zk-radius-btn, 16px)', color: 'var(--zk-pri-text)',
+        borderRadius: pill ? 9999 : 'var(--zk-radius-btn, 16px)', color: 'var(--zk-pri-text)',
         fontSize: 14.5, fontWeight: 700, cursor: 'pointer',
         boxShadow: 'var(--zk-shadow-chip)', fontFamily: 'inherit',
         transition: 'all .25s ease', ...style,
