@@ -33,7 +33,7 @@ import CourseTimer from './components/CourseTimer';
 import AssistantWidget from './components/AssistantWidget';
 import AppRoutes from './app/AppRoutes';
 import useRouteScrollRestoration from './hooks/useRouteScrollRestoration';
-import type { AppContextValue, DynamicRecord } from './app/AppContext';
+import type { AppContextValue, AppUIValue, AppFlowValue, AppAdminValue, DynamicRecord } from './app/AppContext';
 // Stage-1 tokens: CSS-variable layer on top of S; runtime palette values are
 // injected here and consumed through var(--zk-…) by inline styles. The static
 // palette lives in zk-tokens.css (imported by index.css); this file only adds
@@ -532,11 +532,48 @@ const entry={id:uid(),trackingCode,type:'course',date:today(),time:now(),...data
   return()=>window.clearTimeout(t);
  },[view,flowDeadline]);
  // نکته: کلید APP_A_URL برای سازگاری با کدهای موجود صفحات نگه داشته شده، اما مقدار آن اکنون آدرس «پروژه ثانویه (B - فرم مشاوره)» است (VITE_APP_B_URL).
- const app:AppContextValue={cfg,saveCfg,mergeSettings,T,TH,S,css, publicDesign: resolvePublicDesign(), publicColorMode: effectivePublicMode,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA,goHome:()=>setView('home'),resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code))};
+ const goHome=()=>setView('home');
+ const app:AppContextValue={cfg,saveCfg,mergeSettings,T,TH,S,css, publicDesign: resolvePublicDesign(), publicColorMode: effectivePublicMode,lang,setLang,view,setView,fd,setFd,course,setCourse,courseResult,editChild,setEditChild,shipModal,setShipModal,courseTab,setCourseTab,expandedCourse,setExpandedCourse,countries,placeholder,PROFILE_PHOTO,APP_A_URL:APP_B_URL,APP_B_URL,publicText,trVal,showContactOn,goToAppA:goToSecondaryApp,goHome,resetForm,onLogout:()=>{try{clearAdminSession()}catch{};setAdminAuthed(false);setView('admin-login')},CountrySelect,Field,SelectBox,Err,Stepper,Tag,Modal,ContactPanel,MiniIcon,TrustRotator,MemphisBg,Footer,activeTab,chooseDest,deliveryText,validateOptionalDate,finalizeCourseRegistration,phonePlaceholder,validPhone,fullPhone,fileToData,deleteStoredImage,uploadPdfFile,deleteStoredFile,uploadTonguePhoto,deleteStoredTonguePhoto,uploadReceiptWithProgress,uploadVoiceNote,adminTab,setAdminTab,adminAuthed,p2e,referralConsultant,setReferralConsultant,referralTarget,setReferralTarget,requestConsult,referralConsultOpen,setReferralConsultOpen,referralConsultReason,setReferralConsultReason,referralConsultShowReason,setReferralConsultShowReason,startConsult,consultPulse,findTabByCode:((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code))};
  // R21: مسیرهای admin از اپ حذف شدند؛ ورود مستقیم هر آدرسِ حاوی admin با ۴۰۴ ایستا پاسخ داده می‌شود و پنل در /desk/app با گاردِ نشست محافظت می‌شود
  // اصلاح چانک-۱: Suspense برای Lazy Loading
- 
-const page=<AppRoutes app={app} adminAuthed={adminAuthed} referralReady={referralReady} referralConsultant={referralConsultant}/>;
+ // Stage-4: سه زیر-context با useMemo تا تغییر یکی باعث re-render مصرف‌کنندگان
+ // بقیه نشود. این memoها بعد از ساخت `app` و همه handlerها آمده‌اند چون به
+ // توابعی چون chooseDest/finalizeCourseRegistration/requestConsult و … وابسته‌اند.
+ const uiValue: AppUIValue = useMemo(() => ({
+  cfg, T, TH, S, css, lang, setLang, view, setView, publicText, trVal,
+  publicDesign: resolvePublicDesign(),
+  publicColorMode: effectivePublicMode,
+  showContactOn,
+  APP_B_URL, APP_A_URL: APP_B_URL,
+  goHome, goToAppA: goToSecondaryApp,
+  Modal, MiniIcon, Footer, ContactPanel, TrustRotator, MemphisBg,
+  Field, SelectBox, Err, CountrySelect: StableCountrySelect as any, Tag, Stepper: Stepper as any,
+ }), [cfg, T, TH, S, css, lang, view, publicText, trVal, effectivePublicMode, showContactOn, setLang, setView]);
+ const flowValue: AppFlowValue = useMemo(() => ({
+  fd, setFd, course, setCourse, courseResult, editChild, setEditChild,
+  shipModal, setShipModal, courseTab, setCourseTab, expandedCourse, setExpandedCourse, activeTab,
+  chooseDest, deliveryText, validateOptionalDate, finalizeCourseRegistration, resetForm,
+  referralConsultant, setReferralConsultant,
+  referralTarget, setReferralTarget,
+  referralConsultOpen, setReferralConsultOpen,
+  referralConsultReason, setReferralConsultReason,
+  referralConsultShowReason, setReferralConsultShowReason,
+  requestConsult, startConsult, consultPulse,
+  findTabByCode: ((tabs:DynamicRecord[],code:string)=>findTabByCode(tabs,code)),
+  countries, placeholder, PROFILE_PHOTO,
+  phonePlaceholder, validPhone, fullPhone, p2e,
+  fileToData, deleteStoredImage, uploadPdfFile, deleteStoredFile,
+  uploadTonguePhoto, deleteStoredTonguePhoto,
+  uploadReceiptWithProgress, uploadVoiceNote,
+ }), [fd, course, courseResult, editChild, shipModal, courseTab, expandedCourse, activeTab,
+  referralConsultant, referralTarget, referralConsultOpen, referralConsultReason, referralConsultShowReason,
+  consultPulse, countries]);
+ const adminValue: AppAdminValue = useMemo(() => ({
+  adminAuthed, adminTab, setAdminTab,
+  onLogout: () => { try { clearAdminSession(); } catch {}; setAdminAuthed(false); setView('admin-login'); },
+ }), [adminAuthed, adminTab]);
+
+const page=<AppRoutes app={app} ui={uiValue} flow={flowValue} admin={adminValue} adminAuthed={adminAuthed} referralReady={referralReady} referralConsultant={referralConsultant}/>;
  // هدر اصلی در فهرست و جزئیات دوره نمایش داده می‌شود؛ فقط مراحل حساس ثبت/پرداخت هدر ندارند.
  const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
  // صفحات ورود ادمین و پیگیری دارای طراحی گلسمورفیسم تمام‌صفحه با نوار شیشه‌ای اختصاصی هستند؛

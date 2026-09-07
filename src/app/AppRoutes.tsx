@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppContextProvider, type AppContextValue } from './AppContext';
+import { AppContextProvider, type AppContextValue, type AppUIValue, type AppFlowValue, type AppAdminValue } from './AppContext';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const CoursesPage = lazy(() => import('../pages/CoursesPage'));
@@ -30,17 +30,20 @@ const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 
 interface AppRoutesProps {
   app: AppContextValue;
+  ui: AppUIValue;
+  flow: AppFlowValue;
+  admin: AppAdminValue;
   adminAuthed: boolean;
   referralReady: boolean;
   referralConsultant: unknown;
 }
 
-export default function AppRoutes({ app, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
+export default function AppRoutes({ app, ui, flow, admin, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
   // مسیرها مستقل‌اند: /portal همیشه پنل کاربر و /track همیشه پیگیری است.
-  // entryMode فقط مقصد دکمه‌های ورودی را تعیین می‌کند، نه محتوای این دو مسیر را.
+  // entryMode فقط مقصد دکمه‌های ورودی را تعیین می‌کند، نه محتوای این دو مسیر.
   const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--zk-text-muted, #4B5563)', fontSize: 14 }}>در حال بارگذاری...</div>;
   return (
-    <AppContextProvider value={app}>
+    <AppContextProvider value={app} ui={ui} flow={flow} admin={admin}>
       <Suspense fallback={fallback}>
         <Routes>
           <Route path="/" element={<HomePage />} />
