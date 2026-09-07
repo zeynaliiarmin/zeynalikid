@@ -1,3 +1,4 @@
+import { PrimaryButton } from "../components/ui/atoms";
 // src/admin/ImagesManager.tsx
 // بازطراحی کامل صفحه «تصاویر» در پنل مدیریت.
 //
@@ -456,7 +457,7 @@ export default function ImagesManager(props: Props) {
         )}
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
-          <button style={S.btn} onClick={() => setSave(editCfg)}><ZkCheckCircleIcon size={14} /> ذخیره تنظیمات تصاویر</button>
+          <PrimaryButton type="button" onClick={() => setSave(editCfg)}><ZkCheckCircleIcon size={14} /> ذخیره تنظیمات تصاویر</PrimaryButton>
           <span style={{ fontSize: 11, color: T.mut }}>
             عکس‌های تَب «{sectionInfo.label}» در {sectionInfo.target} قابل انتخاب‌اند.
           </span>

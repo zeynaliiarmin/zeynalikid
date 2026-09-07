@@ -1,3 +1,4 @@
+import { PrimaryButton } from "../components/ui/atoms";
 // ============================================================================
 // SettingsManager — بازطراحی کامل «تنظیمات» (رفع fg / پرش صفحه)
 //
@@ -369,7 +370,7 @@ export default function SettingsManager(props: Props) {
           fileToData={fileToData} deleteStoredImage={deleteStoredImage} uid={uid}
         />
       )}
-      <button type="button" style={S.btn} onClick={() => setSave(draft)}>ذخیره تغییرات</button>
+      <PrimaryButton type="button" onClick={() => setSave(draft)}>ذخیره تغییرات</PrimaryButton>
     </div>
   );
 }

@@ -792,7 +792,7 @@ function FAQEditor(){
    <Box title="مدیریت آیکون‌های ارتباط با ما">
     {Object.keys(editCfg.contactIcons||{}).map(k=><div key={k} style={{display:'grid',gridTemplateColumns:'120px 1fr',gap:8,marginBottom:8,alignItems:'center'}}><label>{k}</label><input type="color" style={{...S.inp,height:44,padding:4}} value={editCfg.contactIcons[k]?.color||'#2564a8'} onChange={e=>setEditCfg({...editCfg,contactIcons:{...editCfg.contactIcons,[k]:{...(editCfg.contactIcons[k]||{}),color:e.target.value}}})}/></div>)}
    </Box>
-   <button style={S.btn} onClick={save}>ذخیره</button>
+   <PrimaryButton type="button" onClick={save}>ذخیره</PrimaryButton>
   </>}
 
 
@@ -857,7 +857,7 @@ function FeaturedCoursesEditor(){
     </div>
    </div>
   </Box>
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره دوره‌های ویژه</button>
+  <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره دوره‌های ویژه</PrimaryButton>
  </>;
 }
 
@@ -913,7 +913,7 @@ function TaggedCoursesEditor(){
     </div>
    </div>
   </Box>
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تنظیمات دوره‌های تگ‌دار</button>
+  <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره تنظیمات دوره‌های تگ‌دار</PrimaryButton>
  </>;
 }
 
@@ -962,7 +962,7 @@ function TaggedCoursesEditor(){
    <button style={AdminBtn()} onClick={()=>updCourse([...courseList, "جمله جدید موفقیت دوره"])}><ZkPlusIcon size={13}/> افزودن جمله دوره</button>
   </Box>
 
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره</button></>}
+  <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره</PrimaryButton></>}
 
  // ─── مدیریت باکس جملات اعتمادساز (TrustBoxNew) — ۴ دسته ثابت + تب‌های دوره
  function TrustBoxManagerEditor(){
@@ -1046,7 +1046,7 @@ function TaggedCoursesEditor(){
     </div>)}
     <button style={AdminBtn()} onClick={add}><ZkPlusIcon size={13}/> افزودن جمله جدید</button>
    </Box>
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره جملات اعتمادساز</button>
+   <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره جملات اعتمادساز</PrimaryButton>
   </>}
 
  function ShippingBankEditor(){
@@ -1094,7 +1094,7 @@ function TaggedCoursesEditor(){
      <div><label style={S.lbl}>Callback URL</label><input style={S.inp} dir="ltr" defaultValue={pc.callbackUrl||''} onBlur={e=>upPC('callbackUrl',e.target.value)}/></div>
     </div>
    </Box>
-   <button style={S.btn} onClick={save}>ذخیره</button></>}
+   <PrimaryButton type="button" onClick={save}>ذخیره</PrimaryButton></>}
  // اصلاح ۲۸: ادیتور کامل روش‌های ارسال با پشتیبانی از ترتیب، پیش‌فرض، تگ، راهنما و عنوان انگلیسی
  function ArrSimple({path,title}:any){
   const arr=editCfg[path[0]][path[1]]||[];
@@ -1169,7 +1169,7 @@ function DesignManagerEditor(){
    </div>
   </Box>
   <div className="zkad-preview"><span className="zkad-preview-card">نمونه کارت — رنگ‌بندی فعال پنل</span><button type="button" className="zkad-preview-btn">دکمه اصلی</button><span className="zkad-tag t-ok">موفق</span><span className="zkad-tag t-warn">در انتظار</span><span className="zkad-tag t-err">خطا</span><span className="zkad-tag t-info">ارسال‌شده</span><small>پیش‌نمایش زنده توکن‌های فعال (روشن/تیره) — تغییر تم از سوییچ هدر قابل مشاهده است</small></div>
-  <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره تنظیمات دیزاین</button>
+  <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره تنظیمات دیزاین</PrimaryButton>
  </>;
 }
 
@@ -1439,7 +1439,7 @@ function DesignManagerEditor(){
     <button type="button" style={AdminBtn()} onClick={()=>upd([...items,{id:'p'+uid(),name:'محصول جدید',title:'محصول جدید',description:'توضیحات محصول جدید',desc:'توضیحات محصول جدید',features:['ویژگی ۱','ویژگی ۲'],image:'',imageUrl:'',aspectRatio:'',objectPosition:'center',homeImage:'',homeImageUrl:'',homeImageAspectRatio:'4 / 3',homeImageObjectPosition:'center',showOnHome:false,icon:'',category:'',price:'',discountedPrice:0,isVisible:true,active:true,order:items.length+1}])}><ZkPlusIcon size={13}/> افزودن محصول جدید</button>
    </Box>
    {productHomeCrop&&<ImageCropper src={productHomeCrop.src} T={T} title={`تنظیم کادر عکس منتخب خانه — ${productHomeCrop.name}`} aspectRatio={productHomeCrop.aspectRatio} allowAspectChange onAspectRatioChange={(value:string)=>setProductHomeCrop((current:any)=>current?{...current,aspectRatio:value}:current)} fileName={`home-${productHomeCrop.productId||'product'}.webp`} outputLongSide={1600} onCancel={productHomeCropBusy?()=>{}:closeProductHomeCrop} onDone={saveProductHomeCrop}/>}
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره محصولات</button>
+   <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره محصولات</PrimaryButton>
   </>
  }
 
@@ -1518,7 +1518,7 @@ function DesignManagerEditor(){
     </details>)}
     <button type="button" style={{...AdminBtn(),marginTop:8}} onClick={addHl}><ZkPlusIcon size={13}/> افزودن هایلایت جدید</button>
    </Box>
-   <button style={S.btn} onClick={saveHighlights}>ذخیره هایلایت‌ها</button>
+   <PrimaryButton type="button" onClick={saveHighlights}>ذخیره هایلایت‌ها</PrimaryButton>
    {coverCropFor!==null&&(()=>{const cit=items[coverCropFor]; const csrc=extractDirectMediaUrl(cit?.coverUrl,'image'); return csrc?<CoverCropModal T={T} src={csrc} position={cit?.coverPosition||'50% 50%'} zoom={Number(cit?.coverZoom)||1} onClose={()=>setCoverCropFor(null)} onApply={(pos:any,zo:any)=>{const a=[...items];a[coverCropFor]={...a[coverCropFor],coverPosition:pos,coverZoom:zo};upd(a);}}/>:null;})()}
   </>}
 
@@ -1578,7 +1578,7 @@ function DesignManagerEditor(){
     </details>)}
     <button style={AdminBtn()} onClick={addLicense}><ZkPlusIcon size={13}/> افزودن مجوز جدید</button>
    </Box>
-   <button style={S.btn} onClick={()=>setSave(editCfg)}>ذخیره مجوزها</button>
+   <PrimaryButton type="button" onClick={()=>setSave(editCfg)}>ذخیره مجوزها</PrimaryButton>
   </>}
 
  // مرحله خدمات-۳: تنظیمات بخش خدمات
@@ -1714,7 +1714,7 @@ function DesignManagerEditor(){
     ))}
    </Box>
 
-   <button style={S.btn} onClick={()=>setSave({...editCfg,listSettings:{...ls,items:ls.items},carouselSettings:{...cs,columnsData}})}>ذخیره تنظیمات خدمات</button>
+   <PrimaryButton type="button" onClick={()=>setSave({...editCfg,listSettings:{...ls,items:ls.items},carouselSettings:{...cs,columnsData}})}>ذخیره تنظیمات خدمات</PrimaryButton>
   </>}
 
  const goTab=(id:string)=>{setATab(id);setEditCfg(JSON.parse(JSON.stringify(cfg)))};

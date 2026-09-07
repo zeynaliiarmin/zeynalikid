@@ -1,3 +1,4 @@
+import { PrimaryButton } from "../components/ui/atoms";
 // مدیر مشاورین و لینک‌های ارجاع — کارت اختصاصی در پنل مدیریت
 // هر مشاور یک تب دارد؛ درون تب هر مشاور: اطلاعات مشاور (بدون تب) + لینک ارجاع (بدون تب، همیشه باز) +
 // تب «عکس مشاور» (پیش‌فرض بسته) + تب «اطلاعات بانکی و کیف پول» (پیش‌فرض بسته).
@@ -315,7 +316,7 @@ export default function ConsultantsEditor(props: any) {
       </div>
 
       <div style={{ marginTop: 14 }}>
-        <button type="button" style={S.btn} onClick={() => setSave(draft)}>ذخیره تغییرات</button>
+        <PrimaryButton type="button" onClick={() => setSave(draft)}>ذخیره تغییرات</PrimaryButton>
       </div>
     </Box>
   );

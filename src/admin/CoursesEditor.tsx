@@ -1,3 +1,4 @@
+import { PrimaryButton } from "../components/ui/atoms";
 import React from 'react';
 import { FrameControls, LibraryPicker } from './ImagesManager';
 import { ZkPlusIcon, ZkUploadIcon } from './adminIcons';
@@ -559,7 +560,7 @@ export default function CoursesEditor({
         </button>
       </Box>
 
-      <button type="button" style={S.btn} onClick={() => setSave(editCfg)}>ذخیره</button>
+      <PrimaryButton type="button" onClick={() => setSave(editCfg)}>ذخیره</PrimaryButton>
     </>
   );
 }
