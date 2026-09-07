@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton } from '../components/ui/atoms';
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import PublicBackButton from '../components/PublicBackButton';
@@ -34,9 +35,9 @@ export default function ProfilePage(){
             ? 'For privacy, records are shown only after entering the tracking code and the full phone number used at registration.'
             : 'برای حفظ حریم خصوصی، اطلاعات فقط بعد از واردکردن کد پیگیری و شماره تماس کاملِ زمان ثبت نمایش داده می‌شود.'}
         </p>
-        <button type="button" style={S.btn} onClick={() => setView('track')}>
+        <PrimaryButton type="button" style={{ maxWidth: 320, margin: '0 auto' }} onClick={() => setView('track')}>
           {en ? 'Open secure tracking' : 'ورود به پیگیری امن'}
-        </button>
+        </PrimaryButton>
         {showContactOn?.('profile') && <ContactPanel cfg={cfg} T={T} lang={lang} />}
       </section>
     </main>

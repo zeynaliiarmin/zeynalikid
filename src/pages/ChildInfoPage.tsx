@@ -9,7 +9,7 @@ import SmartTongueCameraModal from '../components/SmartTongueCameraModal';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import PublicBackButton from '../components/PublicBackButton';
 import { pushInPageHistoryState } from '../utils/scrollRestoration';
-import { PrimaryButton } from '../components/ui/atoms';
+import { PrimaryButton, GhostButton } from '../components/ui/atoms';
 
 // اصلاح ۲۳: عنوان این صفحه (در Stepper) از «مقصد» به «اطلاعات فرزند» تغییر کرد.
 // اصلاح ۲۴: فیلدهای نام و شماره تماس والد از این صفحه حذف شدند — این اطلاعات به‌صورت خودکار
@@ -336,5 +336,5 @@ function EditChildOnInfoModal({app}:{app:any}){
    setDraft((prev:any)=> ({...prev, [field]: value}));
  },[]);
  const save=()=>{const prev={date:today(),time:now(),data:{...fd}}; setFd(draft); setCourse((c:any)=>({...c,childInfo:{...draft},editedHistory:[...(c.editedHistory||[]),prev]})); setEditChild(false)};
- return <Modal T={T} onClose={()=>setEditChild(false)} closeLabel={publicText('close','بستن')}><h3 style={{color:T.ttl,marginTop:0}}>{publicText('editChildTitle','ویرایش اطلاعات کودک')}</h3>{['age','height','weight','disease','notes'].map(k=><Field key={k} label={cfg.formFields[k]?.label||k} value={draft[k]||''} onChange={(v:string)=>updateDraftField(k, v)} ph={cfg.formFields[k]?.placeholder||''} S={S} T={T} trVal={trVal} p2e={p2e} />)}<label style={S.lbl}>{publicText('gender','جنسیت')}</label><div style={{display:'flex',gap:8,marginBottom:12}}><button type="button" onClick={()=>setDraft((p:any)=>({...p,gender:'male'}))} style={draft.gender==='male'?S.btn:S.btnGhost}>{publicText('boy','پسر')}</button><button type="button" onClick={()=>setDraft((p:any)=>({...p,gender:'female'}))} style={draft.gender==='female'?S.btn:S.btnGhost}>{publicText('girl','دختر')}</button></div><button type="button" style={S.btn} onClick={save}>{publicText('saveChanges','ذخیره تغییرات')}</button></Modal>
+ return <Modal T={T} onClose={()=>setEditChild(false)} closeLabel={publicText('close','بستن')}><h3 style={{color:T.ttl,marginTop:0}}>{publicText('editChildTitle','ویرایش اطلاعات کودک')}</h3>{['age','height','weight','disease','notes'].map(k=><Field key={k} label={cfg.formFields[k]?.label||k} value={draft[k]||''} onChange={(v:string)=>updateDraftField(k, v)} ph={cfg.formFields[k]?.placeholder||''} S={S} T={T} trVal={trVal} p2e={p2e} />)}<label style={S.lbl}>{publicText('gender','جنسیت')}</label><div style={{display:'flex',gap:8,marginBottom:12}}>{(['male','female'] as const).map(g=>{const sel=draft.gender===g;const Btn:any=sel?PrimaryButton:GhostButton;const label=g==='male'?publicText('boy','پسر'):publicText('girl','دختر');return <Btn key={g} type="button" style={{padding:'12px 20px',minHeight:46,flex:1}} onClick={()=>setDraft((p:any)=>({...p,gender:g}))}>{label}</Btn>})}</div><PrimaryButton type="button" onClick={save}>{publicText('saveChanges','ذخیره تغییرات')}</PrimaryButton></Modal>
 }

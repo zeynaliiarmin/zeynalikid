@@ -1,4 +1,5 @@
 import { useAppContext } from '../app/AppContext';
+import { PrimaryButton } from '../components/ui/atoms';
 import './home-v2.css';
 import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -106,9 +107,9 @@ export default function HomePage(){
            ? 'Dear parent, to improve your child’s condition, tap on a topic such as Height growth, Poor appetite, or Mind & focus to compare courses and choose the best one.'
            : 'والد عزیز، برای شناخت بهتر شرایط فرزندتان و انتخاب مسیر مناسب روی یکی از بخش‌های رشد قد، بی‌اشتهایی یا هوش و ذهن ضربه بزنید تا دوره‌ها را باهم مقایسه کنید و بهترین انتخاب را داشته باشید.'))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
+       <PrimaryButton type="button" pill onClick={onCoursesCta} style={{padding:'12px 18px',fontSize:15,animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
          {lang==='en' ? 'View & browse courses' : 'مشاهده و معرفی دوره‌ها'}
-       </button>
+       </PrimaryButton>
      </section>
    )}
 
@@ -122,9 +123,9 @@ export default function HomePage(){
            ? `Tap the button below to compare ${referralTab.titleEn||referralTab.title} courses side by side and pick the best match for your child.`
            : `با زدن دکمه زیر می‌توانید دوره‌های ${referralTab.title} را با هم مقایسه کنید و بهترین گزینه را برای فرزندتان انتخاب کنید.`))}
        </div>
-       <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:52,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
+       <PrimaryButton type="button" pill onClick={onCoursesCta} style={{padding:'12px 18px',fontSize:15,animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
          {coursesCtaLabel}
-       </button>
+       </PrimaryButton>
      </section>
    )}
 
@@ -142,9 +143,9 @@ export default function HomePage(){
              ? `Tap the button below to see the details and register "${cname}".`
              : `با زدن دکمه زیر می‌توانید جزئیات «${cname}» را ببینید و همان دوره را ثبت کنید.`))}
          </div>
-         <button type="button" onClick={onCoursesCta} style={{width:'100%',minHeight:54,padding:'12px 18px',borderRadius:999,background:'var(--zk-primary)',color:'var(--zk-text-inverse, #fff)',border:0,fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit',animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
+         <PrimaryButton type="button" pill onClick={onCoursesCta} style={{minHeight:54,padding:'12px 18px',fontSize:15,animation:'zk-hero-pulse 2.4s ease-in-out 3',WebkitAnimation:'zk-hero-pulse 2.4s ease-in-out 3',animationFillMode:'forwards',WebkitAnimationFillMode:'forwards'}}>
            {coursesCtaLabel}
-         </button>
+         </PrimaryButton>
        </section>
      );
    })()}
