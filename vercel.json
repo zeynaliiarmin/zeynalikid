@@ -101,7 +101,7 @@
       "destination": "/api/:path*"
     },
     {
-      "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|track|portal|profile|growth|settings|desk|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|admin-sw.js|admin-manifest.webmanifest|spa.html|404.html).*)",
+      "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|track|portal|profile|growth|settings|desk|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|llms.txt|admin-sw.js|admin-manifest.webmanifest|spa.html|404.html).*)",
       "destination": "/404.html?fallback=1",
       "statusCode": 404
     }
@@ -155,6 +155,15 @@
         {
           "key": "Content-Type",
           "value": "application/xml"
+        }
+      ]
+    },
+    {
+      "source": "/llms.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
         }
       ]
     },
