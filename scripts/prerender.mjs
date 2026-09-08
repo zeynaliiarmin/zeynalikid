@@ -7,7 +7,12 @@ const dist=path.resolve('dist');
 const template=await readFile(path.join(dist,'index.html'),'utf8');
 const serverEntry=pathToFileURL(path.resolve('.ssr/entry-server.js')).href;
 const {render}=await import(serverEntry);
-await writeFile(path.join(dist,'spa.html'),template);
+// SPA shell serves app-only routes (forms, dashboard, referral links) that render
+// empty shells to non-JS crawlers and would duplicate the home page in search indexes.
+// Page-level Helmet noindex only runs after JS executes, so the raw shell itself must
+// carry noindex,follow as well (keeps link equity flowing, keeps SERPs clean).
+const spaTemplate=template.replace('</head>','<meta name="robots" content="noindex,follow" />\n</head>');
+await writeFile(path.join(dist,'spa.html'),spaTemplate);
 
 async function loadPublicSettings(){
  const base=String(process.env.VITE_SUPABASE_URL||'').replace(/\/$/,'');
@@ -29,6 +34,21 @@ const heroUrl = settings.images?.hero?.url || '/images/asset13c-hero-mother-chil
 const supabaseUrl = String(process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
 
+// Persian display names for BreadcrumbList structured data on interior pages.
+const routeNames={
+ '/courses':'دوره‌ها','/experience':'تجربه والدین','/licenses':'مجوزها','/education':'آموزش والدین',
+ '/about':'درباره ما','/faq':'سؤالات متداول','/contact':'ارتباط با ما','/products':'محصولات','/privacy':'حریم خصوصی',
+};
+const ldEscape=(s)=>s.replace(/</g,'\\u003c').replaceAll(String.fromCharCode(0x2028),'\\u2028').replaceAll(String.fromCharCode(0x2029),'\\u2029');
+function breadcrumbLd(route){
+ if(route==='/')return '';
+ const json=ldEscape(JSON.stringify({'@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':[
+  {'@type':'ListItem','position':1,'name':'صفحه اصلی','item':`${siteUrl}/`},
+  {'@type':'ListItem','position':2,'name':routeNames[route]||route.replace(/^\//,''),'item':`${siteUrl}${route}`},
+ ]}));
+ return `<script type="application/ld+json">${json}</script>\n`;
+}
+
 for(const route of routes){
  const result=await render(route,settings);
  let html=template.replace(/<div id="root"><\/div>/,`<div id="root" data-ssg="true">${result.body}</div>`);
@@ -39,7 +59,7 @@ for(const route of routes){
  if (supabaseOrigin) {
    extraHead += `\n<link rel="preconnect" href="${supabaseOrigin}" crossorigin />\n<link rel="dns-prefetch" href="${supabaseOrigin}" />`;
  }
- html=html.replace('</head>',`${result.head}${extraHead}
+ html=html.replace('</head>',`${breadcrumbLd(route)}${result.head}${extraHead}
 <script>window.__APP_SSG_SETTINGS__=${serialized};{const mode=window.__APP_SSG_SETTINGS__?.publicThemeMode;if(mode==='light'||mode==='dark'||mode==='auto')window.__zkApplyPublicMode?.(mode)}</script>
 </head>`);
  const relative=route==='/'?'index.html':path.join(route.slice(1),'index.html');

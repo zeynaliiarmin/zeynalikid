@@ -1,35 +1,31 @@
 // Generate sitemap.xml at build time with today's lastmod dates.
+// The URL list is derived from the prerendered SSG routes (scripts/ssg-config.mjs)
+// so the sitemap can never advertise a non-prerendered SPA shell route again.
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { siteUrl, brand } from './ssg-config.mjs';
+import { siteUrl, brand, routes } from './ssg-config.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const today = new Date().toISOString().slice(0, 10);
 
-const urls = [
-  { loc: '/', changefreq: 'weekly', priority: '1.0' },
-  { loc: '/courses', changefreq: 'weekly', priority: '0.9' },
-  { loc: '/education', changefreq: 'weekly', priority: '0.7' },
-  { loc: '/faq', changefreq: 'monthly', priority: '0.7' },
-  { loc: '/about', changefreq: 'monthly', priority: '0.7' },
-  { loc: '/contact', changefreq: 'monthly', priority: '0.7' },
-  { loc: '/products', changefreq: 'weekly', priority: '0.7' },
-  { loc: '/consultation', changefreq: 'monthly', priority: '0.7' },
-  { loc: '/growth', changefreq: 'monthly', priority: '0.7' },
-  { loc: '/privacy', changefreq: 'yearly', priority: '0.5' },
-];
+// Per-route hints; any new SSG route automatically falls back to sensible defaults.
+const meta = {
+  '/':         { changefreq: 'weekly',  priority: '1.0' },
+  '/courses':  { changefreq: 'weekly',  priority: '0.9' },
+  '/products': { changefreq: 'weekly',  priority: '0.7' },
+  '/privacy':  { changefreq: 'yearly',  priority: '0.5' },
+};
+const defaults = { changefreq: 'monthly', priority: '0.7' };
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `  <url>
-    <loc>${siteUrl}${u.loc === '/' ? '' : u.loc}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${u.changefreq}</changefreq>
-    <priority>${u.priority}</priority>
-  </url>`).join('\n')}
+${routes.map(loc => {
+  const u = { ...defaults, ...(meta[loc] || {}) };
+  return `  <url>\n    <loc>${siteUrl}${loc === '/' ? '' : loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
+}).join('\n')}
 </urlset>
 `;
 
 await writeFile(resolve(__dirname, '../public/sitemap.xml'), xml, 'utf8');
-console.log(`Sitemap generated for ${brand} with lastmod=${today}`);
+console.log(`Sitemap generated for ${brand}: ${routes.length} prerendered URLs, lastmod=${today}`);

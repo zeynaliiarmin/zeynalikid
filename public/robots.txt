@@ -1,16 +1,132 @@
-# Allow AI search bots (for ChatGPT, Copilot, DeepSeek, Gemini, etc.)
+# ─────────────────────────────────────────────────────────────
+# زینالیکید — خط‌مشی خزنده‌ها (آخرین به‌روزرسانی: 2026-09-08)
+# سیاست: دسترسی کامل به موتورهای جستجو و خزنده‌های هوش مصنوعی
+# (هم جستجو/pasخ و هم آموزش مدل) برای حداکثر دیده‌شدن برند.
+# نواحی عملیاتی (/admin, /admin-login, /desk) برای همه خصوصی است.
+# ─────────────────────────────────────────────────────────────
+
+# ── OpenAI (جستجوی ChatGPT + خزنده آموزشی) ──
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
 
-# ChatGPT-User is user-initiated and may not respect robots.txt, but keep it anyway
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
 
-# Block training crawlers to protect content
 User-agent: GPTBot
-Disallow: /
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
 
-# Allow all other good crawlers (Google, Bing, etc.) but keep operational areas private
+# ── Anthropic (جستجو/بازیابی Claude + آموزش) ──
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── Perplexity ──
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── Google (توکن کنترل آموزش Gemini؛ جستجو از طریق Googlebot در گروه *) ──
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── Apple (Siri/پیشنهادها + توکن آموزش) ──
+User-agent: Applebot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── Meta ──
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── سایر خزنده‌های داده/مدل ──
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: Bytespider
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: MistralAI-User
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+User-agent: cohere-training-data-crawler
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /desk
+
+# ── سایر خزنده‌ها (Googlebot، Bingbot و ...) ──
 User-agent: *
 Allow: /
 Disallow: /admin
