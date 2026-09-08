@@ -21,7 +21,7 @@ const SYSTEM_PATHS = new Set([
   'products','form','consultation','track','growth','settings','profile','licenses',
   'child-info','course-shipping','course-payment','course-confirm','course-done',
   'payment-verify','service-worker.js','favicon.ico','robots.txt','sitemap.xml',
-  'assets','images','static','manifest.json'
+  'assets','images','static','manifest.json','desk','portal'
 ]);
 
 // حروف استاتیک/غیرقابل حدس را به‌عنوان پسوند تب نپذیر (مثلاً پسوندهای فایل)
@@ -39,16 +39,32 @@ function rawPath(): string {
   }
 }
 
-/**
- * تجزیه لینک ارجاع گسترش‌یافته.
- * ورودی: consultants و courseTabs برای تطبیق معکوس کد پایه و مخفف تب.
- * خروجی: ParsedReferral یا null.
- */
+/** استخراج کدهای متناظر یک مشاور (کد اصلی + نام انگلیسی بدون فاصله + نام فارسی بدون فاصله + الیاس‌ها) */
+function getConsultantCodeCandidates(consultant: any): string[] {
+  if (!consultant || consultant.active === false) return [];
+  const set = new Set<string>();
+  const add = (str: any) => {
+    const cleaned = String(str || '').trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+    if (cleaned && cleaned.length >= 2) set.add(cleaned);
+  };
+  add(consultant.referralCode);
+  add(consultant.id);
+  if (Array.isArray(consultant.aliases)) {
+    consultant.aliases.forEach(add);
+  } else if (typeof consultant.aliases === 'string') {
+    consultant.aliases.split(',').forEach(add);
+  }
+  if (consultant.nameEn) {
+    add(consultant.nameEn);
+    const parts = String(consultant.nameEn).trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (parts.length >= 1) add(parts[0]); // first name (e.g. "amin", "armin", "parvin", "parviz")
+    if (parts.length >= 2) add(parts.join('')); // full name without space (e.g. "aminfarahani")
+  }
+  return Array.from(set);
+}
+
 /**
  * تجزیه یک رشته خام (بدون وابستگی به URL) به کد مشاور/تب/دوره.
- * برای بازیابی لینک ارجاع بعد از رفرش/ناوبری SPA از sessionStorage استفاده می‌شود،
- * بنابراین باید صرفاً بر اساس consultants و courseTabs فعلی (پویا) حل شود تا
- * با افزودن/ویرایش مشاورین در پنل همیشه هماهنگ بماند.
  */
 export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
   const raw = String(rawIn || '').trim();
@@ -57,21 +73,31 @@ export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?
   const defaultList = Array.isArray(defaultSettings.consultants) ? defaultSettings.consultants : [];
   const map = new Map<string, any>();
   for (const c of defaultList) {
-    const code = String(c?.referralCode || '').trim().toLowerCase();
+    const code = String(c?.referralCode || c?.id || '').trim().toLowerCase();
     if (code) map.set(code, c);
   }
   for (const c of inputList) {
-    const code = String(c?.referralCode || '').trim().toLowerCase();
+    const code = String(c?.referralCode || c?.id || '').trim().toLowerCase();
     if (code) map.set(code, c);
   }
   const list: any[] = Array.from(map.values());
   const tabs: any[] = ((Array.isArray(courseTabs) && courseTabs.length ? courseTabs : defaultSettings.courseTabs) as any[]).filter((tab: any) => tab?.active !== false);
-  const candidates = list
-    .filter((consultant:any)=>consultant?.active!==false)
-    .map((consultant:any) => String(consultant?.referralCode || '').trim().toLowerCase())
-    .filter(Boolean)
-    .sort((a: string, b: string) => b.length - a.length);
-  const lowerRaw = raw.toLowerCase();
+
+  // ساخت نقشه از همه کدهای کاندید به مشاور مربوطه
+  const codeToConsultant = new Map<string, any>();
+  for (const c of list) {
+    if (c?.active === false) continue;
+    const codes = getConsultantCodeCandidates(c);
+    for (const code of codes) {
+      if (!codeToConsultant.has(code)) {
+        codeToConsultant.set(code, c);
+      }
+    }
+  }
+
+  const candidates = Array.from(codeToConsultant.keys()).sort((a, b) => b.length - a.length);
+  const lowerRaw = raw.toLowerCase().replace(/[^a-z0-9]/gi, '');
+
   for (const code of candidates) {
     if (!lowerRaw.startsWith(code)) continue;
     const tail = lowerRaw.slice(code.length).replace(/^[-_]+/, '');
@@ -86,7 +112,7 @@ export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?
       if (!/^\d+$/.test(numericTail)) continue;
       const idx = Number(numericTail);
       const tab = findTabByCode(tabs, requestedTab);
-      const activeCourses = (Array.isArray(tab?.courses) ? tab.courses : []).filter((course:any)=>course?.active!==false);
+      const activeCourses = (Array.isArray(tab?.courses) ? tab.courses : []).filter((course: any) => course?.active !== false);
       if (!tab || !Number.isSafeInteger(idx) || idx < 1 || idx > activeCourses.length) continue;
       return { code, raw, tabCode: String(tab.shortCode || requestedTab).trim().toLowerCase(), courseIndex: idx };
     }
@@ -117,11 +143,24 @@ export function parseReferral(consultants?: any[], courseTabs?: any[]): ParsedRe
   return parseReferralRaw(raw, consultants, courseTabs);
 }
 
-/** پیدا کردن مشاور بر اساس کد ارجاع (case-insensitive) - ساده، برای سازگاری */
+/** پیدا کردن مشاور بر اساس کد ارجاع (شامل کد اصلی، الیاس، شناسه و نام) */
 export function findConsultantByCode(consultants: any[] | undefined, code: string): any | null {
-  if (!code || !Array.isArray(consultants)) return null;
-  const c = code.trim().toLowerCase();
-  return consultants.find((x: any) => x && String(x.referralCode || '').trim().toLowerCase() === c) || null;
+  if (!code) return null;
+  const c = code.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+  if (!c) return null;
+
+  const combined = [
+    ...(Array.isArray(consultants) ? consultants : []),
+    ...(Array.isArray(defaultSettings.consultants) ? defaultSettings.consultants : []),
+  ];
+
+  for (const consultant of combined) {
+    if (!consultant || consultant.active === false) continue;
+    const candidates = getConsultantCodeCandidates(consultant);
+    if (candidates.includes(c)) return consultant;
+  }
+
+  return null;
 }
 
 /** پیدا کردن تب بر اساس مخفف سفارشی یا id یا حروف اول عنوان */
@@ -159,12 +198,10 @@ export function suggestTabShortCode(tab: any, allTabs?: any[]): string {
 
 // ساخت کد ارجاع پیشنهادی از نام انگلیسی (۲ حرف اول، بدون فاصله)
 export function makeReferralCode(nameEn?: string): string {
-  // ۲ حرف: حرف اول نام + حرف اول نام خانوادگی (مثل Armin Zeynali → az)
   const parts = String(nameEn || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return (parts[0].charAt(0) + parts[1].charAt(0)).replace(/[^a-z]/g, '');
   }
-  // تک‌کلمه‌ای: دو حرف اول
   return (parts[0] || '').replace(/[^a-z]/g, '').slice(0, 2);
 }
 
@@ -182,7 +219,7 @@ export function getReferralCodeFromUrl(): string {
   try {
     const path = window.location.pathname || '';
     const cleanPath = path.replace(/\/+$/, '').replace(/^\//, '');
-    if (cleanPath && !cleanPath.includes('/') && !cleanPath.startsWith('admin') && !['courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done'].includes(cleanPath.split('?')[0])) {
+    if (cleanPath && !cleanPath.includes('/') && !cleanPath.startsWith('admin') && !['courses','experience','education','about','contact','faq','products','form','consultation','track','growth','settings','profile','licenses','child-info','course-shipping','course-payment','course-confirm','course-done','desk','portal'].includes(cleanPath.split('?')[0])) {
       return cleanPath.split('?')[0].trim();
     }
     const q = new URLSearchParams(window.location.search);
@@ -193,7 +230,6 @@ export function getReferralCodeFromUrl(): string {
 }
 
 // جایگزینی توکن‌های پویا ({tab}، {course}، {consultant}) در متن‌های راهنمای ارجاع.
-// وقتی مدیر متن سفارشی با توکن ذخیره کرده باشد، این تابع نام واقعی را جایگزین می‌کند.
 export function fillReferralText(text: string | null | undefined, vars: Record<string, string>): string {
   let out = String(text || '');
   for (const [key, value] of Object.entries(vars || {})) {

@@ -35,7 +35,7 @@ export const defaultSettings = {
   // ─── مشاورین و لینک‌های ارجاع ───
   consultants: [
     {
-      id: 'cons_armini',
+      id: 'cons_armin',
       name: 'آرمین زینالی',
       nameEn: 'Armin Zeynali',
       title: 'کارشناس ارشد رشد و تغذیه کودک و نوجوان',
@@ -46,34 +46,37 @@ export const defaultSettings = {
       useAboutPhoto: true,
       showPhoto: true,
       referralCode: 'armini',
+      aliases: ['azn', 'az', 'armin', 'arminzeynali'],
       active: true,
     },
     {
-      id: 'cons_azn',
-      name: 'آرمین زینالی',
-      nameEn: 'Armin Zeynali',
-      title: 'کارشناس ارشد رشد و تغذیه کودک و نوجوان',
-      titleEn: 'Senior Child Growth & Nutrition Specialist',
-      desc: 'همراهی تخصصی والدین در مسیر افزایش قد، اشتها و تمرکز کودک',
-      descEn: 'Expert child growth and nutrition consultancy',
+      id: 'cons_amin',
+      name: 'امین فراهانی',
+      nameEn: 'Amin Farahani',
+      title: 'مشاور ارشد ارزیابی و رشد کودک',
+      titleEn: 'Senior Child Growth Evaluator & Consultant',
+      desc: 'مشاوره اختصاصی والدین و بررسی شاخص‌های رشد کودک',
+      descEn: 'Specialized child growth evaluation and consultancy',
       photoUrl: '',
       useAboutPhoto: true,
       showPhoto: true,
-      referralCode: 'azn',
+      referralCode: 'aminfarahani',
+      aliases: ['af', 'amin', 'farahani', 'prah'],
       active: true,
     },
     {
-      id: 'cons_pvs',
-      name: 'پرویز زینالی',
-      nameEn: 'Parviz Zeynali',
-      title: 'مشاور ارشد رشد کودک',
-      titleEn: 'Senior Child Growth Consultant',
-      desc: 'ارزیابی و مشاوره رشد تخصصی کودکان',
-      descEn: 'Specialized child growth evaluation',
+      id: 'cons_parviz',
+      name: 'پروین سیفی',
+      nameEn: 'Parvin Seyfi',
+      title: 'مشاور ارشد پشتیبانی و برنامه‌ریزی کودک',
+      titleEn: 'Senior Child Support & Planning Consultant',
+      desc: 'راهنمایی و پشتیبانی تخصصی دوره‌های رشد و تغذیه',
+      descEn: 'Specialized course support and growth guidance',
       photoUrl: '',
       useAboutPhoto: true,
       showPhoto: true,
       referralCode: 'pvs',
+      aliases: ['ps', 'parvin', 'parviz', 'parvinseyfi', 'parvizseyfi'],
       active: true,
     },
   ] as Array<{
@@ -89,6 +92,7 @@ export const defaultSettings = {
     aboutPhotoUrl?: string;  // عکسِ منبع «درباره ما»
     showPhoto?: boolean;     // نمایش عکس در اطلاعات مشاور
     referralCode?: string;   // کد ارجاع یکتا و کوتاه
+    aliases?: string[];      // کدهای جانبی و مترادف جهت تطبیق هوشمند
     bank?: Record<string, any>;   // اطلاعات بانکی اختصاصی
     wallet?: Record<string, any>; // اطلاعات کیف پول رمزارز
     active?: boolean;
