@@ -97,11 +97,27 @@
       "destination": "/spa.html"
     },
     {
+      "source": "/r/:code*",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/ref/:code*",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/referral/:code*",
+      "destination": "/spa.html"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
     {
-      "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|track|portal|profile|growth|settings|desk|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|llms.txt|admin-sw.js|admin-manifest.webmanifest|spa.html|404.html).*)",
+      "source": "/:code([a-zA-Z0-9_-]{1,64})",
+      "destination": "/spa.html"
+    },
+    {
+      "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|r/|ref/|referral/|track|portal|profile|growth|settings|desk|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|llms.txt|admin-sw.js|admin-manifest.webmanifest|spa.html|404.html).*)",
       "destination": "/404.html?fallback=1",
       "statusCode": 404
     }
