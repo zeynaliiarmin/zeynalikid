@@ -33,7 +33,50 @@ const DEFAULT_SERVICES = [
 export const defaultSettings = {
 
   // ─── مشاورین و لینک‌های ارجاع ───
-  consultants: [] as Array<{
+  consultants: [
+    {
+      id: 'cons_armini',
+      name: 'آرمین زینالی',
+      nameEn: 'Armin Zeynali',
+      title: 'کارشناس ارشد رشد و تغذیه کودک و نوجوان',
+      titleEn: 'Senior Child Growth & Nutrition Specialist',
+      desc: 'همراهی تخصصی والدین در مسیر افزایش قد، اشتها و تمرکز کودک',
+      descEn: 'Expert child growth and nutrition consultancy',
+      photoUrl: '',
+      useAboutPhoto: true,
+      showPhoto: true,
+      referralCode: 'armini',
+      active: true,
+    },
+    {
+      id: 'cons_azn',
+      name: 'آرمین زینالی',
+      nameEn: 'Armin Zeynali',
+      title: 'کارشناس ارشد رشد و تغذیه کودک و نوجوان',
+      titleEn: 'Senior Child Growth & Nutrition Specialist',
+      desc: 'همراهی تخصصی والدین در مسیر افزایش قد، اشتها و تمرکز کودک',
+      descEn: 'Expert child growth and nutrition consultancy',
+      photoUrl: '',
+      useAboutPhoto: true,
+      showPhoto: true,
+      referralCode: 'azn',
+      active: true,
+    },
+    {
+      id: 'cons_pvs',
+      name: 'پرویز زینالی',
+      nameEn: 'Parviz Zeynali',
+      title: 'مشاور ارشد رشد کودک',
+      titleEn: 'Senior Child Growth Consultant',
+      desc: 'ارزیابی و مشاوره رشد تخصصی کودکان',
+      descEn: 'Specialized child growth evaluation',
+      photoUrl: '',
+      useAboutPhoto: true,
+      showPhoto: true,
+      referralCode: 'pvs',
+      active: true,
+    },
+  ] as Array<{
     id: string;
     name: string;         // نام فارسی (الزامی)
     nameEn: string;       // نام انگلیسی (الزامی — برای ساخت کد ارجاع)

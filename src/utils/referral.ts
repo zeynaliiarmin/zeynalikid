@@ -2,6 +2,8 @@
 // کد ارجاع از مسیر (مثل /mhi) یا پارامتر URL (مثل ?ad=mhi) خوانده می‌شود.
 // نسخه گسترش‌یافته: پشتیبانی از لینک‌های نقشه راه مثل /afit (تب) یا /afit1 (دوره مستقیم)
 
+import { defaultSettings } from '../config/defaultSettings';
+
 export interface ParsedReferral {
   /** کد پایه مشاور (مثلاً afi) */
   code: string;
@@ -51,8 +53,19 @@ function rawPath(): string {
 export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?: any[]): ParsedReferral | null {
   const raw = String(rawIn || '').trim();
   if (!raw) return null;
-  const list = Array.isArray(consultants) ? consultants : [];
-  const tabs = (Array.isArray(courseTabs) ? courseTabs : []).filter((tab:any)=>tab?.active!==false);
+  const inputList = Array.isArray(consultants) ? consultants : [];
+  const defaultList = Array.isArray(defaultSettings.consultants) ? defaultSettings.consultants : [];
+  const map = new Map<string, any>();
+  for (const c of defaultList) {
+    const code = String(c?.referralCode || '').trim().toLowerCase();
+    if (code) map.set(code, c);
+  }
+  for (const c of inputList) {
+    const code = String(c?.referralCode || '').trim().toLowerCase();
+    if (code) map.set(code, c);
+  }
+  const list: any[] = Array.from(map.values());
+  const tabs: any[] = ((Array.isArray(courseTabs) && courseTabs.length ? courseTabs : defaultSettings.courseTabs) as any[]).filter((tab: any) => tab?.active !== false);
   const candidates = list
     .filter((consultant:any)=>consultant?.active!==false)
     .map((consultant:any) => String(consultant?.referralCode || '').trim().toLowerCase())
