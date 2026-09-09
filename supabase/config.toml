@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.assistant-telegram]
 verify_jwt = false
+
+[functions.content-api]
+verify_jwt = false

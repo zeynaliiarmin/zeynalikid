@@ -34,6 +34,7 @@ const SCOPE_OPTIONS: Array<{ id: string; label: string; desc: string }> = [
   { id: 'multimedia', label: 'چندرسانه‌ای', desc: 'محتوای چند رسانه‌ای' },
   { id: 'banners', label: 'بنرها', desc: 'بنرهای سایت' },
   { id: 'seo', label: 'سئو', desc: 'تنظیمات سئو' },
+  { id: 'education', label: 'آموزش‌ها', desc: 'محتوای صفحه «آموزش و همراهی والدین»' },
   { id: 'all', label: 'همه دسترسی‌ها', desc: 'دسترسی کامل به همه موارد' },
 ];
 

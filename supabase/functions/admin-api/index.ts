@@ -634,6 +634,7 @@ const VALID_SCOPES = [
   "multimedia",
   "banners",
   "seo",
+  "education",
   "all"
 ];
 

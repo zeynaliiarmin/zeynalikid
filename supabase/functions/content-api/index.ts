@@ -6,6 +6,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, getOrigin } from "../_shared/cors.ts";
+import { POLICY_VERSION, scanContentPolicy, policySummary } from "../_shared/contentPolicy.ts";
 
 function ok(data: any, origin: string, status = 200): Response {
   return new Response(JSON.stringify({ ok: true, ...data }), {
@@ -51,7 +52,7 @@ function extractApiKey(req: Request, body: any): string {
 
 const VALID_SCOPES = [
   "reviews","faqs","courses","products","discounts","tags","featured",
-  "articles","stories","parent_experiences","multimedia","banners","seo","all"
+  "articles","stories","parent_experiences","multimedia","banners","seo","education","all"
 ];
 
 const RESOURCE_SCOPE_MAP: Record<string, string[]> = {
@@ -68,6 +69,7 @@ const RESOURCE_SCOPE_MAP: Record<string, string[]> = {
   parent_experiences: ["parent_experiences","multimedia","all"],
   multimedia: ["multimedia","all"],
   media: ["multimedia","all"],
+  education: ["education","multimedia","all"],
   banners: ["banners","all"],
   seo: ["seo","all"],
 };
@@ -832,6 +834,148 @@ async function handleWithApprovalCheck(
 // Router for content-api
 // ──────────────────────────────────────────────────────────────────────────
 
+
+// ──────────────────────────────────────────────────────────────────────────
+// Education — «آموزش‌ها» (settings.education.items)
+//   آیتم‌ها در صفحهٔ عمومی «آموزش و همراهی والدین» رندر می‌شوند
+//   (mediaPlacement.getMediaItemsForDestination). شرط نمایش:
+//   mediaCategories شامل "education" + active/isVisible !== false.
+// ──────────────────────────────────────────────────────────────────────────
+const EDU_DEFAULT_AUTHOR = "\u0622\u0631\u0645\u06cc\u0646 \u0632\u06cc\u0646\u0627\u0644\u06cc";
+const EDU_DEFAULT_AUTHOR_EN = "Armin Zeinali";
+
+function normalizeEduType(t: string): string {
+  const type = String(t || "article").toLowerCase();
+  if (type === "text" || type === "image" || type === "article") return "article";
+  if (type === "audio" || type === "podcast") return "audio";
+  return type;
+}
+
+function todayFaDate(): string {
+  try {
+    return new Intl.DateTimeFormat("fa-IR-u-nu-latn", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  } catch { return new Date().toISOString().slice(0, 10); }
+}
+
+async function listEducation(body: any, origin: string): Promise<Response> {
+  const { settings } = await loadSettings();
+  const edu = settings.education && typeof settings.education === "object" ? settings.education : {};
+  const items = Array.isArray(edu.items) ? edu.items : [];
+  let list = [...items];
+  if (body.type && body.type !== "all") {
+    const want = normalizeEduType(String(body.type));
+    list = list.filter((x: any) => normalizeEduType(String(x?.type || "article")) === want);
+  }
+  if (body.search) {
+    const q = String(body.search).toLowerCase();
+    list = list.filter((x: any) => [x?.title, x?.titleEn, x?.desc, x?.description, x?.body, ...(Array.isArray(x?.keywords) ? x.keywords : [])]
+      .filter(Boolean).join(" ").toLowerCase().includes(q));
+  }
+  if (body.include_hidden !== true) list = list.filter((x: any) => x?.active !== false && x?.isVisible !== false);
+  const total = list.length;
+  const limitRaw = Number(body?.limit);
+  const offsetRaw = Number(body?.offset);
+  if (Number.isFinite(limitRaw) || Number.isFinite(offsetRaw)) {
+    const offset = Math.max(0, Number.isFinite(offsetRaw) ? offsetRaw : 0);
+    const limit = Math.max(1, Math.min(200, Number.isFinite(limitRaw) ? limitRaw : 50));
+    return ok({ education: list.slice(offset, offset + limit), total }, origin);
+  }
+  return ok({ education: list, total }, origin);
+}
+
+async function createEducation(body: any, origin: string): Promise<Response> {
+  const incoming = body.item || body.education || body.article_obj || {};
+  if (!incoming.title) return err("عنوان (title) الزامی است", origin, 400);
+  const desc = String(incoming.desc ?? incoming.description ?? incoming.body ?? "").trim();
+  if (!desc) return err("متن محتوا (desc یا description یا body) الزامی است", origin, 400);
+  const { settings } = await loadSettings();
+  const eduRaw = settings.education && typeof settings.education === "object" ? settings.education : {};
+  const items = Array.isArray(eduRaw.items) ? eduRaw.items : [];
+  const maxOrder = items.reduce((m: number, x: any) => Math.max(m, Number(x?.order) || 0), 0);
+  const keywords = Array.isArray(incoming.keywords)
+    ? incoming.keywords.map((k: any) => String(k).trim()).filter(Boolean).slice(0, 20) : [];
+  const newItem: Record<string, any> = {
+    ...incoming,
+    id: incoming.id ? String(incoming.id) : `edu_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    type: normalizeEduType(String(incoming.type || "article")),
+    title: String(incoming.title).slice(0, 300),
+    desc,
+    description: desc,
+    keywords,
+    author: incoming.author || EDU_DEFAULT_AUTHOR,
+    authorEn: incoming.authorEn || EDU_DEFAULT_AUTHOR_EN,
+    minutes: Number(incoming.minutes) || 0,
+    date: incoming.date || todayFaDate(),
+    dateEn: incoming.dateEn || incoming.date || todayFaDate(),
+    cover: incoming.cover || "",
+    images: Array.isArray(incoming.images) ? incoming.images : [],
+    platforms: incoming.platforms && typeof incoming.platforms === "object" ? incoming.platforms : {},
+    displayMode: incoming.displayMode || "both",
+    categories: Array.isArray(incoming.categories) ? incoming.categories : (incoming.category ? [String(incoming.category)] : []),
+    mediaCategories: ["education"],
+    mediaCategory: "education",
+    isVisible: incoming.isVisible !== false,
+    active: incoming.active !== false,
+    order: maxOrder + 1,
+    created_via: "content-api",
+  };
+  if (incoming.titleEn) newItem.titleEn = String(incoming.titleEn).slice(0, 300);
+  if (incoming.descEn || incoming.descriptionEn) newItem.descEn = String(incoming.descEn || incoming.descriptionEn).slice(0, 30000);
+  const updatedEdu = { ...eduRaw, items: [...items, newItem] };
+  await saveSettings({ ...settings, education: updatedEdu });
+  return ok({ education: newItem, note: "آیتم در مقصد «آموزش‌ها» (صفحهٔ آموزش و همراهی والدین) ثبت و بلافاصله نمایش داده می‌شود." }, origin);
+}
+
+async function updateEducation(body: any, origin: string): Promise<Response> {
+  if (!body.id) return err("id الزامی است", origin, 400);
+  const { settings } = await loadSettings();
+  const eduRaw = settings.education && typeof settings.education === "object" ? settings.education : {};
+  const items = Array.isArray(eduRaw.items) ? eduRaw.items : [];
+  const idx = items.findIndex((x: any) => String(x.id) === String(body.id));
+  if (idx === -1) return err("آیتم آموزشی یافت نشد", origin, 404);
+  const updates = body.updates || body.item || body.education || {};
+  const updatedItem: Record<string, any> = { ...items[idx] };
+  const strFields = ["title", "titleEn", "desc", "description", "descEn", "body", "author", "authorEn", "date", "dateEn", "cover", "category"];
+  for (const f of strFields) {
+    if (typeof updates[f] === "string") {
+      updatedItem[f] = f === "title" || f === "titleEn" ? updates[f].slice(0, 300) : String(updates[f]).slice(0, 30000);
+    }
+  }
+  if (typeof updates.type === "string") updatedItem.type = normalizeEduType(updates.type);
+  if (Array.isArray(updates.keywords)) updatedItem.keywords = updates.keywords.map((k: any) => String(k).trim()).filter(Boolean).slice(0, 20);
+  if (Array.isArray(updates.categories)) updatedItem.categories = updates.categories;
+  if (typeof updates.images !== "undefined" && Array.isArray(updates.images)) updatedItem.images = updates.images;
+  if (updates.platforms && typeof updates.platforms === "object") updatedItem.platforms = updates.platforms;
+  if (typeof updates.displayMode === "string") updatedItem.displayMode = updates.displayMode;
+  if (typeof updates.isVisible === "boolean") updatedItem.isVisible = updates.isVisible;
+  if (typeof updates.active === "boolean") updatedItem.active = updates.active;
+  if (updates.minutes !== undefined) updatedItem.minutes = Number(updates.minutes) || 0;
+  // desc و description همیشه همگام می‌مانند
+  if (typeof updates.desc === "string" || typeof updates.description === "string") {
+    const nd = String(updates.desc ?? updates.description);
+    updatedItem.desc = nd;
+    updatedItem.description = nd;
+  }
+  // مقصد هرگز تغییر نمی‌کند (آیتم آموزشی باید در آموزش‌ها بماند)
+  updatedItem.mediaCategories = ["education"];
+  updatedItem.mediaCategory = "education";
+  const newList = [...items];
+  newList[idx] = updatedItem;
+  await saveSettings({ ...settings, education: { ...eduRaw, items: newList } });
+  return ok({ updated: true, education: updatedItem }, origin);
+}
+
+async function deleteEducation(body: any, origin: string): Promise<Response> {
+  if (!body.id) return err("id الزامی است", origin, 400);
+  const { settings } = await loadSettings();
+  const eduRaw = settings.education && typeof settings.education === "object" ? settings.education : {};
+  const items = Array.isArray(eduRaw.items) ? eduRaw.items : [];
+  const newList = items.filter((x: any) => String(x.id) !== String(body.id));
+  if (newList.length === items.length) return err("آیتم آموزشی یافت نشد", origin, 404);
+  await saveSettings({ ...settings, education: { ...eduRaw, items: newList } });
+  return ok({ deleted: true, id: body.id }, origin);
+}
+
 const HANDLERS: Record<string, (body:any, origin:string)=>Promise<Response>> = {
   // Reviews
   list_reviews: listReviews,
@@ -874,6 +1018,13 @@ const HANDLERS: Record<string, (body:any, origin:string)=>Promise<Response>> = {
   update_article: updateMedia,
   delete_media: deleteMedia,
   delete_article: deleteMedia,
+  // Education (آموزش‌ها)
+  list_education: listEducation,
+  list_educations: listEducation,
+  get_education: async (b,o)=>{ const { settings } = await loadSettings(); const edu = settings.education && typeof settings.education==="object"?settings.education:{}; const items = Array.isArray(edu.items)?edu.items:[]; const x = items.find((it:any)=>String(it.id)===String(b.id)); if(!x) return err("آیتم آموزشی یافت نشد",o,404); return ok({ education:x },o); },
+  create_education: createEducation,
+  update_education: updateEducation,
+  delete_education: deleteEducation,
   // Highlights
   list_highlights: listHighlights,
   list_stories: listHighlights,
@@ -937,14 +1088,37 @@ serve(async (req)=>{
     if (a.includes("media") || a.includes("article") || a.includes("multimedia") || a.includes("parent_experience")) return "multimedia";
     if (a.includes("highlight") || a.includes("story")) return "stories";
     if (a.includes("banner")) return "banners";
+    if (a.includes("education")) return "education";
     if (a.includes("seo")) return "seo";
     if (a.includes("pending")) return "all";
     return "all";
   })();
 
-  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending"].includes(action)) {
+  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending","get_policy","get_content_policy"].includes(action)) {
     await logAudit(apiKey.id, action, resourceFromAction, null, { error:"scope denied" }, req, false);
     return err(`دسترسی به ${resourceFromAction} برای این کلید مجاز نیست. Scopes: ${apiKey.scopes.join(",")}`, origin, 403);
+  }
+
+  // ─── اکشن متای خودتوضیحی (برای همهٔ کلیدهای معتبر، بدون نیاز به اسکوپ) ───
+  if (action === "get_policy" || action === "get_content_policy") {
+    await logAudit(apiKey.id, action, "@meta", null, { read:true }, req, true);
+    return ok({ policy: policySummary(), api_version: 1 }, origin);
+  }
+
+  // ─── لایهٔ اجباری قوانین محتوا (قبل از هر نوع handler) ───
+  const isWriteAction = action.startsWith("create_") || action.startsWith("update_") ||
+    action.startsWith("set_") || action.startsWith("bulk_create_") || action.startsWith("bulk_update_");
+  if (isWriteAction) {
+    const policyViolations = scanContentPolicy(body);
+    if (policyViolations.length) {
+      await logAudit(apiKey.id, action, resourceFromAction, (body && body.id) || null,
+        { policy_blocked: policyViolations.map(v=>v.rule) }, req, false);
+      return err(
+        "قوانین محتوایی برند رعایت نشده است؛ این درخواست ذخیره نشد. جزئیات نقض در policy_violations آمده است — متن کامل قوانین را با اکشن get_policy بخوانید و پس از اصلاح دوباره تلاش کنید.",
+        origin, 422,
+        { policy_violations: policyViolations, policy_version: POLICY_VERSION },
+      );
+    }
   }
 
   try {
@@ -979,7 +1153,7 @@ serve(async (req)=>{
           const map: Record<string,string> = {
             reviews:"delete_review", faqs:"delete_faq", courses:"delete_course",
             products:"delete_product", media:"delete_media", multimedia:"delete_media",
-            articles:"delete_article", highlights:"delete_highlight", stories:"delete_highlight",
+            articles:"delete_article", highlights:"delete_highlight", stories:"delete_highlight", education:"delete_education",
           };
           const hKey = map[resType] || `delete_${resType}`;
           const handler = HANDLERS[hKey];
@@ -1000,11 +1174,16 @@ serve(async (req)=>{
       } else if (opType === "bulk_edit") {
         const ids = pending.resource_ids || [];
         const updates = stored.updates || stored;
+        const pendEditViol = scanContentPolicy({ updates });
+        if (pendEditViol.length) {
+          await logAudit(apiKey.id, `execute_bulk_edit_${resType}`, resType, null, { pending_id: pendingId, policy_blocked: pendEditViol.map(v=>v.rule) }, req, false);
+          return err("قوانین محتوایی برند در این درخواست گروهی نقض شده است؛ اجرا متوقف شد.", origin, 422, { policy_violations: pendEditViol, policy_version: POLICY_VERSION, pending_id: pendingId });
+        }
         let results: any[] = [];
         for (const id of ids) {
           const map: Record<string,string> = {
             reviews:"update_review", faqs:"update_faq", courses:"update_course",
-            products:"update_product", media:"update_media", highlights:"update_highlight",
+            products:"update_product", media:"update_media", highlights:"update_highlight", education:"update_education",
           };
           const hKey = map[resType] || `update_${resType}`;
           const handler = HANDLERS[hKey];
@@ -1026,11 +1205,13 @@ serve(async (req)=>{
         for (const item of items) {
           const map: Record<string,string> = {
             reviews:"create_review", faqs:"create_faq", courses:"create_course",
-            products:"create_product", media:"create_media", highlights:"create_highlight",
+            products:"create_product", media:"create_media", highlights:"create_highlight", education:"create_education",
           };
           const hKey = map[resType] || `create_${resType}`;
           const handler = HANDLERS[hKey];
           if (handler) {
+            const itemViol = scanContentPolicy(item);
+            if (itemViol.length) { results.push({ ok:false, policy_blocked:true, violations:itemViol }); continue; }
             try {
               const r = await handler(item, origin);
               const rj = await r.json();
@@ -1089,6 +1270,8 @@ serve(async (req)=>{
           for (const it of items) {
             const h = HANDLERS[`create_${resType.replace(/s$/,"")}`] || HANDLERS[`create_${resType}`];
             if (h) {
+              const itViol = scanContentPolicy(it);
+              if (itViol.length) { results.push({ ok:false, policy_blocked:true, violations: itViol }); continue; }
               const r = await h(it, o);
               const j = await r.json();
               results.push(j);
