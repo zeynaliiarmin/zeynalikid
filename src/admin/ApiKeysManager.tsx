@@ -79,7 +79,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
     setLoadingKeys(true);
     try {
       const res = await adminListApiKeys();
-      setKeys(res.api_keys);
+      setKeys((res.api_keys || []).filter((k: any) => k.status !== 'revoked')); // کلیدهای باطل‌شده دیگر در صفحهٔ امنیت نمایش داده نمی‌شوند (قانون مالک)
     } catch (e:any) {
       setMsg(e.message || 'خطا در دریافت کلیدها');
       setMsgType('err');

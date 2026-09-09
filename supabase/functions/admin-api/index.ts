@@ -775,6 +775,11 @@ async function revokeApiKey(body: any, origin: string): Promise<Response> {
 async function listPendingApprovals(_body: any, origin: string): Promise<Response> {
   const supabase = getSupabaseAdmin();
   try { await supabase.rpc("expire_pending_approvals"); } catch {}
+  // چرخه‌حیات تأییدها (قانون مالک): «تأیید/رد/اجرا»‌شده‌ها بعد از ۱ روز (decided_at) پاک شوند؛
+  // درخواست‌های هنوز بدون تصمیم هرگز خودکار حذف نمی‌شوند.
+  try {
+    await supabase.from("api_pending_approvals").delete().neq("status", "pending").lt("decided_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+  } catch (e) { console.warn("pending auto-purge skipped:", e); }
   const { data, error } = await supabase.from("api_pending_approvals")
     .select("id,api_key_id,operation_type,resource_type,resource_ids,payload,status,requested_at,expires_at,decided_at,decided_by,count,reason")
     .order("requested_at", { ascending: false })
@@ -835,6 +840,8 @@ async function rejectPending(body: any, origin: string, session: any): Promise<R
 
 async function listApiAuditLogs(body: any, origin: string): Promise<Response> {
   const supabase = getSupabaseAdmin();
+  // چرخه‌حیات لاگ (قانون مالک): هر چیزی قدیمی‌تر از ۳ روز خودکار پاک شود تا انباشته نشود.
+  try { await supabase.from("api_audit_logs").delete().lt("created_at", new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString()); } catch (e) { console.warn("audit auto-purge skipped:", e); }
   const page = Math.max(1, parseInt(body.page ?? "1", 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(body.limit ?? "50", 10) || 50));
   const offset = (page-1)*limit;

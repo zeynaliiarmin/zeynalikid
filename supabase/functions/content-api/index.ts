@@ -121,6 +121,8 @@ async function logAudit(keyId: string, action: string, resource_type: string, re
   try {
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "";
     const ua = req.headers.get("user-agent") || "";
+    // چرخه‌حیات لاگ (قانون مالک): پیش از ثبت رکورد جدید، لاگ‌های قدیمی‌تر از ۳ روز پاک شوند (خودترمیم‌شونده).
+    try { await supabase.from("api_audit_logs").delete().lt("created_at", new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString()); } catch {}
     await supabase.from("api_audit_logs").insert({
       api_key_id: keyId,
       action,
