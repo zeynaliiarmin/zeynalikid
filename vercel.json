@@ -101,6 +101,10 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/:code((?!assets|api|icons|images|fonts|courses|track|portal|experience|licenses|education|about|faq|contact|products|profile|growth|settings|privacy|desk|admin|admin-login|search|child-info|course-shipping|course-payment|course-confirm|course-done|form|consultation|sw|spa|robots|sitemap|llms|favicon|manifest|admin-sw|admin-manifest|index|404|debug)[a-z0-9]+)",
+      "destination": "/api/referral/:code"
+    },
+    {
       "source": "/((?!assets/|api/|icons/|images/|courses/|experience/|licenses/|education/|about/|faq/|contact/|products/|privacy/|sw.js|manifest.webmanifest|favicon.ico|robots.txt|sitemap.xml|llms.txt|admin-sw.js|admin-manifest.webmanifest|404.html).*)",
       "destination": "/spa.html"
     }
