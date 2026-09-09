@@ -290,7 +290,15 @@ export default function ConsultationPage(){
     if (isDirty && formView === 'form' && !confirm(lang === 'en' ? 'You have unsaved changes. Are you sure you want to clear the form?' : 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید می‌خواهید فرم را پاک کنید؟')) return;
     clearPublicFormDrafts();
     try { localStorage.removeItem('zkid_form_draft'); } catch { }
-    setFd(emptyFd());
+    setFd(() => {
+      // FIX: بعد از پاک‌سازی، نام/شماره کاربرِ واردشده دوباره از نشست پر می‌شود.
+      // قبلاً فقط یک افکت یک‌بارمصرف این کار را می‌کرد و بعد از ریست، فیلد مخفیِ شماره خالی می‌ماند
+      // → شماره '+98' به سرور می‌رفت و با «شماره تماس معتبر نیست» رد می‌شد.
+      const s = getUserSession();
+      if (!s) return emptyFd();
+      const parts = splitE164(s.phone, countries);
+      return { ...emptyFd(), pName: s.fullName || '', cc: parts.cc, pPhone: parts.local };
+    });
     setErrs({});
     setLastId(null);
     setLastTrack('');
@@ -346,7 +354,19 @@ export default function ConsultationPage(){
     if (!validateConsult() || submitting) return;
     setSubmitting(true);
     try {
-      const fp = fullPhone(fd.cc, fd.pPhone);
+      // FIX: نام/شماره در لحظهٔ ثبت مستقیماً از نشست حساب گرفته می‌شود (نه از state قابل‌شکست فرم)؛
+      // اگر کاربر وارد شده باشد، fd ممکن است بعد از ریست/پیش‌نویس شمارهٔ خالی داشته باشد.
+      const sessNow = getUserSession();
+      const effFd = sessNow
+        ? { ...fd, pName: sessNow.fullName || fd.pName, ...(() => { const p = splitE164(sessNow.phone, countries); return { cc: p.cc || fd.cc, pPhone: p.local || fd.pPhone }; })() }
+        : fd;
+      const fp = fullPhone(effFd.cc, effFd.pPhone);
+      // نگهبان قبل از ارسال: شمارهٔ نامعتبر هرگز به سرور نمی‌رود؛ به‌جای خطای ۴۰۰/مودال اضطراری، خطای فیلدی نشان داده می‌شود.
+      if (p2e(fp).replace(/\D/g, '').length < 7) {
+        setErrs((prev: any) => ({ ...prev, pPhone: lang === 'en' ? 'Your account phone number is missing; please sign out and sign in again.' : 'شماره تماس از حساب کاربری شما بازیابی نشد؛ لطفاً یک‌بار از پنل کاربر خارج و دوباره وارد شوید.' }));
+        setSubmitting(false);
+        return;
+      }
       const list = subsCacheRef.current || await loadSubs().catch(() => []);
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
@@ -357,7 +377,7 @@ export default function ConsultationPage(){
           digits(x.fullPhone || '') === digits(fp) &&
           x.type === 'consultation' &&
           x.trackingCode &&
-          similarityScore(x, fd) >= 0.7
+          similarityScore(x, effFd) >= 0.7
         );
         if (dup) {
           setSubmitting(false);
@@ -371,7 +391,7 @@ export default function ConsultationPage(){
         const prev = editEntryRef.current || list.find((x:any) => String(x.id) === String(effectiveEditId)) || {};
         const us = getUserSession(); const trackingCode = us?.code || editOverrideRef.current?.trackingCode || prev.trackingCode || prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
         const updated = {
-          ...prev, ...fd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
+          ...prev, ...effFd, fullPhone: fp, trackingCode, date: today(), time: now(), unread: true,
           ...(us ? { userCode: us.code, userPhone: us.phone, userName: us.fullName } : {}),
           editHistory: [...(prev.editHistory || []), { prevId: prev.id, date: today(), time: now(), data: { pName: prev.pName, age: prev.age, gender: prev.gender, height: prev.height, weight: prev.weight, topics: prev.topics, notes: prev.notes, disease: prev.disease } }]
         };
@@ -386,7 +406,7 @@ export default function ConsultationPage(){
               body: JSON.stringify({
                 trackingCode,
                 fullPhone: fp,
-                updates: { notes: fd.notes || '' },
+                updates: { notes: effFd.notes || '' },
               }),
             });
             if (!resp.ok) {
@@ -417,7 +437,7 @@ export default function ConsultationPage(){
           similarTo = dupModal.similarId;
         } else if (us2?.code) {
           trackingCode = us2.code;
-          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,fd)>=0.7); similarTo=(sim||prevSame).id; }
+          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,effFd)>=0.7); similarTo=(sim||prevSame).id; }
         } else if (dupMode === 'newchild') {
           // همیشه کد جدید تولید می‌شود (هیچ‌وقت کد قبلی را reuse نمی‌کنیم)
           trackingCode = generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
@@ -425,7 +445,7 @@ export default function ConsultationPage(){
         } else {
           // ثبت عادی (بدون تشخیص تکراری)
           trackingCode = prevSame?.trackingCode || generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
-          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,fd)>=0.7); similarTo=(sim||prevSame).id; }
+          if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,effFd)>=0.7); similarTo=(sim||prevSame).id; }
         }
         const sameNumberAll = list.filter((x: any) => digits(x.fullPhone || '') === digits(fp));
         const hasCoursePrev = sameNumberAll.some((x: any) => x.type === 'course');
@@ -450,7 +470,7 @@ export default function ConsultationPage(){
         }
 
         // آپدیت لینک ارجاع: افزودن «دلیل درخواست مشاوره مجدد» (در صورت وجود) به متن یادداشت فرم
-        let consultNotes = fd.notes || '';
+        let consultNotes = effFd.notes || '';
         try {
           const rReason = sessionStorage.getItem('zk_referral_reconsult_reason');
           if (rReason && rReason.trim()) {
@@ -461,7 +481,7 @@ export default function ConsultationPage(){
         const entry = {
           id: uid(), trackingCode, type: 'consultation', date: today(), time: now(),
           ...(us2 ? { userCode: us2.code, userPhone: us2.phone, userName: us2.fullName } : {}),
-          ...fd, notes: consultNotes, fullPhone: fp, voice_note_url,
+          ...effFd, notes: consultNotes, fullPhone: fp, voice_note_url,
           category: 'مشاوره اولیه', consultationStatus: 'مشاوره اولیه',
           consultationStatusChangedAt: new Date().toISOString(),
           priority: autoPriority, unread: true, isNew: true, followReminder: true,
@@ -493,7 +513,8 @@ export default function ConsultationPage(){
               setLS(SK.subs,[...refreshed2,entry]);
               setLastId(entry.id);
             } catch (e2) {
-              reportError('consult_submit', 'Could not save submission to Supabase', String((e2 as any)?.message||e2));triggerErrorAlert('registration');
+              // گزارش واحد در catch بیرونی ثبت می‌شود؛ دیگر برای یک شکست دو خطای دوبل (consult_submit + fatal) لاگ نمی‌شود
+              console.warn('consult submit retry failed', e2);
               throw e2;
             }
           }
@@ -504,11 +525,11 @@ export default function ConsultationPage(){
         setLastTrack(String(entry.trackingCode||trackingCode));
         // اگر کاربر هنوز وارد پنل نشده بود، خودکار با همین کد پیگیری واردش کن
         // تا دفعه بعد از آدمک/همبرگر یک‌راست به پنلش برسد.
-        if (!getUserSession() && entry.trackingCode && (entry.pName || fd.pName)) {
+        if (!getUserSession() && entry.trackingCode && (entry.pName || effFd.pName)) {
           try {
             const sess: PortalSession = {
               phone: fp,
-              fullName: String(entry.pName || fd.pName || ''),
+              fullName: String(entry.pName || effFd.pName || ''),
               code: String(entry.trackingCode),
             };
             setUserSession(sess);

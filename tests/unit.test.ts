@@ -5,6 +5,7 @@
  */
 
 import { p2e, digits, fullPhone, validPhone, flagToEmoji, getCountryFlag } from '../src/utils/phone';
+import { splitE164 } from '../src/utils/userPortal';
 import { TRACKING_PREFIX } from '../src/config/project';
 import {
   generateTrackingCode, extractTrackingNumber, isValidTrackingCode, isAnyValidTrackingCode,
@@ -261,6 +262,25 @@ for(const id of ['blubank','stripe','paypal']){let threw=false;try{await service
  assert(findAssistantRule('قیمت',rules)===null,'قانون contains فقط وقتی اجرا می‌شود که عبارت کامل داخل سؤال کاربر باشد');
  assert(findAssistantRule('هوا چطوره',rules)?.item.id==='r2','قانون عدم اطلاع با جمله دقیق پیدا می‌شود');
  assert(findAssistantRule('هوا فردا چطوره',rules)===null,'قانون exact روی جمله متفاوت اجرا نمی‌شود');
+}
+
+// ── session-prefill regression — باگ «فرم دومِ کاربر لاگین‌شده» ──────────
+// سناریو: بعد از ریست فرم، فیلد شماره (مخفی) باید از نشست دوباره پر شود و fullPhone معتبر بماند.
+{
+  const countries = [{ code: '+98' }, { code: '+46' }, { code: '+1' }, { code: '+' }];
+  const irSessionShapes = ['+989123456789', '09123456789', '9123456789'];
+  for (const sp of irSessionShapes) {
+    const parts = splitE164(sp, countries);
+    const fp = fullPhone(parts.cc, parts.local);
+    assert(fp === '+989123456789', `پرفیل نشست ${sp} → ${fp}`);
+    assert(fp.replace(/\D/g, '').length >= 7, `پرفیل نشست ${sp} حداقل ۷ رقم`);
+  }
+  const se = splitE164('+46701234567', countries);
+  assert(fullPhone(se.cc, se.local) === '+46701234567', 'پرفیل نشست سوئد سالم');
+  // نشست خراب/خالی → نگهبان قبل از ارسال باید رد کند (هرگز ۴۰۰ سرور برای کاربر لاگین‌شده)
+  const empty = splitE164('', countries);
+  assert(fullPhone(empty.cc, empty.local).replace(/\D/g, '').length < 7, 'نشست بدون شماره توسط نگهبان شناسایی می‌شود');
+  assert(fullPhone('+98', '').replace(/\D/g, '').length < 7, 'فرم ریست‌شده بدون پرفیل توسط نگهبان شناسایی می‌شود');
 }
 
 console.log(`\n═══════════════════════════════════`);

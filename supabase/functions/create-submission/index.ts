@@ -10,6 +10,17 @@ const alphabet="abcdefghijklmnopqrstuvwxyz0123456789";
 const trackingPrefix=()=>{const value=String(Deno.env.get("TRACKING_PREFIX")||"ZK").toUpperCase();return value==="FM"?"FM":"ZK"};
 const randomCode=()=>{const length=7+crypto.getRandomValues(new Uint8Array(1))[0]%3;const bytes=crypto.getRandomValues(new Uint8Array(length));const first=String(1+bytes[0]%9);const body=first+Array.from(bytes.slice(1),b=>alphabet[b%alphabet.length]).join('');return `${trackingPrefix()}-${body}`};
 const phoneDigits=(value:string)=>String(value||"").replace(/[^0-9+]/g,"").slice(0,32);
+// نرمال‌سازی یکسان با پنل کاربر/سرور: «۰۹۱۲…»、「۹۱۲…」、「98912…」、「0098…」 و «+98912…» همه → +98912… (سایر کشورها → +CC…)
+// بدون این، رکوردها با قالب‌های متفاوت ذخیره می‌شدند و پنل کاربر (مقایسه دقیق full_phone) خالی نشان می‌داد.
+const normalizeFullPhone=(value:string):string=>{
+ let d=String(value||"").replace(/\D/g,"").slice(0,32);
+ if(!d)return"";
+ if(d.startsWith("0098"))d=d.slice(2);
+ if(d.startsWith("98")&&d.length===12)d="0"+d.slice(2);
+ if(d.startsWith("9")&&d.length===10)d="0"+d;
+ if(d.startsWith("0"))return`+98${d.slice(1)}`;
+ return`+${d}`;
+};
 
 serve(async(req)=>{
  const options=handleOptions(req);if(options)return options;const origin=getOrigin(req);
@@ -20,11 +31,20 @@ serve(async(req)=>{
  const input=body?.submission;
  if(!input||typeof input!=="object"||Array.isArray(input))return jsonResponse({error:"اطلاعات فرم نامعتبر است"},400,origin);
  if(JSON.stringify(input).length>250000)return jsonResponse({error:"حجم اطلاعات فرم بیش از حد مجاز است"},413,origin);
- const fullPhone=phoneDigits(input.fullPhone||input.full_phone||"");
+ let fullPhone=normalizeFullPhone(phoneDigits(input.fullPhone||input.full_phone||""));
+ // اگر fullPhone نامعتبر بود اما کاربر وارد حساب شده (userPhone همراه پیلود می‌آید)، شماره حساب جایگزین می‌شود —
+ // فرمِ کاربر لاگین‌شده هرگز به‌خاطر خرابی فیلد مخفی شماره گم نمی‌شود.
+ if(fullPhone.replace(/\D/g,"").length<7){
+  const alt=normalizeFullPhone(phoneDigits(String((input as any)?.userPhone||"")));
+  if(alt.replace(/\D/g,"").length>=7)fullPhone=alt;
+ }
  if(fullPhone.replace(/\D/g,"").length<7)return jsonResponse({error:"شماره تماس معتبر نیست"},400,origin);
  const type=input.type==="course"?"course":"consultation";
  const payload={...input};
  for(const key of ["id","created_at","updated_at","deleted_at","full_phone","tracking_code","edit_token","service_role","adminPassword"]){delete payload[key]}
+ // قالب شماره یکسان در همه جا (مقایسه دقیق پنل کاربر روی full_phone تکیه دارد)
+ (payload as any).fullPhone=fullPhone;
+ if(String((payload as any)?.userPhone||"").trim()){(payload as any).userPhone=normalizeFullPhone(String((payload as any).userPhone))||String((payload as any).userPhone)}
  payload.type=type;payload.unread=true;payload.isNew=true;payload.editHistory=[];payload.deleted_at=undefined;
  if(type==="consultation"){payload.orderStatus=undefined;payload.consultationStatus=payload.consultationStatus==="ناقص"?"ناقص":"مشاوره اولیه"}
  else{payload.orderStatus=payload.incomplete===true?"ناقص":"جدید";payload.consultationStatus=payload.incomplete===true?"ناقص":"ثبتی"}

@@ -81,7 +81,7 @@ export function parseReferralRaw(rawIn: string, consultants?: any[], courseTabs?
     if (code) map.set(code, c);
   }
   const list: any[] = Array.from(map.values());
-  const tabs: any[] = ((Array.isArray(courseTabs) && courseTabs.length ? courseTabs : defaultSettings.courseTabs) as any[]).filter((tab: any) => tab?.active !== false);
+  const tabs: any[] = ((Array.isArray(courseTabs) && courseTabs.length ? courseTabs : (Array.isArray((defaultSettings as any)?.courseTabs) ? (defaultSettings as any).courseTabs : [])) as any[]).filter((tab: any) => tab?.active !== false);
 
   // ساخت نقشه از همه کدهای کاندید به مشاور مربوطه
   const codeToConsultant = new Map<string, any>();

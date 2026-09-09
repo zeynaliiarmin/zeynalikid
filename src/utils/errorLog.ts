@@ -28,13 +28,24 @@ function sanitize(s: string, max: number): string {
 type ErrorEventPayload={kind:string;message:string;stack:string;page:string;user_agent:string;lang:string};
 const queue:ErrorEventPayload[]=[];let timer:number|null=null;let lastSent=0;const MIN_INTERVAL_MS=10000;
 
+// اثرانگشت هر رویداد برای جلوگیری از تکرار (هم درون صف، هم بین تلاش‌های مجدد/بازدیدهای بعدی)
+const fpOf=(e:ErrorEventPayload)=>`${e.kind}|${e.message}|${e.page}`;
+// خطاهای ارسال‌شدهٔ موفق تا ۱۵ دقیقه دوباره ارسال نمی‌شوند (رفع «تکرار دوباره همان خطا» در پنل)
+const SENT_KEY='zkid_errlog_sent_v1';const SENT_TTL_MS=15*60_000;
+const loadSent=():Record<string,number>=>{try{return JSON.parse(localStorage.getItem(SENT_KEY)||'{}')}catch{return{}}};
+const pruneSent=(m:Record<string,number>)=>{const now=Date.now();const out:Record<string,number>={};for(const k of Object.keys(m))if(now-m[k]<SENT_TTL_MS)out[k]=m[k];return out};
+const wasSent=(fp:string)=>{try{const t=loadSent()[fp];return !!t&&Date.now()-t<SENT_TTL_MS}catch{return false}};
+const markSent=(events:ErrorEventPayload[])=>{try{const m=pruneSent(loadSent());const now=Date.now();for(const e of events)m[fpOf(e)]=now;localStorage.setItem(SENT_KEY,JSON.stringify(m))}catch{}};
+// هر رویداد حداکثر ۴ بار تلاش ارسال دارد؛ بعد از آن دور ریخته می‌شود تا کاربر هفته‌ها بعد خطای قدیمی نبیند
+const attempts=new Map<string,number>();const MAX_ATTEMPTS=4;
+
 const schedule=()=>{if(timer!==null)return;const delay=Math.max(2000,MIN_INTERVAL_MS-(Date.now()-lastSent));timer=window.setTimeout(()=>{timer=null;void flushErrors()},delay)};
 async function flushErrors(force=false):Promise<void>{
  if(!queue.length||!SUPABASE_URL||!SUPABASE_ANON_KEY)return;
  if(!force&&Date.now()-lastSent<MIN_INTERVAL_MS){schedule();return}
  const events=queue.splice(0,10);lastSent=Date.now();
- try{const response=await fetch(`${SUPABASE_URL}/functions/v1/log-error`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({events}),keepalive:true});if(!response.ok)throw new Error('log rejected')}
- catch{queue.unshift(...events);if(queue.length>20)queue.length=20}
+ try{const response=await fetch(`${SUPABASE_URL}/functions/v1/log-error`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({events}),keepalive:true});if(!response.ok)throw new Error('log rejected');markSent(events);for(const e of events)attempts.delete(fpOf(e))}
+ catch{const kept=events.filter(e=>{const f=fpOf(e);const n=(attempts.get(f)||0)+1;attempts.set(f,n);return n<MAX_ATTEMPTS});queue.unshift(...kept);if(queue.length>20)queue.length=20}
  if(queue.length)schedule();
 }
 
@@ -43,6 +54,7 @@ export function reportError(kind:string,message:string,stack?:string):void{
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY)return;
   const event={kind:String(kind||'error').slice(0,30),message:sanitize(message,2000),stack:sanitize(stack||'',4000),page:(typeof location!=='undefined'?location.pathname:'').slice(0,500),user_agent:(typeof navigator!=='undefined'?navigator.userAgent:'').slice(0,500),lang:(()=>{try{return localStorage.getItem('zkid_lang')||''}catch{return''}})().slice(0,8)};
   const fingerprint=`${event.kind}|${event.message}|${event.page}`;
+  if(wasSent(fingerprint))return;
   if(!queue.some(item=>`${item.kind}|${item.message}|${item.page}`===fingerprint))queue.push(event);
   if(queue.length>20)queue.shift();schedule();
  }catch{}
