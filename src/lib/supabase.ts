@@ -297,15 +297,44 @@ export const saveSettings = async (settings: AppSettings): Promise<AppSettings> 
 // اصلاح ۳۱: ثبت بازدید بسیار سبک و بی‌صدا — هرگز نباید در تجربه کاربری اختلال ایجاد کند.
 const PAGE_VIEWS_TABLE = 'page_views';
 
+// شناسهٔ پایدار بازدیدکننده (برای شمارش کاربران یکتا) — یک‌بار تولید و در localStorage می‌ماند.
+const getVisitorId = (): string | null => {
+  try {
+    const key = 'zk_visitor_id_v1';
+    let v = localStorage.getItem(key);
+    if (!v) {
+      v = (crypto && 'randomUUID' in crypto) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+      localStorage.setItem(key, v);
+    }
+    return v;
+  } catch {
+    return null;
+  }
+};
+
+// فیلتر ربات در سمت کلاینت (خود کراولرهای headless): هرگز بازدید ثبت نمی‌کنند.
+const isBotUA = (ua: string | null | undefined): boolean => {
+  if (!ua) return false;
+  return /HeadlessChrome|Headless|PhantomJS|puppeteer|playwright|selenium|lighthouse|PageSpeed|prerender|crawler|spider|Slurp|pingdom|UptimeRobot|curl|wget|python-requests|PostmanRuntime/i.test(ua);
+};
+
 export const trackPageView = (path: string): void => {
   if (!isSupabaseConfigured || !supabase) return;
   try {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    if (isBotUA(ua)) return;
+    // اصلاح ضریب فیک: هر مسیر در هر نشست (sessionStorage) فقط یک‌بار شمرده می‌شود؛
+    // این کار StrictMode ری‌اکت، تغییرات وضعیت فرم و ناوبری تکراری در همان تب را بی‌اثر می‌کند.
+    const sKey = `pv_${path}`;
+    if (sessionStorage.getItem(sKey)) return;
+    sessionStorage.setItem(sKey, Date.now().toString());
     supabase
       .from(PAGE_VIEWS_TABLE)
       .insert({
         page_path: path,
+        visitor_id: getVisitorId(),
         referrer: (typeof document !== 'undefined' && document.referrer) || null,
-        user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) || null,
+        user_agent: ua || null,
       })
       .then(
         () => {},
@@ -318,8 +347,11 @@ export const trackPageView = (path: string): void => {
 
 export type PageViewStats = {
   total: number;
+  uniqueTotal: number;
   thisMonth: number;
+  uniqueMonth: number;
   today: number;
+  uniqueToday: number;
   topPages: { page_path: string; count: number }[];
 };
 
@@ -333,16 +365,19 @@ export const fetchPageViewStats = async (): Promise<PageViewStats> => {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().slice(0, 10);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const todayCount = (stats.dailyCounts || [])
-    .filter((d: any) => d.date === startOfDay)
-    .reduce((sum: number, d: any) => sum + d.views, 0);
-  const thisMonthCount = (stats.dailyCounts || [])
-    .filter((d: any) => d.date >= startOfMonth)
-    .reduce((sum: number, d: any) => sum + d.views, 0);
+  const todayRows = (stats.dailyCounts || []).filter((d: any) => d.date === startOfDay);
+  const todayCount = todayRows.reduce((sum: number, d: any) => sum + d.views, 0);
+  const todayUnique = todayRows.reduce((sum: number, d: any) => sum + (d.uniques || 0), 0);
+  const monthRows = (stats.dailyCounts || []).filter((d: any) => d.date >= startOfMonth);
+  const thisMonthCount = monthRows.reduce((sum: number, d: any) => sum + d.views, 0);
+  const monthUnique = monthRows.reduce((sum: number, d: any) => sum + (d.uniques || 0), 0);
   return {
     total: stats.totalViews || 0,
+    uniqueTotal: stats.uniqueTotal || 0,
     today: todayCount,
+    uniqueToday: todayUnique,
     thisMonth: thisMonthCount,
+    uniqueMonth: monthUnique,
     topPages: (stats.topPages || []).slice(0, 5).map((p: any) => ({ page_path: p.page_path, count: p.views })),
   };
 };

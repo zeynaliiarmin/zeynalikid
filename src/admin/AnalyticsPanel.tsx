@@ -7,8 +7,11 @@ import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 type Stats = {
   total: number;
+  uniqueTotal: number;
   thisMonth: number;
+  uniqueMonth: number;
   today: number;
+  uniqueToday: number;
   topPages: { page_path: string; count: number }[];
   loading: boolean;
   error: string;
@@ -57,8 +60,11 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
   const cached = readCache();
   const [stats, setStats] = useState<Stats>(() => cached ?? {
     total: 0,
+    uniqueTotal: 0,
     thisMonth: 0,
+    uniqueMonth: 0,
     today: 0,
+    uniqueToday: 0,
     topPages: [],
     loading: true,
     error: '',
@@ -134,8 +140,15 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
         </div>
       )}
 
+      <b style={{ fontSize: 12.5, color: T.ttl, display:'block', marginBottom: 8 }}>بازدیدکنندگان واقعی (کاربران یکتا)</b>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
+        <Card label="کاربران یکتا (کل)" value={stats.uniqueTotal} color={T.ttl} />
+        <Card label="کاربران یکتای این ماه" value={stats.uniqueMonth} color={T.acc} />
+        <Card label="کاربران یکتای امروز" value={stats.uniqueToday} color={T.ok} />
+      </div>
+      <b style={{ fontSize: 12.5, color: T.ttl, display:'block', marginBottom: 8 }}>بازدید صفحات (ورودی‌ها)</b>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <Card label="بازدید کل (همیشه)" value={stats.total} color={T.ttl} />
+        <Card label="بازدید کل" value={stats.total} color={T.ttl} />
         <Card label="بازدید این ماه" value={stats.thisMonth} color={T.acc} />
         <Card label="بازدید امروز" value={stats.today} color={T.ok} />
       </div>
@@ -164,7 +177,7 @@ export default function AnalyticsPanel({ T, S }: { T: any; S: any }) {
       )}
 
       <p style={{ fontSize: 10.5, color: T.mut, marginTop: 14, lineHeight: 1.8 }}>
-        ثبت بازدید هر بار که کاربر یک صفحه عمومی (به‌جز پنل مدیریت) را باز می‌کند، به‌صورت بی‌صدا و غیرمسدودکننده در جدول <code>page_views</code> ذخیره می‌شود؛ بازدید فرم مشاوره پروژه ثانویه نیز در همین جدول ثبت می‌شود.
+        دقت آمار بهبود یافت: به ازای هر نشست، هر مسیر فقط یک‌بار شمرده می‌شود و بازدیدهای ربات‌های کراولر (headless معروف) دیگر ثبت/نمایش داده نمی‌شوند. شمارش «کاربران یکتا» با شناسهٔ پایدارِ ذخیره‌شده در مرورگر هر بازدیدکننده محاسبه می‌شود؛ اگر کاربر سِشونش را پاک کند یا مرورگر عوض کند، دوباره شناسهٔ تازه می‌گیرد.
       </p>
     </div>
   );

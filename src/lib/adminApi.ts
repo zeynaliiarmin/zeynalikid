@@ -247,13 +247,15 @@ export async function adminBulkUpdateReviewPlacements(ids: number[], placements:
 
 export async function adminFetchPageViewStats(days: number = 30): Promise<{
   totalViews: number;
+  uniqueTotal: number;
   days: number;
   topPages: Array<{ page_path: string; views: number }>;
-  dailyCounts: Array<{ date: string; views: number }>;
+  dailyCounts: Array<{ date: string; views: number; uniques: number }>;
 }> {
   const body = await callAdminApi('list_page_view_stats', { days });
   return {
     totalViews: body.totalViews ?? 0,
+    uniqueTotal: body.uniqueTotal ?? 0,
     days: body.days ?? days,
     topPages: body.topPages ?? [],
     dailyCounts: body.dailyCounts ?? [],

@@ -554,7 +554,7 @@ async function listPageViewStats(body:any,origin:string):Promise<Response>{
   const {data,error}=await getSupabaseAdmin().rpc("admin_page_view_stats",{p_since:since});
   if(error){console.error("page view aggregation error:",error.message);return err("خطا در دریافت آمار بازدید",origin,500)}
   const stats=(data&&typeof data==="object"?data:{}) as any;
-  return ok({totalViews:Number(stats.totalViews||0),days,topPages:Array.isArray(stats.topPages)?stats.topPages:[],dailyCounts:Array.isArray(stats.dailyCounts)?stats.dailyCounts:[]},origin);
+  return ok({totalViews:Number(stats.totalViews||0),uniqueTotal:Number(stats.uniqueTotal||0),days,topPages:Array.isArray(stats.topPages)?stats.topPages:[],dailyCounts:Array.isArray(stats.dailyCounts)?stats.dailyCounts:[]},origin);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
