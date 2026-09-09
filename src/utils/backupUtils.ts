@@ -345,13 +345,23 @@ export async function maybeAutoBackupToTelegram(getSubs: ()=>any[], getCfg: ()=>
     const subs = getSubs() || [];
     const cfg = getCfg() || {};
     const brand = String(cfg?.siteTitle || (location.hostname.includes('farzandman') ? 'فرزند من' : 'زینالیکید'));
+    // اصلاح مالک: نشانهٔ «بک‌آپ ۳روزه» فقط در localStorage نباشد؛ در تنظیمات سروری هم نگه داشته شود
+    // تا پاک‌شدن کش سایت باعث ارسال دوبارهٔ بک‌آپ نشود.
+    const srvState = ((cfg as any)?.telegramBackup || {}) as any;
+    const srvLastAt = Number(srvState.autoAt) || 0;
+    if (srvLastAt && Date.now() - srvLastAt < AUTO_BACKUP_EVERY_MS) return { sent:false };
     const log = readBackupLog().filter(e => e.brand === brand);
     const last = log.sort((a,b)=>b.sentAt-a.sentAt)[0];
     if (last && Date.now() - last.sentAt < AUTO_BACKUP_EVERY_MS) return { sent:false };
     const hash = await sha256(JSON.stringify({ s: Object.keys(cfg).sort(), n: subs.length, first: subs[0]?.id, last: subs[subs.length-1]?.id }));
-    if (last && last.sha === hash) return { sent:false };
+    if ((last && last.sha === hash) || (srvState.hash && srvState.hash === hash && srvLastAt)) return { sent:false };
     // Send silently
     const r = await callBackupApi({ action: 'send', payload: { submissions: subs, settings: cfg, meta: { brand, sha: hash, auto: true } } }, adminToken);
+    // مارکر سروری: آخرین بک‌آپ خودکار را در تنظیمات سایت ذخیره می‌کنیم تا cache-clear اثر نگذارد
+    try {
+      const { adminSaveSettings } = await import('../lib/adminApi');
+      await adminSaveSettings({ ...(cfg as any), telegramBackup: { autoAt: Date.now(), hash } });
+    } catch (e: any) { console.warn('could not persist server backup marker', e?.message || e); }
     const all = readBackupLog();
     all.push({ brand, sha: hash, messageId: r.message_id, sentAt: Date.now(), filename: r.filename });
     // Purge expired

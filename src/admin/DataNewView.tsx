@@ -288,9 +288,9 @@ export default function DataNewViewPanel({ app }: { app: any }) {
             <div style={{ position: 'fixed', inset: 0, zIndex: 519 }} onClick={() => setBkMenuOpen(false)} />
             <div style={{ position: 'absolute', top: 'calc(100% + 6px)', insetInlineStart: 0, minWidth: 235, background: T.pop || '#fff', border: `1px solid ${T.brd}`, borderRadius: 12, padding: 6, boxShadow: '0 12px 30px rgba(0,0,0,.18)', zIndex: 520 }} onClick={e => e.stopPropagation()}>
               <div style={{ padding: '4px 10px 6px', fontSize: 10.5, color: T.mut, fontWeight: 800 }}>{T.en ? (selectedIds.size > 0 ? `Selected (${selectedIds.size}) items` : 'ALL items of this list') : (selectedIds.size > 0 ? `${faNum(selectedIds.size)} موردِ انتخاب‌شده` : 'همهٔ موارد این فهرست')}</div>
-              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('webp')}>🖼️ {T.en ? 'WebP image (card of each form)' : 'خروجی WebP (تصویر کارت هر فرم)'}</button>
-              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('excel')}>📊 {T.en ? 'Excel (.xls) with all fields' : 'خروجی Excel با تمام فیلدها'}</button>
-              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('pdf')}>📕 {T.en ? 'PDF — one page per form' : 'خروجی PDF — هر فرم یک صفحه A4'}</button>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('webp')}>webp</button>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('excel')}>Excel</button>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('pdf')}>pdf</button>
             </div>
           </>}
         </span>
