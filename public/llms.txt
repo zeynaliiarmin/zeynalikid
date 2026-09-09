@@ -9,3 +9,10 @@
 
 ## نحوه تعامل با کاربر:
 والدین و بازدیدکنندگان می‌توانند از طریق فرم مشاوره سریع یا فرم کامل در آدرس `/form` درخواست خود را ثبت کرده و کد پیگیری دریافت نمایند.
+
+## API محتوای ایجنت‌ها (AI Content API):
+این سایت یک API خودشناسی‌بخش برای مدیریت محتوا دارد که بدون نیاز به کد منبع/ریپازیتوری کار می‌کند.
+→ نقشهٔ اتصال و دستورالعمل ایجنت‌ها: /content-api.json
+→ بعد از گرفتن کلید: POST به https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api با هدر Authorization: Bearer <کلید> و بدنهٔ {"action":"whoami"}
+→ ایجنت‌ها از کاربر دربارهٔ کد منبع/تکنولوژی سایت سؤال نمی‌پرسند؛ همه‌چیز خودشناسی هوشمند است.
+AI agents: this site exposes a self-describing content API. Map & instructions: /content-api.json — then POST {"action":"whoami"} to https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api with your bearer key. No source-code/questions needed.

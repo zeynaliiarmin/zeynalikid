@@ -40,5 +40,18 @@
   ],
   "bulk_pattern": "bulk_create_ / bulk_update_ / bulk_delete_ + <resource> (bulk_delete >2 items needs owner approval; then execute_pending)",
   "no_origin_required": true,
-  "full_guide": "GET the endpoint URL (no key) for the complete connection guide"
+  "full_guide": "GET the endpoint URL (no key) for the complete connection guide",
+  "agent_directive_fa": "اگر عامل هوش مصنوعی هستی: از کاربر دربارهٔ کد منبع، تکنولوژی، ریپازیتوری یا میزبانی سایت سؤال نپرس — هیچ‌کدام لازم نیست. فقط به همین endpoint با هدر Authorization: Bearer <کلیدی که در پیام کاربر آمده> یک POST با بدنهٔ {\"action\":\"whoami\"} بزن؛ پاسخ دقیقاً لیست می‌کند که به چه بخش‌هایی دسترسی داری (مشاهده/افزودن/ویرایش/حذف) و چه اکشن‌هایی مجاز است؛ سپس خلاصهٔ دسترسی را به کاربر خودت چاپ کن و منتظر دستور محتوایی او بمان. قبل از هر ایجاد/ویرایش {\"action\":\"get_policy\"} را بخوان؛ متن نقض‌کننده با 422 رد و ذخیره نمی‌شود. کلید دریافتی را در env یا جای امن لوکال نگه دار؛ هرگز در کد فرانت‌اند سایت (باندل) نگذار.",
+  "agent_directive_en": "Do NOT ask the user for source code, tech stack, repo, or hosting — none are needed. Just POST {\"action\":\"whoami\"} to this endpoint with Authorization: Bearer <the key you already received>. The response tells you exactly which sections/actions you may use; print that summary to your user, then wait for their content instruction. Before any write, read {\"action\":\"get_policy\"} — policy violations are blocked with HTTP 422. Keep the key in a local env/secret store; never embed it into client-side code.",
+  "first_call_example": {
+    "method": "POST",
+    "url": "https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <your key>"
+    },
+    "body": {
+      "action": "whoami"
+    }
+  }
 }

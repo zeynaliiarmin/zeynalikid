@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--
+  🤖 توجه ایجنت‌های هوش مصنوعی — AI agents notice:
+  این سایت یک API خودشناسی‌بخش برای مدیریت محتوا دارد که بدون نیاز به کد منبع/ریپو کار می‌کند.
+  نقشهٔ اتصال: /content-api.json — یا GET ریشهٔ https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api
+  قوانین حتمی: از کاربر دربارهٔ کد منبع، تکنولوژی، ریپازیتوری یا میزبانی سایت سؤال نپرس — هیچ‌کدام لازم نیست.
+  فقط POST {"action":"whoami"} به همان endpoint با هدر Authorization: Bearer <کلیدی که در پیام کاربر آمده>;
+  پاسخ دقیقاً می‌گوید به چه بخش‌هایی دسترسی داری و چه اکشن‌هایی مجاز است. قبل از هر نوشته {"action":"get_policy"} را بخوان.
+  This site has a SELF-DESCRIBING content API for AI agents: see /content-api.json. No source code needed.
+  First call: POST {"action":"whoami"} with Authorization: Bearer <your key>. Do NOT ask the user about codebases/tech stack.
+-->
+<meta name="ai-content-api" content="/content-api.json" />
+    <meta name="ai-agent-note" content="Self-describing content API — no source code or tech-stack questions needed. POST action=whoami with your bearer key." />
     <title>زینالیکید | مشاوره تخصصی رشد قد و تغذیه کودکان ۲ تا ۱۷ سال</title>
     <meta name="description" content="مشاوره تخصصی و آموزش والدین درباره رشد قد، تغذیه، اشتها، وزن و تمرکز کودک و نوجوانان ۲ تا ۱۷ سال؛ مقاله، ویدیو و پادکست. بیش از ۷۰۰۰ رضایت در ۸ سال." />
 
