@@ -1,0 +1,44 @@
+{
+  "service": "content-api",
+  "api_version": 1,
+  "brand": {
+    "id": "zeynalikid",
+    "name_fa": "زینالی‌کید",
+    "name_en": "ZeynaliKid"
+  },
+  "site": "https://zeynalikid.vercel.app",
+  "endpoint": "https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api",
+  "auth": {
+    "type": "bearer_api_key",
+    "header": "Authorization: Bearer <API_KEY>",
+    "alternatives": [
+      "x-api-key header",
+      "api_key JSON body field"
+    ]
+  },
+  "instructions_fa": "این سایت API مدیریت محتوا برای ایجنت‌های هوش مصنوعی دارد. در ۳ قدم متصل شو: ۱) به endpoint بالا ریکوئست POST با بدنهٔ {\"action\":\"whoami\"} با هدر Authorization: Bearer <کلید> بزن تا فهرست دقیق بخش‌های مجاز و اکشن‌هایت را بگيری. ۲) {\"action\":\"get_policy\"} را بخوان؛ قوانین محتوای برند روی همهٔ نوشته‌ها اجباری است (نقض = ارور 422). ۳) با الگوی list/get/create/update/delete_<resource> محتواها را مدیریت کن.",
+  "instructions_en": "AI content API. Connect in 3 steps: 1) POST {\"action\":\"whoami\"} to the endpoint with Authorization: Bearer <your key> to discover your exact scopes/actions. 2) Read {\"action\":\"get_policy\"}; brand content rules are enforced (violations = HTTP 422). 3) Manage content via list/get/create/update/delete_<resource> actions.",
+  "meta_actions": [
+    "whoami",
+    "capabilities",
+    "describe",
+    "me",
+    "get_policy"
+  ],
+  "resources": [
+    "reviews",
+    "faqs",
+    "courses",
+    "products",
+    "articles",
+    "stories",
+    "parent_experiences",
+    "multimedia",
+    "education",
+    "banners",
+    "seo"
+  ],
+  "bulk_pattern": "bulk_create_ / bulk_update_ / bulk_delete_ + <resource> (bulk_delete >2 items needs owner approval; then execute_pending)",
+  "no_origin_required": true,
+  "full_guide": "GET the endpoint URL (no key) for the complete connection guide"
+}
