@@ -11,9 +11,11 @@ const ALLOWED_PREVIEW_PREFIX="zeynalikid-";
 const ALLOWED_LOCAL="http://localhost:5173";
 // Custom domains can be added at runtime through the comma-separated
 // ALLOWED_ORIGINS Edge secret; no code change or cross-project wildcard is needed.
-// Future production domains (e.g. a purchased .com/.ir) are added here before cutover.
+// Sیاست امنیتی مالک: هیچ‌گونه پیوند/دسترسی متقابل با پروژه‌های دیگر
+// (از جمله فرزندمان) مجاز نیست؛ origin پروژه‌های دیگر هرگز به این لیست
+// اضافه نمی‌شود — حتی به‌عنوان «آینده». دامنهٔ آیندهٔ همین برند (مثل .ir)
+// تنها استثنای مجاز است.
 const FUTURE_PRODUCTION_ORIGINS: string[] = [
-  "https://farzandman.vercel.app",
   // "https://zeynalikid.com",
   // "https://www.zeynalikid.com",
 ];

@@ -2,7 +2,7 @@
 // پنل کاربر (ثبت‌نام / ورود / تاریخچه) — نسخه امن:
 //
 // Security:
-//   - CORS فقط برای farzandman.vercel.app و previewهای *.vercel.app
+//   - CORS فقط برای zeynalikid.vercel.app و previewهای zeynalikid-*.vercel.app (سیاست مالک: بدون هیچ پیوندی به پروژه‌های دیگر)
 //   - rate limit مرکزی برای هر اکشن (ضد ربات و سوزاندن پیامک)
 //   - service_role فقط داخل Function
 //   - شماره کامل به کلاینت برنمی‌گردد (فقط ماسک‌شده)

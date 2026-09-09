@@ -131,7 +131,7 @@ export default function SettingsManager(props: Props) {
         ))}
       </Box>
 
-      {arrKeys.map(async (x) => <ArrList key={x[0]} k={x[0]} title={x[1]} />)}
+      {arrKeys.map((x) => <ArrList key={x[0]} k={x[0]} title={x[1]} />)}
 
       <Box title="پیام‌های موفقیت و راهنما">
         <TextField label="متن پیام موفقیت" defaultValue={draft.successMsg || ''} onCommit={(v: string) => up('successMsg', v)} S={S} />

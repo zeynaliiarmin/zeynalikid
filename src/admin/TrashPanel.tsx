@@ -15,9 +15,16 @@ export default function TrashPanel({T,S,AdminBtn,onRestored,refreshKey}:{T:any,S
 
  useEffect(()=>{let alive=true;const load=async()=>{setLoading(true);try{if(isSupabaseConfigured){const data=await fetchDeletedSubmissions();if(alive)setDeletedSubs(data||[])}else{if(alive)setDeletedSubs(getLS(SK.trash,[]))}}catch(e){console.error('Error loading deleted submissions:',e);if(alive)setDeletedSubs(getLS(SK.trash,[]))}finally{if(alive)setLoading(false)}};load();return()=>{alive=false}},[refreshKey]);
 
- const handleRestore=async(id:string|number)=>{const sub=deletedSubs.find(s=>s.id===id);if(!sub)return;try{if(isSupabaseConfigured){await restoreSubmission(id)}else{setLS(SK.trash,getLS(SK.trash,[]).filter((x:any)=>x.id!==id));const subs=getLS(SK.subs,[]);const {deleted_at,...clean}=sub;setLS(SK.subs,[...subs,clean])}setDeletedSubs(prev=>prev.filter(async s=>s.id!==id));setSelectedIds(prev=>{const n=new Set(prev);n.delete(id);return n});onRestored(sub)}catch(e){console.error('Error restoring submission:',e)}};
+ // اصلاح باگ نمایش: تابع filter(async ...) همیشه true برمی‌گرداند و رکورد بازیابی‌شده
+ // در لیست باقی می‌ماند. همچنین با قانون مالک: بازیابی فرم، «کارت پنل کاربر» حذف‌شدهٔ
+ // همان شمارهِ موبایل را نیز (در صورت وجود در سطل) خودکار بازیابی می‌کند.
+ const handleRestore=async(id:string|number)=>{const sub=deletedSubs.find(s=>s.id===id);if(!sub)return;try{if(isSupabaseConfigured){await restoreSubmission(id)}else{setLS(SK.trash,getLS(SK.trash,[]).filter((x:any)=>x.id!==id));const subs=getLS(SK.subs,[]);const {deleted_at,...clean}=sub;setLS(SK.subs,[...subs,clean])}setDeletedSubs(prev=>prev.filter(s=>s.id!==id));setSelectedIds(prev=>{const n=new Set(prev);n.delete(id);return n});onRestored(sub);
+  if(sub.type!=='user'&&isSupabaseConfigured){
+   const userCard=deletedSubs.find((x:any)=>x.type==='user'&&x.id!==id&&digitsOf(x.fullPhone||'')===digitsOf(sub.fullPhone||'')&&digitsOf(x.fullPhone||'').length>=7);
+   if(userCard){try{await restoreSubmission(userCard.id)}catch(e){console.warn('restore user card failed',e)}setDeletedSubs(prev=>prev.filter(s=>s.id!==userCard.id));onRestored(userCard)}
+  }}catch(e){console.error('Error restoring submission:',e)}};
 
- const handlePermanentDelete=async(id:string|number)=>{if(!(await zkConfirm('آیا از حذف دائمی این فرم مطمئن هستید؟ این عملیات قابل بازگشت نیست.')))return;try{if(isSupabaseConfigured){await permanentDeleteSubmission(id)}else{setLS(SK.trash,getLS(SK.trash,[]).filter((x:any)=>x.id!==id))}setDeletedSubs(prev=>prev.filter(async s=>s.id!==id))}catch(e){console.error('Error deleting submission permanently:',e)}};
+ const handlePermanentDelete=async(id:string|number)=>{if(!(await zkConfirm('آیا از حذف دائمی این فرم مطمئن هستید؟ این عملیات قابل بازگشت نیست.')))return;try{if(isSupabaseConfigured){await permanentDeleteSubmission(id)}else{setLS(SK.trash,getLS(SK.trash,[]).filter((x:any)=>x.id!==id))}setDeletedSubs(prev=>prev.filter(s=>s.id!==id))}catch(e){console.error('Error deleting submission permanently:',e)}};
 
  const handlePermanentDeleteMultiple=async()=>{if(selectedIds.size===0)return;if(!(await zkConfirm('آیا از حذف دائمی فرم‌های انتخاب‌شده مطمئن هستید؟ این عملیات قابل بازگشت نیست.')))return;const ids=Array.from(selectedIds);try{if(isSupabaseConfigured){await permanentDeleteMultipleSubmissions(ids)}else{setLS(SK.trash,getLS(SK.trash,[]).filter((x:any)=>!selectedIds.has(x.id)))}setDeletedSubs(prev=>prev.filter(s=>!selectedIds.has(s.id)));setSelectedIds(new Set())}catch(e){console.error('Error deleting multiple submissions permanently:',e)}};
 

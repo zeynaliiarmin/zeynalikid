@@ -134,6 +134,44 @@ export async function exportSubsBackup(items: any[], fmt: BackupFormat, opts: { 
 }
 
 /**
+ * خروجی PDF با جزئیات — برای هر پرونده یک صفحه A4 از تصویر JPG کارت فرم.
+ * (خود jsPDF از WebP پشتیبانی نمی‌کند؛ از همان رندر JPG استفاده می‌کنیم.)
+ */
+export async function exportSubsPdfBackup(items: any[], opts: { onProgress?: (msg: string, done?: number, total?: number) => void } = {}) {
+  if (!items.length) throw new Error('موردی برای خروجی PDF انتخاب نشده است');
+  opts.onProgress?.('در حال رندر تصاویر برای PDF…', 0, items.length);
+  const imgs = await generateImagesBatch(items, 'jpg', (d, t) => opts.onProgress?.(`در حال رندر تصاویر… ${faNum(d)}/${faNum(t)}`, d, t));
+  if (!imgs.length) throw new Error('رندر تصاویر با خطا مواجه شد');
+  const { jsPDF } = await import('jspdf');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = 210, pageH = 297, margin = 6;
+  for (let i = 0; i < imgs.length; i++) {
+    const img = imgs[i];
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = () => reject(new Error('خواندن تصویر ناموفق بود'));
+      r.readAsDataURL(img.blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+      const el = new Image();
+      el.onload = () => resolve({ w: el.naturalWidth || 800, h: el.naturalHeight || 1100 });
+      el.onerror = () => resolve({ w: 800, h: 1100 });
+      el.src = dataUrl;
+    });
+    const maxW = pageW - margin * 2, maxH = pageH - margin * 2;
+    let w = maxW, h = (dims.h * maxW) / dims.w;
+    if (h > maxH) { h = maxH; w = (dims.w * maxH) / dims.h; }
+    if (i > 0) pdf.addPage();
+    const x = (pageW - w) / 2;
+    pdf.addImage(dataUrl, 'JPEG', x, margin, w, h);
+    opts.onProgress?.(`در حال ساخت PDF… ${faNum(i + 1)}/${faNum(imgs.length)}`, i + 1, imgs.length);
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  pdf.save(`backup_pdf_${items.length}_${stamp}.pdf`);
+}
+
+/**
  * بک‌آپ کامل «داشبورد» شامل: فرم‌ها (مشاوره + دوره)، تنظیمات عمومی (faq، محصولات، دوره‌ها، هایلایت،
  * مجوزها، مقالات آموزشی، تجربه‌ها، رسانه‌ها، خدمات، ترجمه‌ها)، و تصاویر کارت فرم‌ها در یک فایل زیپ.
  */

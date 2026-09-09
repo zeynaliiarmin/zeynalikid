@@ -354,7 +354,9 @@ function SubCardBase({
 
   // ویرایش فیلد ساده روی خود فرم (بدون Supabase مستقیم — setSubs خودش sync می‌کند)
   const patchSelf = useCallback((patch: any, logText?: string) => {
-    setSubs((list: any[]) => list.map(async x => x.id === sub.id
+    // اصلاح باگ بحرانی: هرگز تابع async داخل map نگذارید — خروجی Promise[] می‌شد و
+    // در setSubs تمام رکوردها «حذف‌شده» تلقی شده و به سطل بازیافت منتقل می‌شدند.
+    setSubs((list: any[]) => list.map(x => x.id === sub.id
       ? { ...x, ...patch, ...(logText ? { changeHistory: logChange(x, logText) } : {}) }
       : x));
   }, [setSubs, sub.id]);

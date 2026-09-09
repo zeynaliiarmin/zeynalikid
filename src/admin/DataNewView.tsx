@@ -12,6 +12,7 @@ import AdminPopover from './AdminPopover';
 import { digits, faNum, fmtWhen } from './adminUtils';
 import { ZkCheckIcon, ZkTrashIcon, ZkFilterIcon, ZkResetIcon, ZkPhoneIcon, ZkCopyIcon } from './adminIcons';
 import { zkAlert, zkConfirm } from '../components/ZkDialog';
+import { exportSubsBackup, exportSubsPdfBackup } from '../utils/backupUtils';
 
 type NvTab = 'consult' | 'course' | 'users';
 
@@ -57,6 +58,28 @@ export default function DataNewViewPanel({ app }: { app: any }) {
   const [nvFs, setNvFs] = useState<{ stat: string; pay: string; date: string; uStat: string }>({ stat: 'همه', pay: 'همه', date: '', uStat: 'همه' });
   const payOptions = ['همه', 'پرداخت‌شده', 'در انتظار پرداخت', 'بدون پرداخت'];
   const consultStatuses = ['مشاوره اولیه', 'پیگیری', 'مشاوره شده', 'ناقص'];
+
+  // ── بک‌آپ سه‌بخشی (WebP / Excel / PDF) کنار ابزار سطل — خواستهٔ مالک ──
+  const [bkMenuOpen, setBkMenuOpen] = useState(false);
+  const [bkBusy, setBkBusy] = useState(false);
+  const backupItems = () =>
+    (selectedIds.size > 0
+      ? (filteredAll as any[]).filter((x: any) => selectedIds.has(String(x.id)))
+      : (filteredAll as any[]));
+  const runNvBackup = async (fmt: 'webp' | 'excel' | 'pdf') => {
+    if (bkBusy) return;
+    const items = backupItems();
+    if (!items.length) { setMsg(T.en ? 'Nothing to back up' : 'موردی برای بک‌آپ نیست'); setMsgType('err'); return; }
+    setBkBusy(true); setBkMenuOpen(false);
+    try {
+      if (fmt === 'pdf') await exportSubsPdfBackup(items, { onProgress: (m: string) => setMsg(m) });
+      else if (fmt === 'webp') await exportSubsBackup(items, 'image', { imageFormat: 'webp', onProgress: (m: string) => setMsg(m) });
+      else await exportSubsBackup(items, 'excel', { imageFormat: 'webp', onProgress: (m: string) => setMsg(m) });
+      setMsg(T.en ? 'Backup created successfully' : 'بک‌آپ با موفقیت ساخته شد'); setMsgType('ok');
+      setTimeout(() => setMsg(''), 3500);
+    } catch (e: any) { setMsg(String(e?.message || e)); setMsgType('err'); }
+    finally { setBkBusy(false); }
+  };
 
   const nvCopy = useCallback((value: string) => {
     if (!value) return;
@@ -253,6 +276,24 @@ export default function DataNewViewPanel({ app }: { app: any }) {
             <ZkTrashIcon size={15}/>
           </button>
         </span>}
+        {/* بک‌آپ سه‌بخشی (WebP / Excel / PDF) — کنار سطل آشغال همین فهرست */}
+        <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <button type="button" className="zkad-toolbtn" disabled={bkBusy}
+            style={{ background: 'linear-gradient(135deg,#0ea5e9,#6366f1)', color: '#fff', border: 'none', fontWeight: 800 }}
+            onClick={() => setBkMenuOpen(v => !v)}
+            title={T.en ? 'Detailed backup of this list' : 'بک‌آپ با جزئیات از همین فهرست'}>
+            💾 {T.en ? 'Backup' : 'بک‌آپ'}{bkBusy ? '…' : (selectedIds.size > 0 ? ` ${faNum(selectedIds.size)} مورد` : '')}
+          </button>
+          {bkMenuOpen && <>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 519 }} onClick={() => setBkMenuOpen(false)} />
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', insetInlineStart: 0, minWidth: 235, background: T.pop || '#fff', border: `1px solid ${T.brd}`, borderRadius: 12, padding: 6, boxShadow: '0 12px 30px rgba(0,0,0,.18)', zIndex: 520 }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '4px 10px 6px', fontSize: 10.5, color: T.mut, fontWeight: 800 }}>{T.en ? (selectedIds.size > 0 ? `Selected (${selectedIds.size}) items` : 'ALL items of this list') : (selectedIds.size > 0 ? `${faNum(selectedIds.size)} موردِ انتخاب‌شده` : 'همهٔ موارد این فهرست')}</div>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('webp')}>🖼️ {T.en ? 'WebP image (card of each form)' : 'خروجی WebP (تصویر کارت هر فرم)'}</button>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('excel')}>📊 {T.en ? 'Excel (.xls) with all fields' : 'خروجی Excel با تمام فیلدها'}</button>
+              <button type="button" className="zkad-toolbtn" style={{ width: '100%', justifyContent: 'flex-start', border: 0, background: 'transparent', color: T.txt, padding: '9px 10px' }} onClick={() => runNvBackup('pdf')}>📕 {T.en ? 'PDF — one page per form' : 'خروجی PDF — هر فرم یک صفحه A4'}</button>
+            </div>
+          </>}
+        </span>
       </div>
       <details className="zkad-nvfilters" style={{ margin: '2px 0 12px' }}>
         <summary style={{ cursor: 'pointer', fontSize: 11.5, fontWeight: 800, color: T.mut, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: `1px solid ${T.brd}`, borderRadius: 10, background: T.inp, userSelect: 'none' }}><ZkFilterIcon size={13}/> {T.en ? 'Filters' : 'فیلترها'}{((nvTab === 'consult' && nvFs.stat !== 'همه') || (nvTab === 'course' && (nvFs.stat !== 'همه' || nvFs.pay !== 'همه')) || (nvTab === 'users' && nvFs.uStat !== 'همه')) || nvFs.date ? <span className="zkad-tag t-warn" style={{ fontSize: 9.5 }}>{T.en ? 'ON' : 'فعال'}</span> : null}</summary>

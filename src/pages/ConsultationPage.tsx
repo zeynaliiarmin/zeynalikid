@@ -371,14 +371,40 @@ export default function ConsultationPage(){
       const prevSame = list.find((x: any) => digits(x.fullPhone || '') === digits(fp) && x.trackingCode);
       const existingCodes = list.map((x: any) => String(x.trackingCode || '')).filter(Boolean);
 
-      // ── تشخیص فرم تکراری (منطق جدید) ──
+      // ── تشخیص فرم تکراری — قانون جدیدِ مالک ──
+      // ۱) تغییر «جنسیت» ⇒ قطعاً فرزند دیگر است؛ هرگز پرسیده نمی‌شود.
+      // ۲) جنسیت یکسان **و** اختلاف قد ≤۵ و اختلاف وزن ≤۵ ⇒ پرسش می‌شود
+      //    (همان فرزند یا دوقلوهای نزدیک — انتخاب: ویرایش/فرزند دیگر/لغو).
+      // ۳) اختلاف قد>۵ یا وزن>۵ ⇒ فرزند دیگر است؛ بدون پرسش ثبت جدید شود.
+      // ۴) رکورد قبلی فاقد قد/وزن ⇒ فقط وقتی پرس شود که شباهت بالا باشد (سکور ≥۰.۷).
       if (!editId && !dupMode) {
-        const dup = list.find((x: any) =>
+        const candidates = list.filter((x: any) =>
           digits(x.fullPhone || '') === digits(fp) &&
           x.type === 'consultation' &&
-          x.trackingCode &&
-          similarityScore(x, effFd) >= 0.7
+          x.trackingCode
         );
+        const toNum = (v: any): number | null => {
+          const n = Number(p2e(String(v ?? '')).replace(/[٠-٩]/g, (d: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(',', '.'));
+          return Number.isFinite(n) && n > 0 ? n : null;
+        };
+        const hNew = toNum(effFd.height), wNew = toNum(effFd.weight);
+        let dup: any = null;
+        let bestDelta = Number.POSITIVE_INFINITY;
+        for (const x of candidates) {
+          // جنسیت متفاوت ⇒ فرزند دیگر؛ این رکورد اصلاً نامزد پرسش نیست
+          if (effFd.gender && x.gender && x.gender !== effFd.gender) continue;
+          const hOld = toNum(x.height), wOld = toNum(x.weight);
+          if (hNew != null && wNew != null && hOld != null && wOld != null) {
+            const dH = Math.abs(hNew - hOld), dW = Math.abs(wNew - wOld);
+            if (dH <= 5 && dW <= 5) {
+              const d = dH + dW;
+              if (d < bestDelta) { bestDelta = d; dup = x; } // نزدیک‌ترین رکورد نامزد پرسش
+            }
+            continue; // خارج از بازه ⇒ قطعاً فرزند دیگر
+          }
+          // دادهٔ قبلی ناقص (قد/وزن ندارد): fallback به منطق قبلی
+          if (similarityScore(x, effFd) >= 0.7) { dup = dup || x; }
+        }
         if (dup) {
           setSubmitting(false);
           setDupModal({ similarId: dup.id, trackingCode: String(dup.trackingCode) });
@@ -779,7 +805,7 @@ export default function ConsultationPage(){
           </PrimaryButton>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={() => { setDupModal(null); setDupMode(null); }}>
-              {lang === 'en' ? 'No' : 'خیر'}
+              {lang === 'en' ? 'Cancel' : 'لغو'}
             </GhostButton>
             <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={async () => {
               setDupMode('newchild');
