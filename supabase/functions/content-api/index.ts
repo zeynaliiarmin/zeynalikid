@@ -8,6 +8,65 @@ import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, getOrigin } from "../_shared/cors.ts";
 import { POLICY_VERSION, scanContentPolicy, policySummary } from "../_shared/contentPolicy.ts";
 
+// ──────────────────────────────────────────────────────────────────────────
+// Self-discovery for AI agents (هویت برند + نقشهٔ قابلیت‌ها)
+// ──────────────────────────────────────────────────────────────────────────
+const SUPA_URL = Deno.env.get("SUPABASE_URL") || "";
+const BRAND = SUPA_URL.includes("kkdrvexwzuuumjezipnd")
+  ? { id: "zeynalikid", name_fa: "زینالی‌کید", name_en: "ZeynaliKid", site: "https://zeynalikid.vercel.app" }
+  : SUPA_URL.includes("doikoqzarsuprcwkghsq")
+  ? { id: "afradikid", name_fa: "فرزندمان", name_en: "Farzandman", site: "https://farzandman.vercel.app" }
+  : { id: "generic", name_fa: "وب‌سایت", name_en: "Website", site: "" };
+
+const BASE_URL = SUPA_URL ? `${SUPA_URL.replace(/\/$/, "")}/functions/v1/content-api` : "https://<project-ref>.supabase.co/functions/v1/content-api";
+
+interface CapabilitySpec { fa: string; en: string; actions: string[]; verbs_fa: string; verbs_en: string; }
+const CAPABILITY_CATALOG: Record<string, CapabilitySpec> = {
+  reviews:   { fa: "نظرات کاربران", en: "reviews", actions: ["list_reviews","get_review","create_review","update_review","delete_review"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  faqs:      { fa: "سؤالات متداول (FAQ)", en: "faqs", actions: ["list_faqs","get_faq","create_faq","update_faq","delete_faq"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  courses:   { fa: "دوره‌ها", en: "courses", actions: ["list_courses","get_course","create_course","update_course","delete_course","set_discount","remove_discount","set_tag","remove_tag","set_featured","unset_featured"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف، تخفیف/برچسب/ویژه", verbs_en: "list, create, update, delete, discounts/tags/featured" },
+  products:  { fa: "محصولات", en: "products", actions: ["list_products","get_product","create_product","update_product","delete_product"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  articles:  { fa: "مقالات", en: "articles", actions: ["list_articles","get_media","create_article","update_article","delete_article"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  stories:   { fa: "استوری‌ها و هایلایت‌ها", en: "stories/highlights", actions: ["list_stories","get_highlight","create_story","update_story","delete_story"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  parent_experiences: { fa: "تجربیات والدین", en: "parent experiences", actions: ["list_media","get_media","create_media","update_media","delete_media"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  multimedia:{ fa: "چندرسانه‌ای (رسانه‌ها)", en: "multimedia/media", actions: ["list_media","get_media","create_media","update_media","delete_media"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  education: { fa: "آموزش‌ها", en: "education", actions: ["list_education","get_education","create_education","update_education","delete_education"], verbs_fa: "مشاهده، افزودن، ویرایش، حذف", verbs_en: "list, create, update, delete" },
+  banners:   { fa: "بنرها", en: "banners", actions: ["list_banners","update_banner"], verbs_fa: "مشاهده و ویرایش", verbs_en: "list, update" },
+  seo:       { fa: "سئو (SEO)", en: "seo", actions: ["list_seo","update_seo"], verbs_fa: "مشاهده و ویرایش", verbs_en: "list, update" },
+};
+const CAPABILITY_ORDER = ["reviews","faqs","courses","products","articles","stories","parent_experiences","multimedia","education","banners","seo"];
+
+function computeCapabilities(scopes: string[]) {
+  const groups: any[] = [];
+  const flat = new Set<string>();
+  for (const res of CAPABILITY_ORDER) {
+    if (!hasScope(scopes, res)) continue;
+    const spec = CAPABILITY_CATALOG[res];
+    groups.push({ resource: res, label_fa: spec.fa, label_en: spec.en, verbs_fa: spec.verbs_fa, verbs_en: spec.verbs_en, actions: spec.actions });
+    for (const a of spec.actions) flat.add(a);
+  }
+  return { groups, actions: Array.from(flat) };
+}
+
+function buildHowTo(exampleAction: string): Record<string, unknown> {
+  return {
+    method: "POST",
+    url: BASE_URL,
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer <YOUR_API_KEY>" },
+    note_fa: "کلید را همین‌طور (همین کلید دریافتی از پنل) در هدر Authorization به‌صورت Bearer بفرست؛ یا هم‌ارز آن: هدر x-api-key یا فیلد api_key در بدنهٔ JSON.",
+    note_en: "Send the key as Authorization: Bearer <key> header (or x-api-key header / api_key JSON field).",
+    example: { action: exampleAction },
+    example_curl: `curl -X POST "${BASE_URL}" -H "Content-Type: application/json" -H "Authorization: Bearer <YOUR_API_KEY>" -d "{\"action\":\"${exampleAction}\"}"`,
+  };
+}
+
+function keyScopeSummaryFa(scopes: string[]): string {
+  const { groups } = computeCapabilities(scopes);
+  if (!groups.length) return "هیچ بخشی";
+  if ((scopes||[]).includes("all")) return "همهٔ بخش‌ها";
+  return groups.map(g=>g.label_fa).join("، ");
+}
+
 function ok(data: any, origin: string, status = 200): Response {
   return new Response(JSON.stringify({ ok: true, ...data }), {
     status,
@@ -1066,14 +1125,39 @@ serve(async (req)=>{
     return err("Method not allowed", origin, 405);
   }
 
-  if (!action) return err("action الزامی است", origin, 400);
+  // ریشهٔ عمومی: GET بدون اکشن → راهنمای اتصال برای ایجنت‌های هوش مصنوعی (بدون کلید)
+  if (!action) {
+    const publicGuide = {
+      service: "content-api",
+      brand: BRAND,
+      description_fa: "این سرویس، رابط مدیریت محتوای «" + BRAND.name_fa + "» برای ایجنت‌های هوش مصنوعی است" + (BRAND.site ? " (" + BRAND.site + ")" : "") + ". کلید لازم را صاحب سایت از «پنل مدیریت ← امنیت ← ساخت API key» می‌سازد و در اختیار تو می‌گذارد.",
+      description_en: `Content management API of ${BRAND.name_en} for AI agents. The site owner creates your API key in Admin Panel → Security → Create API key.`,
+      how_to_authenticate: buildHowTo("list_education"),
+      first_steps_fa: [
+        "قدم ۱) action را whoami بگذار و با کلیدت صدا بزن تا ببینی به کدام بخش‌ها دسترسی داری.",
+        "قدم ۲) action را get_policy بخوان تا قوانین محتوایی برند را بدانی؛ بدون رعایت آنها ایجاد/ویرایش با ارور 422 رد می‌شود.",
+        "قدم ۳) برای هر بخش دسترسی که داری، اکشن‌های list/get/create/update/delete با الگوی <verb>_<resource> موجود است.",
+      ],
+      first_steps_en: [
+        "1) Call action=whoami with your key to see exactly which sections your key can manage.",
+        "2) Call action=get_policy to read the mandatory content rules (violations are blocked with HTTP 422).",
+        "3) Use list/get/create/update/delete_<resource> actions for each section you have access to.",
+      ],
+      known_resources: ["reviews","faqs","courses","products","articles","stories","parent_experiences","multimedia","education","banners","seo"],
+      bulk_pattern_fa: "عملیات دسته‌جمعی: bulk_create_<resource>، bulk_update_<resource>، bulk_delete_<resource> (bulk_delete بالای ۲ آیتم نیازمند تأیید صاحب سایت است).",
+    };
+    return ok({ guide: publicGuide }, origin, 200);
+  }
 
   // Special actions that don't require API key? No, all require API key except pending check also requires key
   // Extract and validate API key for all actions
   const apiKeyPlain = extractApiKey(req, body);
   const validation = await validateApiKey(apiKeyPlain);
   if (!validation.ok) {
-    return err(validation.error, origin, validation.status);
+    return err(validation.error, origin, validation.status, {
+      hint_fa: "این سرویس content-api سایت " + BRAND.name_fa + " است — نه رمز پنل، نه کلید Stripe/Paystack. کلید صحیح را از «پنل مدیریت ← امنیت» سایت بگیر و با هدر Authorization: Bearer <key> بفرست. ریشهٔ سرویس را GET کن تا راهنمای کامل را ببینی.",
+      hint_en: "This is the " + BRAND.name_en + " content-api. Authenticate with an API key generated in the site's Admin Panel → Security page (Authorization: Bearer <key>). GET this URL for the full guide.",
+    });
   }
   const apiKey = validation.key;
 
@@ -1096,12 +1180,38 @@ serve(async (req)=>{
     return "all";
   })();
 
-  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending","get_policy","get_content_policy"].includes(action)) {
+  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending","get_policy","get_content_policy","whoami","capabilities","describe","me"].includes(action)) {
     await logAudit(apiKey.id, action, resourceFromAction, null, { error:"scope denied" }, req, false);
-    return err(`دسترسی به ${resourceFromAction} برای این کلید مجاز نیست. Scopes: ${apiKey.scopes.join(",")}`, origin, 403);
+    return err(`دسترسی به ${resourceFromAction} برای این کلید مجاز نیست. Scopes: ${apiKey.scopes.join(",")}`, origin, 403, { hint_fa:"برای دیدن فهرست دقیق بخش‌های مجاز، action را whoami بگذار و دوباره صدا بزن.", hint_en:"Call action=whoami to see exactly which sections this key can access." });
   }
 
   // ─── اکشن متای خودتوضیحی (برای همهٔ کلیدهای معتبر، بدون نیاز به اسکوپ) ───
+  // خودشناسی کلید — برای همهٔ کلیدهای معتبر (خواندنی، بدون نیاز به اسکوپ)
+  if (action === "whoami" || action === "capabilities" || action === "describe" || action === "me") {
+    const caps = computeCapabilities(apiKey.scopes || []);
+    const summary = keyScopeSummaryFa(apiKey.scopes || []);
+    await logAudit(apiKey.id, action, "@meta", null, { read:true }, req, true);
+    return ok({
+      service: "content-api",
+      brand: BRAND,
+      base_url: BASE_URL,
+      key: {
+        name: apiKey.name || "",
+        prefix: apiKey.key_prefix || "",
+        scopes: apiKey.scopes || [],
+        is_revoked: !!apiKey.is_revoked,
+        expires_at: apiKey.expires_at || null,
+      },
+      capabilities: caps.groups,
+      flat_actions: caps.actions,
+      summary_fa: "من به این موارد دسترسی دارم: " + summary + " — و می‌توانم در این بخش‌ها فهرست بگیرم، بسازم، ویرایش و حذف کنم (بنر/سئو فقط ویرایش).",
+      summary_en: "This key is connected to the " + BRAND.name_en + " content-api and can manage: " + summary + ".",
+      next_step_fa: "قوانین محتوای برند را با اکشن get_policy بخوان؛ هر متن نقض‌کننده با ارور 422 برگردانده می‌شود و ذخیره نمی‌شود.",
+      how_to_call: buildHowTo(caps.actions.find(a=>a.startsWith("list_")) || "get_policy"),
+      bulk_note_fa: "برای کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource>. حذف دسته‌جمعیِ بالای ۲ آیتم نیازمند تأیید مالک در پنل است.",
+    }, origin);
+  }
+
   if (action === "get_policy" || action === "get_content_policy") {
     await logAudit(apiKey.id, action, "@meta", null, { read:true }, req, true);
     return ok({ policy: policySummary(), api_version: 1 }, origin);
@@ -1282,7 +1392,7 @@ serve(async (req)=>{
           return ok({ created: results.length, results }, o);
         }
         // If we reach here, it needs approval but we are in direct path - create pending
-        return await handleWithApprovalCheck(req, apiKey, resType, op, count, ids, payload, async ()=>ok({}), b, o);
+        return await handleWithApprovalCheck(req, apiKey, resType, op, count, ids, payload, async ()=>ok({}, o), b, o);
       };
       const result = await handleWithApprovalCheck(req, apiKey, resType, op, count, ids, payload, actualHandler, body, origin);
       return result;
@@ -1290,7 +1400,7 @@ serve(async (req)=>{
 
     // Single operations with approval check for delete/edit >1? For single, count=1 so no approval needed, but we still use wrapper for consistency
     const handler = HANDLERS[action];
-    if (!handler) return err(`action نامعتبر: ${action}`, origin, 400);
+    if (!handler) return err(`action نامعتبر: ${action}`, origin, 400, { hint_fa:"برای دیدن اکشن‌های در دسترس با کلیدت، action را whoami بگذار. راهنمای کامل: ریشهٔ همین تابع را GET کن.", hint_en:"Unknown action. Call action=whoami (with your key) or GET this endpoint for the guide + action catalog." });
 
     // Determine operation type for single
     let opType: "delete"|"edit"|"add" = "edit";

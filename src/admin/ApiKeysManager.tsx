@@ -48,6 +48,43 @@ const EXPIRY_OPTIONS = [
   { id: 'custom', label: 'تاریخ سفارشی' },
 ];
 
+function scopeLabelsFa(scopes: string[]): string[] {
+  if (!scopes || scopes.includes('all')) return ['همهٔ بخش‌ها'];
+  return scopes.map(sc=>SCOPE_OPTIONS.find(o=>o.id===sc)?.label || sc);
+}
+
+function buildAgentOnboardingBlock(scopes: string[], keyPlain?: string): string {
+  const base = (typeof window !== 'undefined' ? (import.meta.env.VITE_SUPABASE_URL||'') : '').replace(/\/$/,'');
+  const url = base + '/functions/v1/content-api';
+  const labelsFa = scopeLabelsFa(scopes);
+  const hasAll = (scopes||[]).includes('all');
+  const scopeLine = hasAll
+    ? 'همهٔ بخش‌ها (نظرات، سوالات متداول، دوره‌ها، محصولات، تخفیف‌ها، تگ‌ها، منتخب، مقاله/ویدیو/پادکست، استوری/هایلایت، تجربه والدین، چندرسانه‌ای، بنرها، سئو، آموزش‌ها)'
+    : labelsFa.join('، ');
+  return [
+    '🔌 راهنمای اتصال — content-api سایت شما برای ایجنت هوش مصنوعی',
+    '',
+    'این کلید فقط مخصوص همین API محتواست؛ رمز پنل، کلید Stripe/Paystack و هر سرویس دیگری نیست.',
+    '',
+    'Endpoint: ' + url,
+    'کلید: ' + (keyPlain || '<کلید خودت را اینجا بنویس>'),
+    'روش تماس: POST با بدنهٔ JSON — پارامتر action الزامی است.',
+    'احراز: هدر «Authorization: Bearer <کلید>» (یا هدر x-api-key یا فیلد api_key در بدنه).',
+    '',
+    'قدم ۱) {"action":"whoami"} را با کلید صدا بزن — سرویس می‌گوید کلید چیست و به چه بخش‌هایی دقیقاً دسترسی دارد و چه اکشن‌هایی مجاز است.',
+    'قدم ۲) {"action":"get_policy"} را بخوان — قوانین محتوای برند روی همهٔ نوشته‌ها اجباری است؛ نقض = ارور 422 بدون ذخیره.',
+    '',
+    'دسترسی‌های این کلید: ' + scopeLine,
+    '(مشاهده، افزودن، ویرایش و حذف در بخش‌های مجاز؛ بنرها و سئو فقط مشاهده/ویرایش)',
+    '',
+    'الگوی اکشن‌ها: list_<resource> get_<resource> create_<resource> update_<resource> delete_<resource>',
+    'کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource> (حذف گروهی بالای ۲ مورد نیازمند تأیید صاحب سایت در پنل است؛ بعد با execute_pending اجرا کن).',
+    'مثال: {"action":"list_education"}',
+    '',
+    'برای کسب راهنمای کامل، همین Endpoint را با مرورگر GET کن (بدون کلید).',
+  ].join('\n');
+}
+
 function formatDateFa(iso?: string | null): string {
   if (!iso) return 'بدون انقضا';
   try {
@@ -221,6 +258,12 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
               نام: <b style={{color:T.txt}}>{newKeyInfo.name}</b> | پیشوند: <b style={{direction:'ltr'}}>{newKeyInfo.key_prefix}</b> | انقضا: {formatDateFa(newKeyInfo.expires_at)}
             </div>
           )}
+          <div style={{ marginTop:10, padding:'10px 12px', borderRadius:10, background:`${T.info}10`, border:`1px dashed ${T.info}` }}>
+            <b style={{ fontSize:12, color:T.txt }}>🤖 بلاک آماده برای چسباندن به ایجنت هوش مصنوعی</b>
+            <p style={{ fontSize:11, color:T.mut, lineHeight:1.7, margin:'4px 0 8px' }}>این متن را همراه کلید به ایجنت بده؛ خودش خودشناسی (whoami) را می‌خواند و دقیقاً می‌فهمد چه دسترسی‌هایی دارد — بدون نیاز به توضیح اضافهٔ تو.</p>
+            <pre dir="ltr" style={{ whiteSpace:'pre-wrap', wordBreak:'break-word', background:'#0f172a', color:'#e2e8f0', padding:10, borderRadius:8, fontSize:10, maxHeight:220, overflow:'auto', margin:0 }}>{buildAgentOnboardingBlock(newKeyInfo?.scopes || ['all'], newKeyPlain)}</pre>
+            <button type="button" style={{ ...AdminBtn(), marginTop:8, background:T.info, color:'#fff', border:0 }} onClick={()=>copyToClipboard(buildAgentOnboardingBlock(newKeyInfo?.scopes || ['all'], newKeyPlain))}>📋 کپی بلاک آمادهٔ ایجنت</button>
+          </div>
           <button type="button" style={{ ...AdminBtn(), marginTop:10 }} onClick={()=>{ setNewKeyPlain(null); setNewKeyInfo(null); }}>بستن - ذخیره کردم</button>
         </div>
       )}
@@ -301,7 +344,11 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
                         <span style={{ marginInlineStart:'auto', fontSize:10.5, color:T.mut }}>{formatDateFa(k.created_at)} - انقضا: {formatDateFa(k.expires_at)}</span>
                       </div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-                        {(k.scopes||[]).map(s=><span key={s} style={{ fontSize:10, padding:'2px 7px', borderRadius:8, background:T.soft, border:`1px solid ${T.brd}`, color:T.mut }}>{s}</span>)}
+                        {(k.scopes||[]).map(s=><span key={s} style={{ fontSize:10, padding:'2px 7px', borderRadius:8, background:T.soft, border:`1px solid ${T.brd}`, color:T.txt }} title={SCOPE_OPTIONS.find(o=>o.id===s)?.desc || ''}>{SCOPE_OPTIONS.find(o=>o.id===s)?.label || s}</span>)}
+                      </div>
+                      <div style={{ fontSize:11, color:T.mut, marginBottom:6 }}>
+                        دسترسی به: <b style={{ color:T.txt }}>{scopeLabelsFa(k.scopes||[]).join('، ') || '—'}</b>
+                        <button type="button" style={{ ...AdminBtn(), padding:'2px 8px', fontSize:10, marginInlineStart:8 }} title="متن آمادهٔ راهنمای ایجنت (بدون کلید مخفی — کلید را خودت درج کن) را کپی می‌کند" onClick={()=>copyToClipboard(buildAgentOnboardingBlock(k.scopes||[]))}>📋 کپی بلاک ایجنت</button>
                       </div>
                       <div style={{ display:'flex', gap:8, fontSize:11, color:T.mut, flexWrap:'wrap', alignItems:'center' }}>
                         <span>استفاده: {k.usage_count} بار</span>
@@ -327,7 +374,7 @@ export default function ApiKeysManager({ T, S, AdminBtn, Box }: Props) {
                 <pre style={{ direction:'ltr', textAlign:'left', background:'#0f172a', color:'#e2e8f0', padding:12, borderRadius:10, fontSize:11, overflowX:'auto', marginTop:8 }}>
 {`// لیست نظرات
 POST /content-api
-{ "action": "list_reviews", "api_key": "sk_live_..." }
+{ "action": "list_reviews", "api_key": "<کلید خودت>" }
 
 // ایجاد نظر
 { "action": "create_review", "review": { "reviewer_name": "علی", "comment": "عالی بود", "rating":5, "placements":["course_detail"] } }
