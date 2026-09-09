@@ -52,7 +52,7 @@ export type SubCardProps = {
   /** تغییر کارت باز */
   onToggleOpen?: (id: any) => void;
   /** به‌روزرسانی لیست فرم‌ها */
-  setSubs: (updater: any) => void;
+  setSubs: (updater: any, opts?: { allowRemoval?: boolean }) => void;
   /** تنظیمات سایت (برای لیست محصولات) */
   cfg: any;
   /** آپلود/حذف فایل‌ها — از App تزریق می‌شود */
@@ -436,7 +436,7 @@ function SubCardBase({
               type="button"
               className="zkad-iconbtn zkad-sub-header-icon t-err"
               title="حذف فرم"
-              onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}
+              onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id), { allowRemoval: true }); }}
             >
               <ZkTrashIcon size={15} />
             </button>
@@ -1060,7 +1060,7 @@ function SubCardBase({
                 <button type="button" className="zkad-btn" onClick={() => patchSelf({ priority: sub.priority === 'high' ? 'normal' : 'high' }, sub.priority === 'high' ? 'تغییر اولویت به عادی' : 'تغییر اولویت به زیاد')}>
                   {sub.priority === 'high' ? 'حذف اولویت زیاد' : 'تعیین اولویت زیاد'}
                 </button>
-                <button type="button" className="zkad-btn t-err" onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id)); }}>
+                <button type="button" className="zkad-btn t-err" onClick={async () => { if (!(await zkConfirm('این فرم به سطل بازیافت منتقل شود؟'))) return; setSubs((s: any[]) => s.filter(x => x.id !== sub.id), { allowRemoval: true }); }}>
                   <ZkTrashIcon size={12} /> حذف فرم
                 </button>
               </div>

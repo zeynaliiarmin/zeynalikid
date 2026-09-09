@@ -272,7 +272,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
         {selectedIds.size > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.accText, fontWeight: 800 }}>{faNum(selectedIds.size)} {T.en ? 'selected' : 'انتخاب‌شده'}
           {/* فقط وکتور سطل — بدون متن/عنوان */}
           <button type="button" className="zkad-toolbtn zkad-selected-delete" aria-label={T.en ? 'Delete selected' : 'حذف انتخاب‌شده‌ها'} style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px' }}
-            onClick={async () => { if (!(await zkConfirm(T.en ? `Move ${selectedIds.size} selected items to the trash?` : `حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`))) return; setSubs((prev: any) => prev.filter((x: any) => !selectedIds.has(x.id))); clearSelection(); setMsg(T.en ? 'Moved to trash' : 'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}>
+            onClick={async () => { if (!(await zkConfirm(T.en ? `Move ${selectedIds.size} selected items to the trash?` : `حذف ${faNum(selectedIds.size)} مورد انتخاب‌شده؟ (به سطل بازیافت منتقل می‌شوند)`))) return; setSubs((prev: any) => prev.filter((x: any) => !selectedIds.has(x.id)), { allowRemoval: true }); clearSelection(); setMsg(T.en ? 'Moved to trash' : 'به سطل بازیافت منتقل شد'); setMsgType('ok'); }}>
             <ZkTrashIcon size={15}/>
           </button>
         </span>}
