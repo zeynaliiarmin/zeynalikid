@@ -49,12 +49,30 @@ function breadcrumbLd(route){
  return `<script type="application/ld+json">${json}</script>\n`;
 }
 
+// Helmet-provided SEO tags (title, description, og/url, twitter, canonical) must
+// REPLACE the template defaults — crawlers should see exactly one of each tag.
+function stripTemplateHeadDupes(htmlStr, helmetHead){
+ if(!helmetHead)return htmlStr;
+ const kill=[];
+ if(/<title[\s>]/i.test(helmetHead))kill.push(/<title>[\s\S]*?<\/title>/);
+ if(/name="description"/.test(helmetHead))kill.push(/<meta name="description"[^>]*\/?>/);
+ if(/property="og:title"/.test(helmetHead))kill.push(/<meta property="og:title"[^>]*\/?>/);
+ if(/property="og:description"/.test(helmetHead))kill.push(/<meta property="og:description"[^>]*\/?>/);
+ if(/property="og:url"/.test(helmetHead))kill.push(/<meta property="og:url"[^>]*\/?>/);
+ if(/name="twitter:title"/.test(helmetHead))kill.push(/<meta name="twitter:title"[^>]*\/?>/);
+ if(/name="twitter:description"/.test(helmetHead))kill.push(/<meta name="twitter:description"[^>]*\/?>/);
+ if(/rel="canonical"/.test(helmetHead))kill.push(/<link rel="canonical"[^>]*\/?>/);
+ for(const re of kill)htmlStr=htmlStr.replace(re,'');
+ return htmlStr;
+}
+
 for(const route of routes){
  const result=await render(route,settings);
  let html=template.replace(/<div id="root"><\/div>/,`<div id="root" data-ssg="true">${result.body}</div>`);
  if (heroUrl && heroUrl !== '/images/asset13c-hero-mother-child.webp') {
    html = html.replace('/images/asset13c-hero-mother-child.webp', heroUrl);
  }
+ html=stripTemplateHeadDupes(html, result.head);
  let extraHead = '';
  if (supabaseOrigin) {
    extraHead += `\n<link rel="preconnect" href="${supabaseOrigin}" crossorigin />\n<link rel="dns-prefetch" href="${supabaseOrigin}" />`;

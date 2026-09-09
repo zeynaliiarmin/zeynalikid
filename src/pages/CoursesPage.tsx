@@ -354,7 +354,8 @@ export default function CoursesPage(){
     <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ background: 'var(--zk-bg)', minHeight: '100dvh', overflowX: 'hidden' }}>
       <JsonLd id="ld-courses" data={JSON.stringify({'@context':'https://schema.org','@type':'ItemList',name:lang==='en'?`${brand} growth & nutrition courses`:`دوره‌های رشد و تغذیه ${brand}`,itemListElement:(cfg.courseTabs||[]).flatMap((t:any)=>(t.courses||[]).filter((c:any)=>c.active!==false).map((c:any)=>({'@type':'Course',name:lang==='en'?(c.titleEn||c.title):c.title,description:lang==='en'?(c.descEn||c.desc):c.desc,provider:{'@type':'Organization',name:brand,url:PUBLIC_SITE_URL+'/'}})))})} />
       <Helmet>
-        <title>{lang==='en'?`Courses | ${brand}`:`دوره‌های تخصصی | ${brand}`}</title>
+        <title>{lang==='en'?`Child growth & nutrition courses | ${brand}`:`دوره‌های تخصصی رشد قد و تغذیه کودک | ${brand}`}</title>
+        <meta name="description" content={lang==='en'?'Specialized growth and nutrition courses for children ages 2 to 17: child nutrition consultation, picky-eating treatment, scientific growth-height programs and appetite improvement.':'دوره‌های تخصصی رشد قد و تغذیه کودکان ۲ تا ۱۷ سال؛ مشاوره تغذیه کودک، درمان بدغذایی کودکان، برنامه علمی مکمل رشد قد و افزایش اشتها.'} />
       </Helmet>
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 14px 80px' }}>

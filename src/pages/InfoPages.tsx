@@ -145,7 +145,7 @@ export function ExperiencePage(){
  },[experienceRotationSignature]);
  return (
    <>
-   <Helmet><title>{`${title} | ${siteBrand(cfg)}`}</title><meta name="description" content={`تجربه‌های منتشرشده والدین از خدمات ${siteBrand(cfg,'مجموعه')}`} /></Helmet>
+   <Helmet><title>{`${title} | ${siteBrand(cfg)}`}</title><meta name="description" content={`تجربه واقعی والدین از مشاوره رشد و تغذیه کودک در ${siteBrand(cfg,'مجموعه')}؛ درمان بدغذایی کودکان، بهبود اشتها و رشد قد`} /></Helmet>
      <SecurePage pageTitle={title} T={T} warningMessage={warningMessage}>
        <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}>
          {/* اصلاح ۱ (مرحله ۵): متن راهنمای رضایت والدین در بالای صفحه */}
@@ -221,7 +221,7 @@ export function EducationPage(){
  return (
   <>
      <JsonLd id="ld-edu-faq" data={JSON.stringify({'@context':'https://schema.org','@type':'FAQPage',mainEntity:faqItems.map((it:any)=>({'@type':'Question',name:it.question,acceptedAnswer:{'@type':'Answer',text:it.answer}}))})} />
-   <Helmet><title>{en?`Education | ${siteBrand(cfg,'Child Growth')}`:`آموزش و همراهی والدین | ${siteBrand(cfg)}`}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — growth, nutrition, appetite and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ همراهی در مسیر رشد، اشتها، تغذیه و تمرکز.'}/></Helmet>
+   <Helmet><title>{en?`Education | ${siteBrand(cfg,'Child Growth')}`:`آموزش و همراهی والدین | ${siteBrand(cfg)}`}</title><meta name="description" content={en?'Articles, videos and podcasts for parents — from feeding picky eaters and treating picky eating to scientific tips for growth, nutrition and focus.':'آرشیو مقاله، ویدیو و پادکست تخصصی برای والدین؛ از غذا دادن به کودک بی‌اشتها و درمان بدغذایی کودکان تا راهکارهای علمی رشد قد، تغذیه و تمرکز.'}/></Helmet>
    <main className="zke-root" dir={en?'ltr':'rtl'}>
     <div className="zke-container">
      <header className="zke-hero"><div className="zke-hero-inner">
