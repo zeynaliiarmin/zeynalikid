@@ -15,7 +15,7 @@ const SUPA_URL = Deno.env.get("SUPABASE_URL") || "";
 const BRAND = SUPA_URL.includes("kkdrvexwzuuumjezipnd")
   ? { id: "zeynalikid", name_fa: "زینالی‌کید", name_en: "ZeynaliKid", site: "https://zeynalikid.vercel.app" }
   : SUPA_URL.includes("doikoqzarsuprcwkghsq")
-  ? { id: "afradikid", name_fa: "فرزندمان", name_en: "Farzandman", site: "https://farzandman.vercel.app" }
+  ? { id: "afradikid", name_fa: "فرزند من", name_en: "Farzand Man", site: "https://farzandman.vercel.app" }
   : { id: "generic", name_fa: "وب‌سایت", name_en: "Website", site: "" };
 
 const BASE_URL = SUPA_URL ? `${SUPA_URL.replace(/\/$/, "")}/functions/v1/content-api` : "https://<project-ref>.supabase.co/functions/v1/content-api";
