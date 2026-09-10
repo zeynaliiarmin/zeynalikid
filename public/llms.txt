@@ -22,3 +22,6 @@ AI agents: this site exposes a self-describing content API. Map & instructions: 
 - /education/<slug> · /courses/<slug> · /products/<slug>
 - اگر slug صریح ندهید، خودکار از عنوان ساخته می‌شود؛ انتخاب slug لاتین کوتاه SEO بهتری می‌دهد.
 - آیتم‌های صفحات مجوزها / نظرات / تجربه‌والدین، صفحهٔ جدا ندارند (فقط خود آن صفحات لیست می‌شوند).
+
+## صفحهٔ سئویی هر محتوا برای ربات‌ها (seo-ssr)
+ربات‌های جست‌وجوگر (Googlebot و…) در /education/<slug> نسخهٔ کاملاً HTMLٔ SSR با title/description/canonical/OG/JSON-LD و متن کامل مقاله می‌گیرند؛ کاربران نسخهٔ تعاملی همان صفحه را می‌بینند. هر دو نسخه از همان دیتابیس تغذیه می‌شوند و محتوای جدید بدون دیپلوی همگام است.

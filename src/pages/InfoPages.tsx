@@ -3,7 +3,7 @@ import { useAppContext } from '../app/AppContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { seoKeyOf, matchSeoKey } from '../lib/seo';
 import { isValidMediaUrl } from '../utils/detectCountry';
 import useMediaVpn from '../hooks/useMediaVpn';
@@ -195,6 +195,9 @@ export function EducationPage(){
  const mediaVpnOn=useVpn(cfg);
  const navigate = useNavigate();
  const { slug: eduSlug } = useParams();
+ const location = useLocation();
+ // ورود مستقیم با لینک دائمی (/education/:slug از گوگل/اشتراک) → صفحهٔ تمام‌صفحهٔ تک‌محتوا به‌جای مودال
+ const [directEntry] = useState(() => { try { return (location as any).key === 'default'; } catch { return true; } });
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  // Backfill default author/source for any legacy education item missing author (E-E-A-T).
@@ -207,6 +210,7 @@ export function EducationPage(){
  // بازکردن مستقیم از روی URLهای SEO: /education/:slug
  useEffect(()=>{
   if(usingSamples)return;
+  if(directEntry)return; // در حالت صفحهٔ تمام‌صفحه مودال نمی‌گشیم — خود صفحه آیتم را نشان می‌دهد
   if(eduSlug){
     const it=matchSeoKey(source, eduSlug);
     if(it && String((openItem as any)?.id)!==String(it.id)) openEduItem(it as EduItem, {nav:false});
@@ -223,6 +227,19 @@ export function EducationPage(){
  const faqItems=faqReal.length?faqReal.map((x:any)=>({id:String(x.id),question:x.question,answer:x.answer})):FAQ_SAMPLES.map(x=>({id:x.id,question:(en&&x.qEn)?x.qEn:x.q,answer:(en&&x.aEn)?x.aEn:x.a}));
  const related=useMemo(()=>openItem?source.filter((x:any)=>x.id!==openItem.id&&x.type===openItem.type).slice(0,3):[],[openItem,source]);
  const consult=()=>{try{goToAppA?.()}catch{}};
+ // صفحهٔ اختصاصی تک‌محتوا برای ورود مستقیم (SEO): فقط همان آیتم رندر می‌شود — بدون بارگذاری لیست
+ const pageItem=(directEntry&&eduSlug)?matchSeoKey(source, eduSlug):null;
+ useEffect(()=>{ if(directEntry&&eduSlug&&!pageItem&&!usingSamples&&source.length){ navigate('/education',{replace:true}); } // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[directEntry,eduSlug,!!pageItem,usingSamples,source.length]);
+ useEffect(()=>{ if(pageItem){ setRealViews((prev)=>recordView(prev, String(pageItem.id))); } // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[String((pageItem as any)?.id||'')]);
+ if(directEntry&&eduSlug){
+  if(!pageItem){
+   return <main className="zke-root" dir={en?'ltr':'rtl'}><div className="zke-container" style={{padding:'40px 0',textAlign:'center',color:'var(--zk-text-muted)'}}>{en?'Loading…':'در حال بارگذاری…'}</div></main>;
+  }
+  const pageRelated=source.filter((x:any)=>x.id!==pageItem.id&&x.type===pageItem.type).slice(0,3);
+  return <ArticleModal fullPage item={pageItem as EduItem} related={pageRelated} lang={lang} brand={siteBrand(cfg)} onClose={()=>navigate('/education')} onOpen={(x:any)=>navigate(`/education/${encodeURIComponent(seoKeyOf(x as any))}`)} onConsult={consult} views={viewsOf(pageItem)} viewsOf={(x:any)=>viewsOf(x)}/>;
+ }
  const title=en?'Learning & parent companionship':'آموزش و همراهی والدین';
  const introText=en?(cfg.educationIntroTextEn||''):(cfg.educationIntroText||'');
  const showIntro=cfg.pageContentOrder?.education?.showIntro!==false&&!!introText;

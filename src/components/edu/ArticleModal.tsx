@@ -14,15 +14,16 @@ import JsonLd from '../JsonLd';
 import { itemUrl, metaDescOf, seoKeyOf } from '../../lib/seo';
 
 /**
- * مدال جزئیات محتوا — Stage 8
- * موبایل: BottomSheet تمام‌صفحه · دسکتاپ: پنجره وسط (حداکثر ۷۶۰)
+ * مدال/صفحه جزئیات محتوا — Stage 8 + صفحهٔ تمام‌صفحهٔ SEO
+ * fullPage=true → بدون پورتال/بک‌دراپ، به‌صورت صفحهٔ عادی جایگزین لیست می‌شود
+ * (ورود مستقیم با لینک /education/:slug و ربات‌ها)
  */
 const safeSourceUrl=(value:unknown)=>/^https?:\/\//i.test(String(value||'').trim())?String(value).trim():'';
 
-export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult, views, viewsOf, brand }: {
+export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult, views, viewsOf, brand, fullPage }: {
   item: EduItem; related: EduItem[]; lang: string;
   onClose: () => void; onOpen: (it: EduItem) => void; onConsult: () => void;
-  views?: number; viewsOf?: (item: EduItem) => number; brand?: string;
+  views?: number; viewsOf?: (item: EduItem) => number; brand?: string; fullPage?: boolean;
 }) {
   const en = lang === 'en';
   // مدت‌زمان خودکار: مقاله = مطالعه متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعه توضیحات
@@ -32,12 +33,13 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
     ? (en ? `${Number(views).toLocaleString('en-US')} views` : `${Number(views).toLocaleString('fa-IR')} بازدید`)
     : null;
   useEffect(() => {
+    if (fullPage) return; // در حالت صفحه، قفل اسکرول/بستن با Escape لازم نیست
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+  }, [onClose, fullPage]);
 
   const Icon = item.type === 'text' ? TextIcon : item.type === 'video' ? VideoIcon : item.type === 'image' ? PhotoIcon : AudioIcon;
   const isArticle = isArticleType(item.type);
@@ -71,8 +73,8 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
     } catch { /* no-op */ }
   }, [item?.id]);
 
-  return createPortal(
-    <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
+  const content = (
+    <>
       <Helmet>
         <title>{pageTitle}</title>
         {pageDesc ? <meta name="description" content={pageDesc} /> : null}
@@ -148,6 +150,22 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
           )}
         </div>
       </div>
+    </>
+  );
+
+  // حالت صفحهٔ تمام‌صفحه (ورود مستقیم با لینک دائمی آیتم) — بدون پورتال و بک‌دراپ
+  if (fullPage) {
+    return (
+      <div className="zke-itempage" role="main" aria-label={en ? item.titleEn || item.title : item.title}
+        style={{ minHeight: '80dvh', background: 'var(--zk-background, #fff)', paddingTop: 10 }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>{content}</div>
+      </div>
+    );
+  }
+
+  return createPortal(
+    <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
+      {content}
     </div>,
     document.body,
   );
