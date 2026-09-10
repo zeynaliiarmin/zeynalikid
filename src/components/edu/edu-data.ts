@@ -40,7 +40,8 @@ export const isArticleType = (t: string): boolean => t === 'article' || t === 't
 
 export type ArticleBlock =
   | { kind: 'para'; text: string }
-  | { kind: 'img'; url: string };
+  | { kind: 'img'; url: string }
+  | { kind: 'highlight'; text: string; color: string };
 
 export function buildArticleBlocks(item: any): ArticleBlock[] {
   const paras = String(item?.body || '').split(/\n\n+/).map(p => p.trim()).filter(Boolean);
@@ -50,14 +51,24 @@ export function buildArticleBlocks(item: any): ArticleBlock[] {
     const p = Number(im.position) || 0;
     (byPos[p] = byPos[p] || []).push(im);
   });
+  // هایلایت‌های موقعیت‌دار: هر جایی از متن می‌توانند بیایند (position=شمارهٔ پاراگراف بعد از آن)
+  const hlPos: Record<number, any[]> = {};
+  (Array.isArray(item?.highlights) ? item.highlights : []).forEach((h: any) => {
+    const p = Number(h?.position) || 0;
+    if (p > 0 && h?.text) (hlPos[p] = hlPos[p] || []).push(h);
+  });
   const blocks: ArticleBlock[] = [];
   const insertAt = (pos: number) => {
     (byPos[pos] || []).forEach((im: any) => blocks.push({ kind: 'img', url: String(im.url) }));
   };
-  insertAt(0);
+  const insertHlAt = (pos: number) => {
+    (hlPos[pos] || []).forEach((h: any) => blocks.push({ kind: 'highlight', text: String(h.text), color: String(h.color || '#DBEAFE') }));
+  };
+  insertAt(0); insertHlAt(0);
   paras.forEach((p, idx) => {
     blocks.push({ kind: 'para', text: p });
     insertAt(idx + 1);
+    insertHlAt(idx + 1);
   });
   const maxPos = paras.length;
   Object.keys(byPos).map(Number).sort((a, b) => a - b).forEach((pos) => {

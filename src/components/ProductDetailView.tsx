@@ -2,6 +2,9 @@ import React from 'react';
 import ReviewSection from './ReviewSection';
 import StickyAnchorNav, { detailSectionStyle, detailSectionTitleStyle } from './StickyAnchorNav';
 import PublicBackButton from './PublicBackButton';
+import { Helmet } from 'react-helmet-async';
+import JsonLd from './JsonLd';
+import { itemUrl, metaDescOf, seoKeyOf } from '../lib/seo';
 
 interface Product {
   id: string;
@@ -67,7 +70,30 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
 
   const imgSrc = product.image || product.imageUrl || '/images/products/product-personalized-plan.webp';
 
+  // SEO صفحه محصول: title/meta/canonical/OG + JSON-LD Product
+  const pSeoTitle = `${name} | ${isFa ? 'محصولات' : 'Products'}`;
+  const pSeoDesc = metaDescOf(desc || '');
+  const pSeoUrl = itemUrl('products', product as any);
+  const productLd = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'Product',
+    name, description: pSeoDesc,
+    ...(product.imageUrl || product.image ? { image: [String(product.imageUrl || product.image)] } : {}),
+    brand: { '@type': 'Brand', name: T?.brand || '' },
+  });
+
   return (
+    <>
+    <Helmet>
+      <title>{pSeoTitle}</title>
+      {pSeoDesc ? <meta name="description" content={pSeoDesc} /> : null}
+      <link rel="canonical" href={pSeoUrl} />
+      <meta property="og:type" content="product" />
+      <meta property="og:title" content={name} />
+      {pSeoDesc ? <meta property="og:description" content={pSeoDesc} /> : null}
+      {(product.imageUrl || product.image) ? <meta property="og:image" content={String(product.imageUrl || product.image)} /> : null}
+      <meta property="og:url" content={pSeoUrl} />
+    </Helmet>
+    <JsonLd id={`ld-product-${seoKeyOf(product as any)}`} data={productLd} />
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: 210, background: 'linear-gradient(145deg, var(--zk-surface-muted), var(--zk-bg))', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
@@ -189,6 +215,6 @@ export default function ProductDetailView({ product, T, lang, onClose, onAddToCa
           </button>
         )}
       </div>
-    </div>
+    </div></>
   );
 }

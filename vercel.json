@@ -97,6 +97,22 @@
       "destination": "/spa.html"
     },
     {
+      "source": "/education/:path*",
+      "destination": "/education/index.html"
+    },
+    {
+      "source": "/courses/:path*",
+      "destination": "/courses/index.html"
+    },
+    {
+      "source": "/products/:path*",
+      "destination": "/products/index.html"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/sitemap"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },

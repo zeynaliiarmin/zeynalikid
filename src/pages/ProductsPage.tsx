@@ -1,7 +1,8 @@
 import { useAppContext } from '../app/AppContext';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
+import { seoKeyOf, matchSeoKey } from '../lib/seo';
 import { Helmet } from 'react-helmet-async';
 import JsonLd from '../components/JsonLd';
 import ProductCard from '../components/ProductCard';
@@ -14,6 +15,8 @@ export default function ProductsPage(){
   const { cfg, T, lang, APP_A_URL, Footer, showContactOn, ContactPanel, referralConsultant, requestConsult, startConsult } = app;
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const navigate = useNavigate();
+  const { slug: productSlug } = useParams();
   const [filter, setFilter] = useState<'all' | 'personalized' | 'supplement' | 'education' | 'bundle'>('all');
 
   const showSection = cfg.products?.showSection ?? cfg.showProductsSection ?? cfg.showProductsPage ?? true;
@@ -66,6 +69,9 @@ export default function ProductsPage(){
     }
     setSelectedProduct(product);
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+    // آدرس دائمی محصول (سئو): /products/:slug — همگام با URL تا صفحه share/index شود
+    const key = seoKeyOf(product);
+    if (key) navigate(`/products/${encodeURIComponent(key)}`, { replace: true });
   };
 
   const closeDetail = () => {
@@ -74,7 +80,22 @@ export default function ProductsPage(){
       try { window.history.back(); } catch {}
     }
     setSelectedProduct(null);
+    if (productSlug) navigate('/products', { replace: true });
   };
+  // بازکردن مستقیم از روی URLهای SEO: /products/:slug
+  React.useEffect(() => {
+    if (!productSlug || !rawProducts.length || selectedProduct) return;
+    const found = matchSeoKey(rawProducts, productSlug);
+    if (found) {
+      if (!detailPushedRef.current) {
+        pushInPageHistoryState({ zkProductDetail: true, from: window.location.pathname });
+        detailPushedRef.current = true;
+      }
+      setSelectedProduct(found);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productSlug, rawProducts.length]);
+
   if (!showSection) {
     // Phase 8: به‌جای نمایش پیام «غیرفعال است»، مستقیماً به صفحه اصلی هدایت می‌شود
     return <Navigate to="/" replace />;

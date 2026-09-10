@@ -12,6 +12,9 @@ import { balancedRandomMix, mediaTypeOf } from '../utils/mediaPlacement';
 import { defaultSettings as configDefaultSettings } from '../config/defaultSettings';
 import PublicBackButton from './PublicBackButton';
 import { pushInPageHistoryState } from '../utils/scrollRestoration';
+import { Helmet } from 'react-helmet-async';
+import JsonLd from './JsonLd';
+import { itemUrl, metaDescOf, seoKeyOf } from '../lib/seo';
 
 // ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
 // سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
@@ -297,7 +300,32 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
 
 
 
+  // SEO صفحه دوره: title/meta/canonical/OG + JSON-LD Course
+  const seoTitle = `${title} | ${cfg?.siteTitle || 'سامانه'}`;
+  const seoDesc = metaDescOf(desc || '');
+  const seoUrl = itemUrl('courses', course as any);
+  const seoImg = String(course.image || '');
+  const courseLd = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'Course',
+    name: title, description: seoDesc,
+    ...(seoImg ? { image: [seoImg] } : {}),
+    provider: { '@type': 'Organization', name: cfg?.siteTitle || '' },
+    inLanguage: isFa ? 'fa' : 'en',
+  });
+
   return (
+    <>
+    <Helmet>
+      <title>{seoTitle}</title>
+      {seoDesc ? <meta name="description" content={seoDesc} /> : null}
+      <link rel="canonical" href={seoUrl} />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={title} />
+      {seoDesc ? <meta property="og:description" content={seoDesc} /> : null}
+      {seoImg ? <meta property="og:image" content={seoImg} /> : null}
+      <meta property="og:url" content={seoUrl} />
+    </Helmet>
+    <JsonLd id={`ld-course-${seoKeyOf(course as any)}`} data={courseLd} />
     <div style={{ background: 'var(--zk-surface)', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--zk-border)', boxShadow: 'var(--zk-shadow-medium)' }}>
       {/* کارت معرفی مشاور ارجاع‌دهنده در ابتدای جزئیات دوره */}
       {hasReferral && referralConsultant && (
@@ -783,6 +811,6 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
           {isFa ? 'ثبت‌نام مستقیم این دوره' : 'Direct enrollment'}
         </button>
       </div>
-    </div>
+    </div></>
   );
 }

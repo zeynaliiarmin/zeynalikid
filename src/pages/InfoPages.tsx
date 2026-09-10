@@ -3,6 +3,8 @@ import { useAppContext } from '../app/AppContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useParams, useNavigate } from 'react-router-dom';
+import { seoKeyOf, matchSeoKey } from '../lib/seo';
 import { isValidMediaUrl } from '../utils/detectCountry';
 import useMediaVpn from '../hooks/useMediaVpn';
 import MediaCard, { mediaThumb } from '../components/MediaCard';
@@ -179,16 +181,20 @@ export function EducationPage(){
  // بازدیدهای واقعی (localStorage همان دستگاه) — روی عدد شروع هر محتوا اضافه می‌شود
  const [realViews,setRealViews]=useState<Record<string, number>>(() => loadRealViews());
  const viewsOf = (item: any) => totalViews(item, realViews[String(item?.id)] || 0);
- // رفع باگ دکمه برگشت گوشی: بستن مودال محتوای آموزشی با دکمه back
- const eduDetailRef=useRef(false);
- useEffect(()=>{
-  const onPop=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; setOpenItem(null); } };
-  window.addEventListener('popstate',onPop);
-  return ()=>window.removeEventListener('popstate',onPop);
- },[]);
- const openEduItem=(it:EduItem)=>{ if(!eduDetailRef.current){ pushInPageHistoryState({zkEduDetail:true}); eduDetailRef.current=true; } setOpenItem(it); setRealViews((prev)=>recordView(prev, String(it?.id))); try{window.scrollTo({top:0,behavior:'smooth'})}catch{} };
- const closeEduItem=()=>{ if(eduDetailRef.current){ eduDetailRef.current=false; try{window.history.back()}catch{} } setOpenItem(null); };
+ // آدرس دائمی هر محتوا (سئو): /education/:slug — باز شدن/بسته شدن همگام با URL
+ const openEduItem=(it:EduItem, opts?:{nav?:boolean})=>{
+  setOpenItem(it);
+  setRealViews((prev)=>recordView(prev, String(it?.id)));
+  try{window.scrollTo({top:0,behavior:'smooth'})}catch{}
+  if(opts?.nav!==false){
+    const key=seoKeyOf(it as any);
+    if(key) navigate(`/education/${encodeURIComponent(key)}`);
+  }
+ };
+ const closeEduItem=()=>{ navigate('/education', { replace: true }); setOpenItem(null); };
  const mediaVpnOn=useVpn(cfg);
+ const navigate = useNavigate();
+ const { slug: eduSlug } = useParams();
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  // Backfill default author/source for any legacy education item missing author (E-E-A-T).
@@ -198,6 +204,18 @@ export function EducationPage(){
  const source:any[]=usingSamples?(EDU_SAMPLES as any[]).map(withAuthor):real.map(withAuthor);
  // پل دستیار: اگر لینک «مشاهده همین مورد» باز شد، همان آیتم خودکار در پنجره نمایشگرش باز می‌شود.
  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o||openItem)return;const it=(source as any[]).find((x:any)=>!usingSamples&&String(x?.id)===o);if(it){openEduItem(it as EduItem);const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())}}catch{}},[source.length]);
+ // بازکردن مستقیم از روی URLهای SEO: /education/:slug
+ useEffect(()=>{
+  if(usingSamples)return;
+  if(eduSlug){
+    const it=matchSeoKey(source, eduSlug);
+    if(it && String((openItem as any)?.id)!==String(it.id)) openEduItem(it as EduItem, {nav:false});
+    else if(!it && openItem) closeEduItem();
+  } else if(openItem){
+    setOpenItem(null);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[eduSlug, source.length]);
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);
  const filtered=useMemo(()=>{const base=typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF); if(sortUI==='seen')return [...base].sort((a:any,b:any)=>viewsOf(b)-viewsOf(a)); return base;},[searched,typeF,sortUI,realViews]);
  const suggestedKeywords=useMemo(()=>{const map=new Map<string,number>();source.forEach((x:any)=>(x.keywords||[]).forEach((kw:string)=>{const k=String(kw).trim().toLowerCase();if(k)map.set(k,(map.get(k)||0)+1)}));return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,cfg.suggestedKeywordsCount||8).map(([k])=>k)},[source,cfg.suggestedKeywordsCount]);
@@ -270,7 +288,7 @@ export function EducationPage(){
      {cfg.servicesVisibility?.trainings!==false&&<div style={{marginTop:26}}><h3 style={{color:T.ttl,fontSize:15,margin:'0 0 10px',fontWeight:800}}>{en?'Our Services':'خدمات ما'}</h3><ServicesSection T={T} lang={lang} publicText={(k:string,fb?:string)=>en?(cfg.translations?.en?.[k]||fb||k):(cfg.translations?.fa?.[k]||fb||k)} mode={cfg.servicesDisplayMode?.home==='carousel'?'carousel':'list'} listItems={cfg.listSettings?.items||[]} carouselSettings={cfg.carouselSettings||{columns:2,autoScrollInterval:8,autoScrollEnabled:true,pauseOnSwipe:3,columnsData:[]}}/></div>}
      {contactFirst?<>{ContactBlock}{IntroBlock}</>:<>{IntroBlock}{ContactBlock}</>}
     </div>
-    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} onClose={closeEduItem} onOpen={(x)=>openEduItem(x as EduItem)} onConsult={consult} views={viewsOf(openItem)} viewsOf={(x:any)=>viewsOf(x)}/>}
+    {openItem&&<ArticleModal item={openItem} related={related} lang={lang} brand={siteBrand(cfg)} onClose={closeEduItem} onOpen={(x)=>openEduItem(x as EduItem)} onConsult={consult} views={viewsOf(openItem)} viewsOf={(x:any)=>viewsOf(x)}/>}
    </main>
   </>
  );

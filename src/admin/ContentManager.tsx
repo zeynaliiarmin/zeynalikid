@@ -592,7 +592,7 @@ function MediaLibraryManager(props: any) {
           <label style={S.lbl}>توضیحات (نمایش در صفحه معرفی دوره‌ها)</label>
           <StableAdminTextarea style={{ ...S.ta, marginBottom: 8 }} defaultValue={it.descriptionCourses || ''} onCommit={(v: string) => chg(i, 'descriptionCourses', v)} rows={3} />
           <label style={{ ...S.lbl, marginTop: 2, display: 'block' }}>هایلایت‌های متن (جملات رنگی جلب‌توجه)</label>
-          <p style={{ fontSize: 10.5, color: T.mut, margin: '0 0 6px', lineHeight: 1.7 }}>می‌توانید چند هایلایت رنگی اضافه کنید؛ در نمایش، قبل یا بعد از توضیحات/متن کامل به‌ترتیب ظاهر می‌شوند. رنگ‌های پاستیلی انتخاب کنید تا متن داخل با رنگِ هایلایت خوانا بماند.</p>
+          <p style={{ fontSize: 10.5, color: T.mut, margin: '0 0 6px', lineHeight: 1.7 }}>هاف لایت‌ها می‌توانند هر جای توضیحات/متن قرار بگیرند — فیلد عددی کنار رنگ = «بعد از چند پاراگراف بیاید» (۰ یعنی گروه ثابت بالای متن). رنگ پاستیلی انتخاب کنید تا متن خوانا بماند.</p>
           {(() => {
             const highlights: any[] = it.highlights || [];
             const setHighlights = (arr: any[]) => chg(i, 'highlights', arr);
@@ -601,6 +601,7 @@ function MediaLibraryManager(props: any) {
                 {highlights.map((h: any, hi: number) => (
                   <div key={h.id || hi} style={{ border: `1px solid ${T.brd}`, borderRadius: 10, padding: 8, marginBottom: 6, background: T.badge }}>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
+                      <input type="number" min={0} style={{ ...S.inp, width: 76, flex: '0 0 auto' }} title="بعد از چند پاراگراف بیاید (۰ = بالای متن — گروه ثابت)" defaultValue={h.position || 0} onBlur={(e)=>{ const v=Math.max(0, Number(e.target.value)||0); const a=[...highlights]; a[hi]={...a[hi], ...(v>0?{position:v}:{position:undefined})}; setHighlights(a); }} placeholder="پاراگراف" />
                       <select style={{ ...S.inp, flex: 1 }} value={h.color || '#DCFCE7'} onChange={(e) => { const a = [...highlights]; a[hi] = { ...a[hi], color: e.target.value }; setHighlights(a); }}>
                         <option value="#DCFCE7">سبز ملایم</option>
                         <option value="#FEF9C3">زرد ملایم</option>

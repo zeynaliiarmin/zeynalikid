@@ -6,6 +6,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { seoKeyOf, matchSeoKey } from '../lib/seo';
 import JsonLd from '../components/JsonLd';
 import CourseCard from '../components/CourseCard';
 import CourseDetailView from '../components/CourseDetailView';
@@ -61,6 +63,8 @@ export default function CoursesPage(){
   const brand=String(cfg.browserTitle||cfg.siteTitle||(lang==='en'?'Child Growth':'سامانه رشد کودک')).replace(/[“”"]/g,'').trim();
 
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const navigate = useNavigate();
+  const { slug: courseSlug } = useParams();
   const [expiredNotice, setExpiredNotice] = useState(false);
   // اگر از طریق لینک ارجاع با تعیین تب آمده، همان تب به‌صورت پیش‌فرض باز شود
   const initialFilter = (() => {
@@ -215,6 +219,9 @@ export default function CoursesPage(){
     setSelectedCourse(course);
     try { sessionStorage.setItem('zk_course_detail', String(course.id)); } catch {}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+    // آدرس دائمی دوره (سئو): /courses/:slug — همگام با URL تا صفحه share/index شود
+    const key = seoKeyOf(course);
+    if (key) navigate(`/courses/${encodeURIComponent(key)}`, { replace: true });
   };
 
   const closeDetail = () => {
@@ -224,7 +231,22 @@ export default function CoursesPage(){
     }
     try { sessionStorage.removeItem('zk_course_detail'); } catch {}
     setSelectedCourse(null);
+    if (courseSlug) navigate('/courses', { replace: true });
   };
+
+  // بازکردن مستقیم از روی URLهای SEO: /courses/:slug
+  React.useEffect(() => {
+    if (!courseSlug || !allAvailableCourses.length || selectedCourse) return;
+    const found = matchSeoKey(allAvailableCourses, courseSlug);
+    if (found) {
+      if (!detailPushedRef.current) {
+        pushInPageHistoryState({ zkCourseDetail: true, from: window.location.pathname });
+        detailPushedRef.current = true;
+      }
+      setSelectedCourse(found);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseSlug, allAvailableCourses.length]);
 
   // ─── بازیابی دوره باز بعد از رفرش (بدون پریدن به فهرست دوره‌ها) ───
   React.useEffect(() => {

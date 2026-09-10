@@ -9,6 +9,9 @@ import { TextIcon, VideoIcon, AudioIcon, PhotoIcon } from '../Icons';
 import { Highlights, RichText } from '../MediaHighlights';
 import { extractDirectMediaUrl } from '../../utils/mediaInput';
 import PublicBackButton from '../PublicBackButton';
+import { Helmet } from 'react-helmet-async';
+import JsonLd from '../JsonLd';
+import { itemUrl, metaDescOf, seoKeyOf } from '../../lib/seo';
 
 /**
  * مدال جزئیات محتوا — Stage 8
@@ -16,10 +19,10 @@ import PublicBackButton from '../PublicBackButton';
  */
 const safeSourceUrl=(value:unknown)=>/^https?:\/\//i.test(String(value||'').trim())?String(value).trim():'';
 
-export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult, views, viewsOf }: {
+export default function ArticleModal({ item, related, lang, onClose, onOpen, onConsult, views, viewsOf, brand }: {
   item: EduItem; related: EduItem[]; lang: string;
   onClose: () => void; onOpen: (it: EduItem) => void; onConsult: () => void;
-  views?: number; viewsOf?: (item: EduItem) => number;
+  views?: number; viewsOf?: (item: EduItem) => number; brand?: string;
 }) {
   const en = lang === 'en';
   // مدت‌زمان خودکار: مقاله = مطالعه متن؛ ویدیو/ویس = مدت واقعی فایل + مطالعه توضیحات
@@ -41,8 +44,50 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
   const blocks = isArticle ? buildArticleBlocks(item) : [];
   const paras = (item.body || '').split('\n\n').filter(Boolean);
 
+  // هایلایت‌های بدون position همان گروه بالای متن‌اند؛ موقعیت‌دارها در بین متن رندر می‌شوند.
+  const topHighlights = (Array.isArray((item as any).highlights) ? (item as any).highlights : []).filter((h: any) => !(Number(h?.position) > 0));
+
+  // SEO هر محتوا: title + description + canonical + OG + Article JSON-LD
+  const pageTitle = `${en ? (item.titleEn || item.title) : item.title} | ${brand || 'سامانه'}`;
+  const pageDesc = metaDescOf((en ? (item.descEn || item.desc || item.body) : (item.desc || item.body)) || '');
+  const canonical = itemUrl('education', item as any);
+  const coverImg = extractDirectMediaUrl((item as any).cover || (item as any).images?.[0]?.url || '', 'image');
+  const articleLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': isArticle ? 'Article' : (item.type === 'video' ? 'VideoObject' : 'Article'),
+    headline: en ? (item.titleEn || item.title) : item.title,
+    description: pageDesc,
+    ...(coverImg ? { image: [coverImg] } : {}),
+    author: { '@type': 'Person', name: en ? (item.authorEn || item.author || brand) : (item.author || brand) },
+    inLanguage: en ? 'en' : 'fa',
+  });
+
+  // ریست اسکرول هنگام تعویض به محتوای مشابه — کاربر باید ابتدای محتوای جدید را ببیند
+  useEffect(() => {
+    try {
+      const win = document.querySelector('.zke-modal-win') as HTMLElement | null;
+      if (win) win.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    } catch { /* no-op */ }
+  }, [item?.id]);
+
   return createPortal(
     <div className="zke-modal" onMouseDown={e => { if (e.currentTarget === e.target) onClose(); }} role="dialog" aria-modal="true" aria-label={en ? item.titleEn : item.title}>
+      <Helmet>
+        <title>{pageTitle}</title>
+        {pageDesc ? <meta name="description" content={pageDesc} /> : null}
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={en ? (item.titleEn || item.title) : item.title} />
+        {pageDesc ? <meta property="og:description" content={pageDesc} /> : null}
+        {coverImg ? <meta property="og:image" content={coverImg} /> : null}
+        <meta property="og:url" content={canonical} />
+        <meta property="og:locale" content={en ? 'en_US' : 'fa_IR'} />
+        <meta name="twitter:card" content={coverImg ? 'summary_large_image' : 'summary'} />
+        <meta name="twitter:title" content={en ? (item.titleEn || item.title) : item.title} />
+        {pageDesc ? <meta name="twitter:description" content={pageDesc} /> : null}
+      </Helmet>
+      <JsonLd id={`ld-item-${seoKeyOf(item as any) || 'article'}`} data={articleLd} />
       <div className="zke-modal-win">
         <div className="zke-modal-head zk-public-title-row" dir={en ? 'ltr' : 'rtl'}>
           <PublicBackButton lang={en ? 'en' : 'fa'} onBack={onClose} testId="public-education-detail-back" />
@@ -63,15 +108,17 @@ export default function ArticleModal({ item, related, lang, onClose, onOpen, onC
 
           {!isArticle && <EduPlayer item={item} kind={item.type === 'video' ? 'video' : item.type === 'image' ? 'image' : 'audio'} lang={lang} />}
 
-          <Highlights highlights={(item as any).highlights} />
+          <Highlights highlights={topHighlights.length ? topHighlights : undefined} />
           {isArticle ? (
             <>
               {blocks.length ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {blocks.map((b, i) => b.kind === 'para' ? (
                     <RichText key={i} text={b.text} lang={lang} />
+                  ) : b.kind === 'highlight' ? (
+                    <div key={i}><Highlights highlights={[{ id: `hlpos-${i}`, text: (b as any).text, color: (b as any).color }]} /></div>
                   ) : (
-                    <img key={i} src={extractDirectMediaUrl(b.url, 'image') || b.url} alt="" loading="lazy" referrerPolicy="no-referrer"
+                    <img key={i} src={extractDirectMediaUrl((b as any).url, 'image') || (b as any).url} alt="" loading="lazy" referrerPolicy="no-referrer"
                       onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
                       style={{ width: '100%', height: 'auto', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: '1px solid var(--zk-border)', display: 'block', background: '#000' }} />
                   ))}

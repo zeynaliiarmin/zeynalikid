@@ -984,9 +984,14 @@ async function createEducation(body: any, origin: string): Promise<Response> {
   if (Array.isArray(incoming.highlights)) {
     const palette = new Set(["#DCFCE7", "#FEF9C3", "#FFE4E6", "#DBEAFE", "#FFEDD5", "#F3E8FF", "#CCFBF1", "#E2E8F0"]);
     newItem.highlights = incoming.highlights
-      .map((h: any) => ({ id: String(h?.id || "hl" + Math.random().toString(36).slice(2, 7)), text: String(h?.text || "").slice(0, 500), color: palette.has(String(h?.color)) ? String(h!.color) : "#DCFCE7" }))
+      .map((h: any) => {
+        const entry: any = { id: String(h?.id || "hl" + Math.random().toString(36).slice(2, 7)), text: String(h?.text || "").slice(0, 500), color: palette.has(String(h?.color)) ? String(h!.color) : "#DCFCE7" };
+        const pos = Number(h?.position);
+        if (Number.isFinite(pos) && pos > 0) entry.position = Math.round(pos);
+        return entry;
+      })
       .filter((h: any) => h.text.trim())
-      .slice(0, 6);
+      .slice(0, 24);
   }
   if (incoming.quote) newItem.quote = String(incoming.quote).slice(0, 2000);
   if (incoming.sourceUrl) newItem.sourceUrl = String(incoming.sourceUrl).slice(0, 2000);
@@ -1028,12 +1033,18 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
   if (Array.isArray(updates.highlights)) {
     const palette = new Set(["#DCFCE7","#FEF9C3","#FFE4E6","#DBEAFE","#FFEDD5","#F3E8FF","#CCFBF1","#E2E8F0"]);
     updatedItem.highlights = updates.highlights
-      .map((h: any) => ({
-        text: String(h?.text ?? "").slice(0, 500),
-        color: h?.color && typeof h.color === "string" && palette.has(h.color) ? h.color : "#DCFCE7",
-      }))
-      .filter((h: any) => h.text)
-      .slice(0, 6);
+      .map((h: any) => {
+        const entry: any = {
+          id: String(h?.id || "hl" + Math.random().toString(36).slice(2, 7)),
+          text: String(h?.text ?? "").slice(0, 500),
+          color: h?.color && typeof h.color === "string" && palette.has(h.color) ? h.color : "#DCFCE7",
+        };
+        const pos = Number(h?.position);
+        if (Number.isFinite(pos) && pos > 0) entry.position = Math.round(pos);
+        return entry;
+      })
+      .filter((h: any) => String(h.text || "").trim())
+      .slice(0, 24);
   }
   // desc و description همیشه همگام می‌مانند
   if (typeof updates.desc === "string" || typeof updates.description === "string") {
@@ -1235,15 +1246,15 @@ serve(async (req)=>{
         { field:"desc", type:"string", required:true, where_fa:"خلاصهٔ کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
         { field:"body", type:"string", required:true, where_fa:"متن کامل مقاله", rules_fa:"بدون HTML؛ پاراگراف‌ها با \\n\\n؛ نشانه‌گذاری ساده مجاز" },
         { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد مقاله — در کارت، بالای مقاله، و پنل مدیریت (فیلد «کاور مقاله») قرار می‌گیرد", rules_fa:"فقط URL مستقیم، هرگز HTML — api خودکار imageUrl(قدیمی) ↔ cover را هم‌همگام می‌کند" },
-        { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین توضیحات — وقتی مقاله بلند است و عکس مرتبط با موضوع پیدا کردی، عکس را اینجا بگذار (نه توی body)", rules_fa:"position: 0=بالا، 1=بعد از پاراگراف اول، 2=بعد از پاراگراف دوم، ... — فقط URL مستقیم" },
+        { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین توضیحات — عکس‌ها در هر جای محتوا بدون محدودیت می‌توانند بیایند؛ هر وقت مقاله بلند است یا عکس مرتبط داری اینجا بگذار (هرگز تگ img در body)", rules_fa:"position: 0=بالای مقاله، N=بعد از پاراگراف N — فقط URL مستقیم" },
         { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جملهٔ کوتاه تأمل‌برانگیز" },
-        { field:"highlights", type:"array<{text:string, color:string}>", required:false, where_fa:"«هایلایت‌های متن (جملات رنگی جلب‌توجه)» — همان بخش موجود در پنل مدیریت؛ در نمایش قبل یا بعد از توضیحات/متن کامل به‌ترتیب ظاهر می‌شوند تا جملات مهم به چشم مخاطب بیایند و بخش‌ها از هم جدا بمانند و متن خسته‌کننده نشود", rules_fa:"رنگ پاستیلی انتخاب کن تا متن داخل با رنگ هایلایت خوانا بماند؛ حداکثر ۶ × ۵۰۰؛ color فقط از پالت ۸تایی زیر" },
+        { field:"highlights", type:"array<{text:string, color:string, position?:number}>", required:false, where_fa:"«هایلایت‌های متن (جملات رنگی جلب‌توجه)» — همان بخش پنل مدیریت؛ هر کدام می‌تواند در هر جای محتوا قرار بگیرد: position:N → بعد از پاراگراف N و بدون position → گروه ثابت بالای متن", rules_fa:"رنگ پاستیلی انتخاب کن تا متن داخل با رنگ خوانا بماند؛ color فقط از پالت ۸تایی (تا ۲۴ مورد)" },
         { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمهٔ «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
         { field:"author / authorEn", type:"string", required:true, where_fa:"نویسنده در متا", rules_fa:"نام تحریریه برند" },
         { field:"minutes", type:"number", required:false, where_fa:"مدت مطالعه", rules_fa:"عدد صحیح (۳ تا ۱۵)" },
         { field:"date / dateEn", type:"string", required:true, where_fa:"تاریخ در متا", rules_fa:"شمسی/میلادی" },
         { field:"keywords", type:"string[]", required:false, where_fa:"جست‌و‌جو + سئو", rules_fa:"تا ۲۰ کلمهٔ کوتاه" },
-        { field:"slug", type:"string", required:true, where_fa:"اشتراک/سئو", rules_fa:"لاتین کوچک + خط تیره" },
+                { field:"slug", type:"string", required:false, where_fa:"آدرس دائمی این محتوا در /education/<slug> — برای سئو مهم است و لینک‌های داخلی هم به همین فرمت هستند", rules_fa:"کوتاه لاتین سیتا a-z0-9 و خط‌تیره، یکتا — اگر نگذاری خودکار از slugify(title) ساخته می‌شود" },
         { field:"categories / category", type:"string[]", required:false, where_fa:"فیلترهای صفحه", rules_fa:"فارسی: «اشتها», «رشد قد», «خواب», ..." },
         { field:"type", type:"string", required:true, where_fa:"قالب نمایش", rules_fa:"article" },
         { field:"order", type:"number", required:false, where_fa:"ترتیب نمایش", rules_fa:"number" },
@@ -1316,6 +1327,7 @@ serve(async (req)=>{
       bulk_note_fa: "برای کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource>. حذف دسته‌جمعیِ بالای ۲ آیتم نیازمند تأیید مالک در پنل است.",
       schema_hint_fa: "قبل از نوشتن مقالهٔ آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
       inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد/کلفت** *کج/ایتالیک* __زیرخط__ [لینک خارجی](https://...) [لینک داخلی](/form)/[متن](/courses)/[متن](/education) — برای جزئیات عکس/هایلایت/صفحات داخلی قبل از نوشتن حتماً describe_resource را بخوان.",
+      seo_note_fa: "هر محتوا (آموزش/دوره/محصول، نه نظرات و تجربه والدین و مجوزها) صفحهٔ دائمی قابل‌گوگل دارد: /education/<slug> ، /courses/<slug> ، /products/<slug> — اگر slug صریح لاتین کوتاه انتخاب کنی، لینک‌های سئویی بهتر می‌شوند؛ اگر نگذاری خودکار از عنوان ساخته می‌شود.",
     }, origin);
   }
 

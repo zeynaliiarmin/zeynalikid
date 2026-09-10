@@ -62,7 +62,13 @@ export default function AppRoutes({ app, ui, flow, admin, adminAuthed, referralR
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/experience" element={<ExperiencePage />} />
           <Route path="/licenses" element={<LicensesPage />} />
+          <Route path="/education/:slug" element={<EducationPage />} />
+          <Route path="/education/:slug" element={<EducationPage />} />
           <Route path="/education" element={<EducationPage />} />
+          <Route path="/courses/:slug" element={<CoursesPage />} />
+          <Route path="/products/:slug" element={<ProductsPage />} />
+          <Route path="/courses/:slug" element={<CoursesPage />} />
+          <Route path="/products/:slug" element={<ProductsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/products" element={<ProductsPage />} />
