@@ -511,6 +511,11 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                   <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--zk-text)', marginBottom: 3 }}>
                     {isFa ? (cfg?.courseInstructor?.name || PROJECT_AUTHOR) : (cfg?.courseInstructor?.nameEn || PROJECT_AUTHOR_EN)}
                   </div>
+                  <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.6 }}>
+                    {isFa
+                      ? (cfg?.courseInstructor?.desc || 'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم')
+                      : (cfg?.courseInstructor?.descEn || 'Child & Adolescent Growth and Nutrition Specialist — guiding families on healthy growth journeys')}
+                  </div>
                 </div>
               </div>
             )}
