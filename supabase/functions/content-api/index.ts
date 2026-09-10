@@ -996,7 +996,7 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
   if (idx === -1) return err("آیتم آموزشی یافت نشد", origin, 404);
   const updates = body.updates || body.item || body.education || {};
   const updatedItem: Record<string, any> = { ...items[idx] };
-  const strFields = ["title", "titleEn", "desc", "description", "descEn", "body", "author", "authorEn", "date", "dateEn", "cover", "category"];
+  const strFields = ["title", "titleEn", "desc", "descEn", "body", "author", "authorEn", "date", "dateEn", "cover", "category", "sourceUrl", "quote", "slug", "reviewedAt", "imageUrl", "shortDescription"];
   for (const f of strFields) {
     if (typeof updates[f] === "string") {
       updatedItem[f] = f === "title" || f === "titleEn" ? updates[f].slice(0, 300) : String(updates[f]).slice(0, 30000);
@@ -1011,6 +1011,19 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
   if (typeof updates.isVisible === "boolean") updatedItem.isVisible = updates.isVisible;
   if (typeof updates.active === "boolean") updatedItem.active = updates.active;
   if (updates.minutes !== undefined) updatedItem.minutes = Number(updates.minutes) || 0;
+  if (typeof updates.order === "number" || typeof updates.order === "string") {
+    const n = Number(updates.order); if (Number.isFinite(n) && n >= 0) updatedItem.order = n;
+  }
+  if (Array.isArray(updates.highlights)) {
+    const palette = new Set(["#DCFCE7","#FEF9C3","#FFE4E6","#DBEAFE","#FFEDD5","#F3E8FF","#CCFBF1","#E2E8F0"]);
+    updatedItem.highlights = updates.highlights
+      .map((h: any) => ({
+        text: String(h?.text ?? "").slice(0, 500),
+        color: h?.color && typeof h.color === "string" && palette.has(h.color) ? h.color : "#DCFCE7",
+      }))
+      .filter((h: any) => h.text)
+      .slice(0, 6);
+  }
   // desc و description همیشه همگام می‌مانند
   if (typeof updates.desc === "string" || typeof updates.description === "string") {
     const nd = String(updates.desc ?? updates.description);
@@ -1180,12 +1193,83 @@ serve(async (req)=>{
     return "all";
   })();
 
-  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending","get_policy","get_content_policy","whoami","capabilities","describe","me"].includes(action)) {
+  if (!hasScope(apiKey.scopes, resourceFromAction) && !["check_pending","execute_pending","list_pending","get_policy","get_content_policy","whoami","capabilities","describe","me","describe_resource"].includes(action)) {
     await logAudit(apiKey.id, action, resourceFromAction, null, { error:"scope denied" }, req, false);
     return err(`دسترسی به ${resourceFromAction} برای این کلید مجاز نیست. Scopes: ${apiKey.scopes.join(",")}`, origin, 403, { hint_fa:"برای دیدن فهرست دقیق بخش‌های مجاز، action را whoami بگذار و دوباره صدا بزن.", hint_en:"Call action=whoami to see exactly which sections this key can access." });
   }
 
   // ─── اکشن متای خودتوضیحی (برای همهٔ کلیدهای معتبر، بدون نیاز به اسکوپ) ───
+  // شمای کامل فیلدهای محتوا — برای همهٔ کلیدهای معتبر (بدون نیاز به اسکوپ)
+  if (action === "describe_resource") {
+    const res = String(body.resource || body.section || body.type || "education").toLowerCase().trim();
+    const educationSchema = {
+      display_fa: "در صفحهٔ «آموزش» (/education) — کارت‌ها title+desc+cover+keywords می‌خوانند؛ کلیک کارت → مودال کامل با meta + متن + تصاویر بین‌ پاراگراف.",
+      renderer_rules_fa: [
+        "متن‌ها ساده (بدون HTML)؛ <img>، <p>، <div>، <span>، <a href>، <strong>، <br> و هر برچسب دیگر به‌صورت متنِ خام نمایش داده می‌شود و غلط است.",
+        "نشانه‌گذاری درون‌خطی مجاز: **متن** → بولد | *متن* → ایتالیک | __متن__ → زیرخط | [متن لینک](https://...) → لینک",
+        "پاراگراف‌ها در body با دو خط خالی (\\n\\n) جدا می‌شوند.",
+      ],
+      fields: [
+        { field:"title", type:"string", required:true, where_fa:"کارت + عنوان مقاله", rules_fa:"۴ تا ۳۰۰ کاراکتر، فارسی، بدون HTML" },
+        { field:"titleEn", type:"string", required:false, where_fa:"عنوان انگلیسی (lang=en)", rules_fa:"اختیاری" },
+        { field:"desc", type:"string", required:true, where_fa:"خلاصهٔ کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
+        { field:"body", type:"string", required:true, where_fa:"متن کامل مقاله", rules_fa:"بدون HTML؛ پاراگراف‌ها با \\n\\n؛ نشانه‌گذاری ساده مجاز" },
+        { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد کارت + بالای مقاله", rules_fa:"فقط URL مستقیم — تصویر هرگز در body با <img> نیاید؛ فقط اینجا یا images" },
+        { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین پاراگراف‌ها", rules_fa:"position: 0=بالا، 1=بعد از پاراگراف اول، 2=بعد از پاراگراف دوم، ..." },
+        { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جملهٔ کوتاه تأمل‌برانگیز" },
+        { field:"highlights", type:"array<{text:string, color:string}>", required:false, where_fa:"کادرهای رنگی زیر متا برای جملات کلیدی", rules_fa:"حداکثر ۶ × ۵۰۰ کاراکتر؛ color فقط یکی از ۸ رنگ پالت زیر — رنگ را با ماهیت جمله بگذار" },
+        { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمهٔ «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
+        { field:"reviewedAt", type:"string", required:false, where_fa:"«بازبینی: …» در متا", rules_fa:"تاریخ شمسی" },
+        { field:"author / authorEn", type:"string", required:true, where_fa:"نویسنده در متا", rules_fa:"نام تحریریه برند" },
+        { field:"minutes", type:"number", required:false, where_fa:"مدت مطالعه", rules_fa:"عدد صحیح (۳ تا ۱۵)" },
+        { field:"date / dateEn", type:"string", required:true, where_fa:"تاریخ در متا", rules_fa:"شمسی/میلادی" },
+        { field:"keywords", type:"string[]", required:false, where_fa:"جست‌و‌جو + سئو", rules_fa:"تا ۲۰ کلمهٔ کوتاه" },
+        { field:"slug", type:"string", required:true, where_fa:"اشتراک/سئو", rules_fa:"لاتین کوچک + خط تیره" },
+        { field:"categories / category", type:"string[]", required:false, where_fa:"فیلترهای صفحه", rules_fa:"فارسی: «اشتها», «رشد قد», «خواب», ..." },
+        { field:"type", type:"string", required:true, where_fa:"قالب نمایش", rules_fa:"article" },
+        { field:"order", type:"number", required:false, where_fa:"ترتیب نمایش", rules_fa:"number" },
+        { field:"active / isVisible", type:"boolean", required:true, rules_fa:"true" },
+      ],
+      highlight_palette_fa: ["#DCFCE7 (سبز ملایم → نکتهٔ کاربردی)","#FEF9C3 (زرد ملایم → توجه/یادآوری)","#DBEAFE (آبی ملایم → اطلاعهٔ علمی)","#FFE4E6 (صورتی ملایم → هشدار)","#FFEDD5 (نارنجی ملایم → هشدار ملایم)","#F3E8FF (بنفش ملایم → نکتهٔ تخصصی)","#CCFBF1 (فیروزه‌ای ملایم → اقدام سلامت)","#E2E8F0 (خاکستری ملایم → یادداشت)"],
+      dos_fa: [
+        "همیشه منبع معتبر را در sourceUrl بگذار؛ در body فقط اسم منبع به‌صورت متن ذکر کن.",
+        "تصویر جلد فقط در cover؛ تصاویر میانی فقط در images[] با position منطقی.",
+        "جملات کلیدی را در highlights با رنگ مناسب ماهیت‌بندی کن (حداکثر ۳-۴).",
+        "یک quote کوتاه و جذاب در فیلد quote بگذار تا در انتهای مقاله برجسته شود.",
+        "slug یکتا (لاتین + خط تیره)، keywords ۶-۱۰ کلمه، desc ۲-۳ خطی جذاب.",
+        "لحن برند: آمیانهٔ مؤدبانه (میتونه، واسه، بچه، خونه)؛ قوانین کامل با get_policy.",
+      ],
+      donts_fa: [
+        "HTML (<img>, <p>, <div>, <a href>, <strong>, <br> و...) در هیچ فیلد نگذار.",
+        "تصویر را در body با <img> نگذار.",
+        "«به پزشک مراجعه کنید» نگو — بگو «با واحد مشاورهٔ مجموعه در میان بگذار».",
+        "دوز دقیق دارو/مکمل و ادعای درمان قطعی/۱۰۰٪ هیچ‌وقت ننویس.",
+        "اطلاعات شخصی (موبایل/کارت) در متن نگذار.",
+      ],
+      example: {
+        title:"کم‌اشتهایی واقعی یا دوره‌ای؟ راهنمای خانواده",
+        desc:"اگه بچه‌ت غذا را نمی‌خوره، اول صبر و نظم لازمه…",
+        body:"پاراگراف اول…\\n\\n**نکتهٔ مهم:** …\\n\\nپاراگراف دوم…",
+        cover:"https://i.imageupload.app/abcd1234.jpeg",
+        images:[{ url:"https://i.imageupload.app/xyz567.jpeg", position:0, alt:"مهمان سفرهٔ خانه" },{ url:"https://i.imageupload.app/qrs890.jpeg", position:2 }],
+        quote:"سفرهٔ آرام، کلید خوش‌اشتهایی بچه است.",
+        highlights:[{ text:"یادداشت: لرزش اشتها در دو سه روز طبیعیه.", color:"#DCFCE7" },{ text:"هشدار: وزن‌کم‌کردن شدید یا بی‌حالی = فوراً با مشاوره تماس.", color:"#FEF9C3" }],
+        sourceUrl:"https://www.healthychildren.org/English/ages-stages/toddler/nutrition/Pages/default.aspx",
+        slug:"low-appetite-or-phase",
+        keywords:["اشتها","بدغذایی","بچه","سفره"],
+        categories:["اشتها"],
+        type:"article",
+        minutes:8,
+      },
+    };
+    return ok({
+      resource: res,
+      schema: res.includes("edu") || res === "article" ? educationSchema : { generic_note_fa:"همین قواعد متنِ ساده + نشانه‌گذاری در همهٔ بخش‌ها؛ برای education اکشن را مجدد با resource:'education' فراخوانی کن." },
+      brand: BRAND,
+      note_fa: "قبل از create/update، دادهٔ قدیمی همان بخش را با list_ بخوان و لحن/ساختار را مطابق بکن.",
+    }, origin);
+  }
+
   // خودشناسی کلید — برای همهٔ کلیدهای معتبر (خواندنی، بدون نیاز به اسکوپ)
   if (action === "whoami" || action === "capabilities" || action === "describe" || action === "me") {
     const caps = computeCapabilities(apiKey.scopes || []);
@@ -1209,6 +1293,8 @@ serve(async (req)=>{
       next_step_fa: "قوانین محتوای برند را با اکشن get_policy بخوان؛ هر متن نقض‌کننده با ارور 422 برگردانده می‌شود و ذخیره نمی‌شود.",
       how_to_call: buildHowTo(caps.actions.find(a=>a.startsWith("list_")) || "get_policy"),
       bulk_note_fa: "برای کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource>. حذف دسته‌جمعیِ بالای ۲ آیتم نیازمند تأیید مالک در پنل است.",
+      schema_hint_fa: "قبل از نوشتن مقالهٔ آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
+      inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد** *ایتالیک* __زیرخط__ [لینک](https://...).",
     }, origin);
   }
 
