@@ -132,6 +132,7 @@ const PUBLIC_MEDIA_ITEM_FIELDS = [
   "imageUrl", "audioUrl", "url", "phone",
   "viewsSeed", "minutes", "durationSec", "images",
   "author", "authorEn", "sourceUrl", "reviewedAt", "quote",
+  "cover", "highlights", "desc", "descEn", "slug", "shortDescription",
 ];
 
 function maskPublicPhone(value: unknown): string {

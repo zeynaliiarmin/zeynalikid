@@ -170,7 +170,8 @@ export function toEducationMediaItem(item: any, vpnOn: boolean): any {
     ? item.images.map((im: any) => ({ id: String(im?.id || 'img'), url: String(im?.url || ''), ...(im?.position != null ? { position: Number(im.position) || 0 } : {}) }))
     : (legacyImageUrl ? [{ id: 'img0', url: legacyImageUrl, position: 0 }] : []);
   const type = isArticle ? 'article' : rawType;
-  const directCover = extractDirectMediaUrl(item?.cover || item?.thumbnail, 'image');
+  // cover ممکن است در content-api/admin زیر cover یا imageUrl ذخیره شده باشد — fallback هر دو را می‌خواند
+  const directCover = extractDirectMediaUrl(item?.cover || item?.thumbnail || item?.imageUrl, 'image');
   // اگر ویدیو هیچ تصویر بندانگشتی/کاوری نداشته باشد:
   // - یوتیوب → تصویر بندانگشتی مستقیم (img.youtube.com)
   // - آپارات → hash استخراج و از Edge Function «aparat-thumb» poster واقعی گرفته می‌شود

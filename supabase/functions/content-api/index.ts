@@ -968,7 +968,8 @@ async function createEducation(body: any, origin: string): Promise<Response> {
     minutes: Number(incoming.minutes) || 0,
     date: incoming.date || todayFaDate(),
     dateEn: incoming.dateEn || incoming.date || todayFaDate(),
-    cover: incoming.cover || "",
+    cover: (incoming.cover && String(incoming.cover).trim()) || (incoming.imageUrl && String(incoming.imageUrl).trim()) || "",
+    imageUrl: (incoming.imageUrl && String(incoming.imageUrl).trim()) || (incoming.cover && String(incoming.cover).trim()) || "",
     images: Array.isArray(incoming.images) ? incoming.images : [],
     platforms: incoming.platforms && typeof incoming.platforms === "object" ? incoming.platforms : {},
     displayMode: incoming.displayMode || "both",
@@ -980,6 +981,16 @@ async function createEducation(body: any, origin: string): Promise<Response> {
     order: maxOrder + 1,
     created_via: "content-api",
   };
+  if (Array.isArray(incoming.highlights)) {
+    const palette = new Set(["#DCFCE7", "#FEF9C3", "#FFE4E6", "#DBEAFE", "#FFEDD5", "#F3E8FF", "#CCFBF1", "#E2E8F0"]);
+    newItem.highlights = incoming.highlights
+      .map((h: any) => ({ id: String(h?.id || "hl" + Math.random().toString(36).slice(2, 7)), text: String(h?.text || "").slice(0, 500), color: palette.has(String(h?.color)) ? String(h!.color) : "#DCFCE7" }))
+      .filter((h: any) => h.text.trim())
+      .slice(0, 6);
+  }
+  if (incoming.quote) newItem.quote = String(incoming.quote).slice(0, 2000);
+  if (incoming.sourceUrl) newItem.sourceUrl = String(incoming.sourceUrl).slice(0, 2000);
+  if (incoming.slug) newItem.slug = String(incoming.slug).slice(0, 200);
   if (incoming.titleEn) newItem.titleEn = String(incoming.titleEn).slice(0, 300);
   if (incoming.descEn || incoming.descriptionEn) newItem.descEn = String(incoming.descEn || incoming.descriptionEn).slice(0, 30000);
   const updatedEdu = { ...eduRaw, items: [...items, newItem] };
@@ -996,7 +1007,7 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
   if (idx === -1) return err("آیتم آموزشی یافت نشد", origin, 404);
   const updates = body.updates || body.item || body.education || {};
   const updatedItem: Record<string, any> = { ...items[idx] };
-  const strFields = ["title", "titleEn", "desc", "descEn", "body", "author", "authorEn", "date", "dateEn", "cover", "category", "sourceUrl", "quote", "slug", "reviewedAt", "imageUrl", "shortDescription"];
+  const strFields = ["title", "titleEn", "desc", "description", "descEn", "body", "author", "authorEn", "date", "dateEn", "cover", "category", "sourceUrl", "quote", "slug", "reviewedAt", "imageUrl", "shortDescription"];
   for (const f of strFields) {
     if (typeof updates[f] === "string") {
       updatedItem[f] = f === "title" || f === "titleEn" ? updates[f].slice(0, 300) : String(updates[f]).slice(0, 30000);
@@ -1029,6 +1040,13 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
     const nd = String(updates.desc ?? updates.description);
     updatedItem.desc = nd;
     updatedItem.description = nd;
+  }
+  // cover ↔ imageUrl همیشه همگام — admin و content-api دو راه ورود دارند
+  {
+    const c = String(updatedItem.cover || "").trim();
+    const iu = String(updatedItem.imageUrl || "").trim();
+    if (c && c !== iu) updatedItem.imageUrl = c;
+    else if (!c && iu) updatedItem.cover = iu;
   }
   // مقصد هرگز تغییر نمی‌کند (آیتم آموزشی باید در آموزش‌ها بماند)
   updatedItem.mediaCategories = ["education"];
@@ -1216,10 +1234,10 @@ serve(async (req)=>{
         { field:"titleEn", type:"string", required:false, where_fa:"عنوان انگلیسی (lang=en)", rules_fa:"اختیاری" },
         { field:"desc", type:"string", required:true, where_fa:"خلاصهٔ کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
         { field:"body", type:"string", required:true, where_fa:"متن کامل مقاله", rules_fa:"بدون HTML؛ پاراگراف‌ها با \\n\\n؛ نشانه‌گذاری ساده مجاز" },
-        { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد مقاله — در کارت، بالای مقاله، و در پنل مدیریت (صفحه محتوا + فیلد «کاور مقاله» در کدهای دستی) قرار می‌گیرد", rules_fa:"فقط URL مستقیم؛ هرگز با HTML — تصویر میانی متن فقط در images" },
-        { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین پاراگراف‌ها", rules_fa:"position: 0=بالا، 1=بعد از پاراگراف اول، 2=بعد از پاراگراف دوم، ..." },
+        { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد مقاله — در کارت، بالای مقاله، و پنل مدیریت (فیلد «کاور مقاله») قرار می‌گیرد", rules_fa:"فقط URL مستقیم، هرگز HTML — api خودکار imageUrl(قدیمی) ↔ cover را هم‌همگام می‌کند" },
+        { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین توضیحات — وقتی مقاله بلند است و عکس مرتبط با موضوع پیدا کردی، عکس را اینجا بگذار (نه توی body)", rules_fa:"position: 0=بالا، 1=بعد از پاراگراف اول، 2=بعد از پاراگراف دوم، ... — فقط URL مستقیم" },
         { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جملهٔ کوتاه تأمل‌برانگیز" },
-        { field:"highlights", type:"array<{text:string, color:string}>", required:false, where_fa:"کادرهای رنگی زیر متا برای جملات کلیدی", rules_fa:"حداکثر ۶ × ۵۰۰ کاراکتر؛ color فقط یکی از ۸ رنگ پالت زیر — رنگ را با ماهیت جمله بگذار" },
+        { field:"highlights", type:"array<{text:string, color:string}>", required:false, where_fa:"«هایلایت‌های متن (جملات رنگی جلب‌توجه)» — همان بخش موجود در پنل مدیریت؛ در نمایش قبل یا بعد از توضیحات/متن کامل به‌ترتیب ظاهر می‌شوند تا جملات مهم به چشم مخاطب بیایند و بخش‌ها از هم جدا بمانند و متن خسته‌کننده نشود", rules_fa:"رنگ پاستیلی انتخاب کن تا متن داخل با رنگ هایلایت خوانا بماند؛ حداکثر ۶ × ۵۰۰؛ color فقط از پالت ۸تایی زیر" },
         { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمهٔ «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
         { field:"author / authorEn", type:"string", required:true, where_fa:"نویسنده در متا", rules_fa:"نام تحریریه برند" },
         { field:"minutes", type:"number", required:false, where_fa:"مدت مطالعه", rules_fa:"عدد صحیح (۳ تا ۱۵)" },

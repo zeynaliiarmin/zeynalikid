@@ -9,7 +9,7 @@
  *  - POST/PUT/DELETE: NEVER intercepted.
  */
 
-const VERSION = 'zkid-desk-v16-2026-09-09-links-highlights-cover';
+const VERSION = 'zkid-desk-v17-2026-09-10-public-cover-highlights';
 const STATIC_CACHE = 'admin-static-' + VERSION;
 const NAV_CACHE = 'admin-nav-' + VERSION;
 
