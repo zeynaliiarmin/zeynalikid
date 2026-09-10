@@ -1,6 +1,6 @@
 {
   "service": "content-api",
-  "api_version": 1,
+  "api_version": "1+2026-09-10",
   "brand": {
     "id": "zeynalikid",
     "name_fa": "زینالی‌کید",
@@ -53,5 +53,8 @@
     "body": {
       "action": "whoami"
     }
-  }
+  },
+  "payload_shapes_fa": "فیلدها در create/update هم «صاف در ریشه» هم داخل آبجکت به‌نام ریسورس (مثل {\"education\":{...}} یا {\"faq\":{...}}) پذیرفته می‌شوند؛ id در update/delete می‌تواند در ریشه یا داخل همان آبجکت باشد. خطاهای ۴۰۰ همراه expected_example و received_top_level_keys برمی‌گردند.",
+  "faq_destination_fa": "create_faq به‌صورت پیش‌فرض با placements=['faq'] در صفحهٔ «سوالات متداول» (/faq) — همانجایی که FAQPage JSON-LD گوگل رندر می‌کند — نمایش داده می‌شود. مقادیر مجاز placements: faq · home · education.",
+  "bulk_actions_example": "bulk_create_<resource> / bulk_update_<resource> / bulk_delete_<resource> (فهرست دقیق در whoami.bulk_actions)"
 }

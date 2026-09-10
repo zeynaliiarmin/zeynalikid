@@ -13,7 +13,7 @@ type FAQItem = { id: string; question: string; answer: string; answerTitle?: str
 export default function FAQPage(){
  const app=useAppContext();
   const { cfg, T, S, css, lang, showContactOn, ContactPanel } = app;
-  const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => !Array.isArray(item.placements) || item.placements.includes('faq'));
+  const items: FAQItem[] = ((lang === 'fa' ? cfg.faqItems : cfg.faqItemsEn) || []).filter((item: any) => item?.active !== false && String(item?.question||'').trim() && String(item?.answer||'').trim() && (!Array.isArray(item.placements) || item.placements.includes('faq')));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // پل دستیار: لینک دقیق ?open=<id> همان سؤال را باز و وسط صفحه می‌آورد.
   useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const idx=items.findIndex((it:any)=>String(it.id)===o);if(idx<0)return;setOpenIndex(idx);window.setTimeout(()=>{document.querySelector(`[data-faq-id="${window.CSS.escape(o)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())},120)}catch{}},[items.length]);

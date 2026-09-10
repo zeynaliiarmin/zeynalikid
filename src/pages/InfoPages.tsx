@@ -223,7 +223,7 @@ export function EducationPage(){
  const searched=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return source;return source.filter((x:any)=>[x.title,x.titleEn,x.description,x.desc,x.body,...(x.keywords||[])].filter(Boolean).join(' ').toLowerCase().includes(t))},[q,source]);
  const filtered=useMemo(()=>{const base=typeF==='all'||typeF==='faq'?searched:searched.filter((x:any)=>x.type===typeF); if(sortUI==='seen')return [...base].sort((a:any,b:any)=>viewsOf(b)-viewsOf(a)); return base;},[searched,typeF,sortUI,realViews]);
  const suggestedKeywords=useMemo(()=>{const map=new Map<string,number>();source.forEach((x:any)=>(x.keywords||[]).forEach((kw:string)=>{const k=String(kw).trim().toLowerCase();if(k)map.set(k,(map.get(k)||0)+1)}));return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,cfg.suggestedKeywordsCount||8).map(([k])=>k)},[source,cfg.suggestedKeywordsCount]);
- const faqReal=(en?cfg.faqItemsEn:cfg.faqItems)||[];
+ const faqReal=((en?cfg.faqItemsEn:cfg.faqItems)||[]).filter((x:any)=>x?.active!==false&&String(x?.question||'').trim()&&String(x?.answer||'').trim()&&(!Array.isArray(x.placements)||x.placements.includes('faq')||x.placements.includes('education')));
  const faqItems=faqReal.length?faqReal.map((x:any)=>({id:String(x.id),question:x.question,answer:x.answer})):FAQ_SAMPLES.map(x=>({id:x.id,question:(en&&x.qEn)?x.qEn:x.q,answer:(en&&x.aEn)?x.aEn:x.a}));
  const related=useMemo(()=>openItem?source.filter((x:any)=>x.id!==openItem.id&&x.type===openItem.type).slice(0,3):[],[openItem,source]);
  const consult=()=>{try{goToAppA?.()}catch{}};

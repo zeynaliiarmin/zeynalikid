@@ -645,14 +645,16 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 function generateRandomKey(): string {
-  // sk_live_ + 32 random alphanumeric + 8 hex
+  // پیشوند برندآگاه + 32 تصادفی + 8 هگز — عمداً با sk_live_ استریپ متفاوت تا با کلید پرداخت اشتباه گرفته نشود
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const randomValues = new Uint8Array(32);
   crypto.getRandomValues(randomValues);
   let rand = "";
   for (let i=0;i<32;i++) rand += chars[randomValues[i] % chars.length];
   const suffix = crypto.randomUUID().replace(/-/g,"").slice(0,8);
-  return `sk_live_${rand}${suffix}`;
+  const _ref = Deno.env.get("SUPABASE_URL") || "";
+  const _prefix = _ref.includes("kkdrvexwzuuumjezipnd") ? "zlk" : _ref.includes("doikoqzarsuprcwkghsq") ? "fmk" : "app";
+  return `${_prefix}_live_${rand}${suffix}`;
 }
 
 function parseExpiry(body: any): { expires_at: string | null, error?: string } {

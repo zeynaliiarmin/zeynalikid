@@ -80,6 +80,34 @@ function ok(data: any, origin: string, status = 200): Response {
   });
 }
 
+const WRAP_KEYS = ["education","item","faq","course","product","review","story","parent_experience","highlight","media","multimedia","article","banner","seo","updates","data","payload","fields","article_obj","faqs","faq_items"];
+// فیلدها هم «صاف در ریشه» هم «داخل آبجکت به‌نام ریسورس» پذیرفته می‌شوند — هر دو یکدست.
+function flatFields(b: any): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (!b || typeof b !== "object") return out;
+  for (const k of Object.keys(b)) {
+    const v = b[k];
+    if (["action","api_key","apiKey","resource","section"].includes(k)) continue;
+    if (WRAP_KEYS.includes(k) && v && typeof v === "object" && !Array.isArray(v)) { Object.assign(out, v); continue; }
+    out[k] = v;
+  }
+  return out;
+}
+// id هم در ریشه هم داخل آبجکت ریسورس/updates پذیرفته می‌شود.
+function pickId(b: any): string {
+  if (b && (typeof b.id === "string" || typeof b.id === "number")) return String(b.id);
+  for (const k of WRAP_KEYS) { const v = b?.[k]; if (v && typeof v === "object" && !Array.isArray(v)) { if (v.id != null) return String(v.id); if (v.ID != null) return String(v.ID); } }
+  return "";
+}
+function missingErr(message: string, origin: string, body: any, example: any): Response {
+  return err(message, origin, 400, {
+    received_top_level_keys: Object.keys(body || {}),
+    expected_example: example,
+    payload_shapes_fa: "فیلدها را هم می‌توانی صاف در ریشه بفرستی، هم داخل آبجکت به‌نام ریسورس (مثل {\"education\":{...}}); id در update می‌تواند در ریشه یا داخل همان آبجکت باشد.",
+    payload_shapes_en: "Fields accepted both flat at root or wrapped under the resource key; update id allowed at root or inside the wrapper.",
+  });
+}
+
 function err(message: string, origin: string, status = 400, extra: Record<string, any> = {}): Response {
   return new Response(JSON.stringify({ ok: false, error: message, ...extra }), {
     status,
@@ -277,7 +305,7 @@ async function listReviews(body: any, origin: string): Promise<Response> {
 }
 
 async function getReview(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.from("reviews").select("*").eq("id", body.id).maybeSingle();
   if (error) return err("خطا در دریافت نظر", origin, 500);
@@ -312,8 +340,8 @@ async function createReview(body: any, origin: string): Promise<Response> {
 }
 
 async function updateReview(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
-  const updates = body.updates || body.review || {};
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const allowed: Record<string, any> = {};
   if (["approved","rejected","pending"].includes(updates.status)) allowed.status = updates.status;
   if (Array.isArray(updates.placements)) allowed.placements = updates.placements.filter((p:any)=>p==="course_detail"||p==="product_detail");
@@ -331,7 +359,7 @@ async function updateReview(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteReview(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const supabase = getSupabaseAdmin();
   const { error, count } = await supabase.from("reviews").delete({ count:"exact" }).eq("id", body.id);
   if (error) return err("خطا در حذف نظر", origin, 500);
@@ -345,54 +373,100 @@ async function deleteReview(body: any, origin: string): Promise<Response> {
 
 async function listFaqs(body: any, origin: string): Promise<Response> {
   const { settings } = await loadSettings();
-  const faqs = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
-  return ok({ faqs, total: faqs.length }, origin);
+  const faqItems = Array.isArray(settings.faqItems) ? settings.faqItems : [];
+  const legacy = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
+  return ok({ faqs: faqItems, total: faqItems.length, legacy_manual_count: legacy.length,
+    destination_fa: "صفحهٔ «سوالات متداول» (/faq) — با FAQPage JSON-LD در گوگل" }, origin);
 }
 
 async function createFaq(body: any, origin: string): Promise<Response> {
+  const incoming = flatFields(body);
+  if (!incoming.question || !incoming.answer) return missingErr("سوال و پاسخ الزامی است", origin, body, { action:"create_faq", question:"بچه‌ام هیچ‌چیز نمی‌خوره؛ طبیعیه؟", answer:"خیلی وقتا طبیعیه… جزئیات: [آموزش‌ها](/education)", placements:["faq"] });
   const { settings } = await loadSettings();
-  const faqs = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
-  const incoming = body.faq || body;
-  if (!incoming.question || !incoming.answer) return err("سوال و پاسخ الزامی است", origin, 400);
-  const newFaq = {
-    id: incoming.id || `faq_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+  const faqItems = Array.isArray(settings.faqItems) ? settings.faqItems : [];
+  const faqItemsEn = Array.isArray(settings.faqItemsEn) ? settings.faqItemsEn : [];
+  const id = incoming.id || `faq_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  if (faqItems.some((f:any)=>String(f.id)===String(id))) return err("یک FAQ با همین id از قبل وجود دارد. با update_faq ویرایشش کن.", origin, 409);
+  const placements = Array.isArray(incoming.placements) && incoming.placements.length ? incoming.placements.map(String) : ["faq"];
+  const newFaq: Record<string, any> = {
+    id,
     question: String(incoming.question).slice(0,1000),
     answer: String(incoming.answer).slice(0,4000),
-    category: incoming.category || "general",
-    active: incoming.active !== false,
-    order: faqs.length+1,
+    placements,
   };
-  const updated = [...faqs, newFaq];
-  await saveSettings({ ...settings, manualUserQuestions: updated });
-  return ok({ faq: newFaq }, origin);
+  if (typeof incoming.answerTitle === "string" && incoming.answerTitle.trim()) newFaq.answerTitle = incoming.answerTitle.slice(0,300);
+  if (typeof incoming.category === "string") newFaq.category = incoming.category;
+  if (incoming.active === false) newFaq.active = false;
+  if (Number.isFinite(Number(incoming.order)) && incoming.order !== undefined) newFaq.order = Number(incoming.order);
+  // جفت انگلیسی همیشه هم‌ردیف می‌ماند تا پنل مدیریت (زوج fa/en) از ردیف نیفتد؛ خالی = نامرئی.
+  const enPair: Record<string, any> = { id: `${id}_en`, question: String(incoming.questionEn ?? incoming.question_en ?? "").slice(0,1000), answer: String(incoming.answerEn ?? incoming.answer_en ?? "").slice(0,4000), placements };
+  await saveSettings({ ...settings, faqItems: [...faqItems, newFaq], faqItemsEn: [...faqItemsEn, enPair] });
+  return ok({ faq: newFaq,
+    destination_fa: "/faq — بلافاصله در «سوالات متداول» نمایش داده می‌شود",
+    note_fa: "placements پیش‌فرض ['faq']؛ مقادیر مجاز: faq (صفحهٔ سوالات متداول) · home (بخش سوالات خانه، ۴ تای اول) · education (تب سوالات صفحهٔ آموزش). نسخهٔ انگلیسی را بعداً با update_faq و فیلدهای questionEn/answerEn کامل کن." }, origin);
 }
 
 async function updateFaq(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  const id = pickId(body);
+  if (!id) return missingErr("id الزامی است", origin, body, { action:"update_faq", id:"faq_…", question:"…", answer:"…" });
   const { settings } = await loadSettings();
-  const faqs = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
-  const idx = faqs.findIndex((f:any)=>String(f.id)===String(body.id));
-  if (idx===-1) return err("FAQ یافت نشد", origin, 404);
-  const updates = body.updates || body.faq || {};
-  const updatedFaq = { ...faqs[idx] };
-  if (typeof updates.question === "string") updatedFaq.question = updates.question.slice(0,1000);
-  if (typeof updates.answer === "string") updatedFaq.answer = updates.answer.slice(0,4000);
-  if (typeof updates.category === "string") updatedFaq.category = updates.category;
-  if (typeof updates.active === "boolean") updatedFaq.active = updates.active;
-  const newList = [...faqs];
-  newList[idx] = updatedFaq;
-  await saveSettings({ ...settings, manualUserQuestions: newList });
-  return ok({ updated:true, faq: updatedFaq }, origin);
+  const faqItems = Array.isArray(settings.faqItems) ? settings.faqItems : [];
+  const faqItemsEn = Array.isArray(settings.faqItemsEn) ? settings.faqItemsEn : [];
+  const u: Record<string, any> = flatFields(body); delete u.id;
+  const idx = faqItems.findIndex((f:any)=>String(f.id)===String(id));
+  if (idx !== -1) {
+    const up = { ...faqItems[idx] };
+    if (typeof u.question === "string") up.question = u.question.slice(0,1000);
+    if (typeof u.answer === "string") up.answer = u.answer.slice(0,4000);
+    if (typeof u.answerTitle === "string") up.answerTitle = u.answerTitle.slice(0,300);
+    if (typeof u.category === "string") up.category = u.category;
+    if (typeof u.active === "boolean") up.active = u.active;
+    if (Number.isFinite(Number(u.order)) && u.order !== undefined) up.order = Number(u.order);
+    if (Array.isArray(u.placements)) up.placements = u.placements.map(String);
+    // جفت انگلیسی (اختیاری)
+    let newEn = faqItemsEn;
+    const qEn = u.questionEn ?? u.question_en, aEn = u.answerEn ?? u.answer_en;
+    if (qEn !== undefined || aEn !== undefined) {
+      const eIdx = faqItemsEn.findIndex((f:any)=>String(f.id)===String(id)+"_en");
+      const enUp: Record<string, any> = eIdx !== -1 ? { ...faqItemsEn[eIdx] } : { id: `${id}_en`, question:"", answer:"", placements: up.placements || ["faq"] };
+      if (typeof qEn === "string") enUp.question = qEn.slice(0,1000);
+      if (typeof aEn === "string") enUp.answer = aEn.slice(0,4000);
+      newEn = eIdx !== -1 ? faqItemsEn.map((f:any,i:number)=> i===eIdx ? enUp : f) : [...faqItemsEn, enUp];
+    }
+    await saveSettings({ ...settings, faqItems: faqItems.map((f:any,i:number)=> i===idx ? up : f), faqItemsEn: newEn });
+    return ok({ updated:true, faq: up }, origin);
+  }
+  // سطل قدیمی (manualUserQuestions) — فقط ویرایش/حذف برای سازگاری با داده‌های موجود
+  const legacy = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
+  const lIdx = legacy.findIndex((f:any)=>String(f.id)===String(id));
+  if (lIdx === -1) return err("FAQ یافت نشد", origin, 404);
+  const lp = { ...legacy[lIdx] };
+  if (typeof u.question === "string") lp.question = u.question.slice(0,1000);
+  if (typeof u.answer === "string") lp.answer = u.answer.slice(0,4000);
+  if (typeof u.category === "string") lp.category = u.category;
+  if (typeof u.active === "boolean") lp.active = u.active;
+  await saveSettings({ ...settings, manualUserQuestions: legacy.map((f:any,i:number)=> i===lIdx ? lp : f) });
+  return ok({ updated:true, faq: lp, legacy_bucket:true,
+    note_fa:"این آیتم در مخزن قدیمی «پرسش‌های دستی والدین» است که در صفحهٔ عمومی /faq نمایش داده نمی‌شود؛ برای نمایش عمومی با create_faq دوباره بساز." }, origin);
 }
 
 async function deleteFaq(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  const id = pickId(body);
+  if (!id) return missingErr("id الزامی است", origin, body, { action:"delete_faq", id:"faq_…" });
   const { settings } = await loadSettings();
-  const faqs = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
-  const newList = faqs.filter((f:any)=>String(f.id)!==String(body.id));
-  if (newList.length===faqs.length) return err("FAQ یافت نشد", origin, 404);
-  await saveSettings({ ...settings, manualUserQuestions: newList });
-  return ok({ deleted:true, id: body.id }, origin);
+  const faqItems = Array.isArray(settings.faqItems) ? settings.faqItems : [];
+  const faqItemsEn = Array.isArray(settings.faqItemsEn) ? settings.faqItemsEn : [];
+  if (faqItems.some((f:any)=>String(f.id)===String(id))) {
+    await saveSettings({ ...settings,
+      faqItems: faqItems.filter((f:any)=>String(f.id)!==String(id)),
+      faqItemsEn: faqItemsEn.filter((f:any)=>String(f.id)!==String(id)+"_en") });
+    return ok({ deleted:true, id }, origin);
+  }
+  const legacy = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
+  const newLeg = legacy.filter((f:any)=>String(f.id)!==String(id));
+  if (newLeg.length===legacy.length) return err("FAQ یافت نشد", origin, 404);
+  await saveSettings({ ...settings, manualUserQuestions: newLeg });
+  return ok({ deleted:true, id, legacy_bucket:true }, origin);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -412,7 +486,7 @@ async function listCourses(body: any, origin: string): Promise<Response> {
 }
 
 async function getCourse(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const tabs = Array.isArray(settings.courseTabs) ? settings.courseTabs : [];
   for (const tab of tabs) {
@@ -455,11 +529,11 @@ async function createCourse(body: any, origin: string): Promise<Response> {
 }
 
 async function updateCourse(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const tabs = Array.isArray(settings.courseTabs) ? settings.courseTabs : [];
   let found = false;
-  const updates = body.updates || body.course || {};
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const newTabs = tabs.map((tab:any)=>{
     const courses = (tab.courses||[]).map((c:any)=>{
       if (String(c.id)===String(body.id)) {
@@ -490,7 +564,7 @@ async function updateCourse(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteCourse(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const tabs = Array.isArray(settings.courseTabs) ? settings.courseTabs : [];
   let found = false;
@@ -656,13 +730,13 @@ async function createProduct(body: any, origin: string): Promise<Response> {
 }
 
 async function updateProduct(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const productsCfg = settings.products && typeof settings.products === "object" ? settings.products : { list:[] };
   const list = Array.isArray(productsCfg.list) ? productsCfg.list : (Array.isArray(productsCfg.items) ? productsCfg.items : []);
   const idx = list.findIndex((p:any)=>String(p.id)===String(body.id));
   if (idx===-1) return err("محصول یافت نشد", origin, 404);
-  const updates = body.updates || body.product || {};
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const updated = { ...list[idx] };
   if (typeof updates.name === "string" || typeof updates.title === "string") { updated.name = String(updates.name || updates.title).slice(0,200); updated.title = String(updates.title || updates.name).slice(0,200); }
   if (typeof updates.description === "string" || typeof updates.desc === "string") updated.description = String(updates.description || updates.desc).slice(0,2000);
@@ -681,7 +755,7 @@ async function updateProduct(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteProduct(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const productsCfg = settings.products && typeof settings.products === "object" ? settings.products : { list:[] };
   const list = Array.isArray(productsCfg.list) ? productsCfg.list : (Array.isArray(productsCfg.items) ? productsCfg.items : []);
@@ -723,12 +797,12 @@ async function createMedia(body: any, origin: string): Promise<Response> {
 }
 
 async function updateMedia(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const mediaItems = Array.isArray(settings.mediaItems) ? settings.mediaItems : [];
   const idx = mediaItems.findIndex((m:any)=>String(m.id)===String(body.id));
   if (idx===-1) return err("محتوا یافت نشد", origin, 404);
-  const updates = body.updates || body.media || {};
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const updated = { ...mediaItems[idx] };
   if (typeof updates.title === "string") updated.title = updates.title.slice(0,300);
   if (typeof updates.description === "string") updated.description = updates.description.slice(0,5000);
@@ -743,7 +817,7 @@ async function updateMedia(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteMedia(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const mediaItems = Array.isArray(settings.mediaItems) ? settings.mediaItems : [];
   const newList = mediaItems.filter((m:any)=>String(m.id)!==String(body.id));
@@ -783,13 +857,13 @@ async function createHighlight(body: any, origin: string): Promise<Response> {
 }
 
 async function updateHighlight(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const sh = settings.storyHighlights && typeof settings.storyHighlights === "object" ? settings.storyHighlights : { highlights:[] };
   const highlights = Array.isArray(sh.highlights) ? sh.highlights : [];
   const idx = highlights.findIndex((h:any)=>String(h.id)===String(body.id));
   if (idx===-1) return err("هایلایت یافت نشد", origin, 404);
-  const updates = body.updates || body.highlight || {};
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const updated = { ...highlights[idx] };
   if (typeof updates.title === "string") updated.title = updates.title.slice(0,200);
   if (typeof updates.coverUrl === "string") updated.coverUrl = updates.coverUrl;
@@ -802,7 +876,7 @@ async function updateHighlight(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteHighlight(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const sh = settings.storyHighlights && typeof settings.storyHighlights === "object" ? settings.storyHighlights : { highlights:[] };
   const highlights = Array.isArray(sh.highlights) ? sh.highlights : [];
@@ -827,7 +901,7 @@ async function updateBanner(body: any, origin: string): Promise<Response> {
   const { settings } = await loadSettings();
   const images = settings.images || {};
   const current = images[body.key] || {};
-  const updates = body.updates || body.banner || {};
+  const updates = flatFields(body); delete updates.id; delete updates.action;
   const updated = { ...current };
   if (typeof updates.url === "string") updated.url = updates.url;
   if (typeof updates.alt === "string") updated.alt = updates.alt;
@@ -945,8 +1019,8 @@ async function listEducation(body: any, origin: string): Promise<Response> {
 }
 
 async function createEducation(body: any, origin: string): Promise<Response> {
-  const incoming = body.item || body.education || body.article_obj || {};
-  if (!incoming.title) return err("عنوان (title) الزامی است", origin, 400);
+  const incoming = flatFields(body);
+  if (!incoming.title) return missingErr("عنوان (title) الزامی است", origin, body, { action:"create_education", title:"عنوان مقاله", desc:"خلاصه کوتاه", body:"متن کامل…", cover:"https://i.example.com/c.png", sourceUrl:"https://www.healthychildren.org" });
   const desc = String(incoming.desc ?? incoming.description ?? incoming.body ?? "").trim();
   if (!desc) return err("متن محتوا (desc یا description یا body) الزامی است", origin, 400);
   const { settings } = await loadSettings();
@@ -955,6 +1029,12 @@ async function createEducation(body: any, origin: string): Promise<Response> {
   const maxOrder = items.reduce((m: number, x: any) => Math.max(m, Number(x?.order) || 0), 0);
   const keywords = Array.isArray(incoming.keywords)
     ? incoming.keywords.map((k: any) => String(k).trim()).filter(Boolean).slice(0, 20) : [];
+  // minutes: اگر معتبر (۳ تا ۱۵) نبود، خودکار از طول متن برآورد می‌شود تا هیچ محتوایی با minutes=0 منتشر نشود.
+  const autoFields: Record<string, any> = {};
+  const _mins = Number(incoming.minutes);
+  if (!Number.isFinite(_mins) || _mins < 3 || _mins > 15) {
+    autoFields.minutes = Math.max(3, Math.min(15, Math.round(String(incoming.body || desc).length / 900) || 3));
+  }
   const newItem: Record<string, any> = {
     ...incoming,
     id: incoming.id ? String(incoming.id) : `edu_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -965,7 +1045,7 @@ async function createEducation(body: any, origin: string): Promise<Response> {
     keywords,
     author: incoming.author || EDU_DEFAULT_AUTHOR,
     authorEn: incoming.authorEn || EDU_DEFAULT_AUTHOR_EN,
-    minutes: Number(incoming.minutes) || 0,
+    minutes: autoFields.minutes ?? _mins,
     date: incoming.date || todayFaDate(),
     dateEn: incoming.dateEn || incoming.date || todayFaDate(),
     cover: (incoming.cover && String(incoming.cover).trim()) || (incoming.imageUrl && String(incoming.imageUrl).trim()) || "",
@@ -1000,11 +1080,11 @@ async function createEducation(body: any, origin: string): Promise<Response> {
   if (incoming.descEn || incoming.descriptionEn) newItem.descEn = String(incoming.descEn || incoming.descriptionEn).slice(0, 30000);
   const updatedEdu = { ...eduRaw, items: [...items, newItem] };
   await saveSettings({ ...settings, education: updatedEdu });
-  return ok({ education: newItem, note: "آیتم در مقصد «آموزش‌ها» (صفحهٔ آموزش و همراهی والدین) ثبت و بلافاصله نمایش داده می‌شود." }, origin);
+  return ok({ education: newItem, note: "آیتم در مقصد «آموزش‌ها» (صفحهٔ آموزش و همراهی والدین) ثبت و بلافاصله نمایش داده می‌شود.", ...(Object.keys(autoFields).length ? { auto_fields: autoFields } : {}) }, origin);
 }
 
 async function updateEducation(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const eduRaw = settings.education && typeof settings.education === "object" ? settings.education : {};
   const items = Array.isArray(eduRaw.items) ? eduRaw.items : [];
@@ -1069,7 +1149,7 @@ async function updateEducation(body: any, origin: string): Promise<Response> {
 }
 
 async function deleteEducation(body: any, origin: string): Promise<Response> {
-  if (!body.id) return err("id الزامی است", origin, 400);
+  if (!body.id) return err("id الزامی است", origin, 400, { received_top_level_keys: Object.keys(body || {}), expected_example: { id: "<resource-id>" }, payload_shapes_fa: "id و فیلدهای ویرایش را هم در ریشه هم داخل آبجکت به‌نام ریسورس می‌توانی بفرستی." });
   const { settings } = await loadSettings();
   const eduRaw = settings.education && typeof settings.education === "object" ? settings.education : {};
   const items = Array.isArray(eduRaw.items) ? eduRaw.items : [];
@@ -1088,7 +1168,7 @@ const HANDLERS: Record<string, (body:any, origin:string)=>Promise<Response>> = {
   delete_review: deleteReview,
   // FAQs
   list_faqs: listFaqs,
-  get_faq: async (b,o)=>{ const { settings } = await loadSettings(); const faqs = Array.isArray(settings.manualUserQuestions)?settings.manualUserQuestions:[]; const f = faqs.find((x:any)=>String(x.id)===String(b.id)); if(!f) return err("FAQ یافت نشد",o,404); return ok({ faq:f },o); },
+  get_faq: async (b,o)=>{ const { settings } = await loadSettings(); const items = Array.isArray(settings.faqItems)?settings.faqItems:[]; let f = items.find((x:any)=>String(x.id)===String(pickId(b))); let legacy=false; if(!f){ const leg = Array.isArray(settings.manualUserQuestions)?settings.manualUserQuestions:[]; f = leg.find((x:any)=>String(x.id)===String(pickId(b))); legacy=!!f; } if(!f) return err("FAQ یافت نشد",o,404); return ok({ faq:f, ...(legacy?{legacy_bucket:true}:{}) },o); },
   create_faq: createFaq,
   update_faq: updateFaq,
   delete_faq: deleteFaq,
@@ -1202,6 +1282,8 @@ serve(async (req)=>{
     });
   }
   const apiKey = validation.key;
+  // id داخل هر آبجکت تودرتوی شناخته‌شده → ریشه (تا همهٔ هندلرها یکدست بخوانند)
+  if (body && typeof body === "object" && body.id == null) { const _hid = pickId(body); if (_hid) body.id = _hid; }
 
   // Update usage
   updateKeyUsage(apiKey.id);
@@ -1294,10 +1376,38 @@ serve(async (req)=>{
         minutes:8,
       },
     };
+    const faqSchema = {
+      display_fa: "در صفحهٔ «سوالات متداول» (/faq) هم‌راستای FAQPage JSON-LD گوگل نمایش داده می‌شود؛ create_faq مستقیم در همان‌جا می‌نشیند.",
+      renderer_rules_fa: [
+        "متن ساده (بدون HTML)؛ نشانه‌گذاری ساده مجاز: **بولد** *کج* __زیرخط__ و لینک داخلی [متن](/education/slug).",
+        "لینک‌های داخلی مجاز: /education /education/<slug> /courses /products /faq /form /experience /about /contact.",
+      ],
+      fields: [
+        { field:"question", type:"string", required:true, rules_fa:"تا ۱۰۰۰ کاراکتر" },
+        { field:"answer", type:"string", required:true, rules_fa:"تا ۴۰۰۰ کاراکتر؛ ۲–۴ خط پاسخ مستقیم + یک لینک داخلی به مقالهٔ مرتبط توصیه می‌شود" },
+        { field:"questionEn / answerEn", type:"string", required:false, where_fa:"در update_faq قابل تکمیل" },
+        { field:"placements", type:"string[]", required:false, rules_fa:"پیش‌فرض ['faq'] — مجاز: faq · home · education" },
+        { field:"active", type:"boolean", required:false },
+        { field:"order", type:"number", required:false },
+        { field:"category", type:"string", required:false, where_fa:"برچسب سازمان‌دهی (نمایشی نیست)" },
+      ],
+      example: { question:"بچه‌ام هیچ‌چیز نمی‌خوره؛ طبیعیه یا باید نگران بشم؟", answer:"خیلی وقتا طبیعیه. بین ۲ تا ۵ سال رشد کند میشه و اشتها هم میاد پایین… راهنمای کامل: [افزایش اشتهای بچه](/education).", placements:["faq"] },
+      dos_fa: [
+        "پاسخ را خودکفا بنویس (خواننده بدون ورود به مقاله هم جواب بگیرد) و به یک لینک داخلی مرتبط ختم کن.",
+        "۱۰ تا ۱۴ سؤال واقعیِ والدین (هم‌راستای کلمات کلیدی سئو: اشتها، خواب، قد، یبوست، آب، میان‌وعده، مکمل).",
+        "لحن برند: آمیانهٔ مؤدبانه؛ قوانین کامل با get_policy.",
+      ],
+      donts_fa: [
+        "ارجاع به پزشک/کلینیک، تجویز دوز دارو/مکمل، ادعای درمان قطعی.",
+        "FAQ تکراری معنادار با سؤالات موجود (قبل از ساخت، list_faqs را مرور کن).",
+      ],
+    };
     return ok({
       resource: res,
-      schema: res.includes("edu") || res === "article" ? educationSchema : { generic_note_fa:"همین قواعد متنِ ساده + نشانه‌گذاری در همهٔ بخش‌ها؛ برای education اکشن را مجدد با resource:'education' فراخوانی کن." },
+      schema: res.includes("edu") || res === "article" ? educationSchema
+            : (res.includes("faq") ? faqSchema : { generic_note_fa:"همین قواعد متنِ ساده + نشانه‌گذاری در همهٔ بخش‌ها؛ برای education اکشن را مجدد با resource:'education' فراخوانی کن." }),
       brand: BRAND,
+      payload_shapes_fa: "فیلدها هم صاف در ریشه هم داخل آبجکت به نام ریسورس (مثل {\"education\":{...}}) پذیرفته می‌شوند؛ id در update/delete در ریشه یا داخل آبجکت.",
       note_fa: "قبل از create/update، دادهٔ قدیمی همان بخش را با list_ بخوان و لحن/ساختار را مطابق بکن.",
     }, origin);
   }
@@ -1325,6 +1435,9 @@ serve(async (req)=>{
       next_step_fa: "قوانین محتوای برند را با اکشن get_policy بخوان؛ هر متن نقض‌کننده با ارور 422 برگردانده می‌شود و ذخیره نمی‌شود.",
       how_to_call: buildHowTo(caps.actions.find(a=>a.startsWith("list_")) || "get_policy"),
       bulk_note_fa: "برای کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource>. حذف دسته‌جمعیِ بالای ۲ آیتم نیازمند تأیید مالک در پنل است.",
+      bulk_actions: caps.groups.flatMap((g:any)=>[`bulk_create_${g.resource}`,`bulk_update_${g.resource}`,`bulk_delete_${g.resource}`]),
+      payload_shapes_fa: "فیلدها هم صاف در ریشه هم داخل آبجکت به نام ریسورس پذیرفته می‌شوند؛ id در update/delete در ریشه یا داخل همان آبجکت. خطاها expected_example/received_top_level_keys را برمی‌گردانند.",
+      faq_destination_fa: "create_faq به‌صورت پیش‌فرض با placements=['faq'] در «سوالات متداول» (/faq) نمایش داده می‌شود. برای اسکیمای کامل هر ریسورس: action=describe_resource + resource.",
       schema_hint_fa: "قبل از نوشتن مقالهٔ آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
       inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد/کلفت** *کج/ایتالیک* __زیرخط__ [لینک خارجی](https://...) [لینک داخلی](/form)/[متن](/courses)/[متن](/education) — برای جزئیات عکس/هایلایت/صفحات داخلی قبل از نوشتن حتماً describe_resource را بخوان.",
       seo_note_fa: "هر محتوا (آموزش/دوره/محصول، نه نظرات و تجربه والدین و مجوزها) صفحهٔ دائمی قابل‌گوگل دارد: /education/<slug> ، /courses/<slug> ، /products/<slug> — اگر slug صریح لاتین کوتاه انتخاب کنی، لینک‌های سئویی بهتر می‌شوند؛ اگر نگذاری خودکار از عنوان ساخته می‌شود.",
