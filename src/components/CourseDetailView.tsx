@@ -15,6 +15,7 @@ import { pushInPageHistoryState } from '../utils/scrollRestoration';
 import { Helmet } from 'react-helmet-async';
 import JsonLd from './JsonLd';
 import { itemUrl, metaDescOf, seoKeyOf } from '../lib/seo';
+import { PROJECT_AUTHOR, PROJECT_AUTHOR_EN } from '../config/project';
 
 // ─── کارت پیش‌نمایش پرسش متداول — هم‌ابعاد کارت نظرات (عرض ۷۸٪ / maxWidth 300)
 // سؤال کامل نمایش داده می‌شود؛ پاسخ حداکثر ۳ خط. اگر سؤال خیلی طولانی باشد:
@@ -496,7 +497,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
               }}>
                 <img 
                   src={cfg?.courseInstructor?.photoUrl || "/images/specialist/specialist-trust.webp"} 
-                  alt={isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')} 
+                  alt={isFa ? (cfg?.courseInstructor?.name || PROJECT_AUTHOR) : (cfg?.courseInstructor?.nameEn || PROJECT_AUTHOR_EN)} 
                   style={{ 
                     width: 72, 
                     height: 72, 
@@ -508,12 +509,7 @@ export default function CourseDetailView({ course, T, lang, onClose, onRegister,
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--zk-text)', marginBottom: 3 }}>
-                    {isFa ? (cfg?.courseInstructor?.name || 'امیر افرادی') : (cfg?.courseInstructor?.nameEn || 'Amir Afradi')}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--zk-text-muted)', lineHeight: 1.6 }}>
-                    {isFa 
-                      ? (cfg?.courseInstructor?.desc || 'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم') 
-                      : (cfg?.courseInstructor?.descEn || 'Child & Adolescent Growth and Nutrition Specialist — guiding families on healthy growth journeys')}
+                    {isFa ? (cfg?.courseInstructor?.name || PROJECT_AUTHOR) : (cfg?.courseInstructor?.nameEn || PROJECT_AUTHOR_EN)}
                   </div>
                 </div>
               </div>

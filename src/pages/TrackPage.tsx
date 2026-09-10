@@ -203,7 +203,7 @@ export default function TrackPage() {
   const mem = [zp['--zp-mem0'], zp['--zp-mem1'], zp['--zp-mem2']];
   const rootVars: any = { ...zp };
 
-  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (lang === 'en' ? 'Farzandman' : 'فرزند من')).replace(/[“”"]/g, '').trim();
+  const brand = String(cfg?.browserTitle || cfg?.siteTitle || (lang === 'en' ? 'Zeynalikid' : 'زینالیکید')).replace(/[“”"]/g, '').trim();
   const glassCard: any = { background: darkGlass ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,.90)', border: `1px solid ${darkGlass ? 'rgba(255,255,255,.2)' : T.brd}`, borderRadius: 16 };
 
   const infoRows: [string, string][] = [

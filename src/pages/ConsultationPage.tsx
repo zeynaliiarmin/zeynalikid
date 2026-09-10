@@ -84,7 +84,7 @@ const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val
     if(multi) setVal((Array.isArray(val)?val:[]).includes(it) ? (val as string[]).filter((x:string)=>x!==it) : [...(Array.isArray(val)?val:[]), it]);
     else { setVal(it); setOpen(false); }
   },[multi,setVal,val]);
-  return <div><label style={S.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={T} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{...S.inp,textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?T.txt:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(_tr).join('، '):(cfg? '- انتخاب کنید...' : 'انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{(items||[]).map((it:string)=><button key={String(it)} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.soft:'transparent',border:0,borderRadius:9,color:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{_tr(it)}</button>)}</Popup></div>;
+  return <div><label style={S.lbl}>{label}</label><Popup open={open} onClose={()=>setOpen(false)} T={T} trigger={<button type="button" onClick={()=>setOpen(v=>!v)} style={{...S.inp,textAlign:'inherit',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:13,color:txt?T.txt:T.mut,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{txt?String(txt).split('، ').map(_tr).join('، '):(cfg? '- انتخاب کنید...' : 'انتخاب کنید...')}</span><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>}>{(items||[]).map((it:string)=><button type="button" key={String(it)} onClick={()=>choose(it)} style={{display:'block',width:'100%',padding:'9px 10px',background:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.soft:'transparent',border:0,borderRadius:9,color:(multi?(Array.isArray(val)?val:[]).includes(it):val===it)?T.acc:T.txt,cursor:'pointer',fontFamily:'inherit',textAlign:'right',fontSize:13}}>{_tr(it)}</button>)}</Popup></div>;
 });
 // از همان کامپوننت مشترک استفاده می‌شود تا انتخاب کشور در همه‌جای سایت یک شکل باشد
 const StableCountrySelectLocal = CountryCodePopup;
@@ -192,6 +192,8 @@ export default function ConsultationPage(){
 
 
 
+  // به جای متن ثابت برند: با اسم واقعی پروژه (زینالیکید/فرزند من) سازگار است
+  const brand = String(cfg.browserTitle || cfg.siteTitle || 'سامانه رشد کودک').replace(/[“”"]/g, '').trim();
   const isDirty = formView === 'form' && (fd.topics.length > 0 || fd.pName.trim() !== '' || fd.pPhone.trim() !== '' || fd.gender !== '' || fd.age !== '' || fd.height !== '' || fd.weight !== '' || fd.notes.trim() !== '' || fd.disease.trim() !== '' || (fd.digest && fd.digest.length > 0) || fd.appetite !== '' || (fd.specials && fd.specials.length > 0));
   useExitGuard(isDirty, lang === 'fa' ? 'اطلاعات واردشده ذخیره نشده است. آیا مطمئنید؟' : 'You have unsaved changes. Are you sure?');
 
@@ -200,6 +202,8 @@ export default function ConsultationPage(){
 
   // Track page view
   useEffect(() => { try { trackPageView(formView === 'success' ? '/form-success' : '/form') } catch { } }, [formView]);
+  // وقتی صفحهٔ تأیید ثبت باز می‌شود، دید کاربر باید از ابتدای محتوای تأیید شروع شود (نه از انتهای فرم قبلی)
+  useEffect(() => { if (formView === 'success') { try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch { } } }, [formView]);
 
   // Load submissions cache — Phase 4 fix: ConsultationPage is a PUBLIC page, so it must
   // NOT call fetchSubmissions (which now routes through admin-api and requires admin session).
@@ -235,12 +239,12 @@ export default function ConsultationPage(){
       ? ((cfg.consultationSuccessSentencesEn && Array.isArray(cfg.consultationSuccessSentencesEn) && cfg.consultationSuccessSentencesEn.length > 0) ? cfg.consultationSuccessSentencesEn : (cfg.consultationSuccessSentences && Array.isArray(cfg.consultationSuccessSentences) && cfg.consultationSuccessSentences.length > 0 ? cfg.consultationSuccessSentences : formSuccessMessages))
       : ((cfg.consultationSuccessSentences && Array.isArray(cfg.consultationSuccessSentences) && cfg.consultationSuccessSentences.length > 0) ? cfg.consultationSuccessSentences : formSuccessMessages);
     const total = list.length;
-    if (!total) { setSuccessMsgRnd('به جمع خانواده زینالیکید خوش آمدید'); return; }
+    if (!total) { setSuccessMsgRnd('به جمع خانوادهٔ ' + brand + ' خوش آمدید'); return; }
     if (usedMsgIdx.current.length >= total) usedMsgIdx.current = [];
     const avail = Array.from({ length: total }, (_, i) => i).filter(i => !usedMsgIdx.current.includes(i));
     const idx = avail[Math.floor(Math.random() * avail.length)];
     usedMsgIdx.current = [...usedMsgIdx.current, idx];
-    setSuccessMsgRnd(list[idx] || 'به جمع خانواده زینالیکید خوش آمدید');
+    setSuccessMsgRnd(list[idx] || ('به جمع خانوادهٔ ' + brand + ' خوش آمدید'));
   };
 
   const similarityScore = (a: any, b: any) => {
@@ -347,6 +351,8 @@ export default function ConsultationPage(){
   };
 
   const [dupMode, setDupMode] = useState<'edit'|'newchild'|null>(null);
+  // نگهبان سنکرون — خواندن حالت تکراری بلافاصله بعد از کلیک (state ری‌اکت با تأخیر به‌روز می‌شود و قبلاً باعث می‌شد کاربر دوبار روی گزینه بزند)
+  const dupModeRef = useRef<'edit'|'newchild'|null>(null);
   const editOverrideRef = useRef<{id:string, trackingCode:string} | null>(null);
 
   const doSubmit = async () => {
@@ -377,7 +383,7 @@ export default function ConsultationPage(){
       //    (همان فرزند یا دوقلوهای نزدیک — انتخاب: ویرایش/فرزند دیگر/لغو).
       // ۳) اختلاف قد>۵ یا وزن>۵ ⇒ فرزند دیگر است؛ بدون پرسش ثبت جدید شود.
       // ۴) رکورد قبلی فاقد قد/وزن ⇒ فقط وقتی پرس شود که شباهت بالا باشد (سکور ≥۰.۷).
-      if (!editId && !dupMode) {
+      if (!editId && !dupMode && !dupModeRef.current && !editOverrideRef.current) {
         const candidates = list.filter((x: any) =>
           digits(x.fullPhone || '') === digits(fp) &&
           x.type === 'consultation' &&
@@ -458,13 +464,13 @@ export default function ConsultationPage(){
         // «edit» (ویرایش) از همان کد پیگیری قبلی استفاده می‌کند؛ «newchild» همیشه کد تصادفی جدید می‌گیرد.
         let trackingCode: string;
         let similarTo: any = null;
-        if (dupMode === 'edit' && dupModal?.trackingCode) {
+        if (dupModeRef.current === 'edit' && dupModal?.trackingCode) {
           trackingCode = dupModal.trackingCode;
           similarTo = dupModal.similarId;
         } else if (us2?.code) {
           trackingCode = us2.code;
           if (prevSame) { const sim = list.find((x:any)=>digits(x.fullPhone||'')===digits(fp)&&similarityScore(x,effFd)>=0.7); similarTo=(sim||prevSame).id; }
-        } else if (dupMode === 'newchild') {
+        } else if (dupModeRef.current === 'newchild') {
           // همیشه کد جدید تولید می‌شود (هیچ‌وقت کد قبلی را reuse نمی‌کنیم)
           trackingCode = generateSecureTrackingCode(existingCodes, TRACKING_PREFIX);
           if (prevSame) similarTo = prevSame.id;
@@ -563,7 +569,7 @@ export default function ConsultationPage(){
         }
       }
       setEditId(null); editEntryRef.current = null;
-      editOverrideRef.current = null;
+      editOverrideRef.current = null; dupModeRef.current = null;
       setDupModal(null); setDupMode(null);
       pickNextMsg();
       clearPublicFormDrafts();
@@ -657,7 +663,7 @@ export default function ConsultationPage(){
     const all = (cfg.consultTopics || []);
     const chip = (x: string) => {
       const chipActive = (fd.topics || []).includes(x);
-      return <button key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '10px 15px' : '10px 16px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>{trVal(x)}</button>;
+      return <button type="button" key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '10px 15px' : '10px 16px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>{trVal(x)}</button>;
     };
     // Scrollable horizontal row for both languages (no squeezed grid) — nicer on mobile
     return <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', marginInline: -4, paddingInline: 4, scrollbarWidth: 'none' }}><style>{`.zk-chip::-webkit-scrollbar{display:none}`}</style>{all.map(chip)}</div>;
@@ -666,9 +672,9 @@ export default function ConsultationPage(){
   // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)
   if (formView === 'form') return <><MemphisBg T={T} /><div style={{ ...S.page, position: 'relative' }}>
       <Helmet>
-        <title>فرم مشاوره رشد و تغذیه کودک | زینالیکید</title>
+        <title>{`فرم مشاوره رشد و تغذیه کودک | ${brand}`}</title>
         <meta name="description" content="فرم مشاوره تخصصی رشد قد، بهبود اشتها، تقویت هوش و تمرکز کودکان و نوجوانان" />
-        <meta name="keywords" content="فرم مشاوره کودک, رشد قد, بهبود اشتها, تقویت هوش, زینالیکید" />
+        <meta name="keywords" content={`فرم مشاوره کودک, رشد قد, بهبود اشتها, تقویت هوش, ${brand}`} />
       </Helmet>
       <style>{css}</style>
       <div style={{ ...S.card, marginTop: 0 }}>
@@ -789,14 +795,14 @@ export default function ConsultationPage(){
       </div>}
 
       {/* Duplicate modal (Old design restored, updated logic preserved, no tracking code shown) */}
-      {dupModal && <div onMouseDown={e => { if (e.currentTarget === e.target) { setDupModal(null); setDupMode(null); } }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>
+      {dupModal && <div onMouseDown={e => { if (e.currentTarget === e.target) { setDupModal(null); setDupMode(null); dupModeRef.current = null; } }} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,20,30,.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fade .35s ease both', direction: lang === 'fa' ? 'rtl' : 'ltr' }}>
         <div style={{ width: '100%', maxWidth: 420, background: T.pop || T.card || '#fff', border: `1px solid ${T.brd || '#E5E0D8'}`, borderRadius: 20, padding: 20, boxShadow: '0 24px 60px rgba(0,0,0,.22)', animation: 'modalIn .35s ease both' }}>
           <h3 style={{ color: T.ttl || T.txt, marginTop: 0, fontSize: 15, fontWeight: 800 }}>{lang === 'en' ? 'Duplicate form detected' : 'فرم تکراری شناسایی شد'}</h3>
           <p style={{ fontSize: 13, color: T.txt, lineHeight: 2, margin: '10px 0 16px' }}>
             {publicText('duplicateFormMsg')}
           </p>
           <PrimaryButton style={{ marginBottom: 8, padding: 12, fontSize: 14.5 }} onClick={async () => {
-            setDupMode('edit');
+            dupModeRef.current = 'edit'; setDupMode('edit');
             editOverrideRef.current = { id: dupModal.similarId, trackingCode: dupModal.trackingCode };
             setDupModal(null); setSubmitting(true);
             await doSubmit();
@@ -804,11 +810,11 @@ export default function ConsultationPage(){
             {lang === 'en' ? 'Edit information' : 'ویرایش اطلاعات'}
           </PrimaryButton>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={() => { setDupModal(null); setDupMode(null); }}>
+            <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={() => { setDupModal(null); setDupMode(null); dupModeRef.current = null; }}>
               {lang === 'en' ? 'Cancel' : 'لغو'}
             </GhostButton>
             <GhostButton style={{ padding: 11, fontSize: 13.5 }} onClick={async () => {
-              setDupMode('newchild');
+              dupModeRef.current = 'newchild'; setDupMode('newchild');
               setSubmitting(true);
               setDupModal(null);
               await doSubmit();
@@ -821,7 +827,7 @@ export default function ConsultationPage(){
     </div></>;
   if (formView === 'success') return <><MemphisBg T={T} /><div style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingBottom: 16 }}>
       <Helmet>
-        <title>ثبت موفقیت‌آمیز فرم مشاوره | زینالیکید</title>
+        <title>{`ثبت موفقیت‌آمیز فرم مشاوره | ${brand}`}</title>
         <meta name="description" content="فرم مشاوره شما با موفقیت ثبت شد." />
         <meta name="robots" content="noindex, follow" />
       </Helmet>
@@ -829,7 +835,7 @@ export default function ConsultationPage(){
       <div style={{ ...S.card, maxWidth: 460, textAlign: 'center', padding: '20px 18px', marginTop: 0 }}>
         {/* Success checkmark */}
         <div style={{ margin: '2px auto 12px', width: 78, height: 78, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 38px rgba(16,185,129,.3), 4px 4px 10px rgba(0,0,0,.08)', animation: 'modalIn .4s ease both' }}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#04111B" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
         <h2 style={{ color: T.ttl, fontSize: 17, margin: '0 0 5px', fontWeight: 800 }}>{publicText('successMsg')}</h2>
         <p style={{ color: T.mut, fontSize: 12.5, lineHeight: 1.8, margin: '0 0 8px' }}>{publicText('successSubMsg')}</p>

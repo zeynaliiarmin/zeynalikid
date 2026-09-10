@@ -214,7 +214,7 @@ export default function SettingsManager(props: Props) {
       <Box title="باکس معرفی کارشناس در صفحه دوره‌ها">
         <Checklist label="نمایش باکس کارشناس در صفحه معرفی دوره" value={draft.courseInstructor?.show !== false} onChange={(v) => upNested(['courseInstructor', 'show'], v)} />
         <label style={S.lbl}>نام کارشناس</label>
-        <StableAdminInput style={{ ...S.inp, marginBottom: 10 }} defaultValue={draft.courseInstructor?.name || 'امیر افرادی'} onCommit={(v: string) => upNested(['courseInstructor', 'name'], v)} />
+        <StableAdminInput style={{ ...S.inp, marginBottom: 10 }} defaultValue={draft.courseInstructor?.name || 'آرمین زینالی'} onCommit={(v: string) => upNested(['courseInstructor', 'name'], v)} />
         <label style={S.lbl}>توضیحات و سمت کارشناس</label>
         <StableAdminTextarea style={{ ...S.ta, minHeight: 60 }} defaultValue={draft.courseInstructor?.desc || 'متخصص رشد و تغذیه کودک و نوجوان، همراه خانواده‌ها در مسیر رشد سالم'} onCommit={(v: string) => upNested(['courseInstructor', 'desc'], v)} placeholder="متن سمت و تخصص کارشناس..." rows={3} />
       </Box>

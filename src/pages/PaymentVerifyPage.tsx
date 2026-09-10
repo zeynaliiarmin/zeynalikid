@@ -20,6 +20,7 @@ type VerifyStatus = 'loading' | 'success' | 'failed' | 'canceled';
 export default function PaymentVerifyPage(){
  const app=useAppContext();
   const { T, S, css, lang, setView } = app;
+ const brand = String(app.cfg?.browserTitle || app.cfg?.siteTitle || 'سامانه رشد کودک').replace(/[“”"]/g, '').trim();
   const [status, setStatus] = useState<VerifyStatus>('loading');
   const [message, setMessage] = useState('');
   const [refId, setRefId] = useState('');
@@ -173,7 +174,7 @@ export default function PaymentVerifyPage(){
   return (
     <div dir={lang === 'en' ? 'ltr' : 'rtl'} style={{ ...S.page, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <Helmet>
-        <title>{lang === 'en' ? 'Payment Verification' : 'تأیید پرداخت'} | زینالیکید</title>
+        <title>{`${lang === 'en' ? 'Payment Verification' : 'تأیید پرداخت'} | ${brand}`}</title>
         <meta name="robots" content="noindex, follow" />
       </Helmet>
       <style>{css}</style>

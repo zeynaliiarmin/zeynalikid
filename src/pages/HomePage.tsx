@@ -3,6 +3,7 @@ import { PrimaryButton } from '../components/ui/atoms';
 import './home-v2.css';
 import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { PROJECT_AUTHOR } from '../config/project';
 import { Link } from 'react-router-dom';
 import InstallPrompt from '../components/InstallPrompt';
 import { ConsultIcon, CoursesIcon, VideoIcon, LicensesIcon, ContactIcon } from '../components/Icons';
@@ -77,8 +78,8 @@ export default function HomePage(){
    {/* در حالت لینک ارجاع، کادر متخصص پیش‌فرض پنهان و فقط کارت مشاور ارجاع‌دهنده نمایش داده می‌شود */}
    {!referralConsultant && (
    <section className="zk-home-specialist-note" style={{display:'flex',flexDirection:isRtl?'row-reverse':'row',alignItems:'center',gap:14,marginBottom:14,padding:'14px 16px',background:'var(--zk-surface)',border:'1px solid var(--zk-border)',borderRadius:'20px',boxShadow:'var(--zk-shadow-light)'}}>
-    {cfg.showSpecialistPhoto!==false&&cfg.images?.homeAvatar?.enabled!==false&&<img src={(()=>{const raw=String(cfg.images?.homeAvatar?.url||'/images/specialist/specialist-about.webp').trim(); const ok=raw.startsWith('/images/')||/^https:\/\//i.test(raw); return ok?raw:'/images/specialist/specialist-about.webp';})()} alt={cfg.specialistName||'امیر افرادی'} style={{width:62,height:62,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid var(--zk-primary-light)',flexShrink:0}}/>}
-    <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}><strong style={{display:'block',fontSize:14.5,color:'var(--zk-text)',fontWeight:700,lineHeight:1.5}}>{brand+' — '+(lang==='en'?(cfg.specialistTitleEn||'Child Growth & Nutrition Specialist'):(cfg.specialistTitle||'کارشناس رشد و تغذیه کودک و نوجوان'))}</strong><span style={{fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.6}}>{lang==='en'?'A calmer, evidence-based path for your child’s growth' : 'مسیر آرام و مبتنی بر شواهد برای رشد فرزند شما'}</span></div>
+    {cfg.showSpecialistPhoto!==false&&cfg.images?.homeAvatar?.enabled!==false&&<img src={(()=>{const raw=String(cfg.images?.homeAvatar?.url||'/images/specialist/specialist-about.webp').trim(); const ok=raw.startsWith('/images/')||/^https:\/\//i.test(raw); return ok?raw:'/images/specialist/specialist-about.webp';})()} alt={cfg.specialistName||PROJECT_AUTHOR} style={{width:62,height:62,objectFit:'cover',objectPosition:'center 18%',borderRadius:'50%',border:'2px solid var(--zk-primary-light)',flexShrink:0}}/>}
+    <div style={{minWidth:0,textAlign:isRtl?'right':'left'}}><strong style={{display:'block',fontSize:14.5,color:'var(--zk-text)',fontWeight:700,lineHeight:1.5}}>{brand}</strong><span style={{fontSize:12,color:'var(--zk-text-muted)',lineHeight:1.6}}>{lang==='en'?'A calmer, evidence-based path for your child’s growth' : 'مسیر آرام و مبتنی بر شواهد برای رشد فرزند شما'}</span></div>
    </section>
    )}
 
