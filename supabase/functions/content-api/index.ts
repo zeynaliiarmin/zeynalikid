@@ -1206,7 +1206,9 @@ serve(async (req)=>{
       display_fa: "در صفحهٔ «آموزش» (/education) — کارت‌ها title+desc+cover+keywords می‌خوانند؛ کلیک کارت → مودال کامل با meta + متن + تصاویر بین‌ پاراگراف.",
       renderer_rules_fa: [
         "متن‌ها ساده (بدون HTML)؛ <img>، <p>، <div>، <span>، <a href>، <strong>، <br> و هر برچسب دیگر به‌صورت متنِ خام نمایش داده می‌شود و غلط است.",
-        "نشانه‌گذاری درون‌خطی مجاز: **متن** → بولد | *متن* → ایتالیک | __متن__ → زیرخط | [متن لینک](https://...) → لینک",
+        "نشانه‌گذاری درون‌خطی مجاز: **متن** → بولد/کلفت | *متن* → کج/ایتالیک | __متن__ → زیرخط | [متن لینک](https://example.com) → لینک خارجی | [متن لینک](/form) → لینک داخلی سایت",
+        "لینک‌های داخلی سایت که می‌توان توی متن به آنها اشاره داد: /courses (دوره‌ها) · /education (آموزش‌ها) · /experience (تجربه والدین) · /form (فرم مشاوره رایگان) · /products (محصولات) · /faq (سؤالات متداول) · /about · /contact · /privacy",
+        "قاعدهٔ لینک‌سازی: اگر توی متن از دورهٔ مرتبط/فرم مشاوره/بخش دیگری نام بردی، آن عبارت را به‌صورت لینک داخلی بنویس؛ مثلا [دوره‌های تخصصی](/courses) یا [درخواست مشاوره رایگان](/form) یا اشارهٔ دیگر — این قابلیت برای همهٔ بخش‌ها به‌جز نظرات کاربران فعال است.",
         "پاراگراف‌ها در body با دو خط خالی (\\n\\n) جدا می‌شوند.",
       ],
       fields: [
@@ -1214,12 +1216,11 @@ serve(async (req)=>{
         { field:"titleEn", type:"string", required:false, where_fa:"عنوان انگلیسی (lang=en)", rules_fa:"اختیاری" },
         { field:"desc", type:"string", required:true, where_fa:"خلاصهٔ کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
         { field:"body", type:"string", required:true, where_fa:"متن کامل مقاله", rules_fa:"بدون HTML؛ پاراگراف‌ها با \\n\\n؛ نشانه‌گذاری ساده مجاز" },
-        { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد کارت + بالای مقاله", rules_fa:"فقط URL مستقیم — تصویر هرگز در body با <img> نیاید؛ فقط اینجا یا images" },
+        { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد مقاله — در کارت، بالای مقاله، و در پنل مدیریت (صفحه محتوا + فیلد «کاور مقاله» در کدهای دستی) قرار می‌گیرد", rules_fa:"فقط URL مستقیم؛ هرگز با HTML — تصویر میانی متن فقط در images" },
         { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین پاراگراف‌ها", rules_fa:"position: 0=بالا، 1=بعد از پاراگراف اول، 2=بعد از پاراگراف دوم، ..." },
         { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جملهٔ کوتاه تأمل‌برانگیز" },
         { field:"highlights", type:"array<{text:string, color:string}>", required:false, where_fa:"کادرهای رنگی زیر متا برای جملات کلیدی", rules_fa:"حداکثر ۶ × ۵۰۰ کاراکتر؛ color فقط یکی از ۸ رنگ پالت زیر — رنگ را با ماهیت جمله بگذار" },
         { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمهٔ «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
-        { field:"reviewedAt", type:"string", required:false, where_fa:"«بازبینی: …» در متا", rules_fa:"تاریخ شمسی" },
         { field:"author / authorEn", type:"string", required:true, where_fa:"نویسنده در متا", rules_fa:"نام تحریریه برند" },
         { field:"minutes", type:"number", required:false, where_fa:"مدت مطالعه", rules_fa:"عدد صحیح (۳ تا ۱۵)" },
         { field:"date / dateEn", type:"string", required:true, where_fa:"تاریخ در متا", rules_fa:"شمسی/میلادی" },
@@ -1238,6 +1239,8 @@ serve(async (req)=>{
         "یک quote کوتاه و جذاب در فیلد quote بگذار تا در انتهای مقاله برجسته شود.",
         "slug یکتا (لاتین + خط تیره)، keywords ۶-۱۰ کلمه، desc ۲-۳ خطی جذاب.",
         "لحن برند: آمیانهٔ مؤدبانه (میتونه، واسه، بچه، خونه)؛ قوانین کامل با get_policy.",
+        "کلمات کلیدی/عبارت‌های مهم در متن را به صفحات مرتبط لینک کن: [دوره‌های تخصصی](/courses) [از بخش آموزش‌ها](/education) [درخواست مشاوره رایگان](/form) [مراکز تماس](/contact).",
+        "هر مقاله اگر جملهٔ کلیدی/هشداری دارد ۱-۲ ردیف highlights هم بگذار؛۵۰۰ کاراکتر × حداکثر ۶ ؛ رنگ فقط از پالت ۸تایی.",
       ],
       donts_fa: [
         "HTML (<img>, <p>, <div>, <a href>, <strong>, <br> و...) در هیچ فیلد نگذار.",
@@ -1294,7 +1297,7 @@ serve(async (req)=>{
       how_to_call: buildHowTo(caps.actions.find(a=>a.startsWith("list_")) || "get_policy"),
       bulk_note_fa: "برای کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource>. حذف دسته‌جمعیِ بالای ۲ آیتم نیازمند تأیید مالک در پنل است.",
       schema_hint_fa: "قبل از نوشتن مقالهٔ آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
-      inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد** *ایتالیک* __زیرخط__ [لینک](https://...).",
+      inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد/کلفت** *کج/ایتالیک* __زیرخط__ [لینک خارجی](https://...) [لینک داخلی](/form)/[متن](/courses)/[متن](/education) — برای جزئیات عکس/هایلایت/صفحات داخلی قبل از نوشتن حتماً describe_resource را بخوان.",
     }, origin);
   }
 

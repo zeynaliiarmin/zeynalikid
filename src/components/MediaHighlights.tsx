@@ -62,7 +62,7 @@ export function Highlights({ highlights, style }: { highlights?: HighlightItem[]
 function parseInline(text: string, keyPrefix: string, fontSize?: number): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   // ابتدا لینک‌ها را جدا کنیم تا نشانه‌های داخلشان دوباره پارس نشوند
-  const linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g;
   let lastIndex = 0;
   let m: RegExpExecArray | null;
   let k = 0;
@@ -78,7 +78,7 @@ function parseInline(text: string, keyPrefix: string, fontSize?: number): React.
   for (const seg of segments) {
     if (seg.type === 'link') {
       nodes.push(
-        <a key={`${keyPrefix}-l${k++}`} href={seg.href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--zk-primary, #0F766E)', textDecoration: 'underline', fontWeight: 700 }}>
+        <a key={`${keyPrefix}-l${k++}`} href={seg.href} {...(/^(https?:)?\/\//.test(seg.href || '') ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ color: 'var(--zk-primary, #0F766E)', textDecoration: 'underline', fontWeight: 700 }}>
           {seg.text}
         </a>,
       );

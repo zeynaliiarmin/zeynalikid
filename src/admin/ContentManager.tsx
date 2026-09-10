@@ -465,7 +465,7 @@ function MediaLibraryManager(props: any) {
   const add = useCallback(() => {
     const PROJECT_AUTHOR = 'آرمین زینالی';
     const PROJECT_AUTHOR_EN = 'Armin Zeinali';
-    setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, author: isEdu ? PROJECT_AUTHOR : undefined, authorEn: isEdu ? PROJECT_AUTHOR_EN : undefined, sourceUrl: isEdu ? '' : undefined, reviewedAt: isEdu ? '' : undefined, quote: isEdu ? '' : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]);
+    setItems((prev: any[]) => [...prev, { id: sectionKey[0] + uid(), title: 'آیتم جدید', description: '', keywords: sectionKey === 'education' ? [] : undefined, type: isEdu ? 'article' : 'video', body: isEdu ? '' : undefined, images: isEdu ? [] : undefined, author: isEdu ? PROJECT_AUTHOR : undefined, authorEn: isEdu ? PROJECT_AUTHOR_EN : undefined, sourceUrl: isEdu ? '' : undefined, quote: isEdu ? '' : undefined, youtubeCode: '', aparatCode: '', manualCode: '', platform: 'other', phone: '', active: true, order: prev.length + 1, mediaCategories: [sourceDestination], mediaCategory: sourceDestination }]);
   }, [setItems, uid, sectionKey, sourceDestination, isEdu]);
   const remove = useCallback((i: number) => setItems((prev: any[]) => prev.filter((_, j) => j !== i)), [setItems]);
   const move = useCallback((i: number, dir: -1 | 1) => setItems((prev: any[]) => {
@@ -637,13 +637,17 @@ function MediaLibraryManager(props: any) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 8 }}>
                     <div><label style={S.lbl}>نویسنده (فارسی)</label><StableAdminInput style={S.inp} defaultValue={it.author || ''} onCommit={(v: string) => chg(i, 'author', v.trim())} placeholder="نام نویسنده (بدون لقب)" /></div>
                     <div><label style={S.lbl}>Author (English)</label><StableAdminInput dir="ltr" style={S.inp} defaultValue={it.authorEn || ''} onCommit={(v: string) => chg(i, 'authorEn', v.trim())} placeholder="Author name" /></div>
-                    <div><label style={S.lbl}>تاریخ آخرین بازبینی</label><input type="date" dir="ltr" style={S.inp} defaultValue={it.reviewedAt || ''} onBlur={(event) => chg(i, 'reviewedAt', event.target.value)} /></div>
                     <div>
                       <label style={S.lbl}>لینک منبع علمی</label>
                       <div style={{display:'flex',gap:6}}>
                         <StableAdminInput dir="ltr" type="url" style={{...S.inp,flex:1}} defaultValue={it.sourceUrl || ''} onCommit={(v: string) => chg(i, 'sourceUrl', v.trim())} placeholder="https://..." />
                         <button type="button" disabled={!!sourceBusy[i]} onClick={()=>findSourceForIdx(i)} style={{minHeight:50,padding:'0 12px',border:`1px solid ${T.brd}`,borderRadius:12,background:sourceBusy[i]?T.mut:T.soft,color:T.accText,fontSize:11,fontWeight:800,cursor:sourceBusy[i]?'wait':'pointer',whiteSpace:'nowrap',fontFamily:'inherit',opacity:sourceBusy[i]?0.7:1}} title="پیدا کردن خودکار نزدیک‌ترین مقاله علمی انگلیسی و پر کردن فیلد منبع">{sourceBusy[i]?'در حال یافتن…':'🪄 دستیار سوم'}</button>
                       </div>
+                    </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={S.lbl}>کاور مقاله — URL مستقیم عکس جلد (به‌صورت خودکار در کارت، بالای مقاله و همین‌جا نمایش داده می‌شود)</label>
+                      <StableAdminInput dir="ltr" type="url" style={S.inp} defaultValue={it.cover || ''} onCommit={(v: string) => chg(i, 'cover', v.trim())} placeholder="https://i.imageupload.app/...jpeg" />
+                      {it.cover ? <img data-admin-cover-preview src={it.cover} alt="پیش‌نمایش کاور مقاله" style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 10, border: `1px solid ${T.brd}`, marginTop: 6, background: T.card }} /> : null}
                     </div>
                   </div>
                   {normType(it.type) === 'article' && (<>
