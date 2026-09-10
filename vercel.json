@@ -105,7 +105,7 @@
           "value": "(?i).*(googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|applebot|facebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|pinterest|google-inspectiontool|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|fresh).*"
         }
       ],
-      "destination": "https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/education-ssr?slug=:slug"
+      "destination": "/api/education-ssr?slug=:slug"
     },
     {
       "source": "/education/:path*",
