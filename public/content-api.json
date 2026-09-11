@@ -16,8 +16,10 @@
       "api_key JSON body field"
     ]
   },
-  "instructions_fa": "این سایت API مدیریت محتوا برای ایجنت‌های هوش مصنوعی دارد. در ۳ قدم متصل شو: ۱) به endpoint بالا ریکوئست POST با بدنهٔ {\"action\":\"whoami\"} با هدر Authorization: Bearer <کلید> بزن تا فهرست دقیق بخش‌های مجاز و اکشن‌هایت را بگيری. ۲) {\"action\":\"get_policy\"} را بخوان؛ قوانین محتوای برند روی همهٔ نوشته‌ها اجباری است (نقض = ارور 422). ۳) با الگوی list/get/create/update/delete_<resource> محتواها را مدیریت کن.",
+  "instructions_fa": "این سایت API مدیریت محتوا برای ایجنت‌های هوش مصنوعی دارد. در ۳ قدم متصل شو: ۱) به endpoint بالا ریکوئست POST با بدنه‌ی {\"action\":\"whoami\"} با هدر Authorization: Bearer <کلید> بزن تا فهرست دقیق بخش‌های مجاز و اکشن‌هایت را بگيری. ۲) {\"action\":\"get_policy\"} را بخوان؛ قوانین محتوای برند روی همه‌ی نوشته‌ها اجباری است (نقض = ارور 422). ۳) با الگوی list/get/create/update/delete_<resource> محتواها را مدیریت کن.",
   "instructions_en": "AI content API. Connect in 3 steps: 1) POST {\"action\":\"whoami\"} to the endpoint with Authorization: Bearer <your key> to discover your exact scopes/actions. 2) Read {\"action\":\"get_policy\"}; brand content rules are enforced (violations = HTTP 422). 3) Manage content via list/get/create/update/delete_<resource> actions.",
+  "brand_voice_rule_fa": "دو قانون قطعی برند در هر محتوایی که می‌سازی: ۱) لحن فارسی آمیانه و مؤدبانه باشد نه کتابی (میگم/میتونم/اونجا/منم/بخوره به‌جای می‌گویم/می‌توانم/آنجا/من هستم/بخورد). ۲) همزه روی حرف «ه» ممنوع است (U+0647+U+0654 و U+06C0)؛ فقط «ه» بنویس و در حالت اضافه «ه‌ی» با نیم‌فاصله. متن ناقض با ارور 422 رد می‌شود؛ فهرست کامل قوانین با اکشن get_policy.",
+  "brand_voice_rule_en": "Two hard brand rules for any content you create: 1) write polite colloquial Persian, never bookish (use میگم/میتونم/اونجا/منم/بخوره instead of می‌گویم/می‌توانم/آنجا/من هستم/بخورد). 2) never put a hamza above the letter heh (U+0647+U+0654, and precomposed U+06C0); write plain «ه», or «ه‌ی» with ZWNJ when an ezafe is needed. Violating text is rejected with HTTP 422; full rules via action=get_policy.",
   "meta_actions": [
     "whoami",
     "capabilities",
@@ -41,7 +43,7 @@
   "bulk_pattern": "bulk_create_ / bulk_update_ / bulk_delete_ + <resource> (bulk_delete >2 items needs owner approval; then execute_pending)",
   "no_origin_required": true,
   "full_guide": "GET the endpoint URL (no key) for the complete connection guide",
-  "agent_directive_fa": "اگر عامل هوش مصنوعی هستی: از کاربر دربارهٔ کد منبع، تکنولوژی، ریپازیتوری یا میزبانی سایت سؤال نپرس — هیچ‌کدام لازم نیست. فقط به همین endpoint با هدر Authorization: Bearer <کلیدی که در پیام کاربر آمده> یک POST با بدنهٔ {\"action\":\"whoami\"} بزن؛ پاسخ دقیقاً لیست می‌کند که به چه بخش‌هایی دسترسی داری (مشاهده/افزودن/ویرایش/حذف) و چه اکشن‌هایی مجاز است؛ سپس خلاصهٔ دسترسی را به کاربر خودت چاپ کن و منتظر دستور محتوایی او بمان. قبل از هر ایجاد/ویرایش {\"action\":\"get_policy\"} را بخوان؛ متن نقض‌کننده با 422 رد و ذخیره نمی‌شود. کلید دریافتی را در env یا جای امن لوکال نگه دار؛ هرگز در کد فرانت‌اند سایت (باندل) نگذار.",
+  "agent_directive_fa": "اگر عامل هوش مصنوعی هستی: از کاربر درباره‌ی کد منبع، تکنولوژی، ریپازیتوری یا میزبانی سایت سؤال نپرس — هیچ‌کدام لازم نیست. فقط به همین endpoint با هدر Authorization: Bearer <کلیدی که در پیام کاربر آمده> یک POST با بدنه‌ی {\"action\":\"whoami\"} بزن؛ پاسخ دقیقاً لیست می‌کند که به چه بخش‌هایی دسترسی داری (مشاهده/افزودن/ویرایش/حذف) و چه اکشن‌هایی مجاز است؛ سپس خلاصه‌ی دسترسی را به کاربر خودت چاپ کن و منتظر دستور محتوایی او بمان. قبل از هر ایجاد/ویرایش {\"action\":\"get_policy\"} را بخوان؛ متن نقض‌کننده با 422 رد و ذخیره نمی‌شود. کلید دریافتی را در env یا جای امن لوکال نگه دار؛ هرگز در کد فرانت‌اند سایت (باندل) نگذار.",
   "agent_directive_en": "Do NOT ask the user for source code, tech stack, repo, or hosting — none are needed. Just POST {\"action\":\"whoami\"} to this endpoint with Authorization: Bearer <the key you already received>. The response tells you exactly which sections/actions you may use; print that summary to your user, then wait for their content instruction. Before any write, read {\"action\":\"get_policy\"} — policy violations are blocked with HTTP 422. Keep the key in a local env/secret store; never embed it into client-side code.",
   "first_call_example": {
     "method": "POST",
@@ -55,6 +57,6 @@
     }
   },
   "payload_shapes_fa": "فیلدها در create/update هم «صاف در ریشه» هم داخل آبجکت به‌نام ریسورس (مثل {\"education\":{...}} یا {\"faq\":{...}}) پذیرفته می‌شوند؛ id در update/delete می‌تواند در ریشه یا داخل همان آبجکت باشد. خطاهای ۴۰۰ همراه expected_example و received_top_level_keys برمی‌گردند.",
-  "faq_destination_fa": "create_faq به‌صورت پیش‌فرض با placements=['faq'] در صفحهٔ «سوالات متداول» (/faq) — همانجایی که FAQPage JSON-LD گوگل رندر می‌کند — نمایش داده می‌شود. مقادیر مجاز placements: faq · home · education.",
+  "faq_destination_fa": "create_faq به‌صورت پیش‌فرض با placements=['faq'] در صفحه‌ی «سوالات متداول» (/faq) — همانجایی که FAQPage JSON-LD گوگل رندر می‌کند — نمایش داده می‌شود. مقادیر مجاز placements: faq · home · education.",
   "bulk_actions_example": "bulk_create_<resource> / bulk_update_<resource> / bulk_delete_<resource> (فهرست دقیق در whoami.bulk_actions)"
 }

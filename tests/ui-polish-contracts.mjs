@@ -58,18 +58,4 @@ need(backCss, '.zk-public-title-row > .zk-public-back', 'shared public return ro
 need(backCss, 'order: 2;', 'shared public return does not occupy the opposite title edge');
 need(profile, "textAlign: 'start'", 'profile public title remains centered instead of aligned to its language edge');
 
-// U+06C0 and HEH + HAMZA ABOVE must not survive in tracked source as visual text.
-const {execFileSync} = await import('node:child_process');
-const typographyFiles = execFileSync('git', ['ls-files', '-z'], { encoding: 'buffer' }).toString().split('\0').filter(Boolean);
-const precomposed = Buffer.from([0xdb, 0x80]);
-const composed = Buffer.from([0xd9, 0x87, 0xd9, 0x94]);
-const typographyOffenders = [];
-for (const file of typographyFiles) {
-  const body = await readFile(new URL(`../${file}`, import.meta.url));
-  // Avoid treating arbitrary binary coincidences as text; all textual project assets decode as UTF-8.
-  if (body.toString('utf8').includes('\ufffd')) continue;
-  if (body.includes(precomposed) || body.includes(composed)) typographyOffenders.push(file);
-}
-if (typographyOffenders.length) failures.push(`requested HEH form remains in: ${typographyOffenders.join(', ')}`);
-
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}console.log('Requested UI polish and theme-aware unified 404 contracts passed.');

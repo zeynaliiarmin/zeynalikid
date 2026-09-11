@@ -9,7 +9,7 @@ import { handleOptions, getOrigin } from "../_shared/cors.ts";
 import { POLICY_VERSION, scanContentPolicy, policySummary } from "../_shared/contentPolicy.ts";
 
 // ──────────────────────────────────────────────────────────────────────────
-// Self-discovery for AI agents (هویت برند + نقشهٔ قابلیت‌ها)
+// Self-discovery for AI agents (هویت برند + نقشه‌ی قابلیت‌ها)
 // ──────────────────────────────────────────────────────────────────────────
 const SUPA_URL = Deno.env.get("SUPABASE_URL") || "";
 const BRAND = SUPA_URL.includes("kkdrvexwzuuumjezipnd")
@@ -53,7 +53,7 @@ function buildHowTo(exampleAction: string): Record<string, unknown> {
     method: "POST",
     url: BASE_URL,
     headers: { "Content-Type": "application/json", "Authorization": "Bearer <YOUR_API_KEY>" },
-    note_fa: "کلید را همین‌طور (همین کلید دریافتی از پنل) در هدر Authorization به‌صورت Bearer بفرست؛ یا هم‌ارز آن: هدر x-api-key یا فیلد api_key در بدنهٔ JSON.",
+    note_fa: "کلید را همین‌طور (همین کلید دریافتی از پنل) در هدر Authorization به‌صورت Bearer بفرست؛ یا هم‌ارز آن: هدر x-api-key یا فیلد api_key در بدنه‌ی JSON.",
     note_en: "Send the key as Authorization: Bearer <key> header (or x-api-key header / api_key JSON field).",
     example: { action: exampleAction },
     example_curl: `curl -X POST "${BASE_URL}" -H "Content-Type: application/json" -H "Authorization: Bearer <YOUR_API_KEY>" -d "{\"action\":\"${exampleAction}\"}"`,
@@ -63,7 +63,7 @@ function buildHowTo(exampleAction: string): Record<string, unknown> {
 function keyScopeSummaryFa(scopes: string[]): string {
   const { groups } = computeCapabilities(scopes);
   if (!groups.length) return "هیچ بخشی";
-  if ((scopes||[]).includes("all")) return "همهٔ بخش‌ها";
+  if ((scopes||[]).includes("all")) return "همه‌ی بخش‌ها";
   return groups.map(g=>g.label_fa).join("، ");
 }
 
@@ -376,7 +376,7 @@ async function listFaqs(body: any, origin: string): Promise<Response> {
   const faqItems = Array.isArray(settings.faqItems) ? settings.faqItems : [];
   const legacy = Array.isArray(settings.manualUserQuestions) ? settings.manualUserQuestions : [];
   return ok({ faqs: faqItems, total: faqItems.length, legacy_manual_count: legacy.length,
-    destination_fa: "صفحهٔ «سوالات متداول» (/faq) — با FAQPage JSON-LD در گوگل" }, origin);
+    destination_fa: "صفحه‌ی «سوالات متداول» (/faq) — با FAQPage JSON-LD در گوگل" }, origin);
 }
 
 async function createFaq(body: any, origin: string): Promise<Response> {
@@ -403,7 +403,7 @@ async function createFaq(body: any, origin: string): Promise<Response> {
   await saveSettings({ ...settings, faqItems: [...faqItems, newFaq], faqItemsEn: [...faqItemsEn, enPair] });
   return ok({ faq: newFaq,
     destination_fa: "/faq — بلافاصله در «سوالات متداول» نمایش داده می‌شود",
-    note_fa: "placements پیش‌فرض ['faq']؛ مقادیر مجاز: faq (صفحهٔ سوالات متداول) · home (بخش سوالات خانه، ۴ تای اول) · education (تب سوالات صفحهٔ آموزش). نسخهٔ انگلیسی را بعداً با update_faq و فیلدهای questionEn/answerEn کامل کن." }, origin);
+    note_fa: "placements پیش‌فرض ['faq']؛ مقادیر مجاز: faq (صفحه‌ی سوالات متداول) · home (بخش سوالات خانه، ۴ تای اول) · education (تب سوالات صفحه‌ی آموزش). نسخه‌ی انگلیسی را بعداً با update_faq و فیلدهای questionEn/answerEn کامل کن." }, origin);
 }
 
 async function updateFaq(body: any, origin: string): Promise<Response> {
@@ -447,7 +447,7 @@ async function updateFaq(body: any, origin: string): Promise<Response> {
   if (typeof u.active === "boolean") lp.active = u.active;
   await saveSettings({ ...settings, manualUserQuestions: legacy.map((f:any,i:number)=> i===lIdx ? lp : f) });
   return ok({ updated:true, faq: lp, legacy_bucket:true,
-    note_fa:"این آیتم در مخزن قدیمی «پرسش‌های دستی والدین» است که در صفحهٔ عمومی /faq نمایش داده نمی‌شود؛ برای نمایش عمومی با create_faq دوباره بساز." }, origin);
+    note_fa:"این آیتم در مخزن قدیمی «پرسش‌های دستی والدین» است که در صفحه‌ی عمومی /faq نمایش داده نمی‌شود؛ برای نمایش عمومی با create_faq دوباره بساز." }, origin);
 }
 
 async function deleteFaq(body: any, origin: string): Promise<Response> {
@@ -972,7 +972,7 @@ async function handleWithApprovalCheck(
 
 // ──────────────────────────────────────────────────────────────────────────
 // Education — «آموزش‌ها» (settings.education.items)
-//   آیتم‌ها در صفحهٔ عمومی «آموزش و همراهی والدین» رندر می‌شوند
+//   آیتم‌ها در صفحه‌ی عمومی «آموزش و همراهی والدین» رندر می‌شوند
 //   (mediaPlacement.getMediaItemsForDestination). شرط نمایش:
 //   mediaCategories شامل "education" + active/isVisible !== false.
 // ──────────────────────────────────────────────────────────────────────────
@@ -1080,7 +1080,7 @@ async function createEducation(body: any, origin: string): Promise<Response> {
   if (incoming.descEn || incoming.descriptionEn) newItem.descEn = String(incoming.descEn || incoming.descriptionEn).slice(0, 30000);
   const updatedEdu = { ...eduRaw, items: [...items, newItem] };
   await saveSettings({ ...settings, education: updatedEdu });
-  return ok({ education: newItem, note: "آیتم در مقصد «آموزش‌ها» (صفحهٔ آموزش و همراهی والدین) ثبت و بلافاصله نمایش داده می‌شود.", ...(Object.keys(autoFields).length ? { auto_fields: autoFields } : {}) }, origin);
+  return ok({ education: newItem, note: "آیتم در مقصد «آموزش‌ها» (صفحه‌ی آموزش و همراهی والدین) ثبت و بلافاصله نمایش داده می‌شود.", ...(Object.keys(autoFields).length ? { auto_fields: autoFields } : {}) }, origin);
 }
 
 async function updateEducation(body: any, origin: string): Promise<Response> {
@@ -1247,7 +1247,7 @@ serve(async (req)=>{
     return err("Method not allowed", origin, 405);
   }
 
-  // ریشهٔ عمومی: GET بدون اکشن → راهنمای اتصال برای ایجنت‌های هوش مصنوعی (بدون کلید)
+  // ریشه‌ی عمومی: GET بدون اکشن → راهنمای اتصال برای ایجنت‌های هوش مصنوعی (بدون کلید)
   if (!action) {
     const publicGuide = {
       service: "content-api",
@@ -1277,12 +1277,12 @@ serve(async (req)=>{
   const validation = await validateApiKey(apiKeyPlain);
   if (!validation.ok) {
     return err(validation.error, origin, validation.status, {
-      hint_fa: "این سرویس content-api سایت " + BRAND.name_fa + " است — نه رمز پنل، نه کلید Stripe/Paystack. کلید صحیح را از «پنل مدیریت ← امنیت» سایت بگیر و با هدر Authorization: Bearer <key> بفرست. ریشهٔ سرویس را GET کن تا راهنمای کامل را ببینی.",
+      hint_fa: "این سرویس content-api سایت " + BRAND.name_fa + " است — نه رمز پنل، نه کلید Stripe/Paystack. کلید صحیح را از «پنل مدیریت ← امنیت» سایت بگیر و با هدر Authorization: Bearer <key> بفرست. ریشه‌ی سرویس را GET کن تا راهنمای کامل را ببینی.",
       hint_en: "This is the " + BRAND.name_en + " content-api. Authenticate with an API key generated in the site's Admin Panel → Security page (Authorization: Bearer <key>). GET this URL for the full guide.",
     });
   }
   const apiKey = validation.key;
-  // id داخل هر آبجکت تودرتوی شناخته‌شده → ریشه (تا همهٔ هندلرها یکدست بخوانند)
+  // id داخل هر آبجکت تودرتوی شناخته‌شده → ریشه (تا همه‌ی هندلرها یکدست بخوانند)
   if (body && typeof body === "object" && body.id == null) { const _hid = pickId(body); if (_hid) body.id = _hid; }
 
   // Update usage
@@ -1309,64 +1309,64 @@ serve(async (req)=>{
     return err(`دسترسی به ${resourceFromAction} برای این کلید مجاز نیست. Scopes: ${apiKey.scopes.join(",")}`, origin, 403, { hint_fa:"برای دیدن فهرست دقیق بخش‌های مجاز، action را whoami بگذار و دوباره صدا بزن.", hint_en:"Call action=whoami to see exactly which sections this key can access." });
   }
 
-  // ─── اکشن متای خودتوضیحی (برای همهٔ کلیدهای معتبر، بدون نیاز به اسکوپ) ───
-  // شمای کامل فیلدهای محتوا — برای همهٔ کلیدهای معتبر (بدون نیاز به اسکوپ)
+  // ─── اکشن متای خودتوضیحی (برای همه‌ی کلیدهای معتبر، بدون نیاز به اسکوپ) ───
+  // شمای کامل فیلدهای محتوا — برای همه‌ی کلیدهای معتبر (بدون نیاز به اسکوپ)
   if (action === "describe_resource") {
     const res = String(body.resource || body.section || body.type || "education").toLowerCase().trim();
     const educationSchema = {
-      display_fa: "در صفحهٔ «آموزش» (/education) — کارت‌ها title+desc+cover+keywords می‌خوانند؛ کلیک کارت → مودال کامل با meta + متن + تصاویر بین‌ پاراگراف.",
+      display_fa: "در صفحه‌ی «آموزش» (/education) — کارت‌ها title+desc+cover+keywords می‌خوانند؛ کلیک کارت → مودال کامل با meta + متن + تصاویر بین‌ پاراگراف.",
       renderer_rules_fa: [
         "متن‌ها ساده (بدون HTML)؛ <img>، <p>، <div>، <span>، <a href>، <strong>، <br> و هر برچسب دیگر به‌صورت متنِ خام نمایش داده می‌شود و غلط است.",
         "نشانه‌گذاری درون‌خطی مجاز: **متن** → بولد/کلفت | *متن* → کج/ایتالیک | __متن__ → زیرخط | [متن لینک](https://example.com) → لینک خارجی | [متن لینک](/form) → لینک داخلی سایت",
         "لینک‌های داخلی سایت که می‌توان توی متن به آنها اشاره داد: /courses (دوره‌ها) · /education (آموزش‌ها) · /experience (تجربه والدین) · /form (فرم مشاوره رایگان) · /products (محصولات) · /faq (سؤالات متداول) · /about · /contact · /privacy",
-        "قاعدهٔ لینک‌سازی: اگر توی متن از دورهٔ مرتبط/فرم مشاوره/بخش دیگری نام بردی، آن عبارت را به‌صورت لینک داخلی بنویس؛ مثلا [دوره‌های تخصصی](/courses) یا [درخواست مشاوره رایگان](/form) یا اشارهٔ دیگر — این قابلیت برای همهٔ بخش‌ها به‌جز نظرات کاربران فعال است.",
+        "قاعده‌ی لینک‌سازی: اگر توی متن از دوره‌ی مرتبط/فرم مشاوره/بخش دیگری نام بردی، آن عبارت را به‌صورت لینک داخلی بنویس؛ مثلا [دوره‌های تخصصی](/courses) یا [درخواست مشاوره رایگان](/form) یا اشاره‌ی دیگر — این قابلیت برای همه‌ی بخش‌ها به‌جز نظرات کاربران فعال است.",
         "پاراگراف‌ها در body با دو خط خالی (\\n\\n) جدا می‌شوند.",
       ],
       fields: [
         { field:"title", type:"string", required:true, where_fa:"کارت + عنوان مقاله", rules_fa:"۴ تا ۳۰۰ کاراکتر، فارسی، بدون HTML" },
         { field:"titleEn", type:"string", required:false, where_fa:"عنوان انگلیسی (lang=en)", rules_fa:"اختیاری" },
-        { field:"desc", type:"string", required:true, where_fa:"خلاصهٔ کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
+        { field:"desc", type:"string", required:true, where_fa:"خلاصه‌ی کوتاه روی کارت (sync با description)", rules_fa:"متن ساده، نشانه‌گذاری ساده مجاز" },
         { field:"body", type:"string", required:true, where_fa:"متن کامل مقاله", rules_fa:"بدون HTML؛ پاراگراف‌ها با \\n\\n؛ نشانه‌گذاری ساده مجاز" },
         { field:"cover", type:"string(URL)", required:true, where_fa:"تصویر جلد مقاله — در کارت، بالای مقاله، و پنل مدیریت (فیلد «کاور مقاله») قرار می‌گیرد", rules_fa:"فقط URL مستقیم، هرگز HTML — api خودکار imageUrl(قدیمی) ↔ cover را هم‌همگام می‌کند" },
         { field:"images", type:"array<{url:string, position:number, alt?:string}>", required:false, where_fa:"تصاویر بین توضیحات — عکس‌ها در هر جای محتوا بدون محدودیت می‌توانند بیایند؛ هر وقت مقاله بلند است یا عکس مرتبط داری اینجا بگذار (هرگز تگ img در body)", rules_fa:"position: 0=بالای مقاله، N=بعد از پاراگراف N — فقط URL مستقیم" },
-        { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جملهٔ کوتاه تأمل‌برانگیز" },
+        { field:"quote", type:"string", required:false, where_fa:"نقل‌قول برجسته (blockquote) در انتهای متن", rules_fa:"یک جمله‌ی کوتاه تأمل‌برانگیز" },
         { field:"highlights", type:"array<{text:string, color:string, position?:number}>", required:false, where_fa:"«هایلایت‌های متن (جملات رنگی جلب‌توجه)» — همان بخش پنل مدیریت؛ هر کدام می‌تواند در هر جای محتوا قرار بگیرد: position:N → بعد از پاراگراف N و بدون position → گروه ثابت بالای متن", rules_fa:"رنگ پاستیلی انتخاب کن تا متن داخل با رنگ خوانا بماند؛ color فقط از پالت ۸تایی (تا ۲۴ مورد)" },
-        { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمهٔ «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
+        { field:"sourceUrl", type:"string(URL)", required:true, where_fa:"دکمه‌ی «منبع» در متا (اعتبار مقاله/سئو)", rules_fa:"از AAP CDC WHO NIDDK PubMed NIH — همیشه لازم" },
         { field:"author / authorEn", type:"string", required:true, where_fa:"نویسنده در متا", rules_fa:"نام تحریریه برند" },
         { field:"minutes", type:"number", required:false, where_fa:"مدت مطالعه", rules_fa:"عدد صحیح (۳ تا ۱۵)" },
         { field:"date / dateEn", type:"string", required:true, where_fa:"تاریخ در متا", rules_fa:"شمسی/میلادی" },
-        { field:"keywords", type:"string[]", required:false, where_fa:"جست‌و‌جو + سئو", rules_fa:"تا ۲۰ کلمهٔ کوتاه" },
+        { field:"keywords", type:"string[]", required:false, where_fa:"جست‌و‌جو + سئو", rules_fa:"تا ۲۰ کلمه‌ی کوتاه" },
                 { field:"slug", type:"string", required:false, where_fa:"آدرس دائمی این محتوا در /education/<slug> — برای سئو مهم است و لینک‌های داخلی هم به همین فرمت هستند", rules_fa:"کوتاه لاتین سیتا a-z0-9 و خط‌تیره، یکتا — اگر نگذاری خودکار از slugify(title) ساخته می‌شود" },
         { field:"categories / category", type:"string[]", required:false, where_fa:"فیلترهای صفحه", rules_fa:"فارسی: «اشتها», «رشد قد», «خواب», ..." },
         { field:"type", type:"string", required:true, where_fa:"قالب نمایش", rules_fa:"article" },
         { field:"order", type:"number", required:false, where_fa:"ترتیب نمایش", rules_fa:"number" },
         { field:"active / isVisible", type:"boolean", required:true, rules_fa:"true" },
       ],
-      highlight_palette_fa: ["#DCFCE7 (سبز ملایم → نکتهٔ کاربردی)","#FEF9C3 (زرد ملایم → توجه/یادآوری)","#DBEAFE (آبی ملایم → اطلاعهٔ علمی)","#FFE4E6 (صورتی ملایم → هشدار)","#FFEDD5 (نارنجی ملایم → هشدار ملایم)","#F3E8FF (بنفش ملایم → نکتهٔ تخصصی)","#CCFBF1 (فیروزه‌ای ملایم → اقدام سلامت)","#E2E8F0 (خاکستری ملایم → یادداشت)"],
+      highlight_palette_fa: ["#DCFCE7 (سبز ملایم → نکته‌ی کاربردی)","#FEF9C3 (زرد ملایم → توجه/یادآوری)","#DBEAFE (آبی ملایم → اطلاعه‌ی علمی)","#FFE4E6 (صورتی ملایم → هشدار)","#FFEDD5 (نارنجی ملایم → هشدار ملایم)","#F3E8FF (بنفش ملایم → نکته‌ی تخصصی)","#CCFBF1 (فیروزه‌ای ملایم → اقدام سلامت)","#E2E8F0 (خاکستری ملایم → یادداشت)"],
       dos_fa: [
         "همیشه منبع معتبر را در sourceUrl بگذار؛ در body فقط اسم منبع به‌صورت متن ذکر کن.",
         "تصویر جلد فقط در cover؛ تصاویر میانی فقط در images[] با position منطقی.",
         "جملات کلیدی را در highlights با رنگ مناسب ماهیت‌بندی کن (حداکثر ۳-۴).",
         "یک quote کوتاه و جذاب در فیلد quote بگذار تا در انتهای مقاله برجسته شود.",
         "slug یکتا (لاتین + خط تیره)، keywords ۶-۱۰ کلمه، desc ۲-۳ خطی جذاب.",
-        "لحن برند: آمیانهٔ مؤدبانه (میتونه، واسه، بچه، خونه)؛ قوانین کامل با get_policy.",
+        "لحن برند: آمیانه‌ی مؤدبانه (میتونه، واسه، بچه، خونه)؛ قوانین کامل با get_policy.",
         "کلمات کلیدی/عبارت‌های مهم در متن را به صفحات مرتبط لینک کن: [دوره‌های تخصصی](/courses) [از بخش آموزش‌ها](/education) [درخواست مشاوره رایگان](/form) [مراکز تماس](/contact).",
-        "هر مقاله اگر جملهٔ کلیدی/هشداری دارد ۱-۲ ردیف highlights هم بگذار؛۵۰۰ کاراکتر × حداکثر ۶ ؛ رنگ فقط از پالت ۸تایی.",
+        "هر مقاله اگر جمله‌ی کلیدی/هشداری دارد ۱-۲ ردیف highlights هم بگذار؛۵۰۰ کاراکتر × حداکثر ۶ ؛ رنگ فقط از پالت ۸تایی.",
       ],
       donts_fa: [
         "HTML (<img>, <p>, <div>, <a href>, <strong>, <br> و...) در هیچ فیلد نگذار.",
         "تصویر را در body با <img> نگذار.",
-        "«به پزشک مراجعه کنید» نگو — بگو «با واحد مشاورهٔ مجموعه در میان بگذار».",
+        "«به پزشک مراجعه کنید» نگو — بگو «با واحد مشاوره‌ی مجموعه در میان بگذار».",
         "دوز دقیق دارو/مکمل و ادعای درمان قطعی/۱۰۰٪ هیچ‌وقت ننویس.",
         "اطلاعات شخصی (موبایل/کارت) در متن نگذار.",
       ],
       example: {
         title:"کم‌اشتهایی واقعی یا دوره‌ای؟ راهنمای خانواده",
         desc:"اگه بچه‌ت غذا را نمی‌خوره، اول صبر و نظم لازمه…",
-        body:"پاراگراف اول…\\n\\n**نکتهٔ مهم:** …\\n\\nپاراگراف دوم…",
+        body:"پاراگراف اول…\\n\\n**نکته‌ی مهم:** …\\n\\nپاراگراف دوم…",
         cover:"https://i.imageupload.app/abcd1234.jpeg",
-        images:[{ url:"https://i.imageupload.app/xyz567.jpeg", position:0, alt:"مهمان سفرهٔ خانه" },{ url:"https://i.imageupload.app/qrs890.jpeg", position:2 }],
-        quote:"سفرهٔ آرام، کلید خوش‌اشتهایی بچه است.",
+        images:[{ url:"https://i.imageupload.app/xyz567.jpeg", position:0, alt:"مهمان سفره‌ی خانه" },{ url:"https://i.imageupload.app/qrs890.jpeg", position:2 }],
+        quote:"سفره‌ی آرام، کلید خوش‌اشتهایی بچه است.",
         highlights:[{ text:"یادداشت: لرزش اشتها در دو سه روز طبیعیه.", color:"#DCFCE7" },{ text:"هشدار: وزن‌کم‌کردن شدید یا بی‌حالی = فوراً با مشاوره تماس.", color:"#FEF9C3" }],
         sourceUrl:"https://www.healthychildren.org/English/ages-stages/toddler/nutrition/Pages/default.aspx",
         slug:"low-appetite-or-phase",
@@ -1377,14 +1377,14 @@ serve(async (req)=>{
       },
     };
     const faqSchema = {
-      display_fa: "در صفحهٔ «سوالات متداول» (/faq) هم‌راستای FAQPage JSON-LD گوگل نمایش داده می‌شود؛ create_faq مستقیم در همان‌جا می‌نشیند.",
+      display_fa: "در صفحه‌ی «سوالات متداول» (/faq) هم‌راستای FAQPage JSON-LD گوگل نمایش داده می‌شود؛ create_faq مستقیم در همان‌جا می‌نشیند.",
       renderer_rules_fa: [
         "متن ساده (بدون HTML)؛ نشانه‌گذاری ساده مجاز: **بولد** *کج* __زیرخط__ و لینک داخلی [متن](/education/slug).",
         "لینک‌های داخلی مجاز: /education /education/<slug> /courses /products /faq /form /experience /about /contact.",
       ],
       fields: [
         { field:"question", type:"string", required:true, rules_fa:"تا ۱۰۰۰ کاراکتر" },
-        { field:"answer", type:"string", required:true, rules_fa:"تا ۴۰۰۰ کاراکتر؛ ۲–۴ خط پاسخ مستقیم + یک لینک داخلی به مقالهٔ مرتبط توصیه می‌شود" },
+        { field:"answer", type:"string", required:true, rules_fa:"تا ۴۰۰۰ کاراکتر؛ ۲–۴ خط پاسخ مستقیم + یک لینک داخلی به مقاله‌ی مرتبط توصیه می‌شود" },
         { field:"questionEn / answerEn", type:"string", required:false, where_fa:"در update_faq قابل تکمیل" },
         { field:"placements", type:"string[]", required:false, rules_fa:"پیش‌فرض ['faq'] — مجاز: faq · home · education" },
         { field:"active", type:"boolean", required:false },
@@ -1395,7 +1395,7 @@ serve(async (req)=>{
       dos_fa: [
         "پاسخ را خودکفا بنویس (خواننده بدون ورود به مقاله هم جواب بگیرد) و به یک لینک داخلی مرتبط ختم کن.",
         "۱۰ تا ۱۴ سؤال واقعیِ والدین (هم‌راستای کلمات کلیدی سئو: اشتها، خواب، قد، یبوست، آب، میان‌وعده، مکمل).",
-        "لحن برند: آمیانهٔ مؤدبانه؛ قوانین کامل با get_policy.",
+        "لحن برند: آمیانه‌ی مؤدبانه؛ قوانین کامل با get_policy.",
       ],
       donts_fa: [
         "ارجاع به پزشک/کلینیک، تجویز دوز دارو/مکمل، ادعای درمان قطعی.",
@@ -1405,14 +1405,14 @@ serve(async (req)=>{
     return ok({
       resource: res,
       schema: res.includes("edu") || res === "article" ? educationSchema
-            : (res.includes("faq") ? faqSchema : { generic_note_fa:"همین قواعد متنِ ساده + نشانه‌گذاری در همهٔ بخش‌ها؛ برای education اکشن را مجدد با resource:'education' فراخوانی کن." }),
+            : (res.includes("faq") ? faqSchema : { generic_note_fa:"همین قواعد متنِ ساده + نشانه‌گذاری در همه‌ی بخش‌ها؛ برای education اکشن را مجدد با resource:'education' فراخوانی کن." }),
       brand: BRAND,
       payload_shapes_fa: "فیلدها هم صاف در ریشه هم داخل آبجکت به نام ریسورس (مثل {\"education\":{...}}) پذیرفته می‌شوند؛ id در update/delete در ریشه یا داخل آبجکت.",
-      note_fa: "قبل از create/update، دادهٔ قدیمی همان بخش را با list_ بخوان و لحن/ساختار را مطابق بکن.",
+      note_fa: "قبل از create/update، داده‌ی قدیمی همان بخش را با list_ بخوان و لحن/ساختار را مطابق بکن.",
     }, origin);
   }
 
-  // خودشناسی کلید — برای همهٔ کلیدهای معتبر (خواندنی، بدون نیاز به اسکوپ)
+  // خودشناسی کلید — برای همه‌ی کلیدهای معتبر (خواندنی، بدون نیاز به اسکوپ)
   if (action === "whoami" || action === "capabilities" || action === "describe" || action === "me") {
     const caps = computeCapabilities(apiKey.scopes || []);
     const summary = keyScopeSummaryFa(apiKey.scopes || []);
@@ -1438,10 +1438,10 @@ serve(async (req)=>{
       bulk_actions: caps.groups.flatMap((g:any)=>[`bulk_create_${g.resource}`,`bulk_update_${g.resource}`,`bulk_delete_${g.resource}`]),
       payload_shapes_fa: "فیلدها هم صاف در ریشه هم داخل آبجکت به نام ریسورس پذیرفته می‌شوند؛ id در update/delete در ریشه یا داخل همان آبجکت. خطاها expected_example/received_top_level_keys را برمی‌گردانند.",
       faq_destination_fa: "create_faq به‌صورت پیش‌فرض با placements=['faq'] در «سوالات متداول» (/faq) نمایش داده می‌شود. برای اسکیمای کامل هر ریسورس: action=describe_resource + resource.",
-      schema_hint_fa: "قبل از نوشتن مقالهٔ آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
+      schema_hint_fa: "قبل از نوشتن مقاله‌ی آموزش (یا هر بخش دیگر)، action=describe_resource با body={resource:'education'} را بزن — شمای فیلدهای cover/images/highlights/sourceUrl/quote را با مثال برمی‌گرداند و از HTML بودن متن جلوگیری می‌کند.",
       inline_markup_note_fa: "متن‌ها ساده بنویس (بدون HTML): **بولد/کلفت** *کج/ایتالیک* __زیرخط__ [لینک خارجی](https://...) [لینک داخلی](/form)/[متن](/courses)/[متن](/education) — برای جزئیات عکس/هایلایت/صفحات داخلی قبل از نوشتن حتماً describe_resource را بخوان.",
-      seo_note_fa: "هر محتوا (آموزش/دوره/محصول، نه نظرات و تجربه والدین و مجوزها) صفحهٔ دائمی قابل‌گوگل دارد: /education/<slug> ، /courses/<slug> ، /products/<slug> — اگر slug صریح لاتین کوتاه انتخاب کنی، لینک‌های سئویی بهتر می‌شوند؛ اگر نگذاری خودکار از عنوان ساخته می‌شود.",
-      seo_ssr_note_fa: "صفحهٔ دائمی هر محتوای آموزشی (/education/<slug>) دو نسخه دارد: برای کاربران — نسخهٔ کاملاً تعاملی داخل سایت؛ برای ربات‌های جست‌وجوگر — HTML کاملِ سِمَت‌سرور با title/description/canonical/OG و JSON-LD + متن کامل مقاله (بر رندر کردن JS نیازی نیست). پس متن مقاله را کامل و کلیدواژه‌ها را دقیق بنویس؛ گوگل مستقیماً همین HTML را می‌خواند.",
+      seo_note_fa: "هر محتوا (آموزش/دوره/محصول، نه نظرات و تجربه والدین و مجوزها) صفحه‌ی دائمی قابل‌گوگل دارد: /education/<slug> ، /courses/<slug> ، /products/<slug> — اگر slug صریح لاتین کوتاه انتخاب کنی، لینک‌های سئویی بهتر می‌شوند؛ اگر نگذاری خودکار از عنوان ساخته می‌شود.",
+      seo_ssr_note_fa: "صفحه‌ی دائمی هر محتوای آموزشی (/education/<slug>) دو نسخه دارد: برای کاربران — نسخه‌ی کاملاً تعاملی داخل سایت؛ برای ربات‌های جست‌وجوگر — HTML کاملِ سِمَت‌سرور با title/description/canonical/OG و JSON-LD + متن کامل مقاله (بر رندر کردن JS نیازی نیست). پس متن مقاله را کامل و کلیدواژه‌ها را دقیق بنویس؛ گوگل مستقیماً همین HTML را می‌خواند.",
     }, origin);
   }
 
@@ -1450,7 +1450,7 @@ serve(async (req)=>{
     return ok({ policy: policySummary(), api_version: 1 }, origin);
   }
 
-  // ─── لایهٔ اجباری قوانین محتوا (قبل از هر نوع handler) ───
+  // ─── لایه‌ی اجباری قوانین محتوا (قبل از هر نوع handler) ───
   const isWriteAction = action.startsWith("create_") || action.startsWith("update_") ||
     action.startsWith("set_") || action.startsWith("bulk_create_") || action.startsWith("bulk_update_");
   if (isWriteAction) {
@@ -1633,7 +1633,7 @@ serve(async (req)=>{
 
     // Single operations with approval check for delete/edit >1? For single, count=1 so no approval needed, but we still use wrapper for consistency
     const handler = HANDLERS[action];
-    if (!handler) return err(`action نامعتبر: ${action}`, origin, 400, { hint_fa:"برای دیدن اکشن‌های در دسترس با کلیدت، action را whoami بگذار. راهنمای کامل: ریشهٔ همین تابع را GET کن.", hint_en:"Unknown action. Call action=whoami (with your key) or GET this endpoint for the guide + action catalog." });
+    if (!handler) return err(`action نامعتبر: ${action}`, origin, 400, { hint_fa:"برای دیدن اکشن‌های در دسترس با کلیدت، action را whoami بگذار. راهنمای کامل: ریشه‌ی همین تابع را GET کن.", hint_en:"Unknown action. Call action=whoami (with your key) or GET this endpoint for the guide + action catalog." });
 
     // Determine operation type for single
     let opType: "delete"|"edit"|"add" = "edit";

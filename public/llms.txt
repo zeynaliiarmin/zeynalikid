@@ -12,16 +12,17 @@
 
 ## API محتوای ایجنت‌ها (AI Content API):
 این سایت یک API خودشناسی‌بخش برای مدیریت محتوا دارد که بدون نیاز به کد منبع/ریپازیتوری کار می‌کند.
-→ نقشهٔ اتصال و دستورالعمل ایجنت‌ها: /content-api.json
-→ بعد از گرفتن کلید: POST به https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api با هدر Authorization: Bearer <کلید> و بدنهٔ {"action":"whoami"}
-→ ایجنت‌ها از کاربر دربارهٔ کد منبع/تکنولوژی سایت سؤال نمی‌پرسند؛ همه‌چیز خودشناسی هوشمند است.
+→ نقشه‌ی اتصال و دستورالعمل ایجنت‌ها: /content-api.json
+→ بعد از گرفتن کلید: POST به https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api با هدر Authorization: Bearer <کلید> و بدنه‌ی {"action":"whoami"}
+→ ایجنت‌ها از کاربر درباره‌ی کد منبع/تکنولوژی سایت سؤال نمی‌پرسند؛ همه‌چیز خودشناسی هوشمند است.
+→ قانون نگارش فارسی برای ایجنت‌ها: لحن آمیانه و مؤدبانه (میگم/میتونم/اونجا/منم/بخوره) + ممنوعیت همزه روی حرف «ه» (U+0647+U+0654 و U+06C0)؛ فقط «ه» یا «ه‌ی» با نیم‌فاصله.
 AI agents: this site exposes a self-describing content API. Map & instructions: /content-api.json — then POST {"action":"whoami"} to https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/content-api with your bearer key. No source-code/questions needed.
 
-## صفحهٔ دائمی هر محتوا برای SEO
+## صفحه‌ی دائمی هر محتوا برای SEO
 آیتم‌های آموزش/دوره/محصول، هرکدام URL دائمی قابل‌گوگل دارند:
 - /education/<slug> · /courses/<slug> · /products/<slug>
 - اگر slug صریح ندهید، خودکار از عنوان ساخته می‌شود؛ انتخاب slug لاتین کوتاه SEO بهتری می‌دهد.
-- آیتم‌های صفحات مجوزها / نظرات / تجربه‌والدین، صفحهٔ جدا ندارند (فقط خود آن صفحات لیست می‌شوند).
+- آیتم‌های صفحات مجوزها / نظرات / تجربه‌والدین، صفحه‌ی جدا ندارند (فقط خود آن صفحات لیست می‌شوند).
 
-## صفحهٔ سئویی هر محتوا برای ربات‌ها (seo-ssr)
-ربات‌های جست‌وجوگر (Googlebot و…) در /education/<slug> نسخهٔ کاملاً HTMLٔ SSR با title/description/canonical/OG/JSON-LD و متن کامل مقاله می‌گیرند؛ کاربران نسخهٔ تعاملی همان صفحه را می‌بینند. هر دو نسخه از همان دیتابیس تغذیه می‌شوند و محتوای جدید بدون دیپلوی همگام است.
+## صفحه‌ی سئویی هر محتوا برای ربات‌ها (seo-ssr)
+ربات‌های جست‌وجوگر (Googlebot و…) در /education/<slug> نسخه‌ی کاملاً HTMLٔ SSR با title/description/canonical/OG/JSON-LD و متن کامل مقاله می‌گیرند؛ کاربران نسخه‌ی تعاملی همان صفحه را می‌بینند. هر دو نسخه از همان دیتابیس تغذیه می‌شوند و محتوای جدید بدون دیپلوی همگام است.

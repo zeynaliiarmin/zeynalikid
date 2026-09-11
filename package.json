@@ -21,8 +21,9 @@
     "test:scroll-restoration": "node tests/scroll-restoration-ui.mjs",
     "build:ssg": "vite build --ssr src/entry-server.tsx --outDir .ssr && node scripts/prerender.mjs && npm run test:ssg",
     "test:ssg": "node tests/ssg-output.mjs",
-    "test:security": "node tests/security-contracts.mjs && node tests/referral-routing.test.mjs && node tests/operations-contracts.mjs && node tests/assistant-contracts.mjs && npm run test:assistant-curation && node tests/entry-mode-contracts.mjs && node tests/ui-polish-contracts.mjs",
+    "test:security": "node tests/security-contracts.mjs && node tests/referral-routing.test.mjs && node tests/operations-contracts.mjs && node tests/assistant-contracts.mjs && npm run test:assistant-curation && node tests/entry-mode-contracts.mjs && node tests/ui-polish-contracts.mjs && npm run test:content-policy",
     "test:assistant-curation": "esbuild tests/assistant-curation.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-assistant-curation.test.mjs && node /tmp/zeynalikid-assistant-curation.test.mjs",
+    "test:content-policy": "esbuild tests/content-policy-heh.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-content-policy-heh.test.mjs && node /tmp/zeynalikid-content-policy-heh.test.mjs",
     "test:entry-mode:browser": "node tests/entry-mode-routing-ui.mjs",
     "test:assistant-unanswered:browser": "node tests/assistant-unanswered-ui.mjs"
   },
