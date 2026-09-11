@@ -47,14 +47,23 @@ const STATIC_PAGES: Array<[string, string, string]> = [
 ];
 
 async function loadSettings(): Promise<Record<string, any>> {
-  const r = await fetch(SUPABASE_FN, { headers: { 'Accept': 'application/json', 'Origin': SITE_BASE }, signal: AbortSignal.timeout(9000) });
-  const d: any = await r.json();
-  return (d?.settings && typeof d.settings === 'object') ? d.settings : {};
+  // تلاش دوباره در اجرای سرد سرورلس — بدون Origin (رفتار مستند public-settings مثل education-ssr)
+  let last: unknown = null;
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await fetch(SUPABASE_FN, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(6000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d: any = await r.json();
+      if (d?.settings && typeof d.settings === 'object') return d.settings;
+      throw new Error('bad payload');
+    } catch (e) { last = e; }
+  }
+  throw last;
 }
 
 export default async function handler(_req: any, res: any) {
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+  res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=1800, stale-while-revalidate=3600');
   try {
     const settings = await loadSettings();
     const today = new Date().toISOString().slice(0, 10);
