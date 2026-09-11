@@ -56,46 +56,31 @@ function scopeLabelsFa(scopes: string[]): string[] {
 function buildAgentOnboardingBlock(scopes: string[], keyPlain?: string): string {
   const base = (typeof window !== 'undefined' ? (import.meta.env.VITE_SUPABASE_URL||'') : '').replace(/\/$/,'');
   const url = base + '/functions/v1/content-api';
-  const labelsFa = scopeLabelsFa(scopes);
-  const hasAll = (scopes||[]).includes('all');
-  const scopeLine = hasAll
-    ? 'همهٔ بخش‌ها (نظرات، سوالات متداول، دوره‌ها، محصولات، تخفیف‌ها، تگ‌ها، منتخب، مقاله/ویدیو/پادکست، استوری/هایلایت، تجربه والدین، چندرسانه‌ای، بنرها، سئو، آموزش‌ها)'
-    : labelsFa.join('، ');
-  return [
-    '🔌 راهنمای اتصال — content-api سایت شما برای ایجنت هوش مصنوعی',
+    return [
+    '🔌 راهنمای اتصال — content-api سایت زینالی‌کید',
     '',
     'این کلید فقط مخصوص همین API محتواست؛ رمز پنل، کلید Stripe/Paystack و هر سرویس دیگری نیست.',
     '',
-    '⚠️ برای ایجنت: از من دربارهٔ کد منبع، تکنولوژی، ریپازیتوری یا میزبانی این سایت سؤال نپرس — هیچ‌کدام برای کار با این API لازم نیست. فقط مرحله‌به‌مرحله بالا وصل شو، خلاصهٔ دسترسی‌ات را برایم چاپ کن و برای دستور محتوایی منتظر بمان. کلید را در env محلی نگه دار و هرگز در کد سمت کاربر (فرانت‌اند) قرار نده.',
-    '',
     'Endpoint: ' + url,
-    'کلید: ' + (keyPlain || '<کلید خودت را اینجا بنویس>'),
+    'کلید: ' + (keyPlain || '<کلید خودت را اینجا بنویس (با پیشوند zlk_live_)>'),
     'روش تماس: POST با بدنهٔ JSON — پارامتر action الزامی است.',
-    'احراز: هدر «Authorization: Bearer <کلید>» (یا هدر x-api-key یا فیلد api_key در بدنه).',
+    'احراز: هدر Authorization: Bearer <کلید> (یا هدر x-api-key یا فیلد api_key در بدنه).',
     '',
-    'قدم ۱) {"action":"whoami"} را با کلید صدا بزن — سرویس می‌گوید کلید چیست و به چه بخش‌هایی دقیقاً دسترسی دارد و چه اکشن‌هایی مجاز است.',
-    'قدم ۲) {"action":"get_policy"} را بخوان — قوانین محتوای برند روی همهٔ نوشته‌ها اجباری است؛ نقض = ارور 422 بدون ذخیره.',
+    'قدم ۱) {"action":"whoami"} — ببین به چه بخش‌هایی دسترسی داری (اکشن‌های bulk_* هم در whoami.bulk_actions فهرست شده‌اند).',
+    'قدم ۲) {"action":"get_policy"} — قوانین محتوا؛ نقض = 422 بدون ذخیره.',
+    'قدم ۳) {"action":"describe_resource","resource":"faqs"} یا "education" — اسکیمای دقیق فیلدها + مثال آماده.',
     '',
-    'قدم ۳) قبل از نوشتن در هر بخش، اسکیمای دقیق همان بخش را ببر: {"action":"describe_resource","resource":"faqs"} یا ...{"resource":"education"} — فیلدهای لازم/اختیاری، مثال آماده و قواعد نشانه‌گذاری متن را می‌دهد؛ این مرحله از خطای 400/422 جلوگیری می‌کند.',
+    'شکل داده:',
+    '• فیلدهای create/update را هم صاف در ریشه می‌توانی بفرستی، هم داخل آبجکت به نام ریسورس (مثل {"faq":{...}} یا {"education":{...}}) — هر دو یکسان‌اند.',
+    '• در update/delete، id در ریشه یا داخل همان آبجکت؛ خطای 400 همیشه همراه expected_example و received_top_level_keys برمی‌گردد.',
     '',
-    'شکل داده (ساده‌تر از قبل — بدون اختلاف بین اکشن‌ها):',
-    '• فیلدهای create/update را هر دو شکل می‌توانی بفرستی: صاف در ریشهٔ JSON، یا داخل یک آبجکت به نام ریسورس (مثل {"faq":{...}} یا {"education":{...}}) — هر دو یکسان پذیرفته می‌شوند.',
-    '• در update/delete، id را هم در ریشه میدهی، هم داخل همان آبجکت ریسورس.',
-    '• خطای 400 هرگز حدس‌زدنی نیست: همراه received_top_level_keys و expected_example پاسخ می‌دهد.',
-    '• create_faq پیش‌فرض در «سوالات متداول» (/faq — با JSON-LD FAQPage برای گوگل) می‌نشیند. placements اختیاری مجاز: faq (پیش‌فرض)/home/education.',
-    '',
-    'دسترسی‌های این کلید: ' + scopeLine,
-    '(مشاهده، افزودن، ویرایش و حذف در بخش‌های مجاز؛ بنرها و سئو فقط مشاهده/ویرایش)',
-    '',
-    'الگوی اکشن‌ها: list_<resource> get_<resource> create_<resource> update_<resource> delete_<resource>',
-    'کار دسته‌جمعی: bulk_create_/bulk_update_/bulk_delete_ + <resource> (حذف گروهی بالای ۲ مورد نیازمند تأیید صاحب سایت در پنل است؛ بعد با execute_pending اجرا کن).',
-    'مثال: {"action":"list_education"}',
-    '',
-    'برای کسب راهنمای کامل، همین Endpoint را با مرورگر GET کن (بدون کلید).',
-    'نقشهٔ اتصال روی خود سایت: /content-api.json — همین را هم لازم نیست به ایجنت توضیح بده؛ سایت خودش به عامل‌ها می‌گوید.',
+    'نکته‌ها:',
+    '• create_faq پیش‌فرض در صفحهٔ سوالات متداول (/faq) با JSON-LD گوگل می‌نشیند؛ اختیاری: placements=["home"] یا ["education"].',
+    '• create_education در بخش آموزش‌ها و صفحه تک‌محتوای /education/<slug> با SSR برای ربات‌ها.',
+    '• bulk_create_/bulk_update_/bulk_delete_ + <resource>؛ حذف گروهی بالای ۲ مورد به تأیید در پنل امنیت می‌خورد و بعد execute_pending.',
+    '• راهنمای کامل بدون کلید: همین Endpoint را با مرورگر GET کن. نقشهٔ خودشناسی: /content-api.json.',
   ].join('\n');
 }
-
 function formatDateFa(iso?: string | null): string {
   if (!iso) return 'بدون انقضا';
   try {
