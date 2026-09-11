@@ -63,7 +63,8 @@ async function loadSettings(): Promise<Record<string, any>> {
 
 export default async function handler(_req: any, res: any) {
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=1800, stale-while-revalidate=3600');
+  // بدون کشِ لبه (s-maxage=0): سایتمپ باید همیشه تازه و کامل باشد؛ هزینهٔ تولید ناچیز است (۱ فتچ داخلی)
+  res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=0, must-revalidate');
   try {
     const settings = await loadSettings();
     const today = new Date().toISOString().slice(0, 10);
