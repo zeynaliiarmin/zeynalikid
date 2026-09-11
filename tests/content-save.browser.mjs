@@ -124,7 +124,7 @@ async function publicEducationCardState(itemTitle) {
     const card = [...document.querySelectorAll('.zke-card')].find((element) => element.textContent?.includes(title));
     if (!(card instanceof HTMLElement)) throw new Error(`public education card not found: ${title}`);
     return {
-      cover: card.querySelector('.zke-cover') instanceof HTMLButtonElement,
+      cover: ['HTMLAnchorElement','HTMLButtonElement'].includes(card.querySelector('.zke-cover')?.constructor?.name || ''),
       iframeCount: card.querySelectorAll('iframe').length,
       videoCount: card.querySelectorAll('video').length,
       audioCount: card.querySelectorAll('audio').length,
@@ -138,7 +138,7 @@ async function openPublicEducationItem(itemTitle) {
   await page.evaluate((title) => {
     const card = [...document.querySelectorAll('.zke-card')].find((element) => element.textContent?.includes(title));
     const button = card?.querySelector('.zke-cover');
-    if (!(button instanceof HTMLButtonElement)) throw new Error(`public education cover not found: ${title}`);
+    if (!(button instanceof HTMLAnchorElement || button instanceof HTMLButtonElement)) throw new Error(`public education cover not found: ${title}`);
     button.click();
   }, itemTitle);
   await page.waitForSelector('[role="dialog"]', { timeout: 15_000 });

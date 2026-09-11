@@ -596,7 +596,9 @@ const page=<AppRoutes app={app} ui={uiValue} flow={flowValue} admin={adminValue}
  if(!referralReady && view!=='admin' && view!=='admin-login'){
    return <div style={{minHeight:'100dvh',background:'var(--zk-bg, #FDF8F3)'}}/>;
  }
- const canonicalPath=location.pathname==='/'?'/':location.pathname.replace(/\/+$/,'');
+ // /consultation نام مستعار /form است — canonical هر دو روی /form قفل می‌شود تا یک URL واحد در نتایج جستجو باشد.
+ const rawPath=location.pathname==='/'?'/':location.pathname.replace(/\/+$/,'');
+ const canonicalPath=rawPath==='/consultation'?'/form':rawPath;
  const canonicalOrigin=typeof window!=='undefined'?window.location.origin:PUBLIC_SITE_URL;
  const canonicalUrl=`${canonicalOrigin}${canonicalPath}`;
  // Build hreflang alternates using ?lang= query param (low-impact; existing LS state still works,

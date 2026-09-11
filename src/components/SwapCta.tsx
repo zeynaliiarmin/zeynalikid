@@ -31,10 +31,12 @@ interface SwapCtaProps {
   style?: React.CSSProperties;
   type?: 'button' | 'submit';
   ariaLabel?: string;
+  /** وقتی ست باشد، ریشه به‌صورت <a href> رندر می‌شود (لینک واقعی برای خزنده‌ها؛ کلیک کاربر همان onClick) */
+  href?: string;
 }
 
-const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapCta(
-  { variant = 'consult', mode = 'primary', labelA, labelB, iconB, onClick, pulse = false, id, className = '', style, type = 'button', ariaLabel },
+const SwapCta = React.forwardRef<HTMLElement, SwapCtaProps>(function SwapCta(
+  { variant = 'consult', mode = 'primary', labelA, labelB, iconB, onClick, pulse = false, id, className = '', style, type = 'button', ariaLabel, href },
   ref,
 ) {
   const [swapped, setSwapped] = useState(false);
@@ -80,17 +82,37 @@ const SwapCta = React.forwardRef<HTMLButtonElement, SwapCtaProps>(function SwapC
     className,
   ].filter(Boolean).join(' ');
 
-  return (
-    <button ref={ref} id={id} type={type} onClick={onClick} className={cls} data-mode={mode} style={style} aria-label={ariaLabel || labelA}>
-      <span className="zk-swap-viewport" aria-hidden="true">
-        <span className="zk-swap-stack">
-          <span className="zk-swap-line">{labelA}</span>
-          <span className="zk-swap-line">
-            {iconB && <span className="zk-swap-ic">{iconB}</span>}
-            <span>{labelB}</span>
-          </span>
+  const inner = (
+    <span className="zk-swap-viewport" aria-hidden="true">
+      <span className="zk-swap-stack">
+        <span className="zk-swap-line">{labelA}</span>
+        <span className="zk-swap-line">
+          {iconB && <span className="zk-swap-ic">{iconB}</span>}
+          <span>{labelB}</span>
         </span>
       </span>
+    </span>
+  );
+  if (href) {
+    // نسخهٔ لینکی: خزنده‌ها href را دنبال می‌کنند؛ کاربر عادی همان رفتار onClick را می‌گیرد.
+    return (
+      <a
+        ref={ref as React.Ref<HTMLAnchorElement>}
+        id={id}
+        href={href}
+        onClick={(e) => { e.preventDefault(); onClick?.(); }}
+        className={cls}
+        data-mode={mode}
+        style={{ textDecoration: 'none', ...style }}
+        aria-label={ariaLabel || labelA}
+      >
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <button ref={ref as React.Ref<HTMLButtonElement>} id={id} type={type} onClick={onClick} className={cls} data-mode={mode} style={style} aria-label={ariaLabel || labelA}>
+      {inner}
     </button>
   );
 });

@@ -90,11 +90,11 @@
     },
     {
       "source": "/form",
-      "destination": "/spa.html"
+      "destination": "/form/index.html"
     },
     {
       "source": "/consultation",
-      "destination": "/spa.html"
+      "destination": "/consultation/index.html"
     },
     {
       "source": "/education/:slug",

@@ -12,6 +12,8 @@ const today = new Date().toISOString().slice(0, 10);
 // Per-route hints; any new SSG route automatically falls back to sensible defaults.
 const meta = {
   '/':         { changefreq: 'weekly',  priority: '1.0' },
+  '/form':     { changefreq: 'weekly',  priority: '0.9' },
+  '/consultation': { changefreq: 'weekly',  priority: '0.8' },
   '/courses':  { changefreq: 'weekly',  priority: '0.9' },
   '/products': { changefreq: 'weekly',  priority: '0.7' },
   '/privacy':  { changefreq: 'yearly',  priority: '0.5' },

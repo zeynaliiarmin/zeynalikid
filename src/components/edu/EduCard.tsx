@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { typeLabel, type EduItem } from './edu-data';
+import { seoKeyOf } from '../../lib/seo';
 import { TextIcon, VideoIcon, AudioIcon } from '../Icons';
 import CollapsibleCardText from '../CollapsibleCardText';
 import useMediaDuration from '../../hooks/useMediaDuration';
@@ -12,6 +13,8 @@ const Wave = () => (
 );
 
 export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; lang: string; onOpen: (it: EduItem) => void; views?: number }) {
+  // لینک واقعی <a href> برای خزنده‌ها (کلیک کاربر: همان رفتار مودال/.navigate، بدون redirect سخت)
+  const seoHref=`/education/${encodeURIComponent(seoKeyOf(item))}`;
   const en = lang === 'en';
   const isArticle = item.type === 'article' || item.type === 'text' || item.type === 'image';
   const badgeCls = isArticle ? 't-text' : item.type === 'video' ? 't-video' : 't-audio';
@@ -40,11 +43,11 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
   const coverFailed = !coverSrc;
   return (
     <article className="zke-card">
-      <button type="button" className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={() => onOpen(item)} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%' }}>
+      <a href={seoHref} className={`zke-cover${isImage ? ' zke-cover--image' : ''}`} onClick={(e) => { e.preventDefault(); onOpen(item); }} aria-label={`${typeLabel(item.type, lang)}: ${en ? item.titleEn : item.title}`} style={{ border: 0, padding: 0, cursor: 'pointer', width: '100%', display: 'block', textDecoration: 'none', color: 'inherit', fontFamily: 'inherit', background: 'none' }}>
         {coverSrc && !coverFailed ? <img src={coverSrc} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setCoverStage((s) => (s === 0 && item.cover && thumbFn ? 1 : 2))} style={isImage ? { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain' } : undefined} /> : <span className="zke-cover-ph"><Icon size={44} /></span>}
         <span className={`zke-badge ${badgeCls}`}><Icon size={12} /> {typeLabel(item.type, lang)}</span>
         {item.type === 'audio' && <Wave />}
-      </button>
+      </a>
       <div className="zke-body">
         <h3 className="zke-card-title">{en ? item.titleEn : item.title}</h3>
         <CollapsibleCardText
@@ -63,9 +66,9 @@ export default function EduCard({ item, lang, onOpen, views }: { item: EduItem; 
           <span>{duration}</span>
         </div>
         <div className="zke-card-cta">
-          <button type="button" className="zke-pillbtn" onClick={() => onOpen(item)}>{cta}
+          <a href={seoHref} className="zke-pillbtn" onClick={(e) => { e.preventDefault(); onOpen(item); }} style={{ textDecoration: 'none' }}>{cta}
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: en ? 'none' : 'scaleX(-1)' }}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
-          </button>
+          </a>
         </div>
       </div>
     </article>

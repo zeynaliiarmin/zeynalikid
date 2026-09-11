@@ -38,6 +38,7 @@ const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
 const routeNames={
  '/courses':'دوره‌ها','/experience':'تجربه والدین','/licenses':'مجوزها','/education':'آموزش والدین',
  '/about':'درباره ما','/faq':'سؤالات متداول','/contact':'ارتباط با ما','/products':'محصولات','/privacy':'حریم خصوصی',
+ '/form':'فرم مشاوره والدین','/consultation':'فرم مشاوره والدین',
 };
 const ldEscape=(s)=>s.replace(/</g,'\\u003c').replaceAll(String.fromCharCode(0x2028),'\\u2028').replaceAll(String.fromCharCode(0x2029),'\\u2029');
 function breadcrumbLd(route){

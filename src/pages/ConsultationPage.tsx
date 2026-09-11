@@ -11,7 +11,7 @@ import { isSupabaseConfigured, supabase, createSubmission, trackPageView } from 
 import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
-import { TRACKING_PREFIX } from '../config/project';
+import { TRACKING_PREFIX, PUBLIC_SITE_URL } from '../config/project';
 import { getUserSession, validateFullName, splitE164, setUserSession, type PortalSession } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
@@ -673,8 +673,21 @@ export default function ConsultationPage(){
   if (formView === 'form') return <><MemphisBg T={T} /><div style={{ ...S.page, position: 'relative' }}>
       <Helmet>
         <title>{`فرم مشاوره رشد و تغذیه کودک | ${brand}`}</title>
-        <meta name="description" content="فرم مشاوره تخصصی رشد قد، بهبود اشتها، تقویت هوش و تمرکز کودکان و نوجوانان" />
-        <meta name="keywords" content={`فرم مشاوره کودک, رشد قد, بهبود اشتها, تقویت هوش, ${brand}`} />
+        <meta name="description" content="درخواست مشاوره تخصصی رشد قد، بهبود اشتها، وزن‌گیری سالم و تمرکز کودکان ۲ تا ۱۷ سال؛ ثبت نام در کمتر از یک دقیقه و تماس سریع تیم مشاوره." />
+        <meta name="keywords" content={`فرم مشاوره کودک, مشاوره رشد قد کودک, مشاوره تغذیه کودک, بهبود اشتهای کودک, مشاوره رایگان والدین, ${brand}`} />
+        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`فرم مشاوره رشد و تغذیه کودک | ${brand}`} />
+        <meta property="og:description" content="درخواست مشاوره تخصصی رشد قد، بهبود اشتها، وزن‌گیری سالم و تمرکز کودکان ۲ تا ۱۷ سال؛ ثبت نام در کمتر از یک دقیقه." />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: 'فرم مشاوره رشد و تغذیه کودک',
+          description: 'درخواست مشاوره تخصصی رشد قد، بهبود اشتها، وزن‌گیری سالم و تمرکز کودکان ۲ تا ۱۷ سال.',
+          url: `${PUBLIC_SITE_URL}/form`,
+          inLanguage: 'fa',
+          isPartOf: { '@type': 'WebSite', name: brand, url: PUBLIC_SITE_URL },
+        })}</script>
       </Helmet>
       <style>{css}</style>
       <div style={{ ...S.card, marginTop: 0 }}>

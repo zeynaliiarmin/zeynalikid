@@ -52,10 +52,8 @@ const STATIC_PAGES: Array<[string, string, string]> = [
   ["/about", "0.6", "monthly"],
   ["/contact", "0.6", "monthly"],
   ["/privacy", "0.4", "yearly"],
-  ["/form", "0.8", "monthly"],
-  ["/consultation", "0.7", "monthly"],
-  ["/track", "0.3", "monthly"],
-  ["/growth", "0.5", "monthly"],
+  ["/form", "0.9", "weekly"],
+  ["/consultation", "0.8", "weekly"],
 ];
 
 Deno.serve(async () => {

@@ -7,7 +7,9 @@ for(const route of routes){
  const file=route==='/'?'dist/index.html':path.join('dist',route.slice(1),'index.html');
  const html=await readFile(file,'utf8');
  if(!html.includes('data-ssg="true"'))failures.push(`${route}: missing SSG marker`);
- const expected=`rel="canonical" href="${siteUrl}${route}"`;
+ // /consultation is an alias of /form — both pages consolidate onto one canonical (/form).
+ const canonicalPath='/consultation'===route?'/form':route;
+ const expected=`rel="canonical" href="${siteUrl}${canonicalPath}"`;
  if(!html.includes(expected))failures.push(`${route}: canonical mismatch`);
  const canonicalCount=(html.match(/rel="canonical"/g)||[]).length;
  if(canonicalCount!==1)failures.push(`${route}: expected one canonical, got ${canonicalCount}`);
