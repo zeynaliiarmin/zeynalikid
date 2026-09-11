@@ -121,7 +121,7 @@
     },
     {
       "source": "/sitemap.xml",
-      "destination": "https://kkdrvexwzuuumjezipnd.supabase.co/functions/v1/sitemap"
+      "destination": "/api/sitemap"
     },
     {
       "source": "/api/:path*",
