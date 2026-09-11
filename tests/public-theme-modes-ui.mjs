@@ -99,6 +99,13 @@ try{
   const url=request.url();
   if(blockAppScript&&(/\/src\/main\.tsx(?:\?|$)/.test(url)||/\/assets\/index-[^/]+\.js(?:\?|$)/.test(url)))return request.abort();
   const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
+  if(url.includes('/functions/v1/admin-session')){
+   if(request.method()==='OPTIONS')return request.respond({status:204,headers:cors,body:''});
+   // /desk/app validates the session server-side and fails closed, so the read-only preview
+   // must answer validate_session — otherwise the panel never mounts (same mock as the other
+   // admin browser tests, e.g. tests/reviews.browser.mjs).
+   return request.respond({status:200,headers:cors,contentType:'application/json',body:JSON.stringify({valid:true,ownerPhone:'***'})});
+  }
   if(url.includes('/functions/v1/admin-api')){
    if(request.method()==='OPTIONS')return request.respond({status:204,headers:cors,body:''});
    let body={};try{body=JSON.parse(request.postData()||'{}')}catch{}
@@ -172,7 +179,12 @@ try{
  await page.goto(`${base}/?test-hour=12&restore=1`,{waitUntil:'domcontentloaded',timeout:30000});await sleep(250);
  mockedMode='light';
  await setStorage(page,{'zk_personal_color_mode':'light','zk_theme':'classic','zk_public_theme_mode':'light','zk_admin_authed':'true','zk_admin_session_token':'test-session','zk_admin_login_at':String(Date.now())});
- await page.evaluate(()=>localStorage.setItem('zk_admin_login_at',String(Date.now())));
+ // setStorage() above clears sessionStorage on purpose, but since the XSS hardening the admin
+ // token lives in sessionStorage unless biometric trust was elected (pickStore in
+ // src/utils/adminSession.ts). Re-seed the session keys there — same approach as
+ // tests/reviews.browser.mjs — otherwise /desk/app bounces to the login page and the panel
+ // (and its .zkth-toggle) never mounts.
+ await page.evaluate(()=>{sessionStorage.setItem('zk_admin_session_token','test-session');sessionStorage.setItem('zk_admin_authed','true');sessionStorage.setItem('zk_admin_device_id','browser-test-device');localStorage.setItem('zk_admin_login_at',String(Date.now()))});
  await page.goto(`${base}/desk/app?test-hour=12`,{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForSelector('.zkth-toggle',{timeout:20000});
  await page.waitForFunction(()=>!document.querySelector('.zk-launch'),{timeout:20000});
