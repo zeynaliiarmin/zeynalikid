@@ -701,6 +701,9 @@ export default function ConsultationPage(){
           data-webmcp-version="1.0"
           itemScope
           itemType="https://schema.org/ContactForm"
+          // noValidate: ولیدیشن بومی مرورگر، onSubmit را بلوکه می‌کرد و خطاهای فارسیِ خودِ فرم
+          // (و حالت قرمزِ رضایت‌نامه) هرگز نمایش داده نمی‌شدند. requiredها برای AI/فرم‌خوان‌ها می‌مانند.
+          noValidate
           onSubmit={(e) => { e.preventDefault(); doSubmit(); }}
         >
         {/* Specialist photo + title */}

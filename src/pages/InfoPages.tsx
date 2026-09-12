@@ -182,22 +182,36 @@ export function EducationPage(){
  const [realViews,setRealViews]=useState<Record<string, number>>(() => loadRealViews());
  const viewsOf = (item: any) => totalViews(item, realViews[String(item?.id)] || 0);
  // آدرس دائمی هر محتوا (سئو): /education/:slug — باز شدن/بسته شدن همگام با URL
+ // وقتی آدرسِ سئویی با navigate (push) باز می‌شود، بستنِ جزئیات باید همان entry را pop کند؛
+ // وگرنه اسکرولِ صفحهٔ فهرست (که روی entry قبلی ذخیره شده) باز نمی‌گردد.
+ const eduDetailPushedRef=useRef(false);
  const openEduItem=(it:EduItem, opts?:{nav?:boolean})=>{
   setOpenItem(it);
   setRealViews((prev)=>recordView(prev, String(it?.id)));
   try{window.scrollTo({top:0,behavior:'smooth'})}catch{}
   if(opts?.nav!==false){
     const key=seoKeyOf(it as any);
-    if(key) navigate(`/education/${encodeURIComponent(key)}`);
+    if(key){ navigate(`/education/${encodeURIComponent(key)}`); eduDetailPushedRef.current=true; }
   }
  };
- const closeEduItem=()=>{ navigate('/education', { replace: true }); setOpenItem(null); };
+ const closeEduItem=()=>{
+  setOpenItem(null);
+  if(eduDetailPushedRef.current){
+   eduDetailPushedRef.current=false;
+   try{ window.history.back(); }catch{ navigate('/education', { replace: true }); }
+  } else {
+   navigate('/education', { replace: true });
+  }
+ };
  const mediaVpnOn=useVpn(cfg);
  const navigate = useNavigate();
  const { slug: eduSlug } = useParams();
  const location = useLocation();
  // ورود مستقیم با لینک دائمی (/education/:slug از گوگل/اشتراک) → صفحهٔ تمام‌صفحهٔ تک‌محتوا به‌جای مودال
- const [directEntry] = useState(() => { try { return (location as any).key === 'default'; } catch { return true; } });
+ // ورود مستقیم فقط وقتی است که از ابتدا روی آدرسِ تک‌محتوا (/education/:slug) باز شده باشیم.
+ // اگر صرفاً «بارگذاری تازه» ملاک باشد، کلیک روی کارت هم حالت تمام‌صفحه را فعال می‌کند و
+ // مودالِ مقاله دیگر با دکمهٔ بازگشت بسته نمی‌شود.
+ const [directEntry] = useState(() => { try { return (location as any).key === 'default' && Boolean(eduSlug); } catch { return false; } });
  const real=getMediaItemsForDestination(cfg,'education').map((item:any)=>toEducationMediaItem(item,mediaVpnOn));
  const usingSamples=real.length===0;
  // Backfill default author/source for any legacy education item missing author (E-E-A-T).

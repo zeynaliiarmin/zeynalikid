@@ -5,6 +5,10 @@ import puppeteer from 'puppeteer';
 const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:4173';
 const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// بازگرداندنِ موقعیتِ اسکرول بعد از Back تا ۱۲۸۰ms ادامه دارد (useRouteScrollRestoration:
+// RESTORE_DELAYS + 80). تا پایانِ آن پنجره، اسکرولِ برنامه‌ای ذخیره نمی‌شود و با مقدارِ
+// قبلی بازنویسی می‌شود؛ پس قبل از اسکرولِ بعدی باید این پنجره بسته شده باشد.
+const RESTORE_SETTLE = 1400;
 const failures = [];
 
 function assert(condition, message, detail) {
@@ -119,7 +123,7 @@ try {
   assertTop(await position(page), 'hamburger Link');
   await page.goBack({ waitUntil: 'domcontentloaded', timeout: 20_000 });
   await page.waitForFunction(() => window.location.pathname === '/education', { timeout: 10_000 });
-  await sleep(520);
+  await sleep(RESTORE_SETTLE);
   assertRestored(await position(page), browserBackY, 'browser/device Back');
 
   // The shared visible project return control must follow the same history entry.
@@ -129,7 +133,7 @@ try {
   await page.waitForSelector('[data-testid="public-back"]', { timeout: 10_000 });
   await page.click('[data-testid="public-back"]');
   await page.waitForFunction(() => window.location.pathname === '/education', { timeout: 10_000 });
-  await sleep(520);
+  await sleep(RESTORE_SETTLE);
   assertRestored(await position(page), projectBackY, 'project Back control');
 
   // A direct visit must not use the browser's unrelated previous document. The
@@ -151,7 +155,7 @@ try {
   assertTop(await position(page), 'hamburger setView action');
   await page.goBack({ waitUntil: 'domcontentloaded', timeout: 20_000 });
   await page.waitForFunction(() => window.location.pathname === '/education', { timeout: 10_000 });
-  await sleep(520);
+  await sleep(RESTORE_SETTLE);
   assertRestored(await position(page), setViewBackY, 'setView browser Back');
 
   // Native in-page detail history entries keep the source coordinate too. Education
@@ -160,8 +164,9 @@ try {
   await openInitialEducation(page);
   const detailY = await setSourceScroll(page, 360);
   const opened = await page.evaluate(() => {
-    const button = [...document.querySelectorAll('button')].find((item) => (item.textContent || '').trim() === 'مشاهده جزئیات');
-    if (!(button instanceof HTMLButtonElement)) return false;
+    // CTA کارت آموزش، لینک سئویی <a class="zke-pillbtn"> است (نه <button>) — هر دو پذیرفته می‌شوند.
+    const button = [...document.querySelectorAll('button, a')].find((item) => (item.textContent || '').trim() === 'مشاهده جزئیات');
+    if (!(button instanceof HTMLElement)) return false;
     button.click();
     return true;
   });
@@ -171,7 +176,7 @@ try {
   assertTop(await position(page), 'education detail');
   await page.click('[data-testid="public-education-detail-back"]');
   await page.waitForFunction(() => !document.querySelector('[data-testid="public-education-detail-back"]'), { timeout: 10_000 });
-  await sleep(520);
+  await sleep(RESTORE_SETTLE);
   assertRestored(await position(page), detailY, 'in-page education detail Back');
 } catch (error) {
   failures.push(`browser scenario crashed\n${String(error?.stack || error)}`);

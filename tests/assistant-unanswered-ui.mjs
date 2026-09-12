@@ -19,8 +19,9 @@ try {
   await page.setBypassServiceWorker(true);
   await page.evaluateOnNewDocument(() => {
     localStorage.clear(); sessionStorage.clear();
-    localStorage.setItem('zk_admin_authed', 'true');
-    localStorage.setItem('zk_admin_session_token', 'browser-test-session');
+    // نشست ادمین در sessionStorage نگه داشته می‌شود (تا توکن در حافظهٔ بلندمدت نماند).
+    sessionStorage.setItem('zk_admin_authed', 'true');
+    sessionStorage.setItem('zk_admin_session_token', 'browser-test-session');
     localStorage.setItem('zk_admin_login_at', String(Date.now()));
     localStorage.setItem('zkid_settings_v2', JSON.stringify({ entryMode: 'user' }));
   });

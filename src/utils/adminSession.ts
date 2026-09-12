@@ -54,6 +54,15 @@ export async function loginAdminSession(phone: string, password: string) {
 }
 export const getAdminSessionToken = () => STORE.getItem(TOKEN_KEY) || '';
 export const getAdminDeviceId = () => STORE.getItem(DEVICE_KEY) || '';
+/**
+ * Single source of truth for "is an admin signed in".
+ * Both the flag and the token live in the same store (sessionStorage by default),
+ * so a page refresh keeps the admin signed in instead of bouncing to /desk.
+ */
+export const isAdminAuthed = (): boolean => {
+  try { return STORE.getItem(AUTHED_KEY) === 'true' && !!getAdminSessionToken(); } catch { return false; }
+};
+
 export const clearAdminSession=()=>{STORE.removeItem(TOKEN_KEY);STORE.removeItem(DEVICE_KEY);STORE.removeItem(AUTHED_KEY);STORE.removeItem(PASSWORD_UPGRADE_KEY);try{if(typeof localStorage!=='undefined'){localStorage.removeItem(BIOMETRIC_TRUST_KEY);localStorage.removeItem('zk_admin_login_at');}}catch{}};
 export const isAdminPasswordUpgradeRequired=()=>STORE.getItem(PASSWORD_UPGRADE_KEY)==='true';
 

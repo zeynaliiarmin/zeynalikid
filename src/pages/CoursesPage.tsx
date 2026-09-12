@@ -297,6 +297,10 @@ export default function CoursesPage(){
       // An inner detail overlay returns to the course-detail history entry. Its
       // popstate must close only that overlay, never the detail page below it.
       if ((event.state as any)?.zkCourseDetail) return;
+      // نشانهٔ zkCourseDetail روی همان entry با navigate(replace) به آدرس سئویی (/courses/:slug)
+      // بازنویسی می‌شود؛ پس تا وقتی آدرس، آدرسِ جزئیاتِ یک دوره است و جزئیات باز است،
+      // فقط لایهٔ داخلی (مشاهده همهٔ پرسش‌ها/محتوا/نظرات) بسته می‌شود.
+      if (detailPushedRef.current && /^\/courses\/[^/]+/.test(String(window.location.pathname))) return;
       let overlayOpen = false;
       try {
         overlayOpen = !!(window as any).__zkReviewsOverlayOpen

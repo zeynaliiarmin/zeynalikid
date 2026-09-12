@@ -2,8 +2,11 @@ import puppeteer from 'puppeteer';
 const base=process.env.TEST_BASE_URL||'http://localhost:4173';
 const executablePath=process.env.PUPPETEER_EXECUTABLE_PATH||undefined;
 const browser=await puppeteer.launch({headless:true,executablePath,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']});
+// در حالت «پنل کاربر»، صفحه‌های جریان دوره پشت ورود کاربر هستند؛ پس تست هم وارد می‌شود.
+const portalSession={phone:'09123456789',fullName:'کاربر تست',code:'1234'};
+const enterAsPortalUser=async(page)=>{await page.goto(base+'/track',{waitUntil:'domcontentloaded',timeout:30000});await page.evaluate(value=>{try{sessionStorage.setItem('zk_portal_session',JSON.stringify(value))}catch{}},portalSession)};
 for(const route of ['/consultation','/child-info']){
- const context=await browser.createBrowserContext();const page=await context.newPage();await page.setBypassServiceWorker(true);await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('[data-testid="privacy-consent"]',{timeout:15000});
+ const context=await browser.createBrowserContext();const page=await context.newPage();await page.setBypassServiceWorker(true);await enterAsPortalUser(page);await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('[data-testid="privacy-consent"]',{timeout:15000});
  const button=await page.$$('button');let clicked=false;for(const item of button){const text=await item.evaluate(node=>node.textContent||'');if(text.includes('ثبت درخواست مشاوره')||text.includes('ثبت اطلاعات فرزند و ادامه')){await item.evaluate(node=>node.click());clicked=true;break}}
  if(!clicked)throw new Error(`${route}: continue button not found`);await page.waitForFunction(()=>document.querySelector('[data-testid="privacy-consent"]')?.getAttribute('aria-invalid')==='true',{timeout:5000});
  const redState=await page.$eval('[data-testid="privacy-consent"]',node=>({invalid:node.getAttribute('aria-invalid'),border:getComputedStyle(node).borderTopWidth,text:(node.textContent||'').replace(/\s+/g,' ').trim()}));if(redState.invalid!=='true'||redState.border!=='2px'||!redState.text.includes('برای ادامه'))throw new Error(`${route}: consent error not visible`);

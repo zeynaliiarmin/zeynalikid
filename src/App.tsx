@@ -26,7 +26,7 @@ import { uploadAdminFile, uploadPublicFile } from './lib/storageUpload';
 import { applyResolvedZkTheme, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './admin/adminTheme';
 import { normalizeDesignId, normalizePublicColorMode, resolveColorMode, type PersonalColorMode } from './utils/colorMode';
 // PWA admin: shared session utils (clear on logout, validate on /admin/app)
-import { clearAdminSession, getAdminSessionToken, validateAdminSession } from './utils/adminSession';
+import { clearAdminSession, getAdminSessionToken, isAdminAuthed, validateAdminSession } from './utils/adminSession';
 import ErrorAlertHost from './components/ErrorAlert/ErrorAlertHost';
 import ZkDialog from './components/ZkDialog';
 import CourseTimer from './components/CourseTimer';
@@ -79,7 +79,7 @@ function App(){
  useRouteScrollRestoration();
  // اعتبار ورود پنل مدیریت: state داخلی + بررسی sessionStorage.
  // ورود مستقیم به /admin یا /admin/app بدون نشست معتبر ممنوع — کاربر به /admin/login هدایت می‌شود.
- const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>{ try { return (typeof localStorage!=='undefined'&&localStorage.getItem('zk_admin_authed')==='true') && !!getAdminSessionToken(); } catch { return false; } });
+ const [adminAuthed,setAdminAuthed]=useState<boolean>(()=>isAdminAuthed());
  const [adminSettingsLoading,setAdminSettingsLoading]=useState(()=>adminAuthed&&isSupabaseConfigured);
  const [adminTab,setAdminTab]=useState('dashboard');
  // اگر کاربر بدون نشست معتبر وارد /admin/app شد، به /admin/login هدایت شود.
@@ -91,7 +91,7 @@ function App(){
  useEffect(()=>{ const p=location.pathname; if((p==='/desk'||p==='/desk/app')&&getAdminSessionToken()){
    let justLoggedIn=false; try{ const t=Number(localStorage.getItem('zk_admin_login_at')||0); justLoggedIn = (Date.now()-t)<8000; }catch{}
    if(justLoggedIn)return;
-   let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/desk',{replace:true}); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/desk',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
+   let alive=true; validateAdminSession().then(r=>{ if(!alive)return; if(!r.valid){ setAdminAuthed(false); navigate('/desk',{replace:true}); } else { setAdminAuthed(true); } }).catch(()=>{ if(!alive)return; setAdminAuthed(false); navigate('/desk',{replace:true}); }); return ()=>{alive=false}; } },[location.pathname,navigate]);
  const view=pathToView[location.pathname]||pathToView[location.pathname.replace(/\/+$/,'')||'/']||'home';
  const [consultationComplete,setConsultationComplete]=useState(false);useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.flow==='consultation')setConsultationComplete(detail.complete===true)};window.addEventListener('zk-flow-complete',handler);return()=>window.removeEventListener('zk-flow-complete',handler)},[]);
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} navigate(path)},[navigate]);
