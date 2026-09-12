@@ -12,7 +12,7 @@ import { reportError } from '../utils/errorLog';
 import { triggerErrorAlert } from '../utils/errorAlertBus';
 import { generateTrackingCode, generateSecureTrackingCode } from '../utils/tracking';
 import { TRACKING_PREFIX, PUBLIC_SITE_URL } from '../config/project';
-import { getUserSession, validateFullName, splitE164, setUserSession, type PortalSession } from '../utils/userPortal';
+import { getUserSession, validateFullName, splitE164 } from '../utils/userPortal';
 import { validPhone, fullPhone, p2e, digits, getCountryFlag } from '../utils/phone';
 import { getTrustFontSize } from '../utils/trustFont';
 import { formSuccessMessages, getRandomMessage } from '../config/successMessages';
@@ -555,18 +555,11 @@ export default function ConsultationPage(){
         }
         if (subsCacheRef.current) subsCacheRef.current = [...subsCacheRef.current, entry];
         setLastTrack(String(entry.trackingCode||trackingCode));
-        // اگر کاربر هنوز وارد پنل نشده بود، خودکار با همین کد پیگیری واردش کن
-        // تا دفعه بعد از آدمک/همبرگر یک‌راست به پنلش برسد.
-        if (!getUserSession() && entry.trackingCode && (entry.pName || effFd.pName)) {
-          try {
-            const sess: PortalSession = {
-              phone: fp,
-              fullName: String(entry.pName || effFd.pName || ''),
-              code: String(entry.trackingCode),
-            };
-            setUserSession(sess);
-          } catch { /* ignore */ }
-        }
+        // ── قانون امنیتی: ثبت فرم هرگز نشست ورود پنل کاربر نمی‌سازد. ──
+        // دلیل: شمارهٔ تماس را هر کسی می‌تواند (اشتباهی یا عمدی) شمارهٔ دیگری وارد کند؛
+        // اگر با ثبت فرم نشست ساخته شود، فرد وارد پنل صاحب آن شماره می‌شود.
+        // ورود به پنل فقط از صفحهٔ ورود کاربر (با کد تأیید/کپچا) انجام می‌شود.
+        // فرم همچنان با شماره شناسایی و به همان پروفایل و همان کد پیگیری می‌چسبد.
       }
       setEditId(null); editEntryRef.current = null;
       editOverrideRef.current = null; dupModeRef.current = null;

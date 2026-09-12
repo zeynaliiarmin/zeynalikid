@@ -5,7 +5,7 @@ import enDict from '../locales/en';
 import { defaultCountries,defaultSettings as configDefaultSettings,migrateSettings,CURRENT_SETTINGS_VERSION } from '../config/defaultSettings';
 import { PATH_TO_VIEW,VIEW_TO_PATH } from '../config/routes';
 import { getTrustFontSize, getTrustTitleSize, getTrustDescSize } from '../utils/trustFont';
-import { flagToEmoji, getCountryFlag } from '../utils/phone';
+import { flagToEmoji, getCountryFlag, fullPhone as sharedFullPhone, normalizeFullPhone as sharedNormalizeFullPhone } from '../utils/phone';
 import { generateTrackingCode } from '../utils/tracking';
 import { publicDarkPatch } from '../theme/warmPalettes';
 import { optimizeForUpload } from '../utils/imageOptimizer';
@@ -752,8 +752,9 @@ m.paymentConfig=raw?.paymentConfig?.gateways&&Array.isArray(raw.paymentConfig.ga
   :(defaultSettings as any).paymentConfig;
 return m;}
 
-export function validPhone(local:string, country:any){const raw=p2e(local).replace(/[\s\-().]/g,''); const d0=raw.replace(/\D/g,''); if(!d0||/^(\d)\1+$/.test(d0)) return false; if(String(country?.code)==='+98'){let d=d0; if(d.startsWith('0098'))d=d.slice(4); else if(d.startsWith('98')&&/^9\d{9}$/.test(d.slice(2)))d=d.slice(2); if(!/^(0?9)\d{9}$/.test(d))return false; return !/^(\d)\1{8}$/.test(d.replace(/^0?9/,''))} const cc=String(country?.code||'').replace(/\D/g,''); let d=d0; if(raw.startsWith('+')){if(!cc||!d.startsWith(cc))return false; d=d.slice(cc.length)} else if(cc&&d.startsWith('00'+cc)){d=d.slice(2+cc.length)} else if(cc&&cc.length>=2&&d.startsWith(cc)&&d.length>=cc.length+6){d=d.slice(cc.length)} d=d.replace(/^0+/,'')||d; let rx:RegExp; try{rx=new RegExp(country?.regex||'^\\d{7,}$')}catch{rx=/^\d{7,}$/} return rx.test(d)||rx.test('0'+d)}
-export function fullPhone(cc:string, local:string){let d=p2e(local).replace(/\D/g,''); const cd=String(cc||'').replace(/\D/g,''); if(cd){ if(d.startsWith('00'+cd))d=d.slice(2+cd.length); else if(d.startsWith('0'+cd)&&d.length>=cd.length+9)d=d.slice(1+cd.length); else if(cd.length>=2&&d.startsWith(cd)&&d.length>=cd.length+9)d=d.slice(cd.length); } if(d.startsWith('0')&&d.length>=9)d=d.slice(1); return `${cc}${d}`}
+export function validPhone(local:string, country:any){const raw=p2e(local).replace(/[\s\-().]/g,''); const d0=raw.replace(/\D/g,''); if(!d0||/^(\d)\1+$/.test(d0)) return false; if(String(country?.code)==='+98'){const m=sharedNormalizeFullPhone(local,'+98').match(/^\+98(9\d{9})$/); if(!m)return false; return !/^(\d)\1{8}$/.test(m[1].slice(1))} const cc=String(country?.code||'').replace(/\D/g,''); let d=d0; if(raw.startsWith('+')){if(!cc||!d.startsWith(cc))return false; d=d.slice(cc.length)} else if(cc&&d.startsWith('00'+cc)){d=d.slice(2+cc.length)} else if(cc&&cc.length>=2&&d.startsWith(cc)&&d.length>=cc.length+6){d=d.slice(cc.length)} d=d.replace(/^0+/,'')||d; let rx:RegExp; try{rx=new RegExp(country?.regex||'^\\d{7,}$')}catch{rx=/^\d{7,}$/} return rx.test(d)||rx.test('0'+d)}
+// شمارهٔ کامل: پیاده‌سازی یکتا در src/utils/phone.ts (نرمال‌سازی چندکشوری) — اینجا فقط واگذاری است
+export function fullPhone(cc:string, local:string){return sharedFullPhone(cc,local)}
 
 const phoneExamples:Record<string,string>={'+98':'09123456789','+1':'2125550123','+44':'07700900000','+49':'030123456','+46':'0701234567','+41':'0791234567','+47':'41234567','+33':'0612345678','+61':'0412345678','+971':'0501234567','+90':'05321234567','+31':'0612345678','+91':'9876543210','+93':'0701234567','+':'Enter phone number'};
 const serviceDefaults:any=configDefaultSettings as any;

@@ -19,6 +19,8 @@ import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { handleOptions, jsonResponse, getOrigin, rejectIfInvalidOrigin } from "../_shared/cors.ts";
 import { centralRateLimit } from "../_shared/rateLimit.ts";
 import { sendSecurityAlert } from "../_shared/securityAlert.ts";
+import { normalizeFullPhone } from "../_shared/phone.ts";
+import { getOrCreateTrackingCode } from "../_shared/trackingCode.ts";
 
 const PREFIX = String(Deno.env.get("TRACKING_PREFIX") || "ZK").toUpperCase() === "FM" ? "FM" : "ZK";
 
@@ -91,15 +93,7 @@ const briefReports = (p: any) => {
   return { followUps: fups, corrective: corr };
 };
 
-const normalizePhone = (raw: string): string => {
-  let d = digitsOnly(raw);
-  if (d.length < 7) return "";
-  if (d.startsWith("0098")) d = d.slice(2);
-  if (d.startsWith("98") && d.length === 12) d = "0" + d.slice(2);
-  if (d.startsWith("9") && d.length === 10) d = "0" + d;
-  if (d.startsWith("0")) return `+98${d.slice(1)}`;
-  return `+${d}`;
-};
+const normalizePhone = (raw: string): string => normalizeFullPhone(raw);
 
 const maskPhone = (phone: string): string => {
   const d = digitsOnly(String(phone || "").replace(/^\+/, ""));
@@ -581,37 +575,13 @@ serve(async (req) => {
   return jsonResponse({ error: "اکشن نامعتبر است" }, 400, origin);
 });
 
-/** کد یکپارچه: اگر شماره قبلاً کد پیگیری داشته، همان؛ وگرنه کد تازه یکتا */
+/**
+ * کد یکپارچه: اگر شماره قبلاً کد پیگیری داشته، همان؛ وگرنه کد تازهٔ یکتا.
+ * منبع حقیقت، ماژول مشترک است (جدول نگاشت phone_tracking_codes) تا «یک کد برای هر
+ * شماره — برای همیشه» هم در ثبت فرم و هم در ثبت‌نام پنل یکسان رعایت شود.
+ */
 async function adoptOrCreateCode(supabase: any, phone: string): Promise<string> {
-  // ۱) کد موجود همین شماره را به ارث ببر (تککد برای هر کاربر/شماره)
-  try {
-    const { data } = await supabase
-      .from("submissions")
-      .select("payload")
-      .eq("full_phone", phone)
-      .is("deleted_at", null)
-      .not("payload->>type", "eq", "user")
-      .not("payload->>trackingCode", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const adopted = data?.payload?.trackingCode ? String(data.payload.trackingCode) : "";
-    if (adopted) return adopted;
-  } catch { /* ادامه */ }
-  // ۲) کد تازه یکتا — بدون برخورد با کدهای موجود
-  const seen = new Set<string>();
-  try {
-    const { data } = await supabase.from("submissions").select("payload->>trackingCode").not("payload->>trackingCode", "is", null).limit(4000);
-    for (const row of data || []) {
-      const c = row?.trackingCode || row?.payload?.trackingCode;
-      if (c) seen.add(String(c).toLowerCase());
-    }
-  } catch { /* اگر خواندن نشد، باز هم تلاش کن */ }
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const candidate = randomCode();
-    if (!seen.has(candidate.toLowerCase())) return candidate;
-  }
-  return randomCode();
+  return getOrCreateTrackingCode(supabase, phone, PREFIX);
 }
 
 /** ثبت/بهروزرسانی رکورد کاربر (type=user) */

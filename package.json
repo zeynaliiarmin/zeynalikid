@@ -11,7 +11,7 @@
     "test:media": "esbuild tests/media-embed.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-media-embed.test.mjs && node /tmp/zeynalikid-media-embed.test.mjs",
     "test:media:ui": "node tests/media-preview-ui.mjs",
     "test:content-save:browser": "node tests/content-save.browser.mjs",
-    "test": "npm run test:unit && npm run test:media && npm run test:security",
+    "test": "npm run test:unit && npm run test:media && npm run test:phone && npm run test:security",
     "build": "node scripts/generate-404.mjs && tsc -b && vite build && npm run build:ssg",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview",
@@ -25,7 +25,8 @@
     "test:assistant-curation": "esbuild tests/assistant-curation.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-assistant-curation.test.mjs && node /tmp/zeynalikid-assistant-curation.test.mjs",
     "test:content-policy": "esbuild tests/content-policy-heh.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-content-policy-heh.test.mjs && node /tmp/zeynalikid-content-policy-heh.test.mjs",
     "test:entry-mode:browser": "node tests/entry-mode-routing-ui.mjs",
-    "test:assistant-unanswered:browser": "node tests/assistant-unanswered-ui.mjs"
+    "test:assistant-unanswered:browser": "node tests/assistant-unanswered-ui.mjs",
+    "test:phone": "esbuild tests/phone-normalization.test.ts --bundle --platform=node --format=esm --target=node20 --outfile=/tmp/zeynalikid-phone-normalization.test.mjs && node /tmp/zeynalikid-phone-normalization.test.mjs"
   },
   "dependencies": {
     "@fontsource/vazirmatn": "5.3.0",

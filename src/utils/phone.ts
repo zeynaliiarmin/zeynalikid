@@ -5,20 +5,112 @@ export const p2e = (value: unknown) =>
 
 export const digits = (value: unknown) => p2e(value).replace(/[^0-9]/g, '');
 
-export const fullPhone = (cc: string, local: string): string => {
-  // فقط رقم نگه می‌داریم (علامت + و فاصله و خط تیره حذف می‌شوند)
-  let cleaned = p2e(local).replace(/[^0-9]/g, '');
-  const ccDigits = String(cc || '').replace(/\D/g, '');
-  // اگر والدین کد کشور را هم داخل فیلد شماره تایپ کرده باشند (98…، 0098…، +98…) یک‌بار حذف می‌شود
-  if (ccDigits) {
-    if (cleaned.startsWith(`00${ccDigits}`)) cleaned = cleaned.slice(2 + ccDigits.length);
-    else if (cleaned.startsWith(`0${ccDigits}`) && cleaned.length >= ccDigits.length + 9) cleaned = cleaned.slice(1 + ccDigits.length);
-    else if (ccDigits.length >= 2 && cleaned.startsWith(ccDigits) && cleaned.length >= ccDigits.length + 9) cleaned = cleaned.slice(ccDigits.length);
-  }
-  // اگر کد کشور ایران است و پیش‌شماره داخلی 0 دارد، آن 0 حذف می‌شود
-  if (cleaned.startsWith('0') && cleaned.length >= 9) cleaned = cleaned.slice(1);
-  return `${cc}${cleaned}`;
+// ─────────────────────────────────────────────────────────────────────────────
+// نرمال‌سازی چندکشوری شمارهٔ تماس — نسخهٔ کلاینت.
+// منبع حقیقت سمت سرور: supabase/functions/_shared/phone.ts
+// منطق این دو فایل باید «دقیقاً» یکسان بماند؛ tests/unit.test.ts خروجی هر دو را
+// روی یک ماتریس از قالب‌ها مقایسه می‌کند تا واگرایی در CI caught شود.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CountryRule = { cc: string; trunk: string; min: number; max: number };
+
+/** با هر تغییر در قواعد کشورها این عدد را در هر دو فایل بالا ببر. */
+export const PHONE_RULES_VERSION = 1;
+
+/** کشور پیش‌فرض سایت وقتی شماره هیچ نشانهٔ بین‌المللی ندارد (ایران). */
+export const DEFAULT_CC = '98';
+
+/** cc = کد کشور بدون «+»؛ trunk = پیش‌شمارهٔ داخلی؛ min/max = طول شمارهٔ ملی */
+export const COUNTRY_RULES: CountryRule[] = [
+  { cc: '98', trunk: '0', min: 10, max: 10 }, // ایران
+  { cc: '1', trunk: '1', min: 10, max: 10 }, // آمریکا / کانادا
+  { cc: '44', trunk: '0', min: 9, max: 10 }, // انگلیس
+  { cc: '49', trunk: '0', min: 6, max: 13 }, // آلمان
+  { cc: '46', trunk: '0', min: 7, max: 9 }, // سوئد
+  { cc: '41', trunk: '0', min: 9, max: 9 }, // سوئیس
+  { cc: '47', trunk: '', min: 8, max: 8 }, // نروژ
+  { cc: '33', trunk: '0', min: 9, max: 9 }, // فرانسه
+  { cc: '61', trunk: '0', min: 8, max: 9 }, // استرالیا
+  { cc: '971', trunk: '0', min: 8, max: 9 }, // امارات
+  { cc: '90', trunk: '0', min: 10, max: 10 }, // ترکیه
+  { cc: '31', trunk: '0', min: 9, max: 9 }, // هلند
+  { cc: '91', trunk: '0', min: 10, max: 10 }, // هند
+  { cc: '93', trunk: '0', min: 9, max: 9 }, // افغانستان
+];
+
+/** فقط رقم (۲۴ رقم اول) — یکسان با سمت سرور */
+export const phoneDigits = (value: unknown): string => p2e(value).replace(/[^0-9]/g, '').slice(0, 24);
+
+const RULES_BY_CC_LENGTH = [...COUNTRY_RULES].sort((a, b) => b.cc.length - a.cc.length);
+const DEFAULT_RULE = COUNTRY_RULES.find((r) => r.cc === DEFAULT_CC) as CountryRule;
+
+const stripTrunk = (rule: CountryRule, national: string): string => {
+  const n = String(national || '');
+  if (rule.trunk && n.startsWith(rule.trunk) && n.length - rule.trunk.length >= rule.min) return n.slice(rule.trunk.length);
+  return n;
 };
+
+const plausible = (rule: CountryRule, national: string): boolean => {
+  const n = stripTrunk(rule, national);
+  return n.length >= rule.min && n.length <= rule.max;
+};
+
+const matchRule = (d: string): CountryRule | null => {
+  for (const rule of RULES_BY_CC_LENGTH) {
+    if (d.length > rule.cc.length && d.startsWith(rule.cc) && plausible(rule, d.slice(rule.cc.length))) return rule;
+  }
+  return null;
+};
+
+/**
+ * خروجی همیشه E.164 است: «+» + کد کشور + شمارهٔ ملی بدون پیش‌شمارهٔ داخلی.
+ * همهٔ قالب‌های یک شماره به یک مقدار یکسان می‌رسند:
+ *   ۰۹۱۹۸۳۰۵۷۷۴ / ۹۱۹۸۳۰۵۷۷۴ / ۹۸۹۱۹۸۳۰۵۷۷۴ / +۹۸۰۹۱۹۸۳۰۵۷۷۴ / +۹۸۹۱۹۸۳۰۵۷۷۴ → +989198305774
+ */
+export function normalizeFullPhone(value: unknown, preferredCc?: string): string {
+  const raw = p2e(value);
+  const hasPlus = /^\s*\+/.test(raw);
+  const d = phoneDigits(raw);
+  if (d.length < 7) return '';
+
+  // پیش‌شمارهٔ بین‌المللی ۰۰ (فقط وقتی که بعدش کد کشور معتبر باشد)
+  let digitsNow = d;
+  const had00 = d.startsWith('00');
+  if (had00 && matchRule(d.slice(2))) digitsNow = d.slice(2);
+  const explicitIntl = hasPlus || had00;
+
+  const rawPref = String(preferredCc ?? '').trim();
+  const pref = rawPref.replace(/\D/g, '');
+  const prefRule = pref ? COUNTRY_RULES.find((r) => r.cc === pref) : undefined;
+
+  // ۱) بدون نشانهٔ بین‌المللی + کشور انتخابی کاربر → شمارهٔ داخلیِ همان کشور است
+  //    (اگر کاربر کد کشور را هم داخل فیلد تایپ کرده باشد — مثلاً ۹۸۹۱۹۸۳۰۵۷۷۴ — یک‌بار حذف می‌شود)
+  if (prefRule && !explicitIntl) {
+    if (digitsNow.startsWith(prefRule.cc) && plausible(prefRule, digitsNow.slice(prefRule.cc.length))) {
+      return `+${prefRule.cc}${stripTrunk(prefRule, digitsNow.slice(prefRule.cc.length))}`;
+    }
+    return `+${prefRule.cc}${stripTrunk(prefRule, digitsNow)}`;
+  }
+
+  // ۲) تشخیص کد کشور از خود شماره (۹۸…، ۰۰۴۹…، +۹۷۱…)
+  const rule = matchRule(digitsNow);
+  if (rule) return `+${rule.cc}${stripTrunk(rule, digitsNow.slice(rule.cc.length))}`;
+
+  // ۳) کاربر خودش کد کشور را با «+» یا «۰۰» اعلام کرده ولی آن کشور در جدول ما نیست
+  //    (کشور «سایر») → رقم‌ها را دست‌نخورده نگه می‌داریم تا کشور اشتباه نسازیم
+  if (explicitIntl || rawPref === '+') return `+${digitsNow.replace(/^00/, '')}`;
+
+  // ۴) در نبود هر نشانه‌ای: کشور پیش‌فرض سایت (ایران)
+  const fallback = prefRule || DEFAULT_RULE;
+  return `+${fallback.cc}${stripTrunk(fallback, digitsNow)}`;
+}
+
+/**
+ * ساخت شمارهٔ کامل از «کد کشور انتخابی + شمارهٔ تایپ‌شده».
+ * حتی اگر والد کد کشور را هم داخل فیلد تایپ کرده باشد (۹۸…، ۰۰۹۸…، +۹۸۰۹۱۹…)
+ * خروجی یکسان و بدون تکرار کد کشور است.
+ */
+export const fullPhone = (cc: string, local: string): string => normalizeFullPhone(local, cc);
 
 export const validPhone = (local: string, country: { code?: string; regex?: string } | null | undefined): boolean => {
   const clean = p2e(local).replace(/[\s\-()]/g, '');
