@@ -444,9 +444,9 @@ export const defaultSettings = {
       },
     },
   },
-  // entryMode: 'track' = صفحه پیگیری دوره (قدیمی، بدون نیاز به ورود)
-  // entryMode: 'user' = پنل کاربر؛ ثبت دوره و مشاوره فقط پس از ورود/ثبت‌نام
-  entryMode: 'user' as 'track' | 'user',
+  // entryMode همواره 'user' است: ورودی سایت = پنل کاربر (/profile).
+  // حالت قدیمی 'track' (پیگیری دوره) حذف شده و /track حالا ۴۰۴ می‌دهد.
+  entryMode: 'user' as 'user',
   userPortal: {
     otpMode: 'test' as 'off' | 'test' | 'live',
     captchaEnabled: false,

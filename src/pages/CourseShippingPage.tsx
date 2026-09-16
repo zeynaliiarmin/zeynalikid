@@ -38,12 +38,12 @@ export default function CourseShippingPage(){
  // (مقادیر در رکورد ذخیره می‌شوند تا در پنل مدیریت مشخص باشد این ثبت‌نام برای کیست)
 
  // Gating (instant, no flash): در حالت «پنل کاربر» بدون ورود فوری به /portal هدایت شود
- const __entryModeUser = String((cfg as any)?.entryMode || 'user') === 'user';
+ const __entryModeUser = true; // حالت ورودی سایت همواره «پنل کاربر» (/profile) است
  if (__entryModeUser && !getUserSession()) {
    setPortalNext('/course-shipping');
-   return <Navigate to="/portal" replace />;
+   return <Navigate to="/profile" replace />;
  }
- const portalSession = String((cfg as any)?.entryMode||'user')==='user' ? getUserSession() : null;
+ const portalSession = getUserSession();
 
  const [receiverSelf,setReceiverSelf]=useState<boolean>(()=>!!portalSession);
  // نشست تازه‌ساخته‌شده را وارد deps نمی‌کنیم (حلقه رندر)؛ فقط کلید رشته‌ای + مقداردهی بی‌آزار

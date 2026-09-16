@@ -351,7 +351,7 @@ export default function CoursesPage(){
             onRegister={() => {
               // حالت «پنل کاربر»: اگر کاربر وارد نشده باشد، نخست ورود/ثبت‌نام خواسته می‌شود
               // و بعد از آن سؤال روش ارسال می‌آید (برای همه دوره‌ها، از جمله دوره‌های تازه‌افزوده)
-              if (String((cfg as any)?.entryMode || 'user') === 'user' && !getUserSession()) {
+              if (!getUserSession()) {
                 rememberPendingRegistration(String(selectedCourse?.id || ''));
                 setPortalNext('/courses'); app.setView('portal'); return;
               }
@@ -361,7 +361,7 @@ export default function CoursesPage(){
               } else if (chooseDest) {
                 chooseDest('iran', selectedCourse);
               } else {
-                if ((cfg as any)?.entryMode === 'user' && !getUserSession()) { rememberPendingRegistration(String(selectedCourse?.id || '')); setPortalNext('/courses'); app.setView('portal'); return; }
+                if (!getUserSession()) { rememberPendingRegistration(String(selectedCourse?.id || '')); setPortalNext('/courses'); app.setView('portal'); return; }
                 app.setView('child-info');
               }
             }}

@@ -38,7 +38,7 @@
     },
     {
       "source": "/track",
-      "destination": "/spa.html"
+      "destination": "/api/track"
     },
     {
       "source": "/portal",
@@ -216,7 +216,7 @@
       ]
     },
     {
-      "source": "/track",
+      "source": "/api/track",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -226,6 +226,15 @@
     },
     {
       "source": "/portal",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/profile",
       "headers": [
         {
           "key": "X-Robots-Tag",

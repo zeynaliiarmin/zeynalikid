@@ -20,8 +20,8 @@ export function peekCachedPaymentDetails(courseId:string):PaymentDetails|null{
 function writeCachedPaymentDetails(courseId:string,d:PaymentDetails){try{sessionStorage.setItem(CACHE_PREFIX+courseId,JSON.stringify({t:Date.now(),d}))}catch{/* بی‌خطر */}}
 export function clearCachedPaymentDetails(courseId:string){try{sessionStorage.removeItem(CACHE_PREFIX+courseId)}catch{/* بی‌خطر */}}
 
-export async function loadCheckoutPaymentDetails(courseId:string,referralCode:string,turnstileToken:string,signal?:AbortSignal):Promise<PaymentDetails>{
- const sessionResponse=await fetch(`${functionBase()}/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId,referralCode,turnstileToken}),signal});
+export async function loadCheckoutPaymentDetails(courseId:string,referralCode:string,signal?:AbortSignal):Promise<PaymentDetails>{
+ const sessionResponse=await fetch(`${functionBase()}/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId,referralCode}),signal});
  const sessionBody=await parseJson(sessionResponse);const checkoutToken=typeof sessionBody.checkoutToken==='string'?sessionBody.checkoutToken:'';
  if(!sessionResponse.ok||!checkoutToken)throw new Error(typeof sessionBody.error==='string'?sessionBody.error:'ساخت نشست پرداخت انجام نشد');
  const detailsResponse=await fetch(`${functionBase()}/payment-details`,{method:'POST',headers:{'Content-Type':'application/json','X-Checkout-Token':checkoutToken},body:JSON.stringify({referralCode}),signal});

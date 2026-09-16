@@ -9,7 +9,6 @@ export type ErrorAlertContext =
   | 'tongueOptional' // آپلود عکس زبان (اختیاری — بدون نمایش شماره تماس)
   | 'review'         // ثبت نظر
   | 'question'       // سوالات متداول / سوال دارم
-  | 'track'          // صفحه پیگیری
   | 'pdf';           // دانلود PDF
 
 interface Copy { title: string; message: string; showPhone?: boolean; }
@@ -80,17 +79,7 @@ export const ERROR_ALERT_CONTENT: Record<ErrorAlertContext, { fa: Copy; en: Copy
       message: `Our specialists answer dozens of parent questions every day — don't let yours go unanswered. ${PREVENT_EN}`,
     },
   },
-  track: {
-    fa: {
-      title: 'مشکل در صفحه پیگیری',
-      message: `وضعیت ثبت‌نام یا دوره فرزندتان در چند ثانیه قابل بررسی است. ${PREVENT}`,
-    },
-    en: {
-      title: 'Tracking error',
-      message: `Your registration status can be checked in seconds. ${PREVENT_EN}`,
-    },
-  },
-  pdf: {
+pdf: {
     fa: {
       title: 'خطا در دانلود فایل',
       message: `این فایل برنامه اختصاصی فرزند شماست و نباید از دست برود. ${PREVENT}`,

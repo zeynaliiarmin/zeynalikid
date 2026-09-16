@@ -11,7 +11,7 @@ const normalizeDigits=(value:string)=>value.replace(/[۰-۹]/g,d=>String('۰۱۲
 const guidedIntent=(value:string)=>/(مکمل|رشد قد|افزایش قد|کوتاه قد|وزن.?گیری|بی.?اشتهایی|بدغذایی|تمرکز|هوش|تقویت ایمنی|دوره.*فرزند|دوره.*بچه)/i.test(value);
 const hasAge=(value:string)=>/\b(?:[2-9]|1[0-8])\s*(?:سال|ساله)?\b/.test(normalizeDigits(value));
 const suggestion=(question:string,label=question):AssistantSuggestion=>({question,label,path:''});
-const englishSuggestions:AssistantSuggestion[]=[{question:'How can I request a consultation?',label:'Request consultation',path:'/consultation'},{question:'Which courses are available?',label:'View courses',path:'/courses'},{question:'How can I track my request?',label:'Track request',path:'/track'},{question:'How can I contact support?',label:'Contact support',path:'/contact'}];
+const englishSuggestions:AssistantSuggestion[]=[{question:'How can I request a consultation?',label:'Request consultation',path:'/consultation'},{question:'Which courses are available?',label:'View courses',path:'/courses'},{question:'How can I follow up on my request?',label:'My panel',path:'/profile'},{question:'How can I contact support?',label:'Contact support',path:'/contact'}];
 
 async function compressImage(file:File):Promise<string>{
   const url=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('read-failed'));reader.readAsDataURL(file)});

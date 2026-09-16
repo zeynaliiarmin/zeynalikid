@@ -21,10 +21,8 @@ const AboutPage = lazy(() => import('../pages/InfoPages').then((module) => ({ de
 const ContactPage = lazy(() => import('../pages/InfoPages').then((module) => ({ default: module.ContactPage })));
 const FAQPage = lazy(() => import('../pages/FAQPage'));
 const ProductsPage = lazy(() => import('../pages/ProductsPage'));
-const TrackPage = lazy(() => import('../pages/TrackPage'));
 const UserPortalPage = lazy(() => import('../pages/UserPortalPage'));
 const ConsultationPage = lazy(() => import('../pages/ConsultationPage'));
-const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const GrowthChartPage = lazy(() => import('../pages/GrowthChartPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 
@@ -39,8 +37,9 @@ interface AppRoutesProps {
 }
 
 export default function AppRoutes({ app, ui, flow, admin, adminAuthed, referralReady, referralConsultant }: AppRoutesProps) {
-  // مسیرها مستقل‌اند: /portal همیشه پنل کاربر و /track همیشه پیگیری است.
-  // entryMode فقط مقصد دکمه‌های ورودی را تعیین می‌کند، نه محتوای این دو مسیر.
+  // مسیر ورودی سایت یکتاست: /profile = پنل کاربر (ورود/ثبت‌نام والد).
+  // مسیر قدیمی /track (پیگیری دوره) حذف شده و اکنون ۴۰۴ می‌دهد.
+  // /portal برای لینک‌های قدیمی به /profile منتقل می‌شود.
   const fallback = <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--zk-text-muted, #4B5563)', fontSize: 14 }}>در حال بارگذاری...</div>;
   return (
     <AppContextProvider value={app} ui={ui} flow={flow} admin={admin}>
@@ -55,9 +54,8 @@ export default function AppRoutes({ app, ui, flow, admin, adminAuthed, referralR
           <Route path="/course-payment/verify" element={<PaymentVerifyPage />} />
           <Route path="/course-confirm" element={<CourseConfirmPage />} />
           <Route path="/course-done" element={<CourseDonePage />} />
-          <Route path="/track" element={<TrackPage />} />
-          <Route path="/portal" element={<UserPortalPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<UserPortalPage />} />
+          <Route path="/portal" element={<Navigate to="/profile" replace />} />
           <Route path="/growth" element={<GrowthChartPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/experience" element={<ExperiencePage />} />

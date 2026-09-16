@@ -18,7 +18,7 @@ export interface ParsedReferral {
 // مسیرهای سیستمی که نباید به عنوان کد ارجاع تفسیر شوند
 const SYSTEM_PATHS = new Set([
   'admin','admin-login','courses','experience','education','about','contact','faq',
-  'products','form','consultation','track','growth','settings','profile','licenses',
+  'products','form','consultation','growth','settings','profile','licenses',
   'child-info','course-shipping','course-payment','course-confirm','course-done',
   'payment-verify','service-worker.js','favicon.ico','robots.txt','sitemap.xml',
   'assets','images','static','manifest.json','desk','portal'

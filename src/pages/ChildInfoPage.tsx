@@ -52,10 +52,10 @@ export default function ChildInfoPage(){
  const [privacyAttempted,setPrivacyAttempted]=useState(false);
 
  // Gating (instant, no flash): در حالت «پنل کاربر» بدون ورود فوری به /portal هدایت شود
- const __entryModeUser = String((cfg as any)?.entryMode || 'user') === 'user';
+ const __entryModeUser = true; // حالت ورودی سایت همواره «پنل کاربر» (/profile) است
  if (__entryModeUser && !getUserSession()) {
    setPortalNext('/child-info');
-   return <Navigate to="/portal" replace />;
+   return <Navigate to="/profile" replace />;
  }
  const selectedTitle = lang === 'en' ? (course.selected?.titleEn || course.selected?.title) : course.selected?.title;
 

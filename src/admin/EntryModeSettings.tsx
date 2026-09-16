@@ -48,25 +48,14 @@ export default function EntryModeSettings({ app }: { app: any }) {
     <div>
       {row(
         en ? 'Public entry page' : 'صفحه ورودی سایت',
-        seg(String(ec.entryMode || 'user'), [
-          { id: 'user', label: en ? 'User portal (default)' : 'پنل کاربر (حالت پیش‌فرض)' },
-          { id: 'track', label: en ? 'Course tracking as the entry' : 'پیگیری دوره به‌عنوان ورودی' },
-        ], (v) => set({ entryMode: v })),
-        en ? 'The two addresses are always separate: /portal is the user portal and /track is course tracking. This setting only selects the destination of the public entry button. In user-portal mode, course registration and consultations require sign-in.'
-          : 'این دو نشانی همیشه جدا هستند: /portal فقط پنل کاربر است و /track فقط پیگیری دوره. این تنظیم فقط مقصد دکمه ورودی سایت را تعیین می‌کند. در حالت پنل کاربر، ثبت دوره و مشاوره بدون ورود ممکن نیست.'
+        <div style={{ fontSize: 13, color: T.txt, fontWeight: 800, lineHeight: 2 }}>
+          <span dir="ltr" style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 9, background: T.soft, color: T.accText }}>/profile</span>
+          {' — '}
+          {en ? 'parent sign-in / panel' : 'ورود و پنل والد'}
+        </div>,
+        en ? 'The site has one entry page: /profile, where parents sign in or register and then follow up on courses and consultations. The old “course tracking” mode and its /track page have been removed; /track now returns 404 and /portal redirects to /profile.'
+          : 'سایت یک صفحهٔ ورودی دارد: /profile؛ والد در آن وارد می‌شود یا ثبت‌نام می‌کند و سپس دوره‌ها و مشاوره‌ها را پیگیری می‌کند. حالت قدیمی «پیگیری دوره» و صفحهٔ /track حذف شده‌اند؛ /track اکنون خطای ۴۰۴ می‌دهد و /portal به /profile منتقل می‌شود.'
       )}
-
-      {(() => {
-        const savedMode = String((savedCfg as any)?.entryMode || 'user') === 'track' ? 'track' : 'user';
-        const staged = String(ec.entryMode || 'user') === 'user' ? 'user' : 'track';
-        const label = savedMode === 'user' ? (en ? 'User portal' : 'پنل کاربر') : (en ? 'Course tracking' : 'پیگیری دوره');
-        return (
-          <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, background: T.soft, border: `1px solid ${T.brd}`, borderRadius: 11, padding: '9px 12px', marginBottom: 10 }}>
-            {en ? 'Currently live on the site: ' : 'وضعیت فعلی سایت: '}<span style={{ color:T.accText }}>{label}</span>
-            {staged !== savedMode && <span style={{ color: T.warn, fontWeight: 800 }}>{en ? ' — you have an unsaved change; press Save below.' : ' — یک تغییر ذخیرهنشده دارید؛ دکمه پایین را بزنید.'}</span>}
-          </div>
-        );
-      })()}
 
       {row(
         en ? 'Verification code (SMS OTP)' : 'کد تأیید پیامکی (OTP)',
@@ -95,10 +84,10 @@ export default function EntryModeSettings({ app }: { app: any }) {
         en ? 'CAPTCHA (anti-bot)' : 'کپچا (ضد ربات)',
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.txt, fontWeight: 700, cursor: 'pointer' }}>
           <input className="zkad-switch" type="checkbox" checked={up.captchaEnabled === true} onChange={(e) => setUp({ captchaEnabled: e.target.checked })} />
-          {en ? 'Enable Cloudflare Turnstile on registration' : 'فعالسازی Cloudflare Turnstile در فرم ثبتنام'}
+          {en ? 'Enable Cloudflare Turnstile on registration' : 'فعالسازی Cloudflare Turnstile در ورود و ثبت‌نام والد'}
         </label>,
-        en ? 'Recommended to turn ON when live SMS is enabled (bots would burn SMS credits). Requires TURNSTILE_SECRET_KEY on the Edge Function. Where it appears: on the sign-in/register forms in user-portal mode, and on the payment page in course-tracking mode.'
-          : 'پیشنهاد: همزمان با فعالسازی پیامک واقعی روشن شود (رباتها اعتبار پیامک را میسوزانند). نیازمند TURNSTILE_SECRET_KEY در Edge Function است. جای نمایش: در حالت «پنل کاربر» روی فرم ورود و ثبتنام، و در حالت «پیگیری دوره» روی صفحه پرداخت.'
+        en ? 'Recommended to turn ON when live SMS is enabled (bots would burn SMS credits). Requires TURNSTILE_SECRET_KEY on the Edge Function. It appears only on the parent sign-in/register forms at /profile — the payment page no longer asks for a security check.'
+          : 'پیشنهاد: همزمان با فعالسازی پیامک واقعی روشن شود (رباتها اعتبار پیامک را میسوزانند). نیازمند TURNSTILE_SECRET_KEY در Edge Function است. جای نمایش: فقط روی فرم ورود و ثبتنام والد در /profile — صفحهٔ پرداخت دیگر بررسی امنیتی نمیخواهد.'
       )}
 
       {row(

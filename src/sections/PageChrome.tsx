@@ -49,7 +49,6 @@ export default function PageChrome(props: PageChromeProps) {
         <Header
           T={T} lang={lang} setLang={setLang} adminAuthed={adminAuthed}
           onAdminQuestions={() => { setView('admin'); setAdminTab('userQuestions'); }}
-          portalMode={(cfg as any)?.entryMode !== 'track'}
           assistantSlot={!!showAssistant}
         />
       )}

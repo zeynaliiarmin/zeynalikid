@@ -25,7 +25,6 @@ const pageLabels: Record<string, string> = {
   '/course-payment': 'پرداخت',
   '/course-confirm': 'تأیید ثبت‌نام',
   '/course-done': 'اتمام ثبت‌نام',
-  '/track': 'پیگیری',
   '/experience': 'تجربه والدین',
   '/licenses': 'مجوزها',
   '/education': 'آموزش‌ها',

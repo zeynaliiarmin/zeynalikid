@@ -13,7 +13,7 @@ const navParts=services.match(/aria-label=\{isRtl \? 'قبلی'[\s\S]*?aria-labe
 
 
 // Regression coverage for the public-course, portal, return-header and typography request.
-const [courseDetail, portal, portalCss, review, article, ctaCss, backCss, profile, entryBack] = await Promise.all([
+const [courseDetail, portal, portalCss, review, article, ctaCss, backCss, entryBack] = await Promise.all([
   read('src/components/CourseDetailView.tsx'),
   read('src/pages/UserPortalPage.tsx'),
   read('src/pages/portal.css'),
@@ -21,7 +21,6 @@ const [courseDetail, portal, portalCss, review, article, ctaCss, backCss, profil
   read('src/components/edu/ArticleModal.tsx'),
   read('src/components/zkCta.css'),
   read('src/components/public-back-button.css'),
-  read('src/pages/ProfilePage.tsx'),
   read('src/components/EntryBackButton.tsx'),
 ]);
 forbid(courseDetail, /دوره تخصصی|Specialized Course/, 'fixed specialized-course detail tag remains');
@@ -56,6 +55,6 @@ need(article, 'className="zke-modal-head zk-public-title-row" dir={en ? \'ltr\' 
 need(article, 'className="zke-modal-heading"', 'education detail title and type icon are not grouped');
 need(backCss, '.zk-public-title-row > .zk-public-back', 'shared public return row contract is missing');
 need(backCss, 'order: 2;', 'shared public return does not occupy the opposite title edge');
-need(profile, "textAlign: 'start'", 'profile public title remains centered instead of aligned to its language edge');
+need(portal, 'aria-label="user-portal"', 'the single entry page /profile is not the parent portal');
 
 if(failures.length){console.error(failures.join('\n'));process.exit(1)}console.log('Requested UI polish and theme-aware unified 404 contracts passed.');

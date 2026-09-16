@@ -96,7 +96,7 @@ function App(){
  const [consultationComplete,setConsultationComplete]=useState(false);useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.flow==='consultation')setConsultationComplete(detail.complete===true)};window.addEventListener('zk-flow-complete',handler);return()=>window.removeEventListener('zk-flow-complete',handler)},[]);
  const setView=useCallback((newView:string)=>{const path=viewToPath[newView]||'/'; if(newView==='admin'){setAdminSettingsLoading(false);setAdminAuthed(true)} navigate(path)},[navigate]);
  // سازگاری با هش‌های قدیمی (#admin, #track, #courses) — هدایت خودکار به مسیرهای جدید
- useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/desk',{replace:true});else if(h==='#track')navigate('/track',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
+ useEffect(()=>{const h=window.location.hash;if(h==='#admin')navigate('/desk',{replace:true});else if(h==='#profile')navigate('/profile',{replace:true});else if(h==='#courses')navigate('/courses',{replace:true})},[]);
  const initialLang:Lang=(()=>{
   try{
     const usp=new URLSearchParams(window.location.search);
@@ -247,7 +247,7 @@ useEffect(()=>{
  useEffect(()=>{const tabs=cfg.courseTabs||[]; if(tabs.length&&!tabs.some((x:DynamicRecord)=>x.id===courseTab))setCourseTab(tabs.find((x:DynamicRecord)=>x.active)?.id||tabs[0]?.id)},[cfg.courseTabs]);
  // پس از ورود/ثبت‌نام موفق، همان دوره‌ای که پشت درِ ورود مانده بود دوباره باز می‌شود (سؤال روش ارسال)
  useEffect(()=>{
-  if(String((cfg as any)?.entryMode||'user')!=='user')return;
+  // حالت ورودی سایت همواره «پنل کاربر» (/profile) است؛ حالت «پیگیری دوره» حذف شد.
   const resume=()=>{
     try{
       if(!getUserSession())return;
@@ -458,7 +458,7 @@ useEffect(()=>{
  // اصلاح ۱-۳ (مرحله ۴): برچسب‌های Tag اکنون از trVal برای ترجمه استفاده می‌کنند
  function Tag({x}:{x:string}){return <span style={{fontSize:10,padding:'3px 7px',borderRadius:T.badgeRadius||12,background:T.soft,color:T.accText,border:`1px solid ${T.brd}`}}>{trVal(x)}</span>}
  // اصلاح ۱-۵ (مرحله ۴): مقدار پیش‌فرض کشور مقصد (برای dest==='iran') اکنون بر اساس زبان انتخاب‌شده نمایش داده می‌شود (فارسی: «ایران»، انگلیسی: «Iran»)
- function chooseDest(dest:string,cr:DynamicRecord){if((cfg as any)?.entryMode==='user'&&!getUserSession()){setPortalNext('/courses');setView('portal');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
+ function chooseDest(dest:string,cr:DynamicRecord){if(!getUserSession()){setPortalNext('/courses');setView('portal');return} const methods=cfg.shippingMethods[dest].filter((m:DynamicRecord)=>m.active).sort((a:DynamicRecord,b:DynamicRecord)=>(a.order||0)-(b.order||0)); const def=methods.find((m:DynamicRecord)=>m.default)||methods[0]; setCourse((c)=>({...c,selected:cr,dest,shippingMethod:def?.id||'',form:{...c.form,country:dest==='iran'?(lang==='en'?'Iran':'ایران'):'',receiver:fd.pName,phoneCc:fd.cc,phone:fd.pPhone}})); setShipModal(null); const hasChild=!!(fd.age&&fd.gender); setView(hasChild?'course-shipping':'child-info'); {const dl=Date.now()+COURSE_TIMER_MS;setFlowDeadline(dl);try{sessionStorage.setItem('zkid_flow_deadline',String(dl));}catch{}} flowExpiredRef.current=false;}
  function deliveryText(){return buildDeliveryText({
    dest:String(course.dest||''),
    shippingMethod:course.shippingMethod,
@@ -578,18 +578,18 @@ const page=<AppRoutes app={app} ui={uiValue} flow={flowValue} admin={adminValue}
  const courseFlowViews=['course-shipping','course-payment','payment-verify','course-confirm','course-done'];
  // صفحات ورود ادمین و پیگیری دارای طراحی گلسمورفیسم تمام‌صفحه با نوار شیشه‌ای اختصاصی هستند؛
  // هدر/منو/سوییچر زبان سراسری سایت در این دو صفحه نمایش داده نمی‌شود تا ظاهر به‌هم نریزد.
- const glassFullViews=['admin-login','track','portal'];
+ const glassFullViews=['admin-login','portal'];
  const showLangSwitcher=view!=='admin'&&!glassFullViews.includes(view)&&!courseFlowViews.includes(view);
  // اصلاح ۵: نمایش منوی همبرگری اکنون از تنظیمات پنل مدیریت (cfg.menuVisibility) خوانده می‌شود؛
  // در صورت نبود مقدار برای یک view (تنظیمات قدیمی/نامعتبر)، به رفتار پیش‌فرض قبلی (noMenuViews) بازمی‌گردیم.
- const noMenuViews=['courses','course-shipping','course-payment','course-confirm','track','portal','admin-login','admin'];
+ const noMenuViews=['courses','course-shipping','course-payment','course-confirm','portal','admin-login','admin'];
  const successView=view==='course-done'||(view==='form'&&consultationComplete);
  const sensitiveFlow=!successView&&['form','child-info','course-shipping','course-payment','payment-verify','course-confirm'].includes(view);
- const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy','track','portal','admin-login'].includes(view);
+ const showAssistant=successView||['home','courses','experience','licenses','education','about','faq','contact','products','privacy','portal','admin-login'].includes(view);
  // صفحات ویژه (پیگیری/پنل کاربر، ورود مدیریت) دقیقاً مثل صفحات عمومی منوی همبرگری را دارند
- const entryChromeViews=['track','portal','admin-login'];
+ const entryChromeViews=['portal','admin-login'];
  const showMenu=!sensitiveFlow&&(entryChromeViews.includes(view)||(!glassFullViews.includes(view)&&(successView||view==='courses'||(cfg.menuVisibility?.[view]!==undefined?!!cfg.menuVisibility[view]:!noMenuViews.includes(view)))));
- const headerOnFullViews=['admin-login','track','portal']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
+ const headerOnFullViews=['admin-login','portal']; // پنل کاربر، پیگیری دوره و ورود مدیریت هم هدر صفحات عمومی را دارند
  const showHeader=view!=='admin'&&(!glassFullViews.includes(view)||headerOnFullViews.includes(view));
  // بازطراحی: پس‌زمینه ممفیس تزئینی روی همه صفحات عمومی (به‌جز پنل مدیریت) رندر می‌شود
  // ─── گارد فلش: اگر URL لینک ارجاع دارد و هنوز referral مشخص نشده، صفحه عمومی را نشان نده ───
