@@ -148,7 +148,7 @@ export function ExperiencePage(){
  return (
    <>
    <Helmet><title>{`${title} | ${siteBrand(cfg)}`}</title><meta name="description" content={`تجربه واقعی والدین از مشاوره رشد و تغذیه کودک در ${siteBrand(cfg,'مجموعه')}؛ درمان بدغذایی کودکان، بهبود اشتها و رشد قد`} /></Helmet>
-     <SecurePage pageTitle={title} T={T} warningMessage={warningMessage}>
+     <SecurePage pageTitle={title} T={T} warningMessage={warningMessage} lang={lang} protect>
        <PageShell app={app} title={title} variant="trust" topSlot={cfg.storyHighlights?.highlights?.length?<StoryHighlightsBar highlights={cfg.storyHighlights.highlights} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:cfg.storyHighlights?.items?.length?<LegacyStoryHighlightsBar items={cfg.storyHighlights.items} T={T} lang={lang} mediaCountryMode={cfg.mediaCountryMode}/>:null}>
          {/* اصلاح ۱ (مرحله ۵): متن راهنمای رضایت والدین در بالای صفحه */}
          <div style={{background:`${T.warn}15`,border:`1px solid ${T.warn}`,color:T.warn,borderRadius:12,padding:'11px 14px',fontSize:12.5,fontWeight:700,lineHeight:1.85,marginBottom:16}}>{consentNotice}</div>
@@ -329,7 +329,8 @@ export function EducationPage(){
 export function LicensesPage(){
  const app=useAppContext();
  const {cfg,T,lang,showContactOn,ContactPanel}=app;
- // زوم، انتخاب متن و ناوبری صفحه عمداً برای دسترسی‌پذیری آزاد است.
+ // محافظتِ محتوا: زومِ این صفحه غیرفعال است (بدون اختلال در اسکرول) و
+ // کپی/ذخیرهٔ تصویر با یک پیامِ محترمانهٔ حریم‌خصوصی پاسخ داده می‌شود.
  // Phase 8: اگر صفحه مجوزها غیرفعال باشد، لینک مستقیم به صفحه اصلی هدایت می‌شود (داده‌ها حذف نمی‌شوند)
  const showLicensesPage=(cfg.showLicensesPage ?? cfg.menuVisibility?.licenses ?? true)!==false;
  if(!showLicensesPage) return <Navigate to="/" replace/>;
@@ -339,7 +340,7 @@ export function LicensesPage(){
  return (
    <>
      <Helmet><title>{`مجوزها | ${siteBrand(cfg)}`}</title><meta name="description" content={`مجوزها و گواهینامه‌های منتشرشده ${siteBrand(cfg,'مجموعه')}`} /></Helmet>
-     <SecurePage pageTitle={title} T={T}>
+     <SecurePage pageTitle={title} T={T} lang={lang} protect noZoom>
        <PageShell app={app} title={title} variant="trust">
          <p style={{fontSize:13,color:T.mut,lineHeight:2,whiteSpace:'pre-wrap'}}>{cfg.licensesText||(lang==='en'?'Licenses and certificates will be published here soon.':'مجوزها و گواهینامه‌ها به‌زودی در این بخش منتشر می‌شوند.')}</p>
          {/* لیست مجوزها — از تنظیمات پنل (cfg.licenses) */}

@@ -47,9 +47,20 @@ export default function HamburgerMenu({T,lang,setLang,cfg,publicText,APP_A_URL,s
   ['growth',{label: lang==='en'?'Growth Tracking':'پیگیری رشد', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>, to:'/growth'}],
   ['settings',{label: lang==='en'?'Settings':'تنظیمات', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, to:'/settings'}],
  ].map(([k,v])=>[k,v]));
- const menuLayout=(cfg.menuLayout&&cfg.menuLayout.length?cfg.menuLayout:Object.keys(itemsBase).map(id=>({id,show:true})));
+ // مهاجرتِ شناسهٔ قدیمی: پیش از حذفِ حالت «پیگیری دوره»، مدخلِ پنل والد در چیدمانِ
+ // ذخیره‌شده با شناسهٔ track ثبت می‌شد. اگر این جایگزینی انجام نشود، آن مدخل هنگام
+ // فیلتر شدن حذف می‌شود و گزینهٔ ورود والد از منو می‌پرد.
+ const rawLayout=(cfg.menuLayout&&cfg.menuLayout.length?cfg.menuLayout:Object.keys(itemsBase).map(id=>({id,show:true})));
+ const menuLayout=rawLayout.map((x:any)=>x&&x.id==='track'?{...x,id:'profile'}:x);
  const items=menuLayout.filter((x:any)=>x.show!==false&&itemsBase[x.id]).map((x:any)=>({...itemsBase[x.id],_id:x.id}));
  if(!items.some((x:any)=>x._id==='home')&&itemsBase.home)items.unshift({...itemsBase.home,_id:'home'});
+ // پنل والد همیشه در دسترس است: اگر در چیدمان نباشد، پیش از «پیگیری رشد/تنظیمات» درج می‌شود
+ // (با همان خطِ جداکننده‌ای که خودِ مدخل دارد، درست مثل خطِ زیرِ «خانه»).
+ if(!items.some((x:any)=>x._id==='profile')&&itemsBase.profile){
+  const at=items.findIndex((x:any)=>x._id==='growth'||x._id==='settings');
+  const entry={...itemsBase.profile,_id:'profile'};
+  if(at>=0)items.splice(at,0,entry); else items.push(entry);
+ }
  const isRtl=lang==='fa';
  return <>
   <button type="button" onClick={()=>setOpen(true)} aria-label={lang==='fa'?'باز کردن منو':'Open menu'} aria-expanded={open} style={{position:'fixed',top:'calc(8px + env(safe-area-inset-top, 0px))',[isRtl?'right':'left']:'max(16px, env(safe-area-inset-'+(isRtl?'right':'left')+', 0px))',[isRtl?'left':'right']:'auto',zIndex:1300,background:/(?:^|-)dark$/.test(String(T.id||''))?'rgba(255,255,255,.12)':'rgba(255,255,255,.55)',border:/(?:^|-)dark$/.test(String(T.id||''))?'1px solid rgba(255,255,255,.24)':'1px solid var(--zk-border)',backdropFilter:'blur(14px) saturate(160%)',WebkitBackdropFilter:'blur(14px) saturate(160%)',borderRadius:12,padding:0,color:"var(--zk-text)",cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',width:48,height:48,opacity:open?1:.94,boxShadow:"var(--zk-shadow-light)",transition:'all .2s ease'}}><MenuIcon size={22} color={T.acc} /></button>
