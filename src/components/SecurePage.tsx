@@ -16,6 +16,8 @@ type SecurePageProps = {
   protect?: boolean;
   /** غیرفعال کردنِ زومِ صفحه بدون اختلال در اسکرول (ویژهٔ صفحهٔ مجوزها) */
   noZoom?: boolean;
+  /** نسخهٔ ویژهٔ محتوای والدین (اشاره به حریمِ خانواده‌ها)؛ پیش‌فرض: نسخهٔ عمومی */
+  familiesNotice?: boolean;
 };
 
 /**
@@ -25,15 +27,32 @@ type SecurePageProps = {
  * اعتمادِ صاحبانِ محتوا و پیشگیری از سوءاستفاده تأکید می‌شود.
  */
 const NOTICE = {
-  fa: {
-    title: 'پاسداشتِ حریمِ خصوصی',
-    body: 'این مستندات با رضایت و اعتمادِ صاحبانشان منتشر شده‌اند. برای پاسداشتِ حریمِ شخصیِ خانواده‌ها و پیشگیری از هرگونه سوءاستفاده، امکانِ مشاهدهٔ این صفحه تنها در همین‌جا فراهم است. از درک و همراهیِ شما صمیمانه سپاس‌گزاریم.',
-    action: 'متوجه شدم',
+  // نسخهٔ عمومی — برای صفحهٔ مجوزها: مجوزها مربوط به شرکت‌ها و تقدیرنامه‌هاست،
+  // نه والدین؛ بنابراین در آن اشاره‌ای به «خانواده‌ها» نمی‌شود.
+  general: {
+    fa: {
+      title: 'پاسداشتِ حریمِ خصوصی',
+      body: 'این مستندات با رضایت و اعتمادِ صاحبانشان منتشر شده‌اند. برای پاسداشتِ حریمِ شخصی و پیشگیری از هرگونه سوءاستفاده، امکانِ مشاهدهٔ این صفحه تنها در همین‌جا فراهم است. از درک و همراهیِ شما صمیمانه سپاس‌گزاریم.',
+      action: 'متوجه شدم',
+    },
+    en: {
+      title: 'Respecting privacy',
+      body: 'These documents are published with the consent and trust of their owners. To honour personal privacy and to help prevent any misuse, this page may only be viewed here. Thank you sincerely for your understanding.',
+      action: 'I understand',
+    },
   },
-  en: {
-    title: 'Respecting privacy',
-    body: 'These documents are published with the consent and trust of their owners. To honour the privacy of the families involved and to help prevent any misuse, this page may only be viewed here. Thank you sincerely for your understanding.',
-    action: 'I understand',
+  // نسخهٔ مربوط به محتوای والدین — برای صفحهٔ تجربه والدین
+  families: {
+    fa: {
+      title: 'پاسداشتِ حریمِ خصوصی',
+      body: 'این مستندات با رضایت و اعتمادِ صاحبانشان منتشر شده‌اند. برای پاسداشتِ حریمِ شخصیِ خانواده‌ها و پیشگیری از هرگونه سوءاستفاده، امکانِ مشاهدهٔ این صفحه تنها در همین‌جا فراهم است. از درک و همراهیِ شما صمیمانه سپاس‌گزاریم.',
+      action: 'متوجه شدم',
+    },
+    en: {
+      title: 'Respecting privacy',
+      body: 'These documents are published with the consent and trust of their owners. To honour the privacy of the families involved and to help prevent any misuse, this page may only be viewed here. Thank you sincerely for your understanding.',
+      action: 'I understand',
+    },
   },
 } as const;
 
@@ -54,7 +73,7 @@ function isEditableTarget(node: EventTarget | null): boolean {
  * A respectful privacy notice, not fake DRM. Browser key blocking and disabled
  * selection cannot prevent screenshots, but they do harm accessibility and mobile UX.
  */
-export default function SecurePage({ children, pageTitle, T, warningMessage, lang = 'fa', protect = false, noZoom = false }: SecurePageProps) {
+export default function SecurePage({ children, pageTitle, T, warningMessage, lang = 'fa', protect = false, noZoom = false, familiesNotice = false }: SecurePageProps) {
   const message =
     warningMessage ||
     `محتوای صفحه ${pageTitle} با رضایت صاحبان محتوا منتشر شده است؛ لطفاً حریم خصوصی آن‌ها را رعایت کنید.`;
@@ -65,7 +84,8 @@ export default function SecurePage({ children, pageTitle, T, warningMessage, lan
   // اگر نگه‌داشتنِ طولانی پیام را باز کرده باشد، کلیکِ بعدی‌اش را خنثی می‌کنیم
   const suppressClickRef = useRef(false);
 
-  const copy = NOTICE[lang] || NOTICE.fa;
+  const variant = familiesNotice ? NOTICE.families : NOTICE.general;
+  const copy = variant[lang] || variant.fa;
 
   const openNotice = useCallback(() => {
     setNoticeOpen(true);
@@ -75,7 +95,7 @@ export default function SecurePage({ children, pageTitle, T, warningMessage, lan
   useEffect(() => {
     if (!noticeOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setNoticeOpen(false);
+      if (e.key === 'Escape') { suppressClickRef.current = false; setNoticeOpen(false); }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -197,11 +217,17 @@ export default function SecurePage({ children, pageTitle, T, warningMessage, lan
     };
     const onMouseUp = () => clearLongPress();
     const onClickCapture = (e: MouseEvent) => {
-      if (suppressClickRef.current) {
-        suppressClickRef.current = false;
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
+      if (!suppressClickRef.current) return;
+      suppressClickRef.current = false;
+      // مهم: کلیک روی خودِ پیام (مثلاً دکمهٔ «متوجه شدم») نباید خورده شود،
+      // وگرنه کاربر مجبور است دوبار ضربه بزند.
+      try {
+        if ((e.target as Element | null)?.closest?.('[role="dialog"]')) return;
+      } catch {
+        /* بی‌صدا */
       }
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
     };
 
     root.addEventListener('contextmenu', onContextMenu);
@@ -261,7 +287,7 @@ export default function SecurePage({ children, pageTitle, T, warningMessage, lan
           aria-modal="true"
           aria-labelledby="zk-privacy-notice-title"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setNoticeOpen(false);
+            if (e.target === e.currentTarget) { suppressClickRef.current = false; setNoticeOpen(false); }
           }}
           style={{
             position: 'fixed',
@@ -322,7 +348,7 @@ export default function SecurePage({ children, pageTitle, T, warningMessage, lan
             <button
               ref={closeRef}
               type="button"
-              onClick={() => setNoticeOpen(false)}
+              onClick={() => { suppressClickRef.current = false; setNoticeOpen(false); }}
               style={{
                 minHeight: 46,
                 width: '100%',

@@ -64,17 +64,28 @@ check('صفحهٔ تجربه والدین زوم را آزاد می‌گذارد
 check('زبان به محافظ پاس داده می‌شود (پیامِ فارسی/انگلیسی)', /lang=\{lang\}/.test(licensesTag) && /lang=\{lang\}/.test(experienceTag));
 
 // ── ۴) لحنِ پیام: منعِ صریح ممنوع ──
-const faBody = (secure.match(/body:\s*'([^']*)'/) || [])[1] || '';
-const enBody = (secure.match(/body:\s*'([^']*)'/g) || [])[1] || '';
+// دو نسخهٔ پیام: عمومی (مجوزها — بدون «خانواده‌ها») و ویژهٔ والدین (تجربه والدین)
+const generalFa = (secure.match(/general:\s*\{[\s\S]*?body:\s*'([^']*)'/) || [])[1] || '';
+const familiesFa = (secure.match(/families:\s*\{[\s\S]*?body:\s*'([^']*)'/) || [])[1] || '';
+const faBody = generalFa;
+const enBody = (secure.match(/general:\s*[\s\S]*?en:\s*\{[\s\S]*?body:\s*'([^']*)'/) || [])[1] || '';
 check('متنِ فارسی پیام وجود دارد', faBody.length > 40);
+check('نسخهٔ مجوزها واژهٔ «خانواده‌ها» ندارد (مجوزها مربوط به والدین نیست)',
+  familiesFa.length > 40 && !/خانواده/.test(generalFa));
+check('نسخهٔ تجربه والدین به حریمِ خانواده‌ها اشاره می‌کند', /خانواده/.test(familiesFa));
+check('صفحهٔ تجربه والدین از نسخهٔ خانواده‌ها استفاده می‌کند', /familiesNotice/.test(experienceTag));
+check('صفحهٔ مجوزها از نسخهٔ عمومی استفاده می‌کند (familiesNotice ندارد)', !/familiesNotice/.test(licensesTag));
 check('متن پیام صریحاً نمی‌گوید «نمی‌توانید»', !/نمی‌توانید|نمی‌توانی|نمی‌توان/.test(faBody));
 check('متن پیام صریحاً نمی‌گوید «کپی نکنید / دانلود نکنید»', !/کپی نکنید|دانلود نکنید|ذخیره نکنید/.test(faBody));
 check('متن پیام بر حریمِ خصوصی و رضایت تأکید می‌کند', /حریم/.test(faBody) && /رضایت|اعتماد/.test(faBody));
 check('نسخهٔ انگلیسی هم همین ملاحظات را دارد', !/you cannot|you can't|do not copy/i.test(enBody));
 
 // ── ۵) پیام یک دکمهٔ بستن دارد ──
-check('پیام دکمهٔ تأیید دارد', /action:\s*'متوجه شدم'/.test(secure) && /onClick=\{\(\) => setNoticeOpen\(false\)\}/.test(secure));
+check('پیام دکمهٔ تأیید دارد', /action:\s*'متوجه شدم'/.test(secure) && /onClick=\{\(\) => \{ suppressClickRef\.current = false; setNoticeOpen\(false\); \}\}/.test(secure));
 check('پیام با کلیدِ Esc هم بسته می‌شود', /e\.key === 'Escape'/.test(secure));
+// رفعِ ایرادِ «دو ضربه»: کلیکِ روی خودِ پیام نباید توسطِ لایهٔ خنثی‌ساز بلعیده شود
+check('کلیک روی دکمهٔ پیام بلعیده نمی‌شود (تک‌ضربه بسته می‌شود)',
+  /closest\?\.\('\[role="dialog"\]'\)/.test(secure));
 check('نقشِ dialog برای دسترسی‌پذیری ست شده', /role="dialog"/.test(secure) && /aria-modal="true"/.test(secure));
 
 // ── ۶) منوی همبرگری: پنل والد همیشه هست ──
