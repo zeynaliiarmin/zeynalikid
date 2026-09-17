@@ -949,7 +949,7 @@ function SubCardBase({
                         onChange={e => patchSelf({ showSportPlan: e.target.checked }, e.target.checked ? 'فعال‌سازی نمایش برنامه ورزشی' : 'غیرفعال‌سازی نمایش برنامه ورزشی')} />
                       <span>نمایش ورزشی</span>
                     </label>
-                    {(sub.mealPlan || sub.sportPlan) && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => { void downloadPlanPdf({ title: 'برنامه‌ها' + (sub.childName || sub.pName ? ' — ' + String(sub.childName || sub.pName) : ''), code: String(sub.trackingCode || sub.id), meal: sub.mealPlan, sport: sub.sportPlan, userNotes: sub.userNotes }); }}>⬇ PDF برنامه‌ها</button>}
+                    {(sub.mealPlan || sub.sportPlan) && <button type="button" className="zkad-btn sm" style={{ flexShrink: 0 }} onClick={() => { void downloadPlanPdf({ title: 'برنامه‌ها', code: String(sub.trackingCode || sub.id), meal: sub.mealPlan, sport: sub.sportPlan, userNotes: sub.userNotes }); }}>⬇ PDF برنامه‌ها</button>}
                   </div>
                 </div>
               </details>
