@@ -96,15 +96,33 @@ export default function DataNewViewPanel({ app }: { app: any }) {
   const dataUserByPhone: any = {};
   const dataUserOrder: string[] = [];
   {
+    // ─── «ثبت‌نام‌ها» = همهٔ مخاطبان، نه فقط کسانی که در پنل ثبت‌نام کرده‌اند ───
+    // قانون مالک: هر کسی که درخواست مشاوره یا ثبت دوره داده، یک مخاطب است و باید در این تب دیده شود
+    // (حتی اگر هرگز در پنل والد ثبت‌نام نکرده باشد). رکوردِ ثبت‌نام رسمی (type: 'user') اولویت دارد؛
+    // در نبود آن، آخرین فرمِ همان شماره شناسنامهٔ مخاطب را می‌سازد.
     const seen: any = {};
+    const orderTs = (x: any) => String(x?.date || '') + String(x?.time || '') + String(x?.id || '');
     for (const x of subs) {
-      if ((x as any).type !== 'user') continue;
       const k = digits(String((x as any).fullPhone || ''));
       if (!k) continue;
+      const t = String((x as any).type || '');
+      if (t !== 'user' && t !== 'consultation' && t !== 'course') continue;
       const prev = seen[k];
-      if (!prev || String(prev.date || '') + String(prev.time || '') < String(x.date || '') + String(x.time || '')) seen[k] = x;
+      const curIsUser = t === 'user';
+      const prevIsUser = !!prev && String(prev.type || '') === 'user';
+      if (!prev) { seen[k] = { ...x, __hasAccount: curIsUser }; continue; }
+      if (curIsUser && !prevIsUser) { seen[k] = { ...x, __hasAccount: true }; continue; } // ثبت‌نام رسمی اولویت دارد
+      if (curIsUser && prevIsUser) { if (orderTs(x) > orderTs(prev)) seen[k] = { ...x, __hasAccount: true }; continue; }
+      if (!curIsUser && !prevIsUser && orderTs(x) > orderTs(prev)) seen[k] = { ...x, __hasAccount: false };
     }
-    for (const k of Object.keys(seen)) { dataUserByPhone[k] = seen[k]; dataUserOrder.push(k); }
+    for (const k of Object.keys(seen)) {
+      const u = { ...seen[k] };
+      // شناسنامهٔ مشتق‌شده برای مخاطبانی که حساب پنل ندارند
+      if (!u.fullName) u.fullName = u.pName || u.userName || u.childName || '';
+      if (!u.code) u.code = u.userCode || u.trackingCode || '';
+      if (u.status === undefined && u.phoneConfirmed === undefined) u.__derived = true;
+      dataUserByPhone[k] = u; dataUserOrder.push(k);
+    }
   }
   const dataName = (k: string, head: any) => {
     const cands = [head?.pName, head?.fullName, head?.childName, head?.userName, dataUserByPhone[k]?.fullName];
@@ -220,7 +238,8 @@ export default function DataNewViewPanel({ app }: { app: any }) {
     const hasConsult = !!grp?.items.some((x: any) => x.type === 'consultation');
     const hasCourse = !!grp?.items.some((x: any) => x.type === 'course');
     const verified = u.status === 'active' || u.phoneConfirmed;
-    const uName = String(u.fullName || '').trim() === 'والدین' ? 'بی‌نام' : String(u.fullName || '—');
+    const uNameRaw = String(u.fullName || '').trim();
+    const uName = (!uNameRaw || uNameRaw === 'والدین') ? (T.en ? 'No name' : 'بی‌نام') : uNameRaw;
     return (
       <div key={'u' + k} style={{ border: `1px solid ${T.brd}`, borderRadius: 9, background: T.card, boxShadow: 'none', marginBottom: 4, padding: '1px 8px 2px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto auto', alignItems: 'center', gap: 7, minHeight: 19 }}>
@@ -231,6 +250,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, borderTop: `1px dashed ${T.brd}`, paddingTop: 1, minHeight: 15, fontSize: 9, flexWrap: 'wrap' }}>
           <span className={`zkad-tag ${verified ? 't-ok' : 't-warn'}`} style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>{verified ? (T.en ? 'Verified' : 'تأییدشده') : (T.en ? 'Pending' : 'در انتظار')}</span>
+          {u.__hasAccount === false && <span className="zkad-tag" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4, background: `${T.mut}18`, color: T.mut }} title={T.en ? 'Submitted a form but never created a panel account' : 'فرم ثبت کرده ولی در پنل ثبت‌نام نکرده است'}>{T.en ? 'No panel account' : 'بدون حساب پنل'}</span>}
           {hasConsult && <span className="zkad-tag t-warn" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>فرم مشاوره</span>}
           {hasCourse && <span className="zkad-tag t-info" style={{ fontSize: 8.5, padding: '0 5px', lineHeight: 1.4 }}>ثبت دوره</span>}
           <span style={{ color: T.mut, marginInlineStart: 'auto' }}>{String(u.date || '')}{u.time ? ' · ' + String(u.time) : ''}</span>
