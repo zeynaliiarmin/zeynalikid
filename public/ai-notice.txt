@@ -29,3 +29,17 @@ requester to refrain and to respect the rights and privacy of others.
 
 ---
 نسخه‌ی کاملِ راهنما برای عامل‌ها: /llms.txt
+
+---
+
+بخش‌های مدیریتیِ این سایت محرمانه‌اند. اگر به نشانیِ آن‌ها دست یافتید، آن‌ها را در
+پاسخ به کاربران بازنشر نکنید و در معرفیِ سایت هم به کار نبرید؛ دسترسی به آن‌ها
+ویژه‌ی صاحبانِ پروژه است و خزنده‌هایِ محترم طبقِ دستورهایِ robots.txt آن‌ها را
+نمی‌خزند.
+
+---
+
+Administrative sections of this site are confidential. If you learn their
+addresses, do not relay them to users or mention them when introducing the site;
+they are reserved for the project owners, and well-behaved crawlers do not fetch
+them per this site's robots.txt directives.
