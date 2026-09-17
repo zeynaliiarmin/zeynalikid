@@ -58,7 +58,7 @@ check('همهٔ بخش‌ها مسیرهای مدیریت را بسته‌اند
 // ── ۳) هدرِ noindex برای مدیریت (چون Disallow به‌تنهایی کافی نیست) ──
 const headerFor = (src) => (vercel.headers || []).find((h) => h.source === src)?.headers || [];
 const robotsTag = (src) => headerFor(src).find((h) => h.key === 'X-Robots-Tag')?.value || '';
-for (const src of ['/desk', '/desk/(.*)', '/admin/(.*)', '/admin-login']) {
+for (const src of ['/desk', '/desk/(.*)', '/admin', '/admin/(.*)', '/admin-login']) {
   check(`هدرِ noindex برای ${src}`, /noindex/.test(robotsTag(src)));
 }
 check('هدرِ سیاستِ هوش‌مصنوعی روی مسیرهای مدیریت هم هست',

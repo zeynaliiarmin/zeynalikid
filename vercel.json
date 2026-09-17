@@ -354,6 +354,19 @@
           "value": "no-use; confidential management area"
         }
       ]
+    },
+    {
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "X-AI-Policy",
+          "value": "no-use; confidential management area"
+        }
+      ]
     }
   ]
 }
