@@ -402,7 +402,14 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
    }catch(e:any){ void zkAlert('خطا در ساخت بکاپ: '+(e?.message||e)); }
   };
 
-  const changeStatus=useCallback((id:any,status:string)=>setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:logChange(x,`تغییر وضعیت به ${status}`)}:x)),[setSubs]);
+  // تغییر وضعیتِ سفارش: علاوه بر به‌روزرسانیِ محلی، باید روی سرور هم ذخیره شود؛
+  // در غیر این صورت با رفرش یا خروج و ورودِ دوباره، تغییر از بین می‌رفت.
+  // فقط فیلدهایِ موجود در فهرستِ مجازِ admin-api فرستاده می‌شوند (changeHistory
+  // در آن فهرست نیست، برای همین تنها orderStatus ارسال می‌شود).
+  const changeStatus=useCallback((id:any,status:string)=>{
+    setSubs((list:any[])=>list.map(x=>x.id===id?{...x,orderStatus:status,changeHistory:logChange(x,`تغییر وضعیت به ${status}`)}:x));
+    void updateSubmission(id,{orderStatus:status}).catch((e:any)=>{ console.warn('ذخیره وضعیت سفارش ناموفق بود', e); });
+  },[setSubs]);
   // باز/بستن کارت فرم — callback پایدار تا React.memo کارت‌ها بی‌دلیل رندر نشود
   const toggleOpenForm=useCallback((id:any)=>{setExpId(expIdRef.current===id?null:id)},[]);
   // وابستگی‌های تزریقی SubCard؛ با useMemo پایدار می‌مانند و باعث remount نمی‌شوند
@@ -683,7 +690,7 @@ const Field=useCallback(({label,value,onChange,ph,type='text',required=false,inp
  // بازطراحی: بخش‌های ادیتور پنل مدیریت با کارت نئومورفیک (سایه نرم به‌جای بردر ساده)
  // FIX: Stabilize Box component identity — used 59+ times, remount caused all nested inputs/details to reset
  const Box=useMemo(()=>({title,children}:any)=><section className="zkad-panel-card" style={{marginBottom:12}}><h3 style={{fontSize:13.5,color:T.ttl,margin:'0 0 12px',fontWeight:800,lineHeight:1.6,display:'flex',alignItems:'center',gap:7}}>{title}</h3>{children}</section>,[T.ttl]);
-  const changeConsultStatus=useCallback((id:any,status:string)=>{setSubs((list:any[])=>list.map(x=>x.id===id?{...x,consultationStatus:status,category:status,changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${status}`)}:x)); if(String(status)==='مشاوره شده'){const cur=(subs||[]).find((x:any)=>String(x.id)===String(id)); if(cur)autoGeneratePlansIfEmpty(id,cur.mealPlan,(d:{mealPlan:string;sportPlan:string})=>setSubs((prev:any[])=>prev.map((x:any)=>x.id===id?{...x,...(d.mealPlan?{mealPlan:d.mealPlan,showMealPlan:true}:{}),...(d.sportPlan?{sportPlan:d.sportPlan,showSportPlan:true}:{}),plansAiAt:Date.now()}:x)));}},[subs,setSubs]);
+  const changeConsultStatus=useCallback((id:any,status:string)=>{setSubs((list:any[])=>list.map(x=>x.id===id?{...x,consultationStatus:status,category:status,changeHistory:logChange(x,`تغییر وضعیت مشاوره به ${status}`)}:x)); void updateSubmission(id,{consultationStatus:status}).catch((e:any)=>{ console.warn('ذخیره وضعیت مشاوره ناموفق بود', e); }); if(String(status)==='مشاوره شده'){const cur=(subs||[]).find((x:any)=>String(x.id)===String(id)); if(cur)autoGeneratePlansIfEmpty(id,cur.mealPlan,(d:{mealPlan:string;sportPlan:string})=>setSubs((prev:any[])=>prev.map((x:any)=>x.id===id?{...x,...(d.mealPlan?{mealPlan:d.mealPlan,showMealPlan:true}:{}),...(d.sportPlan?{sportPlan:d.sportPlan,showSportPlan:true}:{}),plansAiAt:Date.now()}:x)));}},[subs,setSubs]);
 
  // ─────────────────────────────────────────────────────────────────────────
  // نمای جدید «فرم‌ها و دوره‌ها»: کارت به ازای هر کاربر (تلفیق مشاوره/دوره)
