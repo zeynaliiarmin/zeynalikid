@@ -288,7 +288,7 @@ export default function DataNewViewPanel({ app }: { app: any }) {
         <input style={{ background: T.inp, border: `1px solid ${T.brd}`, color: T.txt, borderRadius: 8, padding: '6px 10px', fontFamily: 'inherit', fontSize: 11.5, width: '100%', maxWidth: 320, outline: 'none' }}
           placeholder={T.en ? 'Search name / phone / code…' : 'جستجوی نام / شماره / کد…'} value={nvQ} onChange={(e) => setNvQ(e.target.value)} />
         <span className="zkad-tag" style={{ fontSize: 11 }}>{T.en ? 'Users' : 'کاربران'}: {faNum(nvTab === 'users' ? usersList.length : (nvTab === 'consult' ? consultList.length : courseList.length))}</span>
-        <button type="button" className="zkad-toolbtn" onClick={() => toggleSelectAll(nvListIds())} title={T.en ? 'Select all cards in this list' : 'انتخاب همه کارت‌های همین فهرست'}><ZkCheckIcon size={13}/> {T.en ? 'Select all' : 'انتخاب همه'} ({faNum(nvListIds().length)})</button>
+        <button type="button" className="zkad-toolbtn" onClick={() => toggleSelectAll(nvListIds())}><ZkCheckIcon size={13}/> {T.en ? 'Select all' : 'انتخاب همه'} ({faNum(nvListIds().length)})</button>
         {selectedIds.size > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.accText, fontWeight: 800 }}>{faNum(selectedIds.size)} {T.en ? 'selected' : 'انتخاب‌شده'}
           {/* فقط وکتور سطل — بدون متن/عنوان */}
           <button type="button" className="zkad-toolbtn zkad-selected-delete" aria-label={T.en ? 'Delete selected' : 'حذف انتخاب‌شده‌ها'} style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 10px' }}

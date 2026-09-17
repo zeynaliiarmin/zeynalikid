@@ -10,13 +10,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { applyResolvedZkTheme, applyZkTheme, getLegacyZkThemePref, getZkThemePref, ZK_THEME_EVENT, ZK_THEME_KEY } from './adminTheme';
 import AdminThemeToggle from './AdminThemeToggle';
-import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkCloseIcon, ZkStaffIcon } from './adminIcons';
+import { ZkBellIcon, ZkChevronDownIcon, ZkHomeIcon, ZkLogoutIcon, ZkMenuIcon, ZkCloseIcon } from './adminIcons';
 import { zkAlert, zkConfirm } from '../components/ZkDialog';
 
 export interface AdminNavLeaf { id: string; label: string; icon?: React.ReactNode; }
 export interface AdminNavGroup { id: string; label: string; icon?: React.ReactNode; items?: AdminNavLeaf[]; }
 
 interface AdminLayoutProps {
+  onSave?: () => void;
+  saving?: boolean;
   lang: 'fa' | 'en';
   groups: AdminNavGroup[];
   active: string;
@@ -27,7 +29,7 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ lang, groups, active, onNavigate, onLogout, onHome, version = '1.0.0', children }: AdminLayoutProps) {
+export default function AdminLayout({ lang, groups, active, onNavigate, onLogout, onHome, onSave, saving, version = '1.0.0', children }: AdminLayoutProps) {
   const rtl = lang !== 'en';
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState<boolean>(() => (getZkThemePref() ?? getLegacyZkThemePref()) === 'dark');
@@ -359,7 +361,21 @@ export default function AdminLayout({ lang, groups, active, onNavigate, onLogout
             )}
           </div>
 
-          <span className="zkad-avatar" title={rtl ? 'مدیر زینالیکید' : 'Zeynalikid Admin'} aria-label={rtl ? 'حساب مدیر' : 'Admin account'}><ZkStaffIcon size={17} color="#fff" /></span>
+          <button
+            type="button"
+            className="zkad-hbtn zkad-savebtn"
+            onClick={() => { if (onSave) onSave(); }}
+            disabled={!onSave || saving}
+            aria-label={rtl ? 'ذخیره تغییرات' : 'Save changes'}
+            title={rtl ? 'ذخیره تغییرات' : 'Save changes'}
+            style={{ color: saving ? 'var(--zkad-mut)' : 'var(--zkad-acc)' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <path d="M17 21v-8H7v8" />
+              <path d="M7 3v5h8" />
+            </svg>
+          </button>
 
           <button
             type="button"

@@ -13,7 +13,7 @@ body.admin-root {
   /* surfaces */
   --zkad-bg: #F8FAFC;
   --zkad-sidebar: #FFFFFF;
-  --zkad-header: rgba(255, 255, 255, 0.94);
+  --zkad-header: rgba(255, 255, 255, 0.72);
   --zkad-card: #FFFFFF;
   --zkad-badge: #F1F5F9;
   --zkad-hover: rgba(14, 165, 233, 0.08);      /* آبی با opacity — hover */
@@ -363,9 +363,12 @@ body.admin-root .zkad-side-btn.zkad-danger:hover { background: var(--zkad-err-so
 
 /* ── Header ──────────────────────────────────────────────────────── */
 body.admin-root .zkad-header {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
-  z-index: 50;
+  inset-block-start: 0;
+  z-index: 60;
+  flex-shrink: 0;
   height: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px));
   padding-top: env(safe-area-inset-top, 0px);
   display: flex;
@@ -373,9 +376,10 @@ body.admin-root .zkad-header {
   gap: 10px;
   padding-inline: 16px;
   background: var(--zkad-header);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
   border-bottom: 1px solid var(--zkad-brd);
+  box-shadow: 0 6px 22px -12px rgba(15, 23, 42, 0.28);
 }
 @media (max-width: 1023.5px) {
   body.admin-root .zkad-header {
