@@ -179,19 +179,29 @@ input, select, textarea {
 .zk-chip {
   display: inline-flex;
   align-items: center;
-  padding: 8px 16px;
-  border-radius: var(--zk-radius-pill);
+  gap: 6px;
+  padding: 9px 15px;
+  border-radius: 14px;
   font-size: 13px;
-  font-weight: 600;
-  background: var(--zk-surface-muted);
-  border: 1px solid var(--zk-border);
+  font-weight: 700;
+  line-height: 1.35;
+  background: color-mix(in srgb, var(--zk-surface, #fff) 55%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--zk-border) 80%, transparent);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, .06), inset 0 1px 0 rgba(255, 255, 255, .55);
   cursor: pointer;
-  transition: all .2s ease;
+  transition: transform .18s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
-.zk-chip.active, .zk-chip--active {
-  background: var(--zk-primary-light);
-  color: var(--zk-primary-text, var(--zk-primary, #0F766E));
-  border-color: var(--zk-primary);
+.zk-chip:hover { transform: translateY(-1px); }
+/* کلاسِ «فعال» در کدِ فرم is-active است؛ هر سه حالت پوشش داده می‌شود. */
+.zk-chip.is-active,
+.zk-chip.active,
+.zk-chip--active {
+  background: linear-gradient(135deg, var(--zk-primary, #0F766E), color-mix(in srgb, var(--zk-primary, #0F766E) 76%, #ffffff));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--zk-primary, #0F766E) 75%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25);
 }
 
 /* Typography helpers */

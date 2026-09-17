@@ -659,7 +659,7 @@ export default function ConsultationPage(){
       return <button type="button" key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '10px 15px' : '10px 16px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>{trVal(x)}</button>;
     };
     // Scrollable horizontal row for both languages (no squeezed grid) — nicer on mobile
-    return <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', marginInline: -4, paddingInline: 4, scrollbarWidth: 'none' }}><style>{`.zk-chip::-webkit-scrollbar{display:none}`}</style>{all.map(chip)}</div>;
+    return <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', marginInline: -4, paddingInline: 4, scrollbarWidth: 'none' }}><style>{`.zk-chip::-webkit-scrollbar{display:none}`}</style>{all.map(chip)}</div>;
   }, [cfg.consultTopics, fd.topics, lang, T, trVal])
 
   // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)

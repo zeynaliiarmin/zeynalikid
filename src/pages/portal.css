@@ -166,13 +166,15 @@
 .zp-filt.on{outline:2px solid var(--zp-acc);outline-offset:-2px}
 .zp-advchip{position:relative;z-index:2;margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--zp-ttl,#4c1d95);background:color-mix(in srgb,var(--zp-acc) 14%,transparent);border-radius:999px;padding:6px 12px}
 .zp-tabwrap{width:100%;margin-bottom:10px}
-.zp-rec-tabs{position:sticky;z-index:1100;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:6px;border-radius:16px;background:transparent;overscroll-behavior-x:contain}
+.zp-rec-tabs{position:sticky;z-index:1100;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:7px;border-radius:18px;background:color-mix(in srgb,var(--zp-card0,#fff) 48%,transparent);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid color-mix(in srgb,var(--zp-cardbd,#ddd) 62%,transparent);box-shadow:0 10px 26px -14px rgba(15,23,42,.22);overscroll-behavior-x:contain}
 .zp-rec-tabs::-webkit-scrollbar{display:none}
 .zp-rec-tabs.zp-stuck{background:color-mix(in srgb,var(--zp-card0,#fff) 62%,transparent);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);box-shadow:0 12px 30px rgba(15,23,42,.14);border-bottom:1px solid color-mix(in srgb,var(--zp-cardbd,#ddd) 70%,transparent)}
 .zp-rec-tabs-title{flex:0 0 auto;font-size:12.5px;font-weight:900;color:var(--zp-ink);margin-inline-start:4px;white-space:nowrap}
-.zp-rec-tabs button{flex:0 0 auto;border:0;background:color-mix(in srgb,var(--zp-acc) 12%,transparent);color:var(--zp-ink);border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:none}
-.zp-rec-tabs button.on{background:var(--zp-acc);color:#fff}
-.zp-rec-tabs .zp-rec-tabs-x{margin-inline-start:auto;background:transparent;color:var(--zp-sub);font-size:18px;line-height:1;padding:4px 10px}
+.zp-rec-tabs button{flex:0 0 auto;border:1px solid transparent;background:transparent;color:var(--zp-sub);border-radius:13px;padding:9px 14px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
+.zp-rec-tabs button:hover{background:color-mix(in srgb,var(--zp-acc) 12%,transparent);color:var(--zp-ink)}
+.zp-rec-tabs button.on{background:linear-gradient(135deg,var(--zp-acc),color-mix(in srgb,var(--zp-acc) 78%,#fff));color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--zp-acc) 80%,transparent)}
+.zp-rec-tabs .zp-rec-tabs-x{margin-inline-start:auto;background:transparent;border:1px solid transparent;box-shadow:none;color:var(--zp-sub);font-size:18px;line-height:1;padding:4px 10px}
+.zp-rec-tabs .zp-rec-tabs-x:hover{background:color-mix(in srgb,var(--zp-err,#e11d48) 12%,transparent);color:var(--zp-err,#e11d48)}
 .zp-rec-tab-body{display:grid;gap:10px;padding:4px 0 2px}
 .zp-rec-row{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:0;border-radius:12px;padding:10px 8px;cursor:pointer;font-family:inherit;text-align:start}
 .zp-rec-row.sel{background:color-mix(in srgb,var(--zp-acc) 10%,transparent)}
