@@ -869,6 +869,7 @@ export function Footer({cfg,T,lang,setView,referralConsultant,requestConsult,onS
     { key: 'contact', label: lang==='en'?'Contact':'ارتباط با ما', view: 'contact' },
     { key: 'faq', label: lang==='en'?'FAQ':'سوالات متداول', view: 'faq' },
     { key: 'education', label: lang==='en'?'Education & Articles':'آموزش و مقالات', view: 'education' },
+    { key: 'privacy', label: lang==='en'?'Privacy Policy':'حریم خصوصی', view: 'privacy' },
   ];
 
   const socialLinks = [
