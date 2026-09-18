@@ -88,20 +88,35 @@ function MediaTabsGrid({items,cfg,T,lang,withText=false,tabVisibility,secure=tru
  const tabs=types.filter((t)=>(pools as any)[t.id].length>0);
  const [mtab,setMtab]=useState(tabs[0]?.id || 'video');
  const [openItem,setOpenItem]=useState<any|null>(null);
+ // صفحه‌بندی: فقط وقتی تعداد زیاد شود فعال می‌شود (در غیر این صورت رفتار دقیقاً مثل قبل است)
+ const [pageIdx,setPageIdx]=useState(0);
  // پل دستیار: لینک دقیق ?open=<id> تب مربوطه را انتخاب، کارت را وسط می‌آورد و جزئیات آن را باز می‌کند.
  useEffect(()=>{try{const o=new URLSearchParams(window.location.search).get('open');if(!o)return;const hit=items.find((x:any)=>String(x?.id)===o);if(!hit)return;const t=String(hit.type||'video')==='audio'?'audio':['article','text','image'].includes(String(hit.type))?'article':'video';if((pools as any)[t]?.some((x:any)=>String(x?.id)===o)&&t!==mtab)setMtab(t);window.setTimeout(()=>{const el=document.querySelector(`[data-media-id="${window.CSS.escape(o)}"]`) as HTMLElement|null;if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #7c5cff';el.style.outlineOffset='3px';window.setTimeout(()=>{el.style.outline=''},2600);const open=el.querySelector('[data-media-card-cover="true"], button') as HTMLElement|null;if(open)open.click();const url=new URL(window.location.href);url.searchParams.delete('open');replaceCurrentHistoryUrl(url.toString())},420)}catch{}},[items.length]);
  const scrollRef=useRef<HTMLDivElement|null>(null);
  useEffect(()=>{if(tabs.length&&!tabs.some(t=>t.id===mtab))setMtab(tabs[0].id)},[tabs.map(t=>t.id).join(','),mtab]);
  if(!tabs.length)return <p style={{fontSize:13,color:T.mut,lineHeight:2}}>{lang==='en'?'Content will be published here soon.':'محتوا به‌زودی در این بخش منتشر می‌شود.'}</p>;
- const shown=(pools as any)[mtab]||[];
+ const __allItems=(pools as any)[mtab]||[];
+ const PAGE_SIZE=24;
+ // فقط در حالتِ شبکه‌ای (غیرِ ردیفی/کاروسل) و فقط وقتی تعداد از حد بگذرد صفحه‌بندی می‌شود؛
+ // بنابراین بخش‌های کنونیِ سایت هیچ تغییری در ظاهر خود نمی‌بینند.
+ const needPaging=!horizontal&&__allItems.length>PAGE_SIZE;
+ const totalPages=needPaging?Math.ceil(__allItems.length/PAGE_SIZE):1;
+ const safePage=Math.min(Math.max(pageIdx,0),Math.max(totalPages-1,0));
+ const shown=needPaging?__allItems.slice(safePage*PAGE_SIZE,safePage*PAGE_SIZE+PAGE_SIZE):__allItems;
+ const navBtn:React.CSSProperties={padding:'7px 14px',borderRadius:10,border:`1px solid ${(T as any)?.brd||'#ddd'}`,background:(T as any)?.card||'transparent',color:(T as any)?.txt||'inherit',fontSize:12.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit'};
  const scroll=(dir:number)=>{const el=scrollRef.current;if(!el)return;const cardWidth=mtab==='image'?312:292;el.scrollBy({left:dir*cardWidth,behavior:'smooth'})};
  const ArrowBtn=({dir}:{dir:number})=>{const label=lang==='en'?(dir<0?'Previous':'Next'):(dir<0?'بعدی':'قبلی');return <button type="button" aria-label={label} title={label} onClick={()=>scroll(dir)} style={{width:38,height:38,borderRadius:'50%',border:`1px solid ${T.brd}`,background:T.card,color:T.accText,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:T.neuOut,fontSize:18,flexShrink:0}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transform:dir<0?'scaleX(-1)':'none'}}><polyline points="9 18 15 12 9 6"/></svg></button>};
  const gridStyle:React.CSSProperties=horizontal?{display:'flex',gap:12,overflowX:'auto',paddingBottom:8,WebkitOverflowScrolling:'touch',scrollSnapType:'x mandatory',alignItems:'flex-start'}:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12,alignItems:'flex-start'};
  const cardStyle=horizontal?{flex:'0 0 auto',scrollSnapAlign:'start' as any,width:mtab==='video'?280:mtab==='image'?300:260,display:'flex'}:{width:'100%',display:'flex'};
  return <>
-  {tabs.length>1&&<div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>{tabs.map((tab)=><button key={tab.id} onClick={()=>setMtab(tab.id)} style={{padding:'7px 13px',borderRadius:18,border:`1px solid ${mtab===tab.id?T.acc:T.brd}`,background:mtab===tab.id?T.soft:'transparent',color:mtab===tab.id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,transition:'all .65s',display:'flex',alignItems:'center',gap:5}}><span style={{display:'flex',alignItems:'center'}}>{tab.icon}</span><span>{tab.label}</span></button>)}</div>}
+  {tabs.length>1&&<div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>{tabs.map((tab)=><button key={tab.id} onClick={()=>{setMtab(tab.id);setPageIdx(0);}} style={{padding:'7px 13px',borderRadius:18,border:`1px solid ${mtab===tab.id?T.acc:T.brd}`,background:mtab===tab.id?T.soft:'transparent',color:mtab===tab.id?T.acc:T.mut,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,transition:'all .65s',display:'flex',alignItems:'center',gap:5}}><span style={{display:'flex',alignItems:'center'}}>{tab.icon}</span><span>{tab.label}</span></button>)}</div>}
   {horizontal&&<div data-media-carousel-controls style={{display:'flex',direction:'ltr',justifyContent:'space-between',alignItems:'center',width:'100%',gap:12,marginBottom:8}}><ArrowBtn dir={-1}/><ArrowBtn dir={1}/></div>}
   <div ref={scrollRef} style={{...gridStyle,animation:'fadeSlide .65s ease both'}}>{shown.map((it:any)=><div key={it.id} style={cardStyle as any}><MediaCard item={it} T={T} lang={lang} vpnOn={vpnOn} secure={secure} onOpen={()=>setOpenItem(it)}/></div>)}</div>
+  {needPaging&&totalPages>1&&(<div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:10,marginTop:14,flexWrap:'wrap'}}>
+    <button type="button" onClick={()=>setPageIdx(Math.max(0,safePage-1))} disabled={safePage===0} aria-label={lang==='en'?'Previous page':'صفحه‌ی قبل'} style={{...navBtn,opacity:safePage===0?0.45:1}}>{lang==='en'?'Previous':'قبلی'}</button>
+    <span style={{fontSize:12.5,color:(T as any)?.mut,fontWeight:700}}>{lang==='en'?`Page ${safePage+1} of ${totalPages}`:`صفحه ${safePage+1} از ${totalPages}`}</span>
+    <button type="button" onClick={()=>setPageIdx(Math.min(totalPages-1,safePage+1))} disabled={safePage>=totalPages-1} aria-label={lang==='en'?'Next page':'صفحه‌ی بعد'} style={{...navBtn,opacity:safePage>=totalPages-1?0.45:1}}>{lang==='en'?'Next':'بعدی'}</button>
+  </div>)}
   {openItem&&<MediaDetailSheet item={openItem} T={T} lang={lang} vpnOn={vpnOn} onClose={()=>setOpenItem(null)}/>}
  </>
 }
