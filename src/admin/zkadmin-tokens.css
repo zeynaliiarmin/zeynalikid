@@ -1244,3 +1244,13 @@ html[data-theme="dark"] body.admin-root .admin-main input.zkad-switch:not(:check
   border-color: #94A3B8 !important;
   background: #0F1722 !important;
 }
+
+/* ─── رفعِ باگ: هدرِ چسبنده (sticky) در پنل مدیریت کار نمی‌کرد ───
+   قانونِ سراسریِ «html, body { overflow-x:hidden; overflow-y:auto }» باعث می‌شد
+   خودِ body یک «ظرفِ اسکرول» شود؛ در نتیجه position:stickyِ هدر نسبت به اسکرولِ
+   صفحه عمل نمی‌کرد و هدر هنگامِ اسکرول بالا می‌رفت. با visible کردنِ body در
+   پنل، هدر دوباره نسبت به اسکرولِ صفحه می‌چسبد. جلوگیری از اسکرولِ افقی همچنان
+   توسطِ html انجام می‌شود، پس خطری برای layout نیست. */
+body.admin-root {
+  overflow: visible;
+}

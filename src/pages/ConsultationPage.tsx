@@ -90,6 +90,22 @@ const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val
 const StableCountrySelectLocal = CountryCodePopup;
 
 
+// آیکونِ هر موضوعِ مشاوره — متناسب با حوزه‌ی رشد و تغذیه‌ی کودک
+function TOPIC_ICON(x: string): string {
+  const t = String(x || '');
+  if (/قد|رشد|بلند|کوتاه|قامت/.test(t)) return '📏';
+  if (/اشتها|غذا|بدغذا|خوراک|تغذیه|کم‌خوری|کم خوری/.test(t)) return '🍽️';
+  if (/وزن|لاغر|چاق|اضافه/.test(t)) return '⚖️';
+  if (/خواب|بی‌خوابی|بی خوابی/.test(t)) return '😴';
+  if (/تمرکز|یادگیری|هوش|حافظه|درس/.test(t)) return '🧠';
+  if (/رفتار|اضطراب|استرس|عصب|لجباز|اخلاق/.test(t)) return '💚';
+  if (/بلوغ/.test(t)) return '🌱';
+  if (/مکمل|ویتامین|آهن|کلسیم/.test(t)) return '💊';
+  if (/ورزش|تحرک|فعالیت|تمرین/.test(t)) return '🤸';
+  if (/ایمنی|بیماری|سرماخوردگی/.test(t)) return '🛡️';
+  return '✨';
+}
+
 export default function ConsultationPage(){
  const app=useAppContext();
   const {
@@ -397,16 +413,22 @@ export default function ConsultationPage(){
         let dup: any = null;
         let bestDelta = Number.POSITIVE_INFINITY;
         for (const x of candidates) {
-          // جنسیت متفاوت ⇒ فرزند دیگر؛ این رکورد اصلاً نامزد پرسش نیست
-          if (effFd.gender && x.gender && x.gender !== effFd.gender) continue;
+          // ── قانونِ مالک (بازتعریف‌شده) ──
+          // تنها وقتی «جنسیت» **و** «سن» هر دو با رکوردِ پیشین متفاوت باشند، قطعاً
+          // فرزندِ دیگری است و پرسشی نمایش داده نمی‌شود. در بقیه‌ی حالت‌ها (وقتی
+          // یکسان یا نزدیک به فرم/فرم‌های قبلی است) پرسش نمایش داده می‌شود.
+          const genderDiffers = !!(effFd.gender && x.gender && x.gender !== effFd.gender);
+          const ageNewN = toNum(effFd.age), ageOldN = toNum(x.age);
+          const ageDiffers = ageNewN != null && ageOldN != null && Math.abs(ageNewN - ageOldN) >= 1;
+          if (genderDiffers && ageDiffers) continue;
           const hOld = toNum(x.height), wOld = toNum(x.weight);
           if (hNew != null && wNew != null && hOld != null && wOld != null) {
             const dH = Math.abs(hNew - hOld), dW = Math.abs(wNew - wOld);
-            if (dH <= 5 && dW <= 5) {
-              const d = dH + dW;
-              if (d < bestDelta) { bestDelta = d; dup = x; } // نزدیک‌ترین رکورد نامزد پرسش
-            }
-            continue; // خارج از بازه ⇒ قطعاً فرزند دیگر
+            // نزدیک‌ترین رکورد نامزدِ پرسش است (حتی اگر خارج از بازه باشد؛
+            // طبقِ قانونِ مالک فقط تفاوتِ سن و جنسیت معاف‌کننده است).
+            const d = dH + dW;
+            if (d < bestDelta) { bestDelta = d; dup = x; }
+            continue;
           }
           // دادهٔ قبلی ناقص (قد/وزن ندارد): fallback به منطق قبلی
           if (similarityScore(x, effFd) >= 0.7) { dup = dup || x; }
@@ -655,11 +677,28 @@ export default function ConsultationPage(){
   const TopicChips = useCallback(()=>{
     const all = (cfg.consultTopics || []);
     const chip = (x: string) => {
-      const chipActive = (fd.topics || []).includes(x);
-      return <button type="button" key={x} className={chipActive?'zk-chip is-active':'zk-chip'} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{ padding: lang === 'en' ? '10px 15px' : '10px 16px', borderRadius: 24, color: chipActive ? T.accText : T.mut, cursor: 'pointer', fontSize: lang === 'en' ? 11.5 : 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 42, transition: 'all .2s ease', flex: '0 0 auto', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>{trVal(x)}</button>;
+      const active = (fd.topics || []).includes(x);
+      return <button type="button" key={x} className="zk-topic-card" aria-pressed={active} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{
+        display:'flex', alignItems:'center', gap:9, minHeight:50,
+        padding:'10px 13px', borderRadius:15, cursor:'pointer',
+        fontFamily:'inherit', fontSize: lang === 'en' ? 12.5 : 13, fontWeight:800,
+        lineHeight:1.5, textAlign: lang === 'en' ? 'left' : 'right',
+        border: active ? '1px solid transparent' : `1px solid ${T.brd}`,
+        background: active ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : (T.card || '#fff'),
+        color: active ? '#fff' : (T.txt || 'inherit'),
+        boxShadow: active ? '0 10px 24px -10px rgba(15,118,110,.6)' : '0 1px 2px rgba(15,23,42,.06)',
+        transition:'transform .16s ease, box-shadow .2s ease, background .2s ease, color .2s ease',
+      }}>
+        <span aria-hidden="true" style={{ fontSize:19, lineHeight:1, flexShrink:0 }}>{TOPIC_ICON(x)}</span>
+        <span style={{ flex:1, minWidth:0, overflowWrap:'anywhere' }}>{trVal(x)}</span>
+        {active && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink:0 }}><path d="M20 6L9 17l-5-5" /></svg>}
+      </button>;
     };
-    // Scrollable horizontal row for both languages (no squeezed grid) — nicer on mobile
-    return <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', marginInline: -4, paddingInline: 4, scrollbarWidth: 'none' }}><style>{`.zk-chip::-webkit-scrollbar{display:none}`}</style>{all.map(chip)}</div>;
+    // شبکه‌ی واکنش‌گرا: فاصله‌ی کم، بدون ردیفِ افقی و بدون فضایِ خالیِ اضافی
+    return <>
+      <style>{`.zk-topic-card:hover{transform:translateY(-2px)}.zk-topic-card:active{transform:translateY(0)}`}</style>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))', gap:8 }}>{all.map(chip)}</div>
+    </>;
   }, [cfg.consultTopics, fd.topics, lang, T, trVal])
 
   // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)
