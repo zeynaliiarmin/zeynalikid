@@ -90,21 +90,6 @@ const StableSelectBoxLocal = memo(function StableSelectBoxLocal({label,items,val
 const StableCountrySelectLocal = CountryCodePopup;
 
 
-// آیکونِ هر موضوعِ مشاوره — متناسب با حوزه‌ی رشد و تغذیه‌ی کودک
-function TOPIC_ICON(x: string): string {
-  const t = String(x || '');
-  if (/قد|رشد|بلند|کوتاه|قامت/.test(t)) return '📏';
-  if (/اشتها|غذا|بدغذا|خوراک|تغذیه|کم‌خوری|کم خوری/.test(t)) return '🍽️';
-  if (/وزن|لاغر|چاق|اضافه/.test(t)) return '⚖️';
-  if (/خواب|بی‌خوابی|بی خوابی/.test(t)) return '😴';
-  if (/تمرکز|یادگیری|هوش|حافظه|درس/.test(t)) return '🧠';
-  if (/رفتار|اضطراب|استرس|عصب|لجباز|اخلاق/.test(t)) return '💚';
-  if (/بلوغ/.test(t)) return '🌱';
-  if (/مکمل|ویتامین|آهن|کلسیم/.test(t)) return '💊';
-  if (/ورزش|تحرک|فعالیت|تمرین/.test(t)) return '🤸';
-  if (/ایمنی|بیماری|سرماخوردگی/.test(t)) return '🛡️';
-  return '✨';
-}
 
 export default function ConsultationPage(){
  const app=useAppContext();
@@ -183,6 +168,8 @@ export default function ConsultationPage(){
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [dupModal, setDupModal] = useState<null | { similarId: any; trackingCode: string }>(null);
   const subsCacheRef = useRef<any[] | null>(null);
+  // آیا آخرین رخداد، یک ثبتِ موفق بوده؟ (برای پاک‌سازیِ فرمِ بعدی)
+  const submittedRef = useRef(false);
 
   // FIX: Stabilize VoiceRecorder callbacks to prevent remounting / lost blob on parent re-render (فرم مشاوره)
   const handleVoiceRecorded = useCallback((blob: Blob) => setVoiceBlob(blob), []);
@@ -330,6 +317,29 @@ export default function ConsultationPage(){
     setPrivacyAttempted(false);
     setFormView('form');
   };
+
+  // ─── پاک‌سازیِ خودکارِ فرم پس از یک ثبتِ موفق ───
+  // پیش از این، اطلاعاتِ آخرین ثبت در حافظه‌ی مرورگر و در وضعیتِ فرم باقی می‌ماند و
+  // مراجعه‌ی بعدی، فرم با اطلاعاتِ فردِ قبلی از پیش پُر می‌شد. این افکت تضمین می‌کند
+  // هر بار که یک «فرم تازه» نمایش داده می‌شود، هیچ اثری از ثبتِ قبلی نباشد.
+  // (نام و شماره‌ی کاربرِ واردشده، مانندِ قبل، از نشستِ او برداشته می‌شود.)
+  useEffect(() => {
+    if (formView !== 'form' || !submittedRef.current) return;
+    submittedRef.current = false;
+    clearPublicFormDrafts();
+    try { localStorage.removeItem('zkid_form_draft'); } catch { }
+    setFd(() => {
+      const s = getUserSession();
+      if (!s) return emptyFd();
+      const parts = splitE164(s.phone, countries);
+      return { ...emptyFd(), pName: s.fullName || '', cc: parts.cc, pPhone: parts.local };
+    });
+    setErrs({});
+    setPrivacyAccepted(false);
+    setPrivacyAttempted(false);
+    setShowCt(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formView]);
 
   const validateConsult = () => {
     const e: any = {};
@@ -588,6 +598,8 @@ export default function ConsultationPage(){
       setDupModal(null); setDupMode(null);
       pickNextMsg();
       clearPublicFormDrafts();
+      try { localStorage.removeItem('zkid_form_draft'); } catch { }
+      submittedRef.current = true;
       setFormView('success');
     } catch (e) {
       console.error('submit failed', e);
@@ -676,29 +688,26 @@ export default function ConsultationPage(){
   // FIX: TopicChips inlined as stable rendering function to avoid nested component remount
   const TopicChips = useCallback(()=>{
     const all = (cfg.consultTopics || []);
-    const chip = (x: string) => {
+    // پاک‌سازیِ هرگونه شماره‌گذاریِ احتمالیِ ابتدای عنوان (مثلِ «۱. رشد قد»)
+    const clean = (v: string) => String(trVal(v) || '').replace(/^\s*[\u0660-\u0669\u06F0-\u06F90-9]+\s*[.)\-\u200c\u200d:]?\s*/, '');
+    const chip = (x: string, i: number) => {
       const active = (fd.topics || []).includes(x);
       return <button type="button" key={x} className="zk-topic-card" aria-pressed={active} onClick={() => setFd((prev: any) => ({ ...prev, topics: (prev.topics || []).includes(x) ? prev.topics.filter((y: string) => y !== x) : [...(prev.topics || []), x] }))} style={{
-        display:'flex', alignItems:'center', gap:9, minHeight:50,
-        padding:'10px 13px', borderRadius:15, cursor:'pointer',
-        fontFamily:'inherit', fontSize: lang === 'en' ? 12.5 : 13, fontWeight:800,
-        lineHeight:1.5, textAlign: lang === 'en' ? 'left' : 'right',
-        border: active ? '1px solid transparent' : `1px solid ${T.brd}`,
-        background: active ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : (T.card || '#fff'),
+        display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+        minHeight:52, padding:'10px 12px',
+        border: 0, cursor:'pointer', fontFamily:'inherit',
+        fontSize: lang === 'en' ? 12.5 : 13, fontWeight:800, lineHeight:1.5,
+        background: active ? 'linear-gradient(135deg,#6D28D9,#7C3AED)' : 'transparent',
         color: active ? '#fff' : (T.txt || 'inherit'),
-        boxShadow: active ? '0 10px 24px -10px rgba(15,118,110,.6)' : '0 1px 2px rgba(15,23,42,.06)',
-        transition:'transform .16s ease, box-shadow .2s ease, background .2s ease, color .2s ease',
-      }}>
-        <span aria-hidden="true" style={{ fontSize:19, lineHeight:1, flexShrink:0 }}>{TOPIC_ICON(x)}</span>
-        <span style={{ flex:1, minWidth:0, overflowWrap:'anywhere' }}>{trVal(x)}</span>
-        {active && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink:0 }}><path d="M20 6L9 17l-5-5" /></svg>}
-      </button>;
+        borderInlineEnd: i < all.length - 1 ? `1px solid ${T.brd}` : 0,
+        transition:'background .2s ease, color .2s ease',
+      }}>{clean(x)}</button>;
     };
-    // شبکه‌ی واکنش‌گرا: فاصله‌ی کم، بدون ردیفِ افقی و بدون فضایِ خالیِ اضافی
-    return <>
-      <style>{`.zk-topic-card:hover{transform:translateY(-2px)}.zk-topic-card:active{transform:translateY(0)}`}</style>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(185px,1fr))', gap:8 }}>{all.map(chip)}</div>
-    </>;
+    // نوارِ یک‌تکه: همه در یک سطر، بدون فاصله‌ی اضافی — فقط مرز بین موضوع‌ها
+    return <div style={{
+      display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(0,1fr))', gap:0,
+      borderRadius:15, overflow:'hidden', border:`1px solid ${T.brd}`, background:T.card,
+    }}>{all.map(chip)}</div>;
   }, [cfg.consultTopics, fd.topics, lang, T, trVal])
 
   // FIX: Inline render to avoid Unstable Nested Component remount (FormPage/SuccessPage as nested components cause entire form to remount on each keystroke)

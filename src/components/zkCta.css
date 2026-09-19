@@ -387,3 +387,12 @@ html[data-public-theme='dark'] .zk-swap-enroll {
   background: var(--zk-primary);
   color: var(--zk-text-inverse, #04111B);
 }
+/* ─── متنِ سفید برای دکمه‌ی دوحالته (درخواستِ مالک) ───
+   هر دو خطِ متن (ثبت درخواست مشاوره / همین الان شروع کن) باید سفید باشند.
+   این قانون با قطعیتِ بالا هرگونه ارث‌بریِ ناخواسته را خنثی می‌کند. */
+.zk-swap-cta,
+.zk-swap-cta .zk-swap-line,
+.zk-swap-cta.zk-swap-consult,
+.zk-swap-cta.zk-swap-consult .zk-swap-line {
+  color: #fff;
+}

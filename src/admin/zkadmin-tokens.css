@@ -181,7 +181,7 @@ body.admin-root .zkad-sidebar {
 
 /* دسکتاپ: ثابت و همیشهvisible؛ محتوا کنارش قرار می‌گیرد */
 @media (min-width: 1024px) {
-  body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); }
+  body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); padding-top: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px)); }
 }
 
 body.admin-root .zkad-backdrop {
@@ -363,11 +363,14 @@ body.admin-root .zkad-side-btn.zkad-danger:hover { background: var(--zkad-err-so
 
 /* ── Header ──────────────────────────────────────────────────────── */
 body.admin-root .zkad-header {
-  position: -webkit-sticky;
-  position: sticky;
+  /* ثابتِ همیشگی — مانندِ هدرِ صفحات عمومی.
+     پیش‌تر sticky بود که به‌دلیلِ تبدیلِ body به ظرفِ اسکرول عمل نمی‌کرد. */
+  position: fixed;
   top: 0;
   inset-block-start: 0;
-  z-index: 60;
+  inset-inline-start: var(--zkad-sidebar-w);
+  inset-inline-end: 0;
+  z-index: 65;
   flex-shrink: 0;
   height: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px));
   padding-top: env(safe-area-inset-top, 0px);
