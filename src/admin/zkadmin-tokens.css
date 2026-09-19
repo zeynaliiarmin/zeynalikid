@@ -181,7 +181,16 @@ body.admin-root .zkad-sidebar {
 
 /* دسکتاپ: ثابت و همیشهvisible؛ محتوا کنارش قرار می‌گیرد */
 @media (min-width: 1024px) {
-  body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); padding-top: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px)); }
+  /* فضایِ بالای محتوا در همه‌ی اندازه‌ها (هدر ثابت است و نباید روی محتوا بیفتد) */
+body.admin-root .zkad-body { padding-top: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px)); }
+body.admin-root .zkad-body { padding-inline-start: var(--zkad-sidebar-w); padding-top: calc(var(--zkad-header-h) + env(safe-area-inset-top, 0px)); }
+}
+
+/* دسکتاپ: نوارِ کناری همیشه نمایان است، پس هدر باید از کنارِ آن شروع شود.
+   (در موبایل نوار کشویی است و هدر تمام‌عرض می‌ماند — وگرنه جا برای بقیه‌ی دکمه‌ها
+   نمی‌ماند و خروج، اعلان‌ها و ذخیره از دید خارج می‌شدند.) */
+@media (min-width: 1024px) {
+  body.admin-root .zkad-header { inset-inline-start: var(--zkad-sidebar-w); }
 }
 
 body.admin-root .zkad-backdrop {
@@ -368,7 +377,7 @@ body.admin-root .zkad-header {
   position: fixed;
   top: 0;
   inset-block-start: 0;
-  inset-inline-start: var(--zkad-sidebar-w);
+  inset-inline-start: 0;   /* در دسکتاپ با قانونِ پایین کنارِ نوار قرار می‌گیرد */
   inset-inline-end: 0;
   z-index: 65;
   flex-shrink: 0;
